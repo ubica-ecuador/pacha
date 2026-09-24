@@ -81,7 +81,10 @@ const muted = theme.colors.text.secondary;
 
 return {
   animation: false,
-  grid: { left: 8, right: 16, top: 30, bottom: 4, containLabel: true },
+  // The axis name sits under the axis labels, centred: at the end of the axis
+  // it ran past the grid's right edge and was clipped ("ma" for magnitude).
+  // `containLabel` leaves the name out, so `bottom` makes room for it.
+  grid: { left: 8, right: 16, top: 30, bottom: 22, containLabel: true },
   tooltip: {
     trigger: 'axis',
     axisPointer: { type: 'none' },
@@ -106,7 +109,7 @@ return {
     brushStyle: { color: 'rgba(128, 128, 128, 0.12)', borderColor: muted, borderWidth: 1 },
     outOfBrush: { colorAlpha: 0.25 },
   },
-  xAxis: { type: 'value', min: domain[0], max: domain[1], name: UNIT, nameGap: 4, axisLabel: { color: muted }, splitLine: { show: false } },
+  xAxis: { type: 'value', min: domain[0], max: domain[1], name: UNIT, nameLocation: 'middle', nameGap: 24, nameTextStyle: { color: muted }, axisLabel: { color: muted }, splitLine: { show: false } },
   yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { opacity: 0.15 } } },
   series: [
     { name: 'All', type: 'bar', data: all, barWidth: '94%', silent: true, itemStyle: { color: 'rgba(128, 128, 128, 0.22)' } },
