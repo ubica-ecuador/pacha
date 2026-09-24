@@ -109,5 +109,9 @@ services:
       grafana:
         condition: service_healthy
 
+networks:
+  default:
+    name: geostack
+
 volumes:
   grafana-data:

@@ -1,0 +1,14 @@
+# Development overlay: a local build of the Kepler panel mounted over the one
+# baked into the image.
+#
+#   KEPLER_DIST=../kepler-grafana/dist docker compose -f compose.yaml -f compose.dev.yaml up --wait
+#
+# KEPLER_DIST is required: a bind mount of a path that does not exist would
+# mount an empty folder, and the panel would silently disappear.
+services:
+  grafana:
+    volumes:
+      - type: bind
+        source: ${KEPLER_DIST:?set KEPLER_DIST to the Kepler panel's dist/ folder}
+        target: /opt/geostack/plugins/ubica-keplergl-panel
+        read_only: true
