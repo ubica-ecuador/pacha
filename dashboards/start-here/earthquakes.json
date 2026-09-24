@@ -1235,7 +1235,7 @@
                         "name": "duckdbwasm"
                       },
                       "spec": {
-                        "rawSql": "SELECT q.place AS \"Place\",\n       strftime(q.time AT TIME ZONE 'UTC', '%Y-%m-%d %H:%M UTC') AS \"Time\",\n       round(q.mag, 1) AS \"Magnitude\",\n       round(q.depth) AS \"Depth (km)\",\n       coalesce(q.alert, 'none') AS \"PAGER alert\",\n       q.mmi AS \"Intensity (MMI)\",\n       q.felt AS \"Felt reports\",\n       CASE WHEN q.tsunami = 1 THEN 'yes' ELSE 'no' END AS \"Tsunami\",\n       e.people_100km AS \"People within 100 km\",\n       q.url AS \"USGS page\"\nFROM $quakes AS q\nLEFT JOIN $exposure AS e ON e.id = q.id\nWHERE q.id = $quake"
+                        "rawSql": "SELECT q.place AS \"Place\",\n       strftime(q.time AT TIME ZONE 'UTC', '%d %b %H:%M UTC') AS \"Time\",\n       round(q.mag, 1) AS \"Magnitude\",\n       round(q.depth) AS \"Depth (km)\",\n       coalesce(q.alert, 'none') AS \"PAGER alert\",\n       q.mmi AS \"Intensity (MMI)\",\n       q.felt AS \"Felt reports\",\n       CASE WHEN q.tsunami = 1 THEN 'yes' ELSE 'no' END AS \"Tsunami\",\n       e.people_100km AS \"People within 100 km\",\n       q.url AS url\nFROM $quakes AS q\nLEFT JOIN $exposure AS e ON e.id = q.id\nWHERE q.id = $quake"
                       }
                     }
                   }
@@ -1274,7 +1274,17 @@
                     "properties": [
                       {
                         "id": "custom.width",
-                        "value": 170
+                        "value": 220
+                      },
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Open on USGS",
+                            "url": "${__data.fields.url}",
+                            "targetBlank": true
+                          }
+                        ]
                       }
                     ]
                   },
@@ -1286,7 +1296,7 @@
                     "properties": [
                       {
                         "id": "custom.width",
-                        "value": 150
+                        "value": 145
                       }
                     ]
                   },
@@ -1298,7 +1308,7 @@
                     "properties": [
                       {
                         "id": "custom.width",
-                        "value": 90
+                        "value": 85
                       }
                     ]
                   },
@@ -1310,7 +1320,7 @@
                     "properties": [
                       {
                         "id": "custom.width",
-                        "value": 90
+                        "value": 85
                       }
                     ]
                   },
@@ -1375,7 +1385,7 @@
                     "properties": [
                       {
                         "id": "custom.width",
-                        "value": 140
+                        "value": 135
                       }
                     ]
                   },
@@ -1387,7 +1397,7 @@
                     "properties": [
                       {
                         "id": "custom.width",
-                        "value": 100
+                        "value": 95
                       }
                     ]
                   },
@@ -1399,7 +1409,7 @@
                     "properties": [
                       {
                         "id": "custom.width",
-                        "value": 80
+                        "value": 70
                       }
                     ]
                   },
@@ -1415,29 +1425,19 @@
                       },
                       {
                         "id": "custom.width",
-                        "value": 175
+                        "value": 160
                       }
                     ]
                   },
                   {
                     "matcher": {
                       "id": "byName",
-                      "options": "USGS page"
+                      "options": "url"
                     },
                     "properties": [
                       {
-                        "id": "links",
-                        "value": [
-                          {
-                            "title": "Open on USGS",
-                            "url": "${__value.text}",
-                            "targetBlank": true
-                          }
-                        ]
-                      },
-                      {
-                        "id": "custom.width",
-                        "value": 130
+                        "id": "custom.hidden",
+                        "value": true
                       }
                     ]
                   }
@@ -1829,7 +1829,7 @@
                         "x": 0,
                         "y": 0,
                         "width": 24,
-                        "height": 12,
+                        "height": 10,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-about"
