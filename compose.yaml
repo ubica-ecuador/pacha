@@ -65,6 +65,11 @@ services:
       - '${STACK_PORT:-3000}:80'
     volumes:
       - ./gateway/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./gateway/feeds.conf:/etc/nginx/conf.d/feeds.conf:ro
+    networks:
+      default:
+        # DuckDB calls http://feeds/...; see gateway/feeds.conf.
+        aliases: [feeds]
     # Not on titiler: the gateway has to come up, and serve Grafana, without it.
     depends_on:
       grafana:
