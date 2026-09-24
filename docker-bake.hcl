@@ -1,5 +1,6 @@
 # The stack's two images, tagged the way compose.yaml runs them.
 # Platforms and push are added by the release workflow (P3).
+# Note: bake also loads compose.yaml from this directory; keep its targets parseable.
 
 variable "STACK_VERSION" {
   default = "dev"

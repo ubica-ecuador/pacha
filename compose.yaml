@@ -109,9 +109,10 @@ services:
       grafana:
         condition: service_healthy
 
+# docker buildx bake also reads this file; its parser needs the default network
+# explicitly declared for the gateway's `feeds` alias.
 networks:
-  default:
-    name: geostack
+  default: {}
 
 volumes:
   grafana-data:
