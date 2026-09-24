@@ -7,7 +7,7 @@ import { openDashboard } from '../lib/browser.mjs';
 
 const opened = [];
 const open = async (query = '') => {
-  const view = await openDashboard(`/d/earthquakes${query}`);
+  const view = await openDashboard(`/d/earthquakes${query}`, { datasets: ['quakes', 'places', 'exposure'] });
   opened.push(view);
   return view;
 };
