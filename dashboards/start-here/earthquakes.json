@@ -459,7 +459,7 @@
                           "config": {
                             "dataId": "grafana-B",
                             "label": "Populated places",
-                            "color": [136, 136, 136],
+                            "color": [224, 224, 224],
                             "columns": {
                               "lat": "latitude",
                               "lng": "longitude"
@@ -467,12 +467,12 @@
                             "columnMode": "points",
                             "isVisible": true,
                             "visConfig": {
-                              "radius": 4,
+                              "radius": 3,
                               "fixedRadius": false,
-                              "opacity": 0.5,
+                              "opacity": 0.75,
                               "outline": false,
                               "filled": true,
-                              "radiusRange": [1, 10]
+                              "radiusRange": [2, 16]
                             }
                           },
                           "visualChannels": {
@@ -1269,6 +1269,54 @@
                   {
                     "matcher": {
                       "id": "byName",
+                      "options": "Place"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 170
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Time"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 150
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Magnitude"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 90
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Depth (km)"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 90
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
                       "options": "PAGER alert"
                     },
                     "properties": [
@@ -1312,6 +1360,46 @@
                             }
                           }
                         ]
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 90
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Intensity (MMI)"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 140
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Felt reports"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 100
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Tsunami"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 80
                       }
                     ]
                   },
@@ -1324,6 +1412,10 @@
                       {
                         "id": "unit",
                         "value": "short"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 175
                       }
                     ]
                   },
@@ -1342,6 +1434,10 @@
                             "targetBlank": true
                           }
                         ]
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 130
                       }
                     ]
                   }
@@ -1418,6 +1514,37 @@
                     ]
                   }
                 ]
+              }
+            }
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "id": 12,
+          "title": "About the data",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "",
+            "spec": {
+              "options": {
+                "mode": "markdown",
+                "content": "### Where the data comes from\n\n- **Earthquakes**: the [USGS real-time feed](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php) of the last 30 days, read straight from USGS by your browser when the dashboard opens. *PAGER alert*, *intensity (MMI)*, *felt reports* and *tsunami* are USGS's own assessments, published only for the earthquakes that warrant one.\n- **Populated places**: [Natural Earth](https://www.naturalearthdata.com/) 1:10m populated places (v5.1.2), about 7,300 towns and cities with population estimates. Public domain.\n\n### How \"people within 100 km\" is counted\n\nFor every earthquake of magnitude 4.5 or more, the populations of the Natural Earth places within 100 km of the epicentre are added up. It uses each place's city-proper figure, not its metropolitan area, so a metro area listed as several places is not counted twice. It leaves out everyone living outside those places, so **read it as a lower bound**, not as USGS's PAGER exposure estimate.\n\n### How it works\n\nBoth datasets are loaded once into DuckDB running in your browser (the Chaski data source). Every filter and click is answered there, without a round trip to the server."
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
               }
             }
           }
@@ -1514,7 +1641,8 @@
                           "spec": {
                             "maxColumnCount": 1,
                             "columnWidthMode": "standard",
-                            "rowHeightMode": "short",
+                            "rowHeightMode": "custom",
+                            "rowHeight": 200,
                             "fillScreen": false,
                             "items": [
                               {
@@ -1679,6 +1807,32 @@
                               }
                             ]
                           }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "title": "About the data",
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 24,
+                        "height": 12,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-about"
                         }
                       }
                     }

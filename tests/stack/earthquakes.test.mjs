@@ -189,6 +189,14 @@ test('the daily series shows all and filtered', () => {
   assert.doesNotMatch(sql, /\$quakeFrom|\$quakeTo/, 'the series is the context the slider moves through');
 });
 
+test('an About the data tab names the sources and the limits of the exposure figure', async () => {
+  const text = JSON.stringify(dashboard());
+  assert.match(text, /About the data/);
+  assert.match(text, /earthquake\.usgs\.gov/);
+  assert.match(text, /Natural Earth/);
+  assert.match(text, /lower bound/);
+});
+
 test('the selection column follows the quake variable', async () => {
   const visible = async (view, title) => (await view.page.locator(`[data-testid="data-testid Panel header ${title}"]`).count()) > 0;
 
