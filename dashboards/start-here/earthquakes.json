@@ -349,7 +349,7 @@
                         "name": "duckdbwasm"
                       },
                       "spec": {
-                        "rawSql": "SELECT id, time, latitude, longitude, mag, depth, place, alert\nFROM $quakes\nWHERE $__timeFilter(time)\n  AND mag >= coalesce(try_cast($mag_lo AS DOUBLE), '-infinity'::DOUBLE)\n  AND mag < coalesce(try_cast($mag_hi AS DOUBLE), 'infinity'::DOUBLE)\n  AND greatest(least(depth, 299.9), 0) >= coalesce(try_cast($depth_lo AS DOUBLE), '-infinity'::DOUBLE)\n  AND greatest(least(depth, 299.9), 0) < coalesce(try_cast($depth_hi AS DOUBLE), 'infinity'::DOUBLE)"
+                        "rawSql": "SELECT id, time, latitude, longitude, mag, depth, greatest(least(depth, 299.9), 0) AS depth_axis, place, alert\nFROM $quakes\nWHERE $__timeFilter(time)"
                       }
                     }
                   }
@@ -401,6 +401,16 @@
                     "variable": "lat",
                     "variableTo": "lng",
                     "zoom": 5
+                  },
+                  {
+                    "field": "mag",
+                    "variable": "mag_lo",
+                    "variableTo": "mag_hi"
+                  },
+                  {
+                    "field": "depth_axis",
+                    "variable": "depth_lo",
+                    "variableTo": "depth_hi"
                   }
                 ],
                 "basemap": "dark-matter",
