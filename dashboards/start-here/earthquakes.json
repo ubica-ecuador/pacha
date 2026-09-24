@@ -1678,7 +1678,7 @@
                                   "x": 0,
                                   "y": 4,
                                   "width": 24,
-                                  "height": 14,
+                                  "height": 17,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-map"
@@ -1693,94 +1693,99 @@
                     {
                       "kind": "RowsLayoutRow",
                       "spec": {
+                        "title": "Hint",
+                        "hideHeader": true,
+                        "collapse": false,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 0,
+                                  "y": 0,
+                                  "width": 24,
+                                  "height": 3,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-hint"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "conditionalRendering": {
+                          "kind": "ConditionalRenderingGroup",
+                          "spec": {
+                            "visibility": "show",
+                            "condition": "and",
+                            "items": [
+                              {
+                                "kind": "ConditionalRenderingVariable",
+                                "spec": {
+                                  "variable": "quake",
+                                  "operator": "equals",
+                                  "value": ""
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
                         "title": "Selection",
                         "hideHeader": true,
                         "collapse": false,
                         "layout": {
-                          "kind": "AutoGridLayout",
+                          "kind": "GridLayout",
                           "spec": {
-                            "maxColumnCount": 1,
-                            "columnWidthMode": "standard",
-                            "rowHeightMode": "custom",
-                            "rowHeight": 200,
-                            "fillScreen": false,
                             "items": [
                               {
-                                "kind": "AutoGridLayoutItem",
+                                "kind": "GridLayoutItem",
                                 "spec": {
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-hint"
-                                  },
-                                  "conditionalRendering": {
-                                    "kind": "ConditionalRenderingGroup",
-                                    "spec": {
-                                      "visibility": "show",
-                                      "condition": "and",
-                                      "items": [
-                                        {
-                                          "kind": "ConditionalRenderingVariable",
-                                          "spec": {
-                                            "variable": "quake",
-                                            "operator": "equals",
-                                            "value": ""
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  }
-                                }
-                              },
-                              {
-                                "kind": "AutoGridLayoutItem",
-                                "spec": {
+                                  "x": 0,
+                                  "y": 0,
+                                  "width": 24,
+                                  "height": 4,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-selected"
-                                  },
-                                  "conditionalRendering": {
-                                    "kind": "ConditionalRenderingGroup",
-                                    "spec": {
-                                      "visibility": "show",
-                                      "condition": "and",
-                                      "items": [
-                                        {
-                                          "kind": "ConditionalRenderingVariable",
-                                          "spec": {
-                                            "variable": "quake",
-                                            "operator": "notEquals",
-                                            "value": ""
-                                          }
-                                        }
-                                      ]
-                                    }
                                   }
                                 }
                               },
                               {
-                                "kind": "AutoGridLayoutItem",
+                                "kind": "GridLayoutItem",
                                 "spec": {
+                                  "x": 0,
+                                  "y": 4,
+                                  "width": 24,
+                                  "height": 16,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-places"
-                                  },
-                                  "conditionalRendering": {
-                                    "kind": "ConditionalRenderingGroup",
-                                    "spec": {
-                                      "visibility": "show",
-                                      "condition": "and",
-                                      "items": [
-                                        {
-                                          "kind": "ConditionalRenderingVariable",
-                                          "spec": {
-                                            "variable": "quake",
-                                            "operator": "notEquals",
-                                            "value": ""
-                                          }
-                                        }
-                                      ]
-                                    }
                                   }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "conditionalRendering": {
+                          "kind": "ConditionalRenderingGroup",
+                          "spec": {
+                            "visibility": "show",
+                            "condition": "and",
+                            "items": [
+                              {
+                                "kind": "ConditionalRenderingVariable",
+                                "spec": {
+                                  "variable": "quake",
+                                  "operator": "notEquals",
+                                  "value": ""
                                 }
                               }
                             ]
