@@ -34,3 +34,8 @@ test('negative and decimal coordinates, as kepler writes them', async () => {
   const cuenca = 'POLYGON((-80.5 -3.5, -78.5 -3.5, -78.5 -1.5, -80.5 -1.5, -80.5 -3.5))';
   assert.deepEqual(await inside(cuenca, [[-79.0, -2.9], [-78.5, -0.2]]), [true, false]);
 });
+
+test('an open ring (last vertex not repeated) works like a closed one', async () => {
+  const square = 'POLYGON((0 0, 10 0, 10 10, 0 10))';
+  assert.deepEqual(await inside(square, [[5, 5], [-1, 5], [15, 5]]), [true, false, false]);
+});
