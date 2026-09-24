@@ -1267,7 +1267,13 @@
         "spec": {
           "id": 10,
           "title": "Selected earthquake",
-          "links": [],
+          "description": "The earthquake clicked on the map or picked in Most exposed. The link beside the title clears it and keeps every other filter.",
+          "links": [
+            {
+              "title": "Clear selection",
+              "url": "/d/earthquakes?${__url_time_range}&var-quakeFrom=${quakeFrom:percentencode}&var-quakeTo=${quakeTo:percentencode}&var-quakeArea=${quakeArea:percentencode}&var-mag_lo=${mag_lo:percentencode}&var-mag_hi=${mag_hi:percentencode}&var-depth_lo=${depth_lo:percentencode}&var-depth_hi=${depth_hi:percentencode}&var-quake=&var-lat=&var-lng="
+            }
+          ],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1285,7 +1291,7 @@
                         "name": "duckdbwasm"
                       },
                       "spec": {
-                        "rawSql": "SELECT q.place AS \"Place\",\n       strftime(q.time AT TIME ZONE 'UTC', '%d %b %H:%M UTC') AS \"Time\",\n       round(q.mag, 1) AS \"Magnitude\",\n       round(q.depth) AS \"Depth (km)\",\n       coalesce(q.alert, 'none') AS \"PAGER alert\",\n       q.mmi AS \"Intensity (MMI)\",\n       q.felt AS \"Felt reports\",\n       CASE WHEN q.tsunami = 1 THEN 'yes' ELSE 'no' END AS \"Tsunami\",\n       e.people_100km AS \"People within 100 km\",\n       q.url AS url\nFROM $quakes AS q\nLEFT JOIN $exposure AS e ON e.id = q.id\nWHERE q.id = $quake"
+                        "rawSql": "SELECT q.place AS \"Place\",\n       strftime(q.time AT TIME ZONE 'UTC', '%d %b %H:%M UTC') AS \"Time\",\n       round(q.mag, 1) AS \"Magnitude\",\n       round(q.depth) AS \"Depth (km)\",\n       coalesce(q.alert, 'none') AS \"PAGER alert\",\n       q.mmi AS \"Intensity (MMI)\",\n       q.felt AS \"Felt reports\",\n       CASE WHEN q.tsunami = 1 THEN 'yes' ELSE 'no' END AS \"Tsunami\",\n       (SELECT coalesce(sum(p.pop_min), 0)::DOUBLE\n          FROM $places AS p\n         WHERE p.latitude BETWEEN q.latitude - 1 AND q.latitude + 1\n           AND 2 * 6371 * asin(sqrt(\n  power(sin(radians(p.latitude - q.latitude) / 2), 2)\n  + cos(radians(q.latitude)) * cos(radians(p.latitude))\n    * power(sin(radians(p.longitude - q.longitude) / 2), 2))) <= 100) AS \"People within 100 km\",\n       q.url AS url\nFROM $quakes AS q\nWHERE q.id = $quake"
                       }
                     }
                   }
@@ -1356,6 +1362,10 @@
                       "options": "Magnitude"
                     },
                     "properties": [
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
                       {
                         "id": "custom.width",
                         "value": 85
@@ -1520,7 +1530,7 @@
                         "name": "duckdbwasm"
                       },
                       "spec": {
-                        "rawSql": "WITH q AS (SELECT latitude, longitude FROM $quakes WHERE id = $quake),\n     candidates AS (\n       SELECT p.name AS \"Place\", p.country AS \"Country\", p.pop_min AS \"Population\",\n              round(2 * 6371 * asin(sqrt(\n                power(sin(radians(p.latitude - q.latitude) / 2), 2)\n                + cos(radians(q.latitude)) * cos(radians(p.latitude))\n                  * power(sin(radians(p.longitude - q.longitude) / 2), 2)))) AS km\n       FROM q, $places AS p\n       WHERE p.latitude BETWEEN q.latitude - 1 AND q.latitude + 1\n     )\nSELECT \"Place\", \"Country\", \"Population\", km AS \"Distance (km)\"\nFROM candidates\nWHERE km <= 100\nORDER BY \"Population\" DESC\nLIMIT 15"
+                        "rawSql": "WITH q AS (SELECT latitude, longitude FROM $quakes WHERE id = $quake),\n     candidates AS (\n       SELECT p.name AS \"Place\", p.country AS \"Country\", p.pop_min AS \"Population\",\n              2 * 6371 * asin(sqrt(\n  power(sin(radians(p.latitude - q.latitude) / 2), 2)\n  + cos(radians(q.latitude)) * cos(radians(p.latitude))\n    * power(sin(radians(p.longitude - q.longitude) / 2), 2))) AS km\n       FROM q, $places AS p\n       WHERE p.latitude BETWEEN q.latitude - 1 AND q.latitude + 1\n     )\nSELECT \"Place\", \"Country\", \"Population\", round(km) AS \"Distance (km)\"\nFROM candidates\nWHERE km <= 100\nORDER BY \"Population\" DESC\nLIMIT 15"
                       }
                     }
                   }
