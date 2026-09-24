@@ -103,8 +103,14 @@ USER 472
 # - Anonymous visitors see dashboards and change nothing.
 # - Unsigned: our two plugins until the catalogue signs them, and DuckDB, which
 #   is not in the catalogue at all. Nothing else.
-# - Grafana 13 hands a backend plugin only the host variables named here.
-#   DuckDB needs HOME to find its extensions.
+# - Grafana 13 hands a backend plugin only the host variables named in
+#   GF_PLUGINS_FORWARD_HOST_ENV_VARS, and never HOME: it always pins a plugin
+#   subprocess's HOME to GF_PATHS_HOME (/usr/share/grafana), no matter what
+#   HOME is set to here (verified against the running DuckDB datasource
+#   process). DuckDB's baked extensions live under
+#   /opt/geostack/duckdb-home/.duckdb/extensions instead, and the datasource's
+#   own initSql points DuckDB at them with `SET extension_directory=...` (see
+#   provisioning/datasources/datasources.yaml).
 # - Infinity silently stops a paginated query at 5 pages unless told otherwise.
 #   The Aqueduct dashboard needs 9 pages of 750 to cover South America.
 # - No plugin preinstall: it downloads apps from grafana.com at every start,
