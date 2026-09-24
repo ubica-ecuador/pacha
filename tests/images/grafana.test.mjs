@@ -28,6 +28,7 @@ const EXPECTED = {
 const INIT_SQL =
   "SET extension_directory='/opt/geostack/duckdb-home/.duckdb/extensions'; SET allow_persistent_secrets = false; " +
   'LOAD httpfs; LOAD spatial; LOAD json; LOAD excel; LOAD raster; LOAD http_client; ' +
+  'LOAD avro; LOAD iceberg; LOAD h3; LOAD a5; LOAD lindel; ' +
   "SET enable_external_file_cache = false; SET disabled_filesystems = 'LocalFileSystem';";
 
 let id;
@@ -112,13 +113,23 @@ test('DuckDB loads every baked extension with no network at all', async () => {
       '-d', JSON.stringify({ name: 'DuckDB', uid: 'duckdb', type: 'motherduck-duckdb-datasource', access: 'proxy', jsonData: { path: '', initSql: INIT_SQL } }),
       'http://localhost:3000/api/datasources',
     );
+    // One call into each extension, so a missing one fails here by name. The
+    // cell ids are cast to text: as JSON numbers they would lose precision.
     const sql =
       'LOAD spatial; LOAD httpfs; LOAD json; LOAD excel; LOAD http_client; LOAD raster; ' +
-      'SELECT version() AS v, ST_AsText(ST_Point(1, 2)) AS p';
+      'LOAD avro; LOAD iceberg; LOAD h3; LOAD a5; LOAD lindel; ' +
+      'SELECT version() AS v, ST_AsText(ST_Point(1, 2)) AS p, ' +
+      'h3_latlng_to_cell(-2.9, -79.0, 7)::VARCHAR AS h3, a5_lonlat_to_cell(-79.0, -2.9, 10)::VARCHAR AS a5, ' +
+      'hilbert_encode([1, 2]::INTEGER[2]) AS hilbert, ' +
+      "(SELECT count(*) FROM duckdb_functions() WHERE function_name IN ('iceberg_scan', 'RT_Read')) AS table_functions";
     const out = curl('-X', 'POST', '-H', 'content-type: application/json', '-d', JSON.stringify(dsQueryBody(sql)), 'http://localhost:3000/api/ds/query');
     const [row] = rowsOf(JSON.parse(out));
     assert.equal(row.v, 'v1.5.4');
     assert.equal(row.p, 'POINT (1 2)');
+    assert.equal(row.h3, '610509782519906303');
+    assert.equal(row.a5, '2955903420613001216');
+    assert.equal(row.hilbert, 7);
+    assert.ok(Number(row.table_functions) >= 2, 'iceberg_scan or RT_Read is missing');
   } finally {
     remove(offline);
   }

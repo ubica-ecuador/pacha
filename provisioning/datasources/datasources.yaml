@@ -14,7 +14,10 @@ datasources:
   # filesystem is off (below), nothing else can be loaded. `http_client`
   # (community) carries the STAC search and the tiler's statistics:
   # `http_get`/`http_post` are scalars, so their URLs and bodies can be built
-  # from $__timeFrom(), $__timeTo() and variables.
+  # from $__timeFrom(), $__timeTo() and variables. The rest, for spatial work:
+  # h3 and a5 (discrete global grids), lindel (Hilbert and Morton orders),
+  # raster (band algebra over GDAL; it reads remote files through /vsicurl/)
+  # and iceberg, with avro, which it needs to read an Iceberg table's manifests.
   #
   # The external file cache is off. It keeps remote files in memory keyed by
   # URL, and a file replaced while several queries read it (the MBTA feeds change
@@ -37,7 +40,7 @@ datasources:
     uid: duckdb
     jsonData:
       path: ''
-      initSql: "SET extension_directory='/opt/geostack/duckdb-home/.duckdb/extensions'; SET allow_persistent_secrets = false; LOAD httpfs; LOAD spatial; LOAD json; LOAD excel; LOAD raster; LOAD http_client; SET enable_external_file_cache = false; SET disabled_filesystems = 'LocalFileSystem';"
+      initSql: "SET extension_directory='/opt/geostack/duckdb-home/.duckdb/extensions'; SET allow_persistent_secrets = false; LOAD httpfs; LOAD spatial; LOAD json; LOAD excel; LOAD raster; LOAD http_client; LOAD avro; LOAD iceberg; LOAD h3; LOAD a5; LOAD lindel; SET enable_external_file_cache = false; SET disabled_filesystems = 'LocalFileSystem';"
 
   - name: Infinity
     type: yesoreyeram-infinity-datasource

@@ -70,8 +70,10 @@ RUN curl -fsSLo /tmp/duckdb-cli.zip "https://github.com/duckdb/duckdb/releases/d
  && echo "${expected}  /tmp/duckdb-cli.zip" | sha256sum -c - \
  && unzip -q /tmp/duckdb-cli.zip -d /usr/local/bin \
  && mkdir -p "${HOME}" \
- && duckdb -c "INSTALL spatial; INSTALL httpfs; INSTALL json; INSTALL excel; INSTALL http_client FROM community; INSTALL raster FROM community;" \
- && test "$(ls "${HOME}/.duckdb/extensions/v${DUCKDB_ENGINE_VERSION}/linux_${TARGETARCH}/"*.duckdb_extension | wc -l)" -eq 6
+ && duckdb -c "INSTALL spatial; INSTALL httpfs; INSTALL json; INSTALL excel; INSTALL avro; INSTALL iceberg; \
+      INSTALL http_client FROM community; INSTALL raster FROM community; INSTALL h3 FROM community; \
+      INSTALL a5 FROM community; INSTALL lindel FROM community;" \
+ && test "$(ls "${HOME}/.duckdb/extensions/v${DUCKDB_ENGINE_VERSION}/linux_${TARGETARCH}/"*.duckdb_extension | wc -l)" -eq 11
 
 # --- Grafana. ---
 FROM grafana/${GRAFANA_EDITION}:${GRAFANA_VERSION}-ubuntu
@@ -113,6 +115,9 @@ USER 472
 #   provisioning/datasources/datasources.yaml).
 # - Infinity silently stops a paginated query at 5 pages unless told otherwise.
 #   The Aqueduct dashboard needs 9 pages of 750 to cover South America.
+# - The raster extension reads remote files with GDAL's own HTTP client, built
+#   to look for CA certificates at a Red Hat path this Ubuntu image lacks; this
+#   points it at Ubuntu's bundle. Forwarded to DuckDB like any variable but HOME.
 # - No plugin preinstall: it downloads apps from grafana.com at every start,
 #   which is the network at runtime this image exists to avoid.
 ENV GF_PATHS_PLUGINS=/opt/geostack/plugins \
@@ -122,7 +127,8 @@ ENV GF_PATHS_PLUGINS=/opt/geostack/plugins \
     GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=ubica-keplergl-panel,ubica-chaski-datasource,motherduck-duckdb-datasource \
     GF_PLUGINS_FORWARD_HOST_ENV_VARS=motherduck-duckdb-datasource,yesoreyeram-infinity-datasource \
     GF_PLUGIN_PAGINATION_MAX_PAGES=12 \
-    GF_PLUGINS_PREINSTALL_DISABLED=true
+    GF_PLUGINS_PREINSTALL_DISABLED=true \
+    CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
 LABEL org.opencontainers.image.title="geostack-grafana" \
       org.opencontainers.image.description="Grafana with the Grafana Geospatial Stack's plugins baked in. Not affiliated with Grafana Labs." \

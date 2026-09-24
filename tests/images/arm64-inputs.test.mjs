@@ -24,8 +24,8 @@ test('the arm64 DuckDB CLI matches its pinned sha256', async () => {
 });
 
 for (const [repo, names] of [
-  ['extensions.duckdb.org', ['spatial', 'httpfs', 'json', 'excel']],
-  ['community-extensions.duckdb.org', ['http_client', 'raster']],
+  ['extensions.duckdb.org', ['spatial', 'httpfs', 'json', 'excel', 'avro', 'iceberg']],
+  ['community-extensions.duckdb.org', ['http_client', 'raster', 'h3', 'a5', 'lindel']],
 ]) {
   for (const name of names) {
     test(`${name} exists for linux_arm64 on ${ENGINE}`, async () => {
