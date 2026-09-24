@@ -7,11 +7,7 @@
   "spec": {
     "title": "Earthquakes — the last 30 days",
     "description": "Earthquakes from the USGS feed over the last 30 days, with who lives nearby.",
-    "tags": [
-      "start-here",
-      "chaski",
-      "kepler"
-    ],
+    "tags": ["start-here", "chaski", "kepler"],
     "links": [],
     "annotations": [],
     "cursorSync": "Off",
@@ -22,18 +18,7 @@
       "from": "now-30d",
       "to": "now",
       "autoRefresh": "",
-      "autoRefreshIntervals": [
-        "5s",
-        "10s",
-        "30s",
-        "1m",
-        "5m",
-        "15m",
-        "30m",
-        "1h",
-        "2h",
-        "1d"
-      ],
+      "autoRefreshIntervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"],
       "hideTimepicker": false,
       "fiscalYearStartMonth": 0,
       "timezone": "browser"
@@ -302,7 +287,7 @@
                         "name": "duckdbwasm"
                       },
                       "spec": {
-                        "rawSql": "SELECT count(*) AS \"Earthquakes\" FROM $quakes WHERE $__timeFilter(time)"
+                        "rawSql": "WITH area AS (\n  SELECT\n    list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n    list_filter(n, lambda v, i: i % 2 = 0) AS ys\n  FROM (SELECT CAST(regexp_extract_all($quakeArea, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n)\nSELECT count(*) AS \"Earthquakes\"\nFROM $quakes, area\nWHERE $__timeFilter(time)\n  AND time >= coalesce(try_cast($quakeFrom AS TIMESTAMPTZ), '-infinity'::TIMESTAMPTZ)\nAND time < coalesce(try_cast($quakeTo AS TIMESTAMPTZ), 'infinity'::TIMESTAMPTZ)\n  AND mag >= coalesce(try_cast($mag_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND mag < coalesce(try_cast($mag_hi AS DOUBLE), 'infinity'::DOUBLE)\n  AND greatest(least(depth, 299.9), 0) >= coalesce(try_cast($depth_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND greatest(least(depth, 299.9), 0) < coalesce(try_cast($depth_hi AS DOUBLE), 'infinity'::DOUBLE)\n  AND (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] > latitude) <> (area.ys[i % len(area.xs) + 1] > latitude)\n        AND longitude < (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)"
                       }
                     }
                   }
@@ -319,9 +304,7 @@
             "spec": {
               "options": {
                 "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
+                  "calcs": ["lastNotNull"],
                   "fields": "",
                   "values": false
                 },
@@ -510,16 +493,40 @@
                             "compareType": "absolute",
                             "fieldsToShow": {
                               "grafana-A": [
-                                { "name": "place", "format": null },
-                                { "name": "mag", "format": null },
-                                { "name": "depth", "format": null },
-                                { "name": "time", "format": null },
-                                { "name": "alert", "format": null }
+                                {
+                                  "name": "place",
+                                  "format": null
+                                },
+                                {
+                                  "name": "mag",
+                                  "format": null
+                                },
+                                {
+                                  "name": "depth",
+                                  "format": null
+                                },
+                                {
+                                  "name": "time",
+                                  "format": null
+                                },
+                                {
+                                  "name": "alert",
+                                  "format": null
+                                }
                               ],
                               "grafana-B": [
-                                { "name": "name", "format": null },
-                                { "name": "country", "format": null },
-                                { "name": "pop_max", "format": null }
+                                {
+                                  "name": "name",
+                                  "format": null
+                                },
+                                {
+                                  "name": "country",
+                                  "format": null
+                                },
+                                {
+                                  "name": "pop_max",
+                                  "format": null
+                                }
                               ]
                             }
                           }
@@ -555,6 +562,146 @@
                     }
                   }
                 }
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-magnitude": {
+        "kind": "Panel",
+        "spec": {
+          "id": 3,
+          "title": "Magnitude",
+          "description": "Drag across the bars to filter the dashboard by magnitude. Grey is every earthquake in the time range; colour is what the other filters leave.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "all",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "SELECT floor(mag / 0.5) * 0.5 AS bin, count(*) AS n\nFROM $quakes\nWHERE $__timeFilter(time)\nGROUP BY 1 ORDER BY 1"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "selected",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "WITH area AS (\n  SELECT\n    list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n    list_filter(n, lambda v, i: i % 2 = 0) AS ys\n  FROM (SELECT CAST(regexp_extract_all($quakeArea, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n)\nSELECT floor(mag / 0.5) * 0.5 AS bin, count(*) AS n\nFROM $quakes, area\nWHERE $__timeFilter(time)\n  AND time >= coalesce(try_cast($quakeFrom AS TIMESTAMPTZ), '-infinity'::TIMESTAMPTZ)\nAND time < coalesce(try_cast($quakeTo AS TIMESTAMPTZ), 'infinity'::TIMESTAMPTZ)\n  AND greatest(least(depth, 299.9), 0) >= coalesce(try_cast($depth_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND greatest(least(depth, 299.9), 0) < coalesce(try_cast($depth_hi AS DOUBLE), 'infinity'::DOUBLE)\n  AND (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] > latitude) <> (area.ys[i % len(area.xs) + 1] > latitude)\n        AND longitude < (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\nGROUP BY 1 ORDER BY 1"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "volkovlabs-echarts-panel",
+            "version": "7.2.5",
+            "spec": {
+              "options": {
+                "renderer": "canvas",
+                "editorMode": "code",
+                "getOption": "// A histogram whose brush filters the rest of the dashboard.\n//\n// Dragging across it writes the selected range to two dashboard variables\n// (LO and HI); the other panels filter on them, and this one does not, so it\n// keeps showing the whole distribution the other filters leave. Two query\n// frames feed it: `all` (grey, the context) and `selected` (colour, what the\n// other filters leave). Each has columns `bin` (the bin's lower edge) and `n`.\n//\n// A dashboard changes only the constants block below.\n// @constants begin\nconst LO = 'mag_lo';\nconst HI = 'mag_hi';\nconst STEP = 0.5;\nconst DOMAIN = [-1.5, 9];\nconst UNIT = 'magnitude';\nconst COLOR = 'orange';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\n\nconst points = (refId) => {\n  const frame = context.panel.data.series.find((f) => f.refId === refId);\n  if (!frame) {\n    return [];\n  }\n  const bins = frame.fields.find((f) => f.name === 'bin').values;\n  const counts = frame.fields.find((f) => f.name === 'n').values;\n  return Array.from(bins, (b, i) => [Number(b) + STEP / 2, Number(counts[i])]);\n};\nconst all = points('all');\nconst selected = points('selected');\nconst domain = DOMAIN || [Math.min(...all.map((p) => p[0] - STEP / 2)), Math.max(...all.map((p) => p[0] + STEP / 2))];\n\n// Whole bins only: a range that cuts a bar in two would count half of it.\nconst snap = (range) => {\n  const lo = Math.floor(range[0] / STEP) * STEP;\n  const hi = Math.max(Math.ceil(range[1] / STEP) * STEP, lo + STEP);\n  return [lo, hi];\n};\nconst drawBrush = (range) =>\n  chart.dispatchAction({ type: 'brush', areas: range ? [{ brushType: 'lineX', xAxisIndex: 0, coordRange: range }] : [] });\nconst publish = (range) => {\n  location.partial({ ['var-' + LO]: range ? String(range[0]) : '', ['var-' + HI]: range ? String(range[1]) : '' }, true);\n};\n\nchart.off('brushEnd');\nchart.off('brush');\nchart.on('brushEnd', (event) => {\n  const area = event.areas[0];\n  if (!area || !area.coordRange) {\n    publish(undefined);\n    return;\n  }\n  const range = snap(area.coordRange);\n  publish(range);\n  setTimeout(() => drawBrush(range), 0);\n});\nchart.on('brush', (event) => {\n  if (event.command === 'clear') {\n    publish(undefined);\n  }\n});\n\n// Every redraw (setOption without merge) wipes the brush: draw it back from\n// the variables, which is also how a shared link arrives with its range.\nconst current = [\n  parseFloat(context.grafana.replaceVariables('${' + LO + '}')),\n  parseFloat(context.grafana.replaceVariables('${' + HI + '}')),\n];\nsetTimeout(() => {\n  chart.dispatchAction({ type: 'takeGlobalCursor', key: 'brush', brushOption: { brushType: 'lineX', brushMode: 'single' } });\n  if (current.every(Number.isFinite)) {\n    drawBrush(current);\n  }\n}, 0);\n\nconst accent = theme.visualization.getColorByName(COLOR);\nconst muted = theme.colors.text.secondary;\n\nreturn {\n  animation: false,\n  grid: { left: 8, right: 16, top: 30, bottom: 4, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'none' },\n    formatter: (items) => {\n      const x = items[0].value[0] - STEP / 2;\n      const rows = items.map((it) => `${it.marker}${it.seriesName}: <b>${it.value[1]}</b>`).join('<br/>');\n      return `${x}–${x + STEP} ${UNIT}<br/>${rows}`;\n    },\n  },\n  toolbox: {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: { brush: { type: ['lineX', 'clear'], title: { lineX: 'Select a range', clear: 'Clear the filter' } } },\n  },\n  brush: {\n    xAxisIndex: 0,\n    seriesIndex: [1],\n    brushType: 'lineX',\n    brushMode: 'single',\n    transformable: true,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.12)', borderColor: muted, borderWidth: 1 },\n    outOfBrush: { colorAlpha: 0.25 },\n  },\n  xAxis: { type: 'value', min: domain[0], max: domain[1], name: UNIT, nameGap: 4, axisLabel: { color: muted }, splitLine: { show: false } },\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { opacity: 0.15 } } },\n  series: [\n    { name: 'All', type: 'bar', data: all, barWidth: '94%', silent: true, itemStyle: { color: 'rgba(128, 128, 128, 0.22)' } },\n    { name: 'Filtered', type: 'bar', data: selected, barWidth: '94%', barGap: '-100%', itemStyle: { color: accent } },\n  ],\n};\n"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-depth": {
+        "kind": "Panel",
+        "spec": {
+          "id": 4,
+          "title": "Depth (km)",
+          "description": "Drag across the bars to filter the dashboard by depth. Grey is every earthquake in the time range; colour is what the other filters leave. Depths beyond 300 km are counted in the last bar.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "all",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "SELECT floor(greatest(least(depth, 299.9), 0) / 10) * 10 AS bin, count(*) AS n\nFROM $quakes\nWHERE $__timeFilter(time)\nGROUP BY 1 ORDER BY 1"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "selected",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "WITH area AS (\n  SELECT\n    list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n    list_filter(n, lambda v, i: i % 2 = 0) AS ys\n  FROM (SELECT CAST(regexp_extract_all($quakeArea, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n)\nSELECT floor(greatest(least(depth, 299.9), 0) / 10) * 10 AS bin, count(*) AS n\nFROM $quakes, area\nWHERE $__timeFilter(time)\n  AND time >= coalesce(try_cast($quakeFrom AS TIMESTAMPTZ), '-infinity'::TIMESTAMPTZ)\nAND time < coalesce(try_cast($quakeTo AS TIMESTAMPTZ), 'infinity'::TIMESTAMPTZ)\n  AND mag >= coalesce(try_cast($mag_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND mag < coalesce(try_cast($mag_hi AS DOUBLE), 'infinity'::DOUBLE)\n  AND (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] > latitude) <> (area.ys[i % len(area.xs) + 1] > latitude)\n        AND longitude < (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\nGROUP BY 1 ORDER BY 1"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "volkovlabs-echarts-panel",
+            "version": "7.2.5",
+            "spec": {
+              "options": {
+                "renderer": "canvas",
+                "editorMode": "code",
+                "getOption": "// A histogram whose brush filters the rest of the dashboard.\n//\n// Dragging across it writes the selected range to two dashboard variables\n// (LO and HI); the other panels filter on them, and this one does not, so it\n// keeps showing the whole distribution the other filters leave. Two query\n// frames feed it: `all` (grey, the context) and `selected` (colour, what the\n// other filters leave). Each has columns `bin` (the bin's lower edge) and `n`.\n//\n// A dashboard changes only the constants block below.\n// @constants begin\nconst LO = 'depth_lo';\nconst HI = 'depth_hi';\nconst STEP = 10;\nconst DOMAIN = [0, 300];\nconst UNIT = 'km';\nconst COLOR = 'blue';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\n\nconst points = (refId) => {\n  const frame = context.panel.data.series.find((f) => f.refId === refId);\n  if (!frame) {\n    return [];\n  }\n  const bins = frame.fields.find((f) => f.name === 'bin').values;\n  const counts = frame.fields.find((f) => f.name === 'n').values;\n  return Array.from(bins, (b, i) => [Number(b) + STEP / 2, Number(counts[i])]);\n};\nconst all = points('all');\nconst selected = points('selected');\nconst domain = DOMAIN || [Math.min(...all.map((p) => p[0] - STEP / 2)), Math.max(...all.map((p) => p[0] + STEP / 2))];\n\n// Whole bins only: a range that cuts a bar in two would count half of it.\nconst snap = (range) => {\n  const lo = Math.floor(range[0] / STEP) * STEP;\n  const hi = Math.max(Math.ceil(range[1] / STEP) * STEP, lo + STEP);\n  return [lo, hi];\n};\nconst drawBrush = (range) =>\n  chart.dispatchAction({ type: 'brush', areas: range ? [{ brushType: 'lineX', xAxisIndex: 0, coordRange: range }] : [] });\nconst publish = (range) => {\n  location.partial({ ['var-' + LO]: range ? String(range[0]) : '', ['var-' + HI]: range ? String(range[1]) : '' }, true);\n};\n\nchart.off('brushEnd');\nchart.off('brush');\nchart.on('brushEnd', (event) => {\n  const area = event.areas[0];\n  if (!area || !area.coordRange) {\n    publish(undefined);\n    return;\n  }\n  const range = snap(area.coordRange);\n  publish(range);\n  setTimeout(() => drawBrush(range), 0);\n});\nchart.on('brush', (event) => {\n  if (event.command === 'clear') {\n    publish(undefined);\n  }\n});\n\n// Every redraw (setOption without merge) wipes the brush: draw it back from\n// the variables, which is also how a shared link arrives with its range.\nconst current = [\n  parseFloat(context.grafana.replaceVariables('${' + LO + '}')),\n  parseFloat(context.grafana.replaceVariables('${' + HI + '}')),\n];\nsetTimeout(() => {\n  chart.dispatchAction({ type: 'takeGlobalCursor', key: 'brush', brushOption: { brushType: 'lineX', brushMode: 'single' } });\n  if (current.every(Number.isFinite)) {\n    drawBrush(current);\n  }\n}, 0);\n\nconst accent = theme.visualization.getColorByName(COLOR);\nconst muted = theme.colors.text.secondary;\n\nreturn {\n  animation: false,\n  grid: { left: 8, right: 16, top: 30, bottom: 4, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'none' },\n    formatter: (items) => {\n      const x = items[0].value[0] - STEP / 2;\n      const rows = items.map((it) => `${it.marker}${it.seriesName}: <b>${it.value[1]}</b>`).join('<br/>');\n      return `${x}–${x + STEP} ${UNIT}<br/>${rows}`;\n    },\n  },\n  toolbox: {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: { brush: { type: ['lineX', 'clear'], title: { lineX: 'Select a range', clear: 'Clear the filter' } } },\n  },\n  brush: {\n    xAxisIndex: 0,\n    seriesIndex: [1],\n    brushType: 'lineX',\n    brushMode: 'single',\n    transformable: true,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.12)', borderColor: muted, borderWidth: 1 },\n    outOfBrush: { colorAlpha: 0.25 },\n  },\n  xAxis: { type: 'value', min: domain[0], max: domain[1], name: UNIT, nameGap: 4, axisLabel: { color: muted }, splitLine: { show: false } },\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { opacity: 0.15 } } },\n  series: [\n    { name: 'All', type: 'bar', data: all, barWidth: '94%', silent: true, itemStyle: { color: 'rgba(128, 128, 128, 0.22)' } },\n    { name: 'Filtered', type: 'bar', data: selected, barWidth: '94%', barGap: '-100%', itemStyle: { color: accent } },\n  ],\n};\n"
               },
               "fieldConfig": {
                 "defaults": {},
@@ -600,6 +747,32 @@
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-map"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 18,
+                        "width": 12,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-magnitude"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 12,
+                        "y": 18,
+                        "width": 12,
+                        "height": 8,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-depth"
                         }
                       }
                     }

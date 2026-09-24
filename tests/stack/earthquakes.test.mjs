@@ -5,16 +5,23 @@ import { api } from '../lib/grafana.mjs';
 import { STACK_URL } from '../lib/stack.mjs';
 import { openDashboard } from '../lib/browser.mjs';
 import { loadDashboard, panelsByType } from '../lib/dashboards.mjs';
+import { brushHistogramBody, withConstants } from '../lib/templates.mjs';
 
 const dashboard = () => loadDashboard('dashboards/start-here/earthquakes.json');
 
-const opened = [];
+const AREA = encodeURIComponent('POLYGON((-85 -45, -65 -45, -65 5, -85 5, -85 -45))');
+
+// Only one Chromium alive at a time: several live browsers starve the
+// software WebGL renderer the map's canvas needs (found in Task 4). `open`
+// closes whatever it previously opened before launching the next one; `after`
+// closes the last one still standing.
+let current;
 const open = async (query = '') => {
-  const view = await openDashboard(`/d/earthquakes${query}`, { datasets: ['quakes', 'places', 'exposure'] });
-  opened.push(view);
-  return view;
+  if (current) await current.browser.close();
+  current = await openDashboard(`/d/earthquakes${query}`, { datasets: ['quakes', 'places', 'exposure'] });
+  return current;
 };
-after(async () => Promise.all(opened.map((v) => v.browser.close())));
+after(async () => current && current.browser.close());
 
 test('is provisioned in Start here under its old uid', async () => {
   const { status, json } = await api(STACK_URL, '/api/dashboards/uid/earthquakes');
@@ -67,14 +74,76 @@ test('the map never filters on what it publishes itself', () => {
 
 test('the map draws', async () => {
   const view = await open();
-  // kepler's own WebGL canvas mounts after Grafana's panel-loaded signal, and
-  // by this point in the file three earlier browsers are still open (`after`
-  // closes them all at once) competing for the same software-WebGL renderer
-  // — so give the canvas a few extra seconds rather than the single frame
-  // `openDashboard` already waited.
+  // kepler's own WebGL canvas mounts after Grafana's panel-loaded signal, so
+  // give it a few extra seconds rather than the single frame `openDashboard`
+  // already waited.
   const CANVAS = '[data-viz-panel-key] canvas';
   await view.page.waitForFunction((sel) => document.querySelectorAll(sel).length > 0, CANVAS, { timeout: 20_000 });
   const canvases = await view.page.locator(CANVAS).count();
   assert.ok(canvases > 0);
   assert.equal(await view.panelErrors(), 0);
+});
+
+test('URL filters narrow the count, and clearing them restores it', async () => {
+  const all = await (await open()).statNumber('Earthquakes');
+
+  const strong = await (await open('?var-mag_lo=5&var-mag_hi=10')).statNumber('Earthquakes');
+  assert.ok(strong < all, `${strong} !< ${all}`);
+
+  const inArea = await (await open(`?var-quakeArea=${AREA}`)).statNumber('Earthquakes');
+  assert.ok(inArea < all, `${inArea} !< ${all}`);
+
+  const cleared = await (await open('?var-mag_lo=&var-mag_hi=&var-depth_lo=&var-depth_hi=&var-quakeArea=')).statNumber('Earthquakes');
+  assert.equal(cleared, all);
+});
+
+test('the histograms run the shared template, changing only its constants', () => {
+  const template = brushHistogramBody();
+  const bodies = JSON.stringify(dashboard()).match(/@constants begin[\s\S]*?@constants end/g);
+  assert.equal(bodies?.length, 2);
+  for (const panel of panelsByType(dashboard(), 'volkovlabs-echarts-panel')) {
+    const code = Object.values(JSON.parse(JSON.stringify(panel.vizConfig?.spec?.options ?? panel.options))).find(
+      (v) => typeof v === 'string' && v.includes('@constants begin'),
+    );
+    const constants = code.match(/\/\/ @constants begin\n([\s\S]*?)\/\/ @constants end/)[1];
+    assert.equal(code, withConstants(template, constants));
+  }
+});
+
+test('dragging across the magnitude histogram filters the dashboard without reloading the data', async () => {
+  // A real brush, the way a visitor makes one: a page navigation would restart
+  // Chaski and reload everything, which is exactly what must not happen.
+  const view = await open();
+
+  // The map publishes its own default quakeFrom/quakeTo once, after it settles
+  // (software WebGL can take several seconds); since the histogram's own
+  // `selected` query depends on that window, its one-time arrival redraws the
+  // chart (every redraw wipes an in-progress brush, by brush-histogram.js's
+  // own design). Wait for that one-time settle first, so the drag below lands
+  // in the steady state rather than racing it.
+  await view.page.waitForFunction(() => new URL(location.href).searchParams.get('var-quakeFrom'), null, { timeout: 20_000 });
+  await view.page.waitForTimeout(500);
+
+  for (const title of ['Magnitude', 'Depth (km)']) {
+    const panel = view.page.locator(`[data-testid="data-testid Panel header ${title}"]`).locator('xpath=ancestor::*[@data-viz-panel-key][1]');
+    assert.ok((await panel.locator('canvas').count()) > 0, title);
+  }
+  assert.equal(await view.panelErrors(), 0);
+
+  const all = await view.statNumber('Earthquakes');
+  const loadsBefore = await view.page.evaluate(() => window.__duckdbwasm.stats.loads.length);
+  const canvas = view.page
+    .locator('[data-testid="data-testid Panel header Magnitude"]')
+    .locator('xpath=ancestor::*[@data-viz-panel-key][1]')
+    .locator('canvas')
+    .first();
+  const box = await canvas.boundingBox();
+  await view.page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.5);
+  await view.page.mouse.down();
+  await view.page.mouse.move(box.x + box.width * 0.9, box.y + box.height * 0.5, { steps: 10 });
+  await view.page.mouse.up();
+  await view.page.waitForFunction(() => new URL(location.href).searchParams.get('var-mag_lo'), null, { timeout: 10_000 });
+  await view.page.waitForTimeout(2000);
+  assert.ok((await view.statNumber('Earthquakes')) < all);
+  assert.equal(await view.page.evaluate(() => window.__duckdbwasm.stats.loads.length), loadsBefore);
 });
