@@ -188,3 +188,34 @@ test('the daily series shows all and filtered', () => {
   assert.match(sql, /AS \\"Filtered\\"/);
   assert.doesNotMatch(sql, /\$quakeFrom|\$quakeTo/, 'the series is the context the slider moves through');
 });
+
+test('the selection column follows the quake variable', async () => {
+  const visible = async (view, title) => (await view.page.locator(`[data-testid="data-testid Panel header ${title}"]`).count()) > 0;
+
+  // No quake selected: the hint explains the map, the selection panels don't exist.
+  const noQuakeView = await open();
+  assert.equal(await visible(noQuakeView, 'How to use this map'), true);
+  assert.equal(await visible(noQuakeView, 'Selected earthquake'), false);
+
+  // The same page's Chaski data picks the quake Task 6's "Most exposed" table
+  // ranks first, so the selected panel's text can be checked against it.
+  const [top] = await noQuakeView.chaski(
+    'SELECT q.id, q.place FROM datasets.quakes q JOIN datasets.exposure e USING (id) ORDER BY e.people_100km DESC LIMIT 1',
+  );
+
+  const selectedView = await open(`?var-quake=${encodeURIComponent(top.id)}`);
+  assert.equal(await visible(selectedView, 'How to use this map'), false);
+  assert.equal(await visible(selectedView, 'Selected earthquake'), true);
+  const text = await selectedView.page
+    .locator('[data-testid="data-testid Panel header Selected earthquake"]')
+    .locator('xpath=ancestor::*[@data-viz-panel-key][1]')
+    .innerText();
+  assert.ok(text.includes(top.place), `${top.place} not in: ${text.slice(0, 200)}`);
+  assert.equal(await visible(selectedView, 'Places within 100 km'), true);
+  assert.equal(await selectedView.panelErrors(), 0);
+
+  // A quake id that matches nothing: hint stays hidden (quake isn't empty), no panel errors.
+  const staleView = await open('?var-quake=does-not-exist');
+  assert.equal(await visible(staleView, 'How to use this map'), false);
+  assert.equal(await staleView.panelErrors(), 0);
+});
