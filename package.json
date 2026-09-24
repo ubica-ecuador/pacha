@@ -9,7 +9,8 @@
     "test:config": "node --test \"tests/config.test.mjs\"",
     "test:images": "node --test --test-concurrency=1 \"tests/images/*.test.mjs\"",
     "test:stack": "node --test --test-concurrency=1 \"tests/stack/*.test.mjs\"",
-    "test": "npm run test:config && npm run test:images && npm run test:stack"
+    "test:templates": "node --test \"tests/templates/*.test.mjs\"",
+    "test": "npm run test:templates && npm run test:config && npm run test:images && npm run test:stack"
   },
   "devDependencies": {
     "playwright": "1.63.0"
