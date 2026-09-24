@@ -61,14 +61,34 @@ test('the tiler is served under /titiler with the prefix taken off', async () =>
 });
 
 test('Grafana Live upgrades to a websocket through the gateway', async () => {
+  // A browser always sends Origin; a plain GET from Node does not. Grafana
+  // Live checks it against GF_SERVER_ROOT_URL (compose.yaml) before
+  // upgrading, so the request has to look like a real browser's to prove the
+  // gateway/root_url combination actually works — not just that the socket
+  // upgrades when nothing checks the Origin at all.
   const res = await rawGet(`${STACK_URL}/api/live/ws`, {
     authorization: basicAuth(),
+    origin: new URL(STACK_URL).origin,
     connection: 'Upgrade',
     upgrade: 'websocket',
     'sec-websocket-version': '13',
     'sec-websocket-key': 'dGhlIHNhbXBsZSBub25jZQ==',
   });
   assert.equal(res.status, 101);
+});
+
+test('Grafana Live rejects a websocket from a foreign Origin', async () => {
+  // The positive test above would also pass if the Origin check were simply
+  // off. Proving a mismatched Origin is refused is what shows it is on.
+  const res = await rawGet(`${STACK_URL}/api/live/ws`, {
+    authorization: basicAuth(),
+    origin: 'https://evil.example',
+    connection: 'Upgrade',
+    upgrade: 'websocket',
+    'sec-websocket-version': '13',
+    'sec-websocket-key': 'dGhlIHNhbXBsZSBub25jZQ==',
+  });
+  assert.equal(res.status, 403);
 });
 
 test("Chaski's engine goes out compressed", async () => {
