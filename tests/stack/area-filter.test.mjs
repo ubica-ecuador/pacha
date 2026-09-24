@@ -39,3 +39,8 @@ test('an open ring (last vertex not repeated) works like a closed one', async ()
   const square = 'POLYGON((0 0, 10 0, 10 10, 0 10))';
   assert.deepEqual(await inside(square, [[5, 5], [-1, 5], [15, 5]]), [true, false, false]);
 });
+
+test('a ring drawn on a copy of the world west of -180 works like one drawn on the map itself', async () => {
+  const westCopy = 'POLYGON((-200 0, -190 0, -190 10, -200 10, -200 0))';
+  assert.deepEqual(await inside(westCopy, [[165, 5], [175, 5], [-195, 5]]), [true, false, false]);
+});
