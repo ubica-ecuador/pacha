@@ -85,16 +85,32 @@ test('the map draws', async () => {
 });
 
 test('URL filters narrow the count, and clearing them restores it', async () => {
-  const all = await (await open()).statNumber('Earthquakes');
+  // A fixed, wholly-in-the-past range (an hour behind "now", so no quake
+  // arriving during the test can land in it) carried on every URL below, and
+  // a baseline computed against each page's own already-loaded `quakes`
+  // dataset over that same range — comparing a page against itself, not
+  // against a separate page's independently-refetched copy of the live USGS
+  // feed, which is what made this test drift by a quake or two before.
+  const to = Math.floor((Date.now() - 60 * 60 * 1000) / 60_000) * 60_000;
+  const from = to - 29 * 24 * 60 * 60 * 1000;
+  const range = `from=${from}&to=${to}`;
+  const baselineSql = `SELECT count(*) AS n FROM datasets.quakes WHERE time >= to_timestamp(${from} / 1000) AND time <= to_timestamp(${to} / 1000)`;
+  const baselineOf = async (view) => Number((await view.chaski(baselineSql))[0].n);
 
-  const strong = await (await open('?var-mag_lo=5&var-mag_hi=10')).statNumber('Earthquakes');
-  assert.ok(strong < all, `${strong} !< ${all}`);
+  const strongView = await open(`?${range}&var-mag_lo=5&var-mag_hi=10`);
+  const strong = await strongView.statNumber('Earthquakes');
+  const strongBaseline = await baselineOf(strongView);
+  assert.ok(strong < strongBaseline, `${strong} !< ${strongBaseline}`);
 
-  const inArea = await (await open(`?var-quakeArea=${AREA}`)).statNumber('Earthquakes');
-  assert.ok(inArea < all, `${inArea} !< ${all}`);
+  const inAreaView = await open(`?${range}&var-quakeArea=${AREA}`);
+  const inArea = await inAreaView.statNumber('Earthquakes');
+  const inAreaBaseline = await baselineOf(inAreaView);
+  assert.ok(inArea < inAreaBaseline, `${inArea} !< ${inAreaBaseline}`);
 
-  const cleared = await (await open('?var-mag_lo=&var-mag_hi=&var-depth_lo=&var-depth_hi=&var-quakeArea=')).statNumber('Earthquakes');
-  assert.equal(cleared, all);
+  const clearedView = await open(`?${range}&var-mag_lo=&var-mag_hi=&var-depth_lo=&var-depth_hi=&var-quakeArea=`);
+  const cleared = await clearedView.statNumber('Earthquakes');
+  const clearedBaseline = await baselineOf(clearedView);
+  assert.equal(cleared, clearedBaseline);
 });
 
 test('the histograms run the shared template, changing only its constants', () => {
