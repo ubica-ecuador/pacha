@@ -80,5 +80,34 @@ services:
       timeout: 3s
       retries: 12
 
+  # MCP server for AI agents that build dashboards (P4). Loopback only, behind
+  # a bearer token: its tools write to Grafana. Never published on a public
+  # instance.
+  mcp:
+    image: grafana/mcp-grafana:1.5.1
+    command:
+      - -t
+      - streamable-http
+      - --address
+      - 0.0.0.0:8000
+      # Host header allowlist (DNS-rebinding guard): how callers reach it.
+      - --allowed-hosts
+      - localhost:8000,127.0.0.1:8000
+      # Replaces the default list: only what building dashboards needs.
+      # runpanelquery is off by default upstream.
+      - --enabled-tools
+      - dashboard,datasource,search,runpanelquery
+    environment:
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_USERNAME: ${GF_SECURITY_ADMIN_USER:-admin}
+      GRAFANA_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-admin}
+      # From the environment rather than a flag, so it stays out of `ps`.
+      MCP_GRAFANA_SERVER_TOKEN: ${GEOSTACK_MCP_TOKEN:-geostack-local}
+    ports:
+      - '127.0.0.1:8000:8000'
+    depends_on:
+      grafana:
+        condition: service_healthy
+
 volumes:
   grafana-data:
