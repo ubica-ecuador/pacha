@@ -883,7 +883,7 @@
                         "name": "duckdbwasm"
                       },
                       "spec": {
-                        "rawSql": "WITH area AS (\n  SELECT\n    list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n    list_filter(n, lambda v, i: i % 2 = 0) AS ys\n  FROM (SELECT CAST(regexp_extract_all($quakeArea, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n), f AS (\n  SELECT q.* FROM $quakes AS q, area\n  WHERE $__timeFilter(time) AND time >= coalesce(try_cast($quakeFrom AS TIMESTAMPTZ), '-infinity'::TIMESTAMPTZ)\nAND time <= coalesce(try_cast($quakeTo AS TIMESTAMPTZ), 'infinity'::TIMESTAMPTZ) AND mag >= coalesce(try_cast($mag_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND mag < coalesce(try_cast($mag_hi AS DOUBLE), 'infinity'::DOUBLE) AND greatest(least(depth, 299.9), 0) >= coalesce(try_cast($depth_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND greatest(least(depth, 299.9), 0) < coalesce(try_cast($depth_hi AS DOUBLE), 'infinity'::DOUBLE) AND (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] > latitude) <> (area.ys[i % len(area.xs) + 1] > latitude)\n        AND longitude < (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\n)\nSELECT f.place AS \"Place\",\n       round(f.mag, 1) AS \"Magnitude\",\n       coalesce(f.alert, 'none') AS \"PAGER alert\",\n       CASE WHEN f.tsunami = 1 THEN 'yes' ELSE '' END AS \"Tsunami\",\n       e.people_100km AS \"People within 100 km\",\n       e.largest_place AS \"Largest place\",\n       e.largest_pop AS \"Its population\",\n       f.id, f.latitude, f.longitude\nFROM f JOIN $exposure AS e ON e.id = f.id\nWHERE e.people_100km > 0\nORDER BY e.people_100km DESC\nLIMIT 10"
+                        "rawSql": "WITH area AS (\n  SELECT\n    list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n    list_filter(n, lambda v, i: i % 2 = 0) AS ys\n  FROM (SELECT CAST(regexp_extract_all($quakeArea, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n), f AS (\n  SELECT q.* FROM $quakes AS q, area\n  WHERE $__timeFilter(time) AND time >= coalesce(try_cast($quakeFrom AS TIMESTAMPTZ), '-infinity'::TIMESTAMPTZ)\nAND time <= coalesce(try_cast($quakeTo AS TIMESTAMPTZ), 'infinity'::TIMESTAMPTZ) AND mag >= coalesce(try_cast($mag_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND mag < coalesce(try_cast($mag_hi AS DOUBLE), 'infinity'::DOUBLE) AND greatest(least(depth, 299.9), 0) >= coalesce(try_cast($depth_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND greatest(least(depth, 299.9), 0) < coalesce(try_cast($depth_hi AS DOUBLE), 'infinity'::DOUBLE) AND (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] > latitude) <> (area.ys[i % len(area.xs) + 1] > latitude)\n        AND longitude < (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\n)\nSELECT f.place AS \"Place\",\n       round(f.mag, 1) AS \"Mag\",\n       coalesce(f.alert, 'none') AS \"PAGER\",\n       e.people_100km AS \"People ≤100 km\",\n       e.largest_place AS \"Largest place\",\n       e.largest_pop AS \"Population\",\n       f.id, f.latitude, f.longitude\nFROM f JOIN $exposure AS e ON e.id = f.id\nWHERE e.people_100km > 0\nORDER BY e.people_100km DESC\nLIMIT 10"
                       }
                     }
                   }
@@ -917,7 +917,23 @@
                   {
                     "matcher": {
                       "id": "byName",
-                      "options": "PAGER alert"
+                      "options": "Mag"
+                    },
+                    "properties": [
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 50
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "PAGER"
                     },
                     "properties": [
                       {
@@ -960,13 +976,17 @@
                             }
                           }
                         ]
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 75
                       }
                     ]
                   },
                   {
                     "matcher": {
                       "id": "byName",
-                      "options": "People within 100 km"
+                      "options": "People ≤100 km"
                     },
                     "properties": [
                       {
@@ -991,18 +1011,38 @@
                           "mode": "fixed",
                           "fixedColor": "orange"
                         }
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 140
                       }
                     ]
                   },
                   {
                     "matcher": {
                       "id": "byName",
-                      "options": "Its population"
+                      "options": "Largest place"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 120
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Population"
                     },
                     "properties": [
                       {
                         "id": "unit",
                         "value": "short"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 90
                       }
                     ]
                   },
@@ -1794,7 +1834,7 @@
                                 "spec": {
                                   "x": 0,
                                   "y": 0,
-                                  "width": 14,
+                                  "width": 16,
                                   "height": 10,
                                   "element": {
                                     "kind": "ElementReference",
@@ -1805,9 +1845,9 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 14,
+                                  "x": 16,
                                   "y": 0,
-                                  "width": 10,
+                                  "width": 8,
                                   "height": 10,
                                   "element": {
                                     "kind": "ElementReference",
