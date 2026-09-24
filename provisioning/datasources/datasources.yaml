@@ -1,0 +1,42 @@
+apiVersion: 1
+
+datasources:
+  # DuckDB on the server. `path` blank means an in-memory database, which is all
+  # reading remote files needs. The extensions are baked into the image, under
+  # /opt/geostack/duckdb-home/.duckdb/extensions — but Grafana 13.2.1 always
+  # launches a backend plugin's subprocess with HOME pinned to GF_PATHS_HOME
+  # (/usr/share/grafana), never the image's own HOME, so the plugin process
+  # never sees where they were baked. The leading `SET extension_directory=...`
+  # names that path explicitly; without it the INSTALLs below would try to go
+  # online instead of finding the files already on disk.
+  #
+  # `http_client` (community) carries the STAC search: `http_get` is a scalar,
+  # so its URL can be built from $__timeFrom() and $__timeTo().
+  #
+  # The external file cache is off. It keeps remote files in memory keyed by
+  # URL, and a file replaced while several queries read it (the MBTA feeds change
+  # every 15 s) reached a query as a mix of both versions: "Malformed JSON", about
+  # one query in 800. The setting is instance-wide, hence here.
+  - name: DuckDB
+    type: motherduck-duckdb-datasource
+    uid: duckdb
+    jsonData:
+      path: ''
+      initSql: "SET extension_directory='/opt/geostack/duckdb-home/.duckdb/extensions'; INSTALL spatial; LOAD spatial; INSTALL http_client FROM community; LOAD http_client; SET enable_external_file_cache = false;"
+
+  - name: Infinity
+    type: yesoreyeram-infinity-datasource
+    uid: infinity
+    jsonData: {}
+
+  # Chaski: DuckDB in each viewer's browser. Deliberately without a URL. That URL
+  # is what $__proxy reads through, and whoever may query the datasource (on a
+  # public instance, any anonymous visitor) could read anywhere on that server,
+  # with its stored credentials. What the browser reads must allow CORS, or
+  # arrive as a dataset from DuckDB or Infinity above.
+  - name: Chaski
+    type: ubica-chaski-datasource
+    uid: duckdbwasm
+    access: proxy
+    jsonData:
+      memoryLimitMB: 1024
