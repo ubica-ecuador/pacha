@@ -1,0 +1,5 @@
+# Exact versions installed on top of the base image. The Dockerfile says why
+# each one is there; this file says which release, so a rebuild months from
+# now installs the same thing.
+rio-tiler==9.4.4
+icechunk==2.2.0

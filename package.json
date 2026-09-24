@@ -1,0 +1,17 @@
+{
+  "name": "geostack",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test:config": "node --test \"tests/config.test.mjs\"",
+    "test:images": "node --test --test-concurrency=1 \"tests/images/*.test.mjs\"",
+    "test:stack": "node --test --test-concurrency=1 \"tests/stack/*.test.mjs\"",
+    "test": "npm run test:config && npm run test:images && npm run test:stack"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}
