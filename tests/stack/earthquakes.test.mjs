@@ -23,6 +23,16 @@ const open = async (query = '') => {
 };
 after(async () => current && current.browser.close());
 
+// Settled: the map has published its time window (every windowed panel re-runs
+// when it lands) and no panel is still loading because of it.
+const settled = async (view) => {
+  await view.page.waitForFunction(() => new URL(location.href).searchParams.get('var-quakeFrom'), null, { timeout: 30_000 });
+  await view.page.waitForTimeout(500);
+  await view.page.waitForFunction(() => document.querySelectorAll('[aria-label="Panel loading bar"]').length === 0, null, {
+    timeout: 30_000,
+  });
+};
+
 test('is provisioned in Start here under its old uid', async () => {
   const { status, json } = await api(STACK_URL, '/api/dashboards/uid/earthquakes');
   assert.equal(status, 200);
@@ -64,12 +74,17 @@ test('the map publishes its time window, its drawn area and the clicked quake', 
 });
 
 test('the map never filters on what it publishes itself', () => {
+  // Nor on the brushes: re-querying on them shrank the time domain the map
+  // publishes as its window. It takes them as Kepler range filters instead.
   const [map] = panelsByType(dashboard(), 'ubica-keplergl-panel');
   const queries = JSON.stringify(map).match(/"rawSql":"[^"]*"/g) ?? [];
   assert.ok(queries.length >= 2, 'expected a quakes query and a places query');
   for (const sql of queries) {
-    assert.doesNotMatch(sql, /\$quakeArea|\$quakeFrom|\$quakeTo/, sql);
+    assert.doesNotMatch(sql, /\$quakeArea|\$quakeFrom|\$quakeTo|\$mag_|\$depth_/, sql);
   }
+  const mappings = JSON.stringify(map.vizConfig.spec.options.variableMappings);
+  assert.match(mappings, /"field":"mag","variable":"mag_lo","variableTo":"mag_hi"/);
+  assert.match(mappings, /"field":"depth_axis","variable":"depth_lo","variableTo":"depth_hi"/);
 });
 
 test('the map draws', async () => {
@@ -98,16 +113,19 @@ test('URL filters narrow the count, and clearing them restores it', async () => 
   const baselineOf = async (view) => Number((await view.chaski(baselineSql))[0].n);
 
   const strongView = await open(`?${range}&var-mag_lo=5&var-mag_hi=10`);
+  await settled(strongView);
   const strong = await strongView.statNumber('Earthquakes');
   const strongBaseline = await baselineOf(strongView);
   assert.ok(strong < strongBaseline, `${strong} !< ${strongBaseline}`);
 
   const inAreaView = await open(`?${range}&var-quakeArea=${AREA}`);
+  await settled(inAreaView);
   const inArea = await inAreaView.statNumber('Earthquakes');
   const inAreaBaseline = await baselineOf(inAreaView);
   assert.ok(inArea < inAreaBaseline, `${inArea} !< ${inAreaBaseline}`);
 
   const clearedView = await open(`?${range}&var-mag_lo=&var-mag_hi=&var-depth_lo=&var-depth_hi=&var-quakeArea=`);
+  await settled(clearedView);
   const cleared = await clearedView.statNumber('Earthquakes');
   const clearedBaseline = await baselineOf(clearedView);
   assert.equal(cleared, clearedBaseline);
@@ -126,33 +144,27 @@ test('the histograms run the shared template, changing only its constants', () =
   }
 });
 
-test('dragging across the magnitude histogram filters the dashboard without reloading the data', async () => {
+test('dragging across the magnitude histogram filters the dashboard without reloading the data, and clearing it restores the count', async () => {
   // A real brush, the way a visitor makes one: a page navigation would restart
   // Chaski and reload everything, which is exactly what must not happen.
   const view = await open();
 
-  // The map publishes its own default quakeFrom/quakeTo once, after it settles
-  // (software WebGL can take several seconds); since the histogram's own
-  // `selected` query depends on that window, its one-time arrival redraws the
-  // chart (every redraw wipes an in-progress brush, by brush-histogram.js's
-  // own design). Wait for that one-time settle first, so the drag below lands
-  // in the steady state rather than racing it.
-  await view.page.waitForFunction(() => new URL(location.href).searchParams.get('var-quakeFrom'), null, { timeout: 20_000 });
-  await view.page.waitForTimeout(500);
+  // The map publishes its default quakeFrom/quakeTo once it has its data
+  // (software WebGL can take several seconds); the histogram's own `selected`
+  // query depends on that window, so its arrival redraws the chart, and every
+  // redraw wipes an in-progress brush (brush-histogram.js's own design). Wait
+  // for it first, so the drag below lands in the steady state.
+  await settled(view);
 
   for (const title of ['Magnitude', 'Depth (km)']) {
-    const panel = view.page.locator(`[data-testid="data-testid Panel header ${title}"]`).locator('xpath=ancestor::*[@data-viz-panel-key][1]');
+    const panel = await view.panel(title);
     assert.ok((await panel.locator('canvas').count()) > 0, title);
   }
   assert.equal(await view.panelErrors(), 0);
 
   const all = await view.statNumber('Earthquakes');
   const loadsBefore = await view.page.evaluate(() => window.__duckdbwasm.stats.loads.length);
-  const canvas = view.page
-    .locator('[data-testid="data-testid Panel header Magnitude"]')
-    .locator('xpath=ancestor::*[@data-viz-panel-key][1]')
-    .locator('canvas')
-    .first();
+  const canvas = (await view.panel('Magnitude')).locator('canvas').first();
   const box = await canvas.boundingBox();
   await view.page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.5);
   await view.page.mouse.down();
@@ -162,15 +174,23 @@ test('dragging across the magnitude histogram filters the dashboard without relo
   await view.page.waitForTimeout(2000);
   assert.ok((await view.statNumber('Earthquakes')) < all);
   assert.equal(await view.page.evaluate(() => window.__duckdbwasm.stats.loads.length), loadsBefore);
+
+  // The toolbox's "Clear the filter" (its right-hand icon, drawn on the
+  // canvas): the count comes back to this page's unfiltered one, so the brush
+  // left nothing behind — no narrowed time window in particular.
+  // Read the stat above scrolled the page, so find the canvas again.
+  const clearBox = await (await view.panel('Magnitude')).locator('canvas').first().boundingBox();
+  await view.page.mouse.click(clearBox.x + clearBox.width - 15, clearBox.y + 7);
+  await view.page.waitForFunction(() => new URL(location.href).searchParams.get('var-mag_lo') === '', null, { timeout: 10_000 });
+  await settled(view);
+  assert.equal(await view.statNumber('Earthquakes'), all);
 });
 
 test('stats and the most exposed table show exposure and link to each quake', async () => {
   const view = await open();
   assert.ok((await view.statNumber('People within 100 km')) > 0);
 
-  const table = view.page
-    .locator('[data-testid="data-testid Panel header Most exposed"]')
-    .locator('xpath=ancestor::*[@data-viz-panel-key][1]');
+  const table = await view.panel('Most exposed');
   const rows = table.locator('[role="row"]');
   const count = await rows.count();
   assert.ok(count >= 2 && count <= 11, `${count} rows including the header`);
@@ -197,7 +217,7 @@ test('an About the data tab names the sources and the limits of the exposure fig
   assert.match(text, /lower bound/);
 });
 
-test('the selection column follows the quake variable', async () => {
+test('the selection rows follow the quake variable', async () => {
   const visible = async (view, title) => (await view.page.locator(`[data-testid="data-testid Panel header ${title}"]`).count()) > 0;
 
   // No quake selected: the hint explains the map, the selection panels don't exist.
@@ -205,7 +225,7 @@ test('the selection column follows the quake variable', async () => {
   assert.equal(await visible(noQuakeView, 'How to use this map'), true);
   assert.equal(await visible(noQuakeView, 'Selected earthquake'), false);
 
-  // The same page's Chaski data picks the quake Task 6's "Most exposed" table
+  // The same page's Chaski data picks the quake the "Most exposed" table
   // ranks first, so the selected panel's text can be checked against it.
   const [top] = await noQuakeView.chaski(
     'SELECT q.id, q.place FROM datasets.quakes q JOIN datasets.exposure e USING (id) ORDER BY e.people_100km DESC LIMIT 1',
@@ -214,10 +234,7 @@ test('the selection column follows the quake variable', async () => {
   const selectedView = await open(`?var-quake=${encodeURIComponent(top.id)}`);
   assert.equal(await visible(selectedView, 'How to use this map'), false);
   assert.equal(await visible(selectedView, 'Selected earthquake'), true);
-  const text = await selectedView.page
-    .locator('[data-testid="data-testid Panel header Selected earthquake"]')
-    .locator('xpath=ancestor::*[@data-viz-panel-key][1]')
-    .innerText();
+  const text = await (await selectedView.panel('Selected earthquake')).innerText();
   assert.ok(text.includes(top.place), `${top.place} not in: ${text.slice(0, 200)}`);
   assert.equal(await visible(selectedView, 'Places within 100 km'), true);
   assert.equal(await selectedView.panelErrors(), 0);
