@@ -4,6 +4,9 @@ import assert from 'node:assert/strict';
 import { api } from '../lib/grafana.mjs';
 import { STACK_URL } from '../lib/stack.mjs';
 import { openDashboard } from '../lib/browser.mjs';
+import { loadDashboard, panelsByType } from '../lib/dashboards.mjs';
+
+const dashboard = () => loadDashboard('dashboards/start-here/earthquakes.json');
 
 const opened = [];
 const open = async (query = '') => {
@@ -40,4 +43,38 @@ test('exposure covers the strong quakes and finds people near some of them', asy
   );
   assert.equal(Number(row.exposed), Number(row.strong));
   assert.ok(Number(row.people) > 0);
+});
+
+test('the map publishes its time window, its drawn area and the clicked quake', () => {
+  const [map] = panelsByType(dashboard(), 'ubica-keplergl-panel');
+  const options = JSON.stringify(map);
+  assert.match(options, /"timeSync":"variables"/);
+  assert.match(options, /"from":"quakeFrom"/);
+  assert.match(options, /"to":"quakeTo"/);
+  assert.match(options, /"areaVariable":"quakeArea"/);
+  assert.match(options, /"source":"click"[^}]*"variable":"quake"|"variable":"quake"[^}]*"source":"click"/);
+  assert.match(options, /"source":"center"/);
+});
+
+test('the map never filters on what it publishes itself', () => {
+  const [map] = panelsByType(dashboard(), 'ubica-keplergl-panel');
+  const queries = JSON.stringify(map).match(/"rawSql":"[^"]*"/g) ?? [];
+  assert.ok(queries.length >= 2, 'expected a quakes query and a places query');
+  for (const sql of queries) {
+    assert.doesNotMatch(sql, /\$quakeArea|\$quakeFrom|\$quakeTo/, sql);
+  }
+});
+
+test('the map draws', async () => {
+  const view = await open();
+  // kepler's own WebGL canvas mounts after Grafana's panel-loaded signal, and
+  // by this point in the file three earlier browsers are still open (`after`
+  // closes them all at once) competing for the same software-WebGL renderer
+  // — so give the canvas a few extra seconds rather than the single frame
+  // `openDashboard` already waited.
+  const CANVAS = '[data-viz-panel-key] canvas';
+  await view.page.waitForFunction((sel) => document.querySelectorAll(sel).length > 0, CANVAS, { timeout: 20_000 });
+  const canvases = await view.page.locator(CANVAS).count();
+  assert.ok(canvases > 0);
+  assert.equal(await view.panelErrors(), 0);
 });
