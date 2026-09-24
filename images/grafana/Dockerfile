@@ -1,0 +1,132 @@
+# syntax=docker/dockerfile:1
+#
+# Grafana for the Grafana Geospatial Stack, with every plugin baked in.
+#
+# Plugins live in /opt/geostack/plugins, not /var/lib/grafana/plugins. The
+# latter is inside the data volume, and Docker only copies image content into a
+# volume that is empty: an existing install (grafana.ubica.ec) would keep the
+# plugins its volume already holds and never see these. DuckDB's extensions sit
+# outside the volume for the same reason, under a HOME of their own.
+#
+# Every version is an ARG here and a label on the image. Plugins taken from a
+# GitHub release are checked against a sha256: a new version fails the build
+# until its hash moves with it.
+
+ARG GRAFANA_EDITION=grafana-enterprise
+ARG GRAFANA_VERSION=13.2.1
+ARG KEPLER_PANEL_VERSION=1.0.0
+ARG KEPLER_PANEL_SHA256=df36b131f670d460eecda3d6816546b4f0bc70876eca81fc82fc56bab50cb68d
+ARG CHASKI_VERSION=1.0.0
+ARG CHASKI_SHA256=07529a4db780b857141e954f166264691685b5f42986881a16c85b3cc1be3974
+ARG DUCKDB_DS_VERSION=0.4.5
+ARG DUCKDB_DS_SHA256=156c6ab8caad03d6a8956dfae1f685697101d14a1f0921528d8c6258f03a3c40
+# The engine the DuckDB datasource is linked against. Extensions are built per
+# engine version, so the CLI that installs them must be this same release.
+ARG DUCKDB_ENGINE_VERSION=1.5.4
+ARG DUCKDB_CLI_SHA256_amd64=1f2fa724fb054b3dbe1a9cbd13de5b76997d850e7087ec762ba88db04e0180cf
+ARG DUCKDB_CLI_SHA256_arm64=377f03fb9f17ab5a78f28f829cbfcb5333da8ab3c2d0788f27694f81df77ed29
+ARG INFINITY_VERSION=4.0.0
+ARG BUSINESS_CHARTS_VERSION=7.2.5
+ARG BUSINESS_TABLE_VERSION=3.6.8
+ARG BUSINESS_VARIABLE_VERSION=5.2.0
+
+# --- The three plugins that come from GitHub releases, unsigned. ---
+FROM alpine:3.20 AS fetch
+ARG TARGETARCH
+ARG KEPLER_PANEL_VERSION
+ARG KEPLER_PANEL_SHA256
+ARG CHASKI_VERSION
+ARG CHASKI_SHA256
+ARG DUCKDB_DS_VERSION
+ARG DUCKDB_DS_SHA256
+RUN apk add --no-cache curl unzip
+WORKDIR /fetch
+RUN curl -fsSLo kepler.zip "https://github.com/ubica-ecuador/keplergl-grafana-panel/releases/download/v${KEPLER_PANEL_VERSION}/ubica-keplergl-panel-${KEPLER_PANEL_VERSION}.zip" \
+ && curl -fsSLo chaski.zip "https://github.com/ubica-ecuador/chaski/releases/download/v${CHASKI_VERSION}/ubica-chaski-datasource-${CHASKI_VERSION}.zip" \
+ && curl -fsSLo duckdb.zip "https://github.com/motherduckdb/grafana-duckdb-datasource/releases/download/v${DUCKDB_DS_VERSION}/motherduck-duckdb-datasource-${DUCKDB_DS_VERSION}.zip" \
+ && printf '%s  kepler.zip\n%s  chaski.zip\n%s  duckdb.zip\n' \
+      "${KEPLER_PANEL_SHA256}" "${CHASKI_SHA256}" "${DUCKDB_DS_SHA256}" | sha256sum -c - \
+ && mkdir /plugins \
+ && for zip in kepler chaski duckdb; do unzip -q "${zip}.zip" -d /plugins; done
+# The DuckDB zip carries an 80 MB engine for each of five platforms; keep ours.
+RUN find /plugins/motherduck-duckdb-datasource -name 'gpx_*' \
+      ! -name "gpx_duckdb_datasource_linux_${TARGETARCH}" -delete \
+ && chmod +x "/plugins/motherduck-duckdb-datasource/gpx_duckdb_datasource_linux_${TARGETARCH}"
+
+# --- DuckDB extensions, installed by a CLI of the datasource's engine. ---
+# Otherwise the datasource downloads them on first use: the internet at query
+# time, again on every fresh container.
+FROM ubuntu:24.04 AS duckdb-extensions
+ARG TARGETARCH
+ARG DUCKDB_ENGINE_VERSION
+ARG DUCKDB_CLI_SHA256_amd64
+ARG DUCKDB_CLI_SHA256_arm64
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates curl unzip \
+ && rm -rf /var/lib/apt/lists/*
+ENV HOME=/opt/geostack/duckdb-home
+RUN curl -fsSLo /tmp/duckdb-cli.zip "https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_ENGINE_VERSION}/duckdb_cli-linux-${TARGETARCH}.zip" \
+ && eval "expected=\${DUCKDB_CLI_SHA256_${TARGETARCH}}" \
+ && echo "${expected}  /tmp/duckdb-cli.zip" | sha256sum -c - \
+ && unzip -q /tmp/duckdb-cli.zip -d /usr/local/bin \
+ && mkdir -p "${HOME}" \
+ && duckdb -c "INSTALL spatial; INSTALL httpfs; INSTALL json; INSTALL excel; INSTALL http_client FROM community; INSTALL raster FROM community;" \
+ && test "$(ls "${HOME}/.duckdb/extensions/v${DUCKDB_ENGINE_VERSION}/linux_${TARGETARCH}/"*.duckdb_extension | wc -l)" -eq 6
+
+# --- Grafana. ---
+FROM grafana/${GRAFANA_EDITION}:${GRAFANA_VERSION}-ubuntu
+ARG GRAFANA_EDITION
+ARG GRAFANA_VERSION
+ARG KEPLER_PANEL_VERSION
+ARG CHASKI_VERSION
+ARG DUCKDB_DS_VERSION
+ARG DUCKDB_ENGINE_VERSION
+ARG INFINITY_VERSION
+ARG BUSINESS_CHARTS_VERSION
+ARG BUSINESS_TABLE_VERSION
+ARG BUSINESS_VARIABLE_VERSION
+
+USER root
+COPY --from=fetch --chown=472:0 /plugins /opt/geostack/plugins
+COPY --from=duckdb-extensions --chown=472:0 /opt/geostack/duckdb-home /opt/geostack/duckdb-home
+# Signed plugins from the catalogue, at fixed versions.
+RUN for plugin in \
+      "yesoreyeram-infinity-datasource ${INFINITY_VERSION}" \
+      "volkovlabs-echarts-panel ${BUSINESS_CHARTS_VERSION}" \
+      "volkovlabs-table-panel ${BUSINESS_TABLE_VERSION}" \
+      "volkovlabs-variable-panel ${BUSINESS_VARIABLE_VERSION}"; do \
+      grafana cli --pluginsDir /opt/geostack/plugins plugins install ${plugin} || exit 1; \
+    done \
+ && chown -R 472:0 /opt/geostack/plugins
+USER 472
+
+# - Anonymous visitors see dashboards and change nothing.
+# - Unsigned: our two plugins until the catalogue signs them, and DuckDB, which
+#   is not in the catalogue at all. Nothing else.
+# - Grafana 13 hands a backend plugin only the host variables named here.
+#   DuckDB needs HOME to find its extensions.
+# - Infinity silently stops a paginated query at 5 pages unless told otherwise.
+#   The Aqueduct dashboard needs 9 pages of 750 to cover South America.
+# - No plugin preinstall: it downloads apps from grafana.com at every start,
+#   which is the network at runtime this image exists to avoid.
+ENV GF_PATHS_PLUGINS=/opt/geostack/plugins \
+    HOME=/opt/geostack/duckdb-home \
+    GF_AUTH_ANONYMOUS_ENABLED=true \
+    GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer \
+    GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=ubica-keplergl-panel,ubica-chaski-datasource,motherduck-duckdb-datasource \
+    GF_PLUGINS_FORWARD_HOST_ENV_VARS=motherduck-duckdb-datasource,yesoreyeram-infinity-datasource \
+    GF_PLUGIN_PAGINATION_MAX_PAGES=12 \
+    GF_PLUGINS_PREINSTALL_DISABLED=true
+
+LABEL org.opencontainers.image.title="geostack-grafana" \
+      org.opencontainers.image.description="Grafana with the Grafana Geospatial Stack's plugins baked in. Not affiliated with Grafana Labs." \
+      org.opencontainers.image.source="https://github.com/ubica-ecuador/grafana-geospatial-stack" \
+      io.geostack.grafana.version="${GRAFANA_EDITION}:${GRAFANA_VERSION}" \
+      io.geostack.kepler-panel.version="${KEPLER_PANEL_VERSION}" \
+      io.geostack.chaski.version="${CHASKI_VERSION}" \
+      io.geostack.duckdb-datasource.version="${DUCKDB_DS_VERSION}" \
+      io.geostack.duckdb-engine.version="${DUCKDB_ENGINE_VERSION}" \
+      io.geostack.infinity.version="${INFINITY_VERSION}" \
+      io.geostack.business-charts.version="${BUSINESS_CHARTS_VERSION}" \
+      io.geostack.business-table.version="${BUSINESS_TABLE_VERSION}" \
+      io.geostack.business-variable.version="${BUSINESS_VARIABLE_VERSION}"
