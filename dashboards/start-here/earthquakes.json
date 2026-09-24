@@ -1235,7 +1235,7 @@
                         "name": "duckdbwasm"
                       },
                       "spec": {
-                        "rawSql": "SELECT q.place AS \"Place\",\n       strftime(q.time::TIMESTAMP, '%Y-%m-%d %H:%M UTC') AS \"Time\",\n       round(q.mag, 1) AS \"Magnitude\",\n       round(q.depth) AS \"Depth (km)\",\n       coalesce(q.alert, 'none') AS \"PAGER alert\",\n       q.mmi AS \"Intensity (MMI)\",\n       q.felt AS \"Felt reports\",\n       CASE WHEN q.tsunami = 1 THEN 'yes' ELSE 'no' END AS \"Tsunami\",\n       e.people_100km AS \"People within 100 km\",\n       q.url AS \"USGS page\"\nFROM $quakes AS q\nLEFT JOIN $exposure AS e ON e.id = q.id\nWHERE q.id = $quake"
+                        "rawSql": "SELECT q.place AS \"Place\",\n       strftime(q.time AT TIME ZONE 'UTC', '%Y-%m-%d %H:%M UTC') AS \"Time\",\n       round(q.mag, 1) AS \"Magnitude\",\n       round(q.depth) AS \"Depth (km)\",\n       coalesce(q.alert, 'none') AS \"PAGER alert\",\n       q.mmi AS \"Intensity (MMI)\",\n       q.felt AS \"Felt reports\",\n       CASE WHEN q.tsunami = 1 THEN 'yes' ELSE 'no' END AS \"Tsunami\",\n       e.people_100km AS \"People within 100 km\",\n       q.url AS \"USGS page\"\nFROM $quakes AS q\nLEFT JOIN $exposure AS e ON e.id = q.id\nWHERE q.id = $quake"
                       }
                     }
                   }
@@ -1490,7 +1490,7 @@
                                 "spec": {
                                   "x": 0,
                                   "y": 4,
-                                  "width": 16,
+                                  "width": 24,
                                   "height": 14,
                                   "element": {
                                     "kind": "ElementReference",
