@@ -1,0 +1,380 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2beta1",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "earthquakes"
+  },
+  "spec": {
+    "title": "Earthquakes — the last 30 days",
+    "description": "Earthquakes from the USGS feed over the last 30 days, with who lives nearby.",
+    "tags": [
+      "start-here",
+      "chaski",
+      "kepler"
+    ],
+    "links": [],
+    "annotations": [],
+    "cursorSync": "Off",
+    "editable": true,
+    "liveNow": false,
+    "preload": false,
+    "timeSettings": {
+      "from": "now-30d",
+      "to": "now",
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "hideTimepicker": false,
+      "fiscalYearStartMonth": 0,
+      "timezone": "browser"
+    },
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "quakes",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "refresh": "onDashboardLoad",
+          "skipUrlSync": true,
+          "query": {
+            "kind": "DataQuery",
+            "group": "ubica-chaski-datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "spec": {
+              "refId": "quakes",
+              "kind": "dataset",
+              "name": "quakes",
+              "source": {
+                "type": "sql",
+                "sql": "SELECT\n  f.id AS id,\n  to_timestamp(f.properties.time / 1000) AS time,\n  f.geometry.coordinates[2]::DOUBLE AS latitude,\n  f.geometry.coordinates[1]::DOUBLE AS longitude,\n  f.geometry.coordinates[3]::DOUBLE AS depth,\n  f.properties.mag::DOUBLE AS mag,\n  f.properties.place::VARCHAR AS place,\n  f.properties.alert::VARCHAR AS alert,\n  f.properties.mmi::DOUBLE AS mmi,\n  f.properties.felt::INTEGER AS felt,\n  f.properties.tsunami::INTEGER AS tsunami,\n  f.properties.sig::INTEGER AS sig,\n  f.properties.url::VARCHAR AS url\nFROM read_json('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson'), unnest(features) AS t(f)\nWHERE f.properties.mag IS NOT NULL"
+              }
+            }
+          },
+          "regex": "",
+          "sort": "disabled",
+          "options": [],
+          "multi": false,
+          "includeAll": false,
+          "allowCustomValue": true
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "places",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "refresh": "onDashboardLoad",
+          "skipUrlSync": true,
+          "query": {
+            "kind": "DataQuery",
+            "group": "ubica-chaski-datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "spec": {
+              "refId": "places",
+              "kind": "dataset",
+              "name": "places",
+              "source": {
+                "type": "sql",
+                "sql": "SELECT\n  f.properties.name::VARCHAR AS name,\n  f.properties.adm0name::VARCHAR AS country,\n  f.properties.latitude::DOUBLE AS latitude,\n  f.properties.longitude::DOUBLE AS longitude,\n  f.properties.pop_min::BIGINT AS pop_min,\n  f.properties.pop_max::BIGINT AS pop_max\nFROM read_json('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_populated_places_simple.geojson'), unnest(features) AS t(f)\nWHERE f.properties.pop_min > 0"
+              }
+            }
+          },
+          "regex": "",
+          "sort": "disabled",
+          "options": [],
+          "multi": false,
+          "includeAll": false,
+          "allowCustomValue": true
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "exposure",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "refresh": "onDashboardLoad",
+          "skipUrlSync": true,
+          "query": {
+            "kind": "DataQuery",
+            "group": "ubica-chaski-datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "spec": {
+              "refId": "exposure",
+              "kind": "dataset",
+              "name": "exposure",
+              "source": {
+                "type": "sql",
+                "sql": "WITH q AS (\n  SELECT id, latitude, longitude FROM $quakes WHERE mag >= 4.5\n),\nnear AS (\n  -- A band of about 111 km around each quake first, so the distance runs on\n  -- a few candidates instead of every place on Earth. The longitude band\n  -- widens with latitude and wraps at the antimeridian.\n  SELECT q.id, p.name, p.pop_min, p.pop_max,\n         2 * 6371 * asin(sqrt(\n           power(sin(radians(p.latitude - q.latitude) / 2), 2)\n           + cos(radians(q.latitude)) * cos(radians(p.latitude))\n             * power(sin(radians(p.longitude - q.longitude) / 2), 2)\n         )) AS km\n  FROM q\n  JOIN $places AS p\n    ON p.latitude BETWEEN q.latitude - 1 AND q.latitude + 1\n   AND least(abs(p.longitude - q.longitude), 360 - abs(p.longitude - q.longitude))\n       <= 1 / greatest(cos(radians(q.latitude)), 0.01)\n)\nSELECT q.id,\n       -- DOUBLE, not BIGINT: DuckDB promotes SUM(BIGINT) to HUGEINT, which\n       -- DuckDB-WASM serializes as a part-indexed object, not a JS number, in\n       -- any consumer that sums this column across rows.\n       coalesce(sum(n.pop_min) FILTER (WHERE n.km <= 100), 0)::DOUBLE AS people_100km,\n       count(n.name) FILTER (WHERE n.km <= 100) AS places_100km,\n       arg_max(n.name, n.pop_max) FILTER (WHERE n.km <= 100) AS largest_place,\n       max(n.pop_max) FILTER (WHERE n.km <= 100) AS largest_pop\nFROM q\nLEFT JOIN near AS n ON n.id = q.id\nGROUP BY q.id"
+              }
+            }
+          },
+          "regex": "",
+          "sort": "disabled",
+          "options": [],
+          "multi": false,
+          "includeAll": false,
+          "allowCustomValue": true
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "name": "quakeFrom",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "query": "",
+          "hide": "hideVariable",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "name": "quakeTo",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "query": "",
+          "hide": "hideVariable",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "name": "quakeArea",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "query": "",
+          "hide": "hideVariable",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "name": "mag_lo",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "query": "",
+          "hide": "hideVariable",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "name": "mag_hi",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "query": "",
+          "hide": "hideVariable",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "name": "depth_lo",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "query": "",
+          "hide": "hideVariable",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "name": "depth_hi",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "query": "",
+          "hide": "hideVariable",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "name": "quake",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "query": "",
+          "hide": "hideVariable",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "name": "lat",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "query": "",
+          "hide": "hideVariable",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "name": "lng",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "query": "",
+          "hide": "hideVariable",
+          "skipUrlSync": false
+        }
+      }
+    ],
+    "elements": {
+      "panel-earthquakes": {
+        "kind": "Panel",
+        "spec": {
+          "id": 1,
+          "title": "Earthquakes",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "SELECT count(*) AS \"Earthquakes\" FROM $quakes WHERE $__timeFilter(time)"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "",
+            "spec": {
+              "options": {
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "colorMode": "none",
+                "graphMode": "none",
+                "textMode": "value",
+                "justifyMode": "auto",
+                "orientation": "auto"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "decimals": 0
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "TabsLayout",
+      "spec": {
+        "tabs": [
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "title": "Explore",
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 6,
+                        "height": 4,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-earthquakes"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
