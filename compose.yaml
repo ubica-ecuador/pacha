@@ -70,6 +70,8 @@ services:
       default:
         # DuckDB calls http://feeds/...; see gateway/feeds.conf.
         aliases: [feeds]
+      # mcp reaches Grafana through here; see the mcp service.
+      mcp: {}
     # Not on titiler: the gateway has to come up, and serve Grafana, without it.
     depends_on:
       grafana:
@@ -98,21 +100,26 @@ services:
       - --enabled-tools
       - dashboard,datasource,search,runpanelquery
     environment:
-      GRAFANA_URL: http://grafana:3000
+      # Through the gateway, on a network of their own. mcp logs in as admin, and
+      # the grafana container runs DuckDB, which anyone viewing a dashboard can
+      # send SQL to: sharing no network with grafana, mcp is out of its reach.
+      GRAFANA_URL: http://gateway
       GRAFANA_USERNAME: ${GF_SECURITY_ADMIN_USER:-admin}
       GRAFANA_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-admin}
       # From the environment rather than a flag, so it stays out of `ps`.
       MCP_GRAFANA_SERVER_TOKEN: ${GEOSTACK_MCP_TOKEN:-geostack-local}
+    networks: [mcp]
     ports:
       - '127.0.0.1:8000:8000'
     depends_on:
-      grafana:
+      gateway:
         condition: service_healthy
 
 # docker buildx bake also reads this file; its parser needs the default network
 # explicitly declared for the gateway's `feeds` alias.
 networks:
   default: {}
+  mcp: {}
 
 volumes:
   grafana-data:

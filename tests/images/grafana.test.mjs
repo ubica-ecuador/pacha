@@ -16,7 +16,7 @@ const EXPECTED = {
 };
 
 // Same as provisioning/datasources/datasources.yaml (Task 3): the offline test
-// has to prove those INSTALLs find the baked files and never go online.
+// has to prove those LOADs find the baked files and never go online.
 //
 // The leading SET is required: Grafana 13.2.1 always launches a backend
 // plugin's subprocess with HOME pinned to GF_PATHS_HOME (/usr/share/grafana),
@@ -26,8 +26,9 @@ const EXPECTED = {
 // unreachable from inside the plugin, so the directory has to be named
 // explicitly instead of relying on the image's HOME env var.
 const INIT_SQL =
-  "SET extension_directory='/opt/geostack/duckdb-home/.duckdb/extensions'; " +
-  'INSTALL spatial; LOAD spatial; INSTALL http_client FROM community; LOAD http_client; SET enable_external_file_cache = false;';
+  "SET extension_directory='/opt/geostack/duckdb-home/.duckdb/extensions'; SET allow_persistent_secrets = false; " +
+  'LOAD httpfs; LOAD spatial; LOAD json; LOAD excel; LOAD raster; LOAD http_client; ' +
+  "SET enable_external_file_cache = false; SET disabled_filesystems = 'LocalFileSystem';";
 
 let id;
 let base;

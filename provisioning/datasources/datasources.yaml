@@ -7,22 +7,37 @@ datasources:
   # launches a backend plugin's subprocess with HOME pinned to GF_PATHS_HOME
   # (/usr/share/grafana), never the image's own HOME, so the plugin process
   # never sees where they were baked. The leading `SET extension_directory=...`
-  # names that path explicitly; without it the INSTALLs below would try to go
-  # online instead of finding the files already on disk.
+  # names that path explicitly; the LOADs below then read the files already on
+  # disk and never go online.
   #
-  # `http_client` (community) carries the STAC search: `http_get` is a scalar,
-  # so its URL can be built from $__timeFrom() and $__timeTo().
+  # Every extension a dashboard may use is loaded here: once the local
+  # filesystem is off (below), nothing else can be loaded. `http_client`
+  # (community) carries the STAC search and the tiler's statistics:
+  # `http_get`/`http_post` are scalars, so their URLs and bodies can be built
+  # from $__timeFrom(), $__timeTo() and variables.
   #
   # The external file cache is off. It keeps remote files in memory keyed by
   # URL, and a file replaced while several queries read it (the MBTA feeds change
   # every 15 s) reached a query as a mix of both versions: "Malformed JSON", about
   # one query in 800. The setting is instance-wide, hence here.
+  #
+  # Last, the local filesystem goes off. Anyone who may view a dashboard can
+  # send this datasource SQL of their own, anonymous visitors included, and
+  # DuckDB runs inside the grafana container: without this, a query could read
+  # /var/lib/grafana/grafana.db. DuckDB refuses to turn it back on, so a query
+  # cannot undo it. The price: dashboards cannot INSTALL or LOAD an extension
+  # that is not loaded here, nor read local files — the data is remote anyway.
+  #
+  # Persistent secrets go off at the very start. The secret manager looks for
+  # them on disk the first time it is used, which with the disk off fails every
+  # remote read; and it refuses the setting once anything has used it, which
+  # LOAD http_client does.
   - name: DuckDB
     type: motherduck-duckdb-datasource
     uid: duckdb
     jsonData:
       path: ''
-      initSql: "SET extension_directory='/opt/geostack/duckdb-home/.duckdb/extensions'; INSTALL spatial; LOAD spatial; INSTALL http_client FROM community; LOAD http_client; SET enable_external_file_cache = false;"
+      initSql: "SET extension_directory='/opt/geostack/duckdb-home/.duckdb/extensions'; SET allow_persistent_secrets = false; LOAD httpfs; LOAD spatial; LOAD json; LOAD excel; LOAD raster; LOAD http_client; SET enable_external_file_cache = false; SET disabled_filesystems = 'LocalFileSystem';"
 
   - name: Infinity
     type: yesoreyeram-infinity-datasource
