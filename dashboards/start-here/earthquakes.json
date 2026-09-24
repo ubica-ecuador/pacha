@@ -710,6 +710,476 @@
             }
           }
         }
+      },
+      "panel-strongest": {
+        "kind": "Panel",
+        "spec": {
+          "id": 5,
+          "title": "Strongest",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "WITH area AS (\n  SELECT\n    list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n    list_filter(n, lambda v, i: i % 2 = 0) AS ys\n  FROM (SELECT CAST(regexp_extract_all($quakeArea, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n), f AS (\n  SELECT q.* FROM $quakes AS q, area\n  WHERE $__timeFilter(time) AND time >= coalesce(try_cast($quakeFrom AS TIMESTAMPTZ), '-infinity'::TIMESTAMPTZ)\nAND time < coalesce(try_cast($quakeTo AS TIMESTAMPTZ), 'infinity'::TIMESTAMPTZ) AND mag >= coalesce(try_cast($mag_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND mag < coalesce(try_cast($mag_hi AS DOUBLE), 'infinity'::DOUBLE) AND greatest(least(depth, 299.9), 0) >= coalesce(try_cast($depth_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND greatest(least(depth, 299.9), 0) < coalesce(try_cast($depth_hi AS DOUBLE), 'infinity'::DOUBLE) AND (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] > latitude) <> (area.ys[i % len(area.xs) + 1] > latitude)\n        AND longitude < (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\n)\nSELECT round(max(mag), 1) AS \"Strongest\" FROM f"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "",
+            "spec": {
+              "options": {
+                "reduceOptions": {
+                  "calcs": ["lastNotNull"],
+                  "fields": "",
+                  "values": false
+                },
+                "colorMode": "value",
+                "graphMode": "none",
+                "textMode": "value",
+                "justifyMode": "auto",
+                "orientation": "auto"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 5
+                      },
+                      {
+                        "color": "red",
+                        "value": 6.5
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-people": {
+        "kind": "Panel",
+        "spec": {
+          "id": 6,
+          "title": "People within 100 km",
+          "description": "People living in towns and cities within 100 km of the filtered earthquakes of magnitude 4.5 or more. Counted from Natural Earth's populated places (city proper, not metro areas), so it leaves out rural areas: read it as a lower bound.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "WITH area AS (\n  SELECT\n    list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n    list_filter(n, lambda v, i: i % 2 = 0) AS ys\n  FROM (SELECT CAST(regexp_extract_all($quakeArea, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n), f AS (\n  SELECT q.* FROM $quakes AS q, area\n  WHERE $__timeFilter(time) AND time >= coalesce(try_cast($quakeFrom AS TIMESTAMPTZ), '-infinity'::TIMESTAMPTZ)\nAND time < coalesce(try_cast($quakeTo AS TIMESTAMPTZ), 'infinity'::TIMESTAMPTZ) AND mag >= coalesce(try_cast($mag_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND mag < coalesce(try_cast($mag_hi AS DOUBLE), 'infinity'::DOUBLE) AND greatest(least(depth, 299.9), 0) >= coalesce(try_cast($depth_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND greatest(least(depth, 299.9), 0) < coalesce(try_cast($depth_hi AS DOUBLE), 'infinity'::DOUBLE) AND (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] > latitude) <> (area.ys[i % len(area.xs) + 1] > latitude)\n        AND longitude < (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\n)\nSELECT coalesce(sum(e.people_100km), 0) AS \"People within 100 km\" FROM f LEFT JOIN $exposure AS e ON e.id = f.id"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "",
+            "spec": {
+              "options": {
+                "reduceOptions": {
+                  "calcs": ["lastNotNull"],
+                  "fields": "",
+                  "values": false
+                },
+                "colorMode": "none",
+                "graphMode": "none",
+                "textMode": "value",
+                "justifyMode": "auto",
+                "orientation": "auto"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "short"
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-most-exposed": {
+        "kind": "Panel",
+        "spec": {
+          "id": 7,
+          "title": "Most exposed",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "WITH area AS (\n  SELECT\n    list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n    list_filter(n, lambda v, i: i % 2 = 0) AS ys\n  FROM (SELECT CAST(regexp_extract_all($quakeArea, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n), f AS (\n  SELECT q.* FROM $quakes AS q, area\n  WHERE $__timeFilter(time) AND time >= coalesce(try_cast($quakeFrom AS TIMESTAMPTZ), '-infinity'::TIMESTAMPTZ)\nAND time < coalesce(try_cast($quakeTo AS TIMESTAMPTZ), 'infinity'::TIMESTAMPTZ) AND mag >= coalesce(try_cast($mag_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND mag < coalesce(try_cast($mag_hi AS DOUBLE), 'infinity'::DOUBLE) AND greatest(least(depth, 299.9), 0) >= coalesce(try_cast($depth_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND greatest(least(depth, 299.9), 0) < coalesce(try_cast($depth_hi AS DOUBLE), 'infinity'::DOUBLE) AND (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] > latitude) <> (area.ys[i % len(area.xs) + 1] > latitude)\n        AND longitude < (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\n)\nSELECT f.place AS \"Place\",\n       round(f.mag, 1) AS \"Magnitude\",\n       coalesce(f.alert, 'none') AS \"PAGER alert\",\n       CASE WHEN f.tsunami = 1 THEN 'yes' ELSE '' END AS \"Tsunami\",\n       e.people_100km AS \"People within 100 km\",\n       e.largest_place AS \"Largest place\",\n       e.largest_pop AS \"Its population\",\n       f.id, f.latitude, f.longitude\nFROM f JOIN $exposure AS e ON e.id = f.id\nWHERE e.people_100km > 0\nORDER BY e.people_100km DESC\nLIMIT 10"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "",
+            "spec": {
+              "options": {
+                "showHeader": true,
+                "cellHeight": "sm",
+                "frameIndex": 0
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "PAGER alert"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "pill"
+                        }
+                      },
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "type": "value",
+                            "options": {
+                              "green": {
+                                "color": "green",
+                                "index": 0,
+                                "text": "green"
+                              },
+                              "yellow": {
+                                "color": "yellow",
+                                "index": 1,
+                                "text": "yellow"
+                              },
+                              "orange": {
+                                "color": "orange",
+                                "index": 2,
+                                "text": "orange"
+                              },
+                              "red": {
+                                "color": "red",
+                                "index": 3,
+                                "text": "red"
+                              },
+                              "none": {
+                                "color": "gray",
+                                "index": 4,
+                                "text": "—"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "People within 100 km"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "gauge",
+                          "mode": "basic",
+                          "valueDisplayMode": "text"
+                        }
+                      },
+                      {
+                        "id": "unit",
+                        "value": "short"
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "orange"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Its population"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "short"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "id"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hidden",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "latitude"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hidden",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "longitude"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hidden",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Place"
+                    },
+                    "properties": [
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Show this earthquake",
+                            "url": "/d/earthquakes?${__url_time_range}&var-quakeFrom=${quakeFrom:percentencode}&var-quakeTo=${quakeTo:percentencode}&var-quakeArea=${quakeArea:percentencode}&var-mag_lo=${mag_lo:percentencode}&var-mag_hi=${mag_hi:percentencode}&var-depth_lo=${depth_lo:percentencode}&var-depth_hi=${depth_hi:percentencode}&var-quake=${__data.fields.id}&var-lat=${__data.fields.latitude}&var-lng=${__data.fields.longitude}"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-daily": {
+        "kind": "Panel",
+        "spec": {
+          "id": 8,
+          "title": "Earthquakes per day",
+          "description": "Every earthquake per day in grey, and those the magnitude, depth and area filters leave in colour. It ignores the map's time slider: this is the month the slider moves through.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "SELECT $__timeGroup(time, 1d) AS time, count(*) AS \"All\" FROM $quakes WHERE $__timeFilter(time) GROUP BY 1 ORDER BY 1"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "B",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "WITH area AS (\n  SELECT\n    list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n    list_filter(n, lambda v, i: i % 2 = 0) AS ys\n  FROM (SELECT CAST(regexp_extract_all($quakeArea, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n)\nSELECT $__timeGroup(time, 1d) AS time, count(*) AS \"Filtered\"\nFROM $quakes, area\nWHERE $__timeFilter(time) AND mag >= coalesce(try_cast($mag_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND mag < coalesce(try_cast($mag_hi AS DOUBLE), 'infinity'::DOUBLE) AND greatest(least(depth, 299.9), 0) >= coalesce(try_cast($depth_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND greatest(least(depth, 299.9), 0) < coalesce(try_cast($depth_hi AS DOUBLE), 'infinity'::DOUBLE) AND (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] > latitude) <> (area.ys[i % len(area.xs) + 1] > latitude)\n        AND longitude < (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\nGROUP BY 1 ORDER BY 1"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "",
+            "spec": {
+              "options": {
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "none"
+                },
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "drawStyle": "bars",
+                    "barAlignment": 0,
+                    "fillOpacity": 80,
+                    "stacking": {
+                      "mode": "none",
+                      "group": "A"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "All"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#8E8E8E"
+                        }
+                      },
+                      {
+                        "id": "custom.fillOpacity",
+                        "value": 30
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Filtered"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "orange"
+                        }
+                      },
+                      {
+                        "id": "custom.fillOpacity",
+                        "value": 90
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
       }
     },
     "layout": {
@@ -729,11 +1199,37 @@
                       "spec": {
                         "x": 0,
                         "y": 0,
-                        "width": 6,
+                        "width": 8,
                         "height": 4,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-earthquakes"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 8,
+                        "y": 0,
+                        "width": 8,
+                        "height": 4,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-strongest"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 16,
+                        "y": 0,
+                        "width": 8,
+                        "height": 4,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-people"
                         }
                       }
                     },
@@ -773,6 +1269,32 @@
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-depth"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 26,
+                        "width": 14,
+                        "height": 10,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-most-exposed"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 14,
+                        "y": 26,
+                        "width": 10,
+                        "height": 10,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-daily"
                         }
                       }
                     }

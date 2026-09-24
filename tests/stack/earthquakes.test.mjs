@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { api } from '../lib/grafana.mjs';
 import { STACK_URL } from '../lib/stack.mjs';
 import { openDashboard } from '../lib/browser.mjs';
-import { loadDashboard, panelsByType } from '../lib/dashboards.mjs';
+import { loadDashboard, panelsByType, panelTitled } from '../lib/dashboards.mjs';
 import { brushHistogramBody, withConstants } from '../lib/templates.mjs';
 
 const dashboard = () => loadDashboard('dashboards/start-here/earthquakes.json');
@@ -162,4 +162,29 @@ test('dragging across the magnitude histogram filters the dashboard without relo
   await view.page.waitForTimeout(2000);
   assert.ok((await view.statNumber('Earthquakes')) < all);
   assert.equal(await view.page.evaluate(() => window.__duckdbwasm.stats.loads.length), loadsBefore);
+});
+
+test('stats and the most exposed table show exposure and link to each quake', async () => {
+  const view = await open();
+  assert.ok((await view.statNumber('People within 100 km')) > 0);
+
+  const table = view.page
+    .locator('[data-testid="data-testid Panel header Most exposed"]')
+    .locator('xpath=ancestor::*[@data-viz-panel-key][1]');
+  const rows = table.locator('[role="row"]');
+  const count = await rows.count();
+  assert.ok(count >= 2 && count <= 11, `${count} rows including the header`);
+
+  const [link] = await table.locator('a[href*="var-quake="]').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
+  assert.match(link, /var-quake=[^&]+/);
+  assert.match(link, /var-lat=-?\d/);
+  assert.match(link, /var-mag_lo=/);
+});
+
+test('the daily series shows all and filtered', () => {
+  const series = panelTitled(dashboard(), 'Earthquakes per day');
+  const sql = JSON.stringify(series);
+  assert.match(sql, /AS \\"All\\"/);
+  assert.match(sql, /AS \\"Filtered\\"/);
+  assert.doesNotMatch(sql, /\$quakeFrom|\$quakeTo/, 'the series is the context the slider moves through');
 });
