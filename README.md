@@ -49,3 +49,7 @@ npm run test:config
 docker compose build && npm run test:images
 docker compose up --wait && npm run test:stack
 ```
+
+## License
+
+Apache-2.0 ([LICENSE](LICENSE)). The images bundle Grafana, its plugins, DuckDB and TiTiler, each under its own license.
