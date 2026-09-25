@@ -895,24 +895,495 @@
           },
           "vizConfig": {
             "kind": "VizConfig",
-            "group": "table",
-            "version": "",
+            "group": "volkovlabs-table-panel",
+            "version": "3.6.8",
             "spec": {
               "options": {
-                "showHeader": true,
-                "cellHeight": "sm",
-                "frameIndex": 0
+                "columnManagerCustomIcon": "",
+                "columnManagerNativeIcon": "table",
+                "isColumnManagerShowCustomIcon": false,
+                "nestedObjects": [],
+                "openColumnManagerMode": "group",
+                "toolbar": {
+                  "alignment": "left"
+                },
+                "tables": [
+                  {
+                    "name": "exposed",
+                    "showHeader": true,
+                    "stripedRows": false,
+                    "highlightRowsOnHover": true,
+                    "expanded": false,
+                    "actionsColumnConfig": {
+                      "alignment": "start",
+                      "fontSize": "md",
+                      "label": "",
+                      "width": {
+                        "auto": false,
+                        "value": 100
+                      }
+                    },
+                    "addRow": {
+                      "enabled": false,
+                      "permission": {
+                        "mode": "",
+                        "userRole": []
+                      },
+                      "request": {
+                        "datasource": "",
+                        "payload": {}
+                      }
+                    },
+                    "deleteRow": {
+                      "enabled": false,
+                      "permission": {
+                        "mode": "",
+                        "userRole": []
+                      },
+                      "request": {
+                        "datasource": "",
+                        "payload": {}
+                      }
+                    },
+                    "pagination": {
+                      "enabled": false,
+                      "mode": "client",
+                      "defaultPageSize": 10
+                    },
+                    "rowHighlight": {
+                      "backgroundColor": "transparent",
+                      "columnId": "",
+                      "enabled": false,
+                      "resetVariable": false,
+                      "scrollTo": "",
+                      "smooth": false,
+                      "variable": ""
+                    },
+                    "update": {
+                      "datasource": "",
+                      "payload": {}
+                    },
+                    "items": [
+                      {
+                        "aggregation": "none",
+                        "appearance": {
+                          "alignment": "start",
+                          "background": {
+                            "applyToRow": false
+                          },
+                          "colors": {},
+                          "header": {
+                            "fontSize": "md"
+                          },
+                          "width": {
+                            "auto": true,
+                            "min": 20,
+                            "value": 100
+                          },
+                          "wrap": true
+                        },
+                        "columnTooltip": "",
+                        "edit": {
+                          "editor": {
+                            "type": "string"
+                          },
+                          "enabled": false,
+                          "permission": {
+                            "mode": "",
+                            "userRole": []
+                          }
+                        },
+                        "enabled": true,
+                        "field": {
+                          "name": "Place",
+                          "source": "A"
+                        },
+                        "fileCell": {
+                          "size": "md",
+                          "text": "Download",
+                          "variant": "primary"
+                        },
+                        "filter": {
+                          "enabled": true,
+                          "mode": "client",
+                          "variable": ""
+                        },
+                        "footer": [],
+                        "gauge": {
+                          "mode": "basic",
+                          "valueDisplayMode": "text",
+                          "valueSize": 14
+                        },
+                        "group": false,
+                        "label": "",
+                        "newRowEdit": {
+                          "editor": {
+                            "type": "string"
+                          },
+                          "enabled": false
+                        },
+                        "objectId": "",
+                        "pin": "",
+                        "preformattedStyle": false,
+                        "scale": "auto",
+                        "showingRows": 20,
+                        "sort": {
+                          "descFirst": false,
+                          "enabled": false
+                        },
+                        "type": "auto"
+                      },
+                      {
+                        "aggregation": "none",
+                        "appearance": {
+                          "alignment": "start",
+                          "background": {
+                            "applyToRow": false
+                          },
+                          "colors": {},
+                          "header": {
+                            "fontSize": "md"
+                          },
+                          "width": {
+                            "auto": false,
+                            "min": 20,
+                            "value": 55
+                          },
+                          "wrap": true
+                        },
+                        "columnTooltip": "",
+                        "edit": {
+                          "editor": {
+                            "type": "string"
+                          },
+                          "enabled": false,
+                          "permission": {
+                            "mode": "",
+                            "userRole": []
+                          }
+                        },
+                        "enabled": true,
+                        "field": {
+                          "name": "Mag",
+                          "source": "A"
+                        },
+                        "fileCell": {
+                          "size": "md",
+                          "text": "Download",
+                          "variant": "primary"
+                        },
+                        "filter": {
+                          "enabled": true,
+                          "mode": "client",
+                          "variable": ""
+                        },
+                        "footer": [],
+                        "gauge": {
+                          "mode": "basic",
+                          "valueDisplayMode": "text",
+                          "valueSize": 14
+                        },
+                        "group": false,
+                        "label": "",
+                        "newRowEdit": {
+                          "editor": {
+                            "type": "string"
+                          },
+                          "enabled": false
+                        },
+                        "objectId": "",
+                        "pin": "",
+                        "preformattedStyle": false,
+                        "scale": "auto",
+                        "showingRows": 20,
+                        "sort": {
+                          "descFirst": false,
+                          "enabled": false
+                        },
+                        "type": "auto"
+                      },
+                      {
+                        "aggregation": "none",
+                        "appearance": {
+                          "alignment": "start",
+                          "background": {
+                            "applyToRow": false
+                          },
+                          "colors": {},
+                          "header": {
+                            "fontSize": "md"
+                          },
+                          "width": {
+                            "auto": false,
+                            "min": 20,
+                            "value": 90
+                          },
+                          "wrap": true
+                        },
+                        "columnTooltip": "",
+                        "edit": {
+                          "editor": {
+                            "type": "string"
+                          },
+                          "enabled": false,
+                          "permission": {
+                            "mode": "",
+                            "userRole": []
+                          }
+                        },
+                        "enabled": true,
+                        "field": {
+                          "name": "PAGER",
+                          "source": "A"
+                        },
+                        "fileCell": {
+                          "size": "md",
+                          "text": "Download",
+                          "variant": "primary"
+                        },
+                        "filter": {
+                          "enabled": true,
+                          "mode": "client",
+                          "variable": ""
+                        },
+                        "footer": [],
+                        "gauge": {
+                          "mode": "basic",
+                          "valueDisplayMode": "text",
+                          "valueSize": 14
+                        },
+                        "group": false,
+                        "label": "",
+                        "newRowEdit": {
+                          "editor": {
+                            "type": "string"
+                          },
+                          "enabled": false
+                        },
+                        "objectId": "",
+                        "pin": "",
+                        "preformattedStyle": false,
+                        "scale": "auto",
+                        "showingRows": 20,
+                        "sort": {
+                          "descFirst": false,
+                          "enabled": false
+                        },
+                        "type": "coloredText"
+                      },
+                      {
+                        "aggregation": "none",
+                        "appearance": {
+                          "alignment": "start",
+                          "background": {
+                            "applyToRow": false
+                          },
+                          "colors": {},
+                          "header": {
+                            "fontSize": "md"
+                          },
+                          "width": {
+                            "auto": false,
+                            "min": 20,
+                            "value": 140
+                          },
+                          "wrap": true
+                        },
+                        "columnTooltip": "",
+                        "edit": {
+                          "editor": {
+                            "type": "string"
+                          },
+                          "enabled": false,
+                          "permission": {
+                            "mode": "",
+                            "userRole": []
+                          }
+                        },
+                        "enabled": true,
+                        "field": {
+                          "name": "People ≤100 km",
+                          "source": "A"
+                        },
+                        "fileCell": {
+                          "size": "md",
+                          "text": "Download",
+                          "variant": "primary"
+                        },
+                        "filter": {
+                          "enabled": true,
+                          "mode": "client",
+                          "variable": ""
+                        },
+                        "footer": [],
+                        "gauge": {
+                          "mode": "basic",
+                          "valueDisplayMode": "text",
+                          "valueSize": 14
+                        },
+                        "group": false,
+                        "label": "",
+                        "newRowEdit": {
+                          "editor": {
+                            "type": "string"
+                          },
+                          "enabled": false
+                        },
+                        "objectId": "",
+                        "pin": "",
+                        "preformattedStyle": false,
+                        "scale": "auto",
+                        "showingRows": 20,
+                        "sort": {
+                          "descFirst": true,
+                          "enabled": true
+                        },
+                        "type": "gauge"
+                      },
+                      {
+                        "aggregation": "none",
+                        "appearance": {
+                          "alignment": "start",
+                          "background": {
+                            "applyToRow": false
+                          },
+                          "colors": {},
+                          "header": {
+                            "fontSize": "md"
+                          },
+                          "width": {
+                            "auto": false,
+                            "min": 20,
+                            "value": 120
+                          },
+                          "wrap": true
+                        },
+                        "columnTooltip": "",
+                        "edit": {
+                          "editor": {
+                            "type": "string"
+                          },
+                          "enabled": false,
+                          "permission": {
+                            "mode": "",
+                            "userRole": []
+                          }
+                        },
+                        "enabled": true,
+                        "field": {
+                          "name": "Largest place",
+                          "source": "A"
+                        },
+                        "fileCell": {
+                          "size": "md",
+                          "text": "Download",
+                          "variant": "primary"
+                        },
+                        "filter": {
+                          "enabled": true,
+                          "mode": "client",
+                          "variable": ""
+                        },
+                        "footer": [],
+                        "gauge": {
+                          "mode": "basic",
+                          "valueDisplayMode": "text",
+                          "valueSize": 14
+                        },
+                        "group": false,
+                        "label": "",
+                        "newRowEdit": {
+                          "editor": {
+                            "type": "string"
+                          },
+                          "enabled": false
+                        },
+                        "objectId": "",
+                        "pin": "",
+                        "preformattedStyle": false,
+                        "scale": "auto",
+                        "showingRows": 20,
+                        "sort": {
+                          "descFirst": false,
+                          "enabled": false
+                        },
+                        "type": "auto"
+                      },
+                      {
+                        "aggregation": "none",
+                        "appearance": {
+                          "alignment": "start",
+                          "background": {
+                            "applyToRow": false
+                          },
+                          "colors": {},
+                          "header": {
+                            "fontSize": "md"
+                          },
+                          "width": {
+                            "auto": false,
+                            "min": 20,
+                            "value": 90
+                          },
+                          "wrap": true
+                        },
+                        "columnTooltip": "",
+                        "edit": {
+                          "editor": {
+                            "type": "string"
+                          },
+                          "enabled": false,
+                          "permission": {
+                            "mode": "",
+                            "userRole": []
+                          }
+                        },
+                        "enabled": true,
+                        "field": {
+                          "name": "Population",
+                          "source": "A"
+                        },
+                        "fileCell": {
+                          "size": "md",
+                          "text": "Download",
+                          "variant": "primary"
+                        },
+                        "filter": {
+                          "enabled": true,
+                          "mode": "client",
+                          "variable": ""
+                        },
+                        "footer": [],
+                        "gauge": {
+                          "mode": "basic",
+                          "valueDisplayMode": "text",
+                          "valueSize": 14
+                        },
+                        "group": false,
+                        "label": "",
+                        "newRowEdit": {
+                          "editor": {
+                            "type": "string"
+                          },
+                          "enabled": false
+                        },
+                        "objectId": "",
+                        "pin": "",
+                        "preformattedStyle": false,
+                        "scale": "auto",
+                        "showingRows": 20,
+                        "sort": {
+                          "descFirst": false,
+                          "enabled": false
+                        },
+                        "type": "auto"
+                      }
+                    ]
+                  }
+                ]
               },
               "fieldConfig": {
-                "defaults": {
-                  "custom": {
-                    "align": "auto",
-                    "cellOptions": {
-                      "type": "auto"
-                    },
-                    "inspect": false
-                  }
-                },
+                "defaults": {},
                 "overrides": [
                   {
                     "matcher": {
@@ -923,10 +1394,6 @@
                       {
                         "id": "decimals",
                         "value": 1
-                      },
-                      {
-                        "id": "custom.width",
-                        "value": 50
                       }
                     ]
                   },
@@ -936,12 +1403,6 @@
                       "options": "PAGER"
                     },
                     "properties": [
-                      {
-                        "id": "custom.cellOptions",
-                        "value": {
-                          "type": "pill"
-                        }
-                      },
                       {
                         "id": "mappings",
                         "value": [
@@ -976,10 +1437,6 @@
                             }
                           }
                         ]
-                      },
-                      {
-                        "id": "custom.width",
-                        "value": 75
                       }
                     ]
                   },
@@ -989,14 +1446,6 @@
                       "options": "People ≤100 km"
                     },
                     "properties": [
-                      {
-                        "id": "custom.cellOptions",
-                        "value": {
-                          "type": "gauge",
-                          "mode": "basic",
-                          "valueDisplayMode": "text"
-                        }
-                      },
                       {
                         "id": "unit",
                         "value": "short"
@@ -1011,22 +1460,6 @@
                           "mode": "fixed",
                           "fixedColor": "orange"
                         }
-                      },
-                      {
-                        "id": "custom.width",
-                        "value": 140
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Largest place"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.width",
-                        "value": 120
                       }
                     ]
                   },
@@ -1039,46 +1472,6 @@
                       {
                         "id": "unit",
                         "value": "short"
-                      },
-                      {
-                        "id": "custom.width",
-                        "value": 90
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "id"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.hidden",
-                        "value": true
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "latitude"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.hidden",
-                        "value": true
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "longitude"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.hidden",
-                        "value": true
                       }
                     ]
                   },
@@ -1638,24 +2031,11 @@
                                 "spec": {
                                   "x": 0,
                                   "y": 0,
-                                  "width": 8,
-                                  "height": 4,
+                                  "width": 16,
+                                  "height": 16,
                                   "element": {
                                     "kind": "ElementReference",
-                                    "name": "panel-earthquakes"
-                                  }
-                                }
-                              },
-                              {
-                                "kind": "GridLayoutItem",
-                                "spec": {
-                                  "x": 8,
-                                  "y": 0,
-                                  "width": 8,
-                                  "height": 4,
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-strongest"
+                                    "name": "panel-map"
                                   }
                                 }
                               },
@@ -1664,8 +2044,8 @@
                                 "spec": {
                                   "x": 16,
                                   "y": 0,
-                                  "width": 8,
-                                  "height": 4,
+                                  "width": 3,
+                                  "height": 3,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-people"
@@ -1675,13 +2055,65 @@
                               {
                                 "kind": "GridLayoutItem",
                                 "spec": {
-                                  "x": 0,
-                                  "y": 4,
-                                  "width": 24,
-                                  "height": 17,
+                                  "x": 19,
+                                  "y": 0,
+                                  "width": 3,
+                                  "height": 3,
                                   "element": {
                                     "kind": "ElementReference",
-                                    "name": "panel-map"
+                                    "name": "panel-strongest"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 22,
+                                  "y": 0,
+                                  "width": 2,
+                                  "height": 3,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-earthquakes"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 16,
+                                  "y": 3,
+                                  "width": 4,
+                                  "height": 6,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-magnitude"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 20,
+                                  "y": 3,
+                                  "width": 4,
+                                  "height": 6,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-depth"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 16,
+                                  "y": 9,
+                                  "width": 8,
+                                  "height": 7,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-daily"
                                   }
                                 }
                               }
@@ -1796,47 +2228,6 @@
                     {
                       "kind": "RowsLayoutRow",
                       "spec": {
-                        "title": "Histograms",
-                        "hideHeader": true,
-                        "collapse": false,
-                        "layout": {
-                          "kind": "GridLayout",
-                          "spec": {
-                            "items": [
-                              {
-                                "kind": "GridLayoutItem",
-                                "spec": {
-                                  "x": 0,
-                                  "y": 0,
-                                  "width": 12,
-                                  "height": 8,
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-magnitude"
-                                  }
-                                }
-                              },
-                              {
-                                "kind": "GridLayoutItem",
-                                "spec": {
-                                  "x": 12,
-                                  "y": 0,
-                                  "width": 12,
-                                  "height": 8,
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-depth"
-                                  }
-                                }
-                              }
-                            ]
-                          }
-                        }
-                      }
-                    },
-                    {
-                      "kind": "RowsLayoutRow",
-                      "spec": {
                         "title": "Data",
                         "hideHeader": true,
                         "collapse": false,
@@ -1849,24 +2240,11 @@
                                 "spec": {
                                   "x": 0,
                                   "y": 0,
-                                  "width": 16,
+                                  "width": 24,
                                   "height": 10,
                                   "element": {
                                     "kind": "ElementReference",
                                     "name": "panel-most-exposed"
-                                  }
-                                }
-                              },
-                              {
-                                "kind": "GridLayoutItem",
-                                "spec": {
-                                  "x": 16,
-                                  "y": 0,
-                                  "width": 8,
-                                  "height": 10,
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-daily"
                                   }
                                 }
                               }
