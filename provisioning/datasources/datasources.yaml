@@ -3,7 +3,7 @@ apiVersion: 1
 datasources:
   # DuckDB on the server. `path` blank means an in-memory database, which is all
   # reading remote files needs. The extensions are baked into the image, under
-  # /opt/geostack/duckdb-home/.duckdb/extensions — but Grafana 13.2.1 always
+  # /opt/pacha/duckdb-home/.duckdb/extensions — but Grafana 13.2.1 always
   # launches a backend plugin's subprocess with HOME pinned to GF_PATHS_HOME
   # (/usr/share/grafana), never the image's own HOME, so the plugin process
   # never sees where they were baked. The leading `SET extension_directory=...`
@@ -40,7 +40,7 @@ datasources:
     uid: duckdb
     jsonData:
       path: ''
-      initSql: "SET extension_directory='/opt/geostack/duckdb-home/.duckdb/extensions'; SET allow_persistent_secrets = false; LOAD httpfs; LOAD spatial; LOAD json; LOAD excel; LOAD raster; LOAD http_client; LOAD avro; LOAD iceberg; LOAD h3; LOAD a5; LOAD lindel; SET enable_external_file_cache = false; SET disabled_filesystems = 'LocalFileSystem';"
+      initSql: "SET extension_directory='/opt/pacha/duckdb-home/.duckdb/extensions'; SET allow_persistent_secrets = false; LOAD httpfs; LOAD spatial; LOAD json; LOAD excel; LOAD raster; LOAD http_client; LOAD avro; LOAD iceberg; LOAD h3; LOAD a5; LOAD lindel; SET enable_external_file_cache = false; SET disabled_filesystems = 'LocalFileSystem';"
 
   - name: Infinity
     type: yesoreyeram-infinity-datasource

@@ -36,7 +36,7 @@ for (const [repo, names] of [
 }
 
 test('the DuckDB datasource zip ships a linux_arm64 binary', () => {
-  sh('docker', ['build', '--target', 'fetch', '-t', 'geostack-grafana-fetch:test', 'images/grafana']);
-  const listing = sh('docker', ['run', '--rm', 'geostack-grafana-fetch:test', 'unzip', '-l', '/fetch/duckdb.zip']);
+  sh('docker', ['build', '--target', 'fetch', '-t', 'pacha-grafana-fetch:test', 'images/grafana']);
+  const listing = sh('docker', ['run', '--rm', 'pacha-grafana-fetch:test', 'unzip', '-l', '/fetch/duckdb.zip']);
   assert.match(listing, /gpx_duckdb_datasource_linux_arm64/);
 });

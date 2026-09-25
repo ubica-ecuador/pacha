@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 #
-# Grafana for the Grafana Geospatial Stack, with every plugin baked in.
+# Grafana for Pacha, with every plugin baked in.
 #
-# Plugins live in /opt/geostack/plugins, not /var/lib/grafana/plugins. The
+# Plugins live in /opt/pacha/plugins, not /var/lib/grafana/plugins. The
 # latter is inside the data volume, and Docker only copies image content into a
 # volume that is empty: an existing install (grafana.ubica.ec) would keep the
 # plugins its volume already holds and never see these. DuckDB's extensions sit
@@ -64,7 +64,7 @@ ARG DUCKDB_CLI_SHA256_arm64
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates curl unzip \
  && rm -rf /var/lib/apt/lists/*
-ENV HOME=/opt/geostack/duckdb-home
+ENV HOME=/opt/pacha/duckdb-home
 RUN curl -fsSLo /tmp/duckdb-cli.zip "https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_ENGINE_VERSION}/duckdb_cli-linux-${TARGETARCH}.zip" \
  && eval "expected=\${DUCKDB_CLI_SHA256_${TARGETARCH}}" \
  && echo "${expected}  /tmp/duckdb-cli.zip" | sha256sum -c - \
@@ -89,17 +89,17 @@ ARG BUSINESS_TABLE_VERSION
 ARG BUSINESS_VARIABLE_VERSION
 
 USER root
-COPY --from=fetch --chown=472:0 /plugins /opt/geostack/plugins
-COPY --from=duckdb-extensions --chown=472:0 /opt/geostack/duckdb-home /opt/geostack/duckdb-home
+COPY --from=fetch --chown=472:0 /plugins /opt/pacha/plugins
+COPY --from=duckdb-extensions --chown=472:0 /opt/pacha/duckdb-home /opt/pacha/duckdb-home
 # Signed plugins from the catalogue, at fixed versions.
 RUN for plugin in \
       "yesoreyeram-infinity-datasource ${INFINITY_VERSION}" \
       "volkovlabs-echarts-panel ${BUSINESS_CHARTS_VERSION}" \
       "volkovlabs-table-panel ${BUSINESS_TABLE_VERSION}" \
       "volkovlabs-variable-panel ${BUSINESS_VARIABLE_VERSION}"; do \
-      grafana cli --pluginsDir /opt/geostack/plugins plugins install ${plugin} || exit 1; \
+      grafana cli --pluginsDir /opt/pacha/plugins plugins install ${plugin} || exit 1; \
     done \
- && chown -R 472:0 /opt/geostack/plugins
+ && chown -R 472:0 /opt/pacha/plugins
 USER 472
 
 # - Anonymous visitors see dashboards and change nothing.
@@ -110,7 +110,7 @@ USER 472
 #   subprocess's HOME to GF_PATHS_HOME (/usr/share/grafana), no matter what
 #   HOME is set to here (verified against the running DuckDB datasource
 #   process). DuckDB's baked extensions live under
-#   /opt/geostack/duckdb-home/.duckdb/extensions instead, and the datasource's
+#   /opt/pacha/duckdb-home/.duckdb/extensions instead, and the datasource's
 #   own initSql points DuckDB at them with `SET extension_directory=...` (see
 #   provisioning/datasources/datasources.yaml).
 # - Infinity silently stops a paginated query at 5 pages unless told otherwise.
@@ -120,8 +120,8 @@ USER 472
 #   points it at Ubuntu's bundle. Forwarded to DuckDB like any variable but HOME.
 # - No plugin preinstall: it downloads apps from grafana.com at every start,
 #   which is the network at runtime this image exists to avoid.
-ENV GF_PATHS_PLUGINS=/opt/geostack/plugins \
-    HOME=/opt/geostack/duckdb-home \
+ENV GF_PATHS_PLUGINS=/opt/pacha/plugins \
+    HOME=/opt/pacha/duckdb-home \
     GF_AUTH_ANONYMOUS_ENABLED=true \
     GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer \
     GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=ubica-keplergl-panel,ubica-chaski-datasource,motherduck-duckdb-datasource \
@@ -130,15 +130,15 @@ ENV GF_PATHS_PLUGINS=/opt/geostack/plugins \
     GF_PLUGINS_PREINSTALL_DISABLED=true \
     CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
-LABEL org.opencontainers.image.title="geostack-grafana" \
-      org.opencontainers.image.description="Grafana with the Grafana Geospatial Stack's plugins baked in. Not affiliated with Grafana Labs." \
-      org.opencontainers.image.source="https://github.com/ubica-ecuador/grafana-geospatial-stack" \
-      io.geostack.grafana.version="${GRAFANA_EDITION}:${GRAFANA_VERSION}" \
-      io.geostack.kepler-panel.version="${KEPLER_PANEL_VERSION}" \
-      io.geostack.chaski.version="${CHASKI_VERSION}" \
-      io.geostack.duckdb-datasource.version="${DUCKDB_DS_VERSION}" \
-      io.geostack.duckdb-engine.version="${DUCKDB_ENGINE_VERSION}" \
-      io.geostack.infinity.version="${INFINITY_VERSION}" \
-      io.geostack.business-charts.version="${BUSINESS_CHARTS_VERSION}" \
-      io.geostack.business-table.version="${BUSINESS_TABLE_VERSION}" \
-      io.geostack.business-variable.version="${BUSINESS_VARIABLE_VERSION}"
+LABEL org.opencontainers.image.title="pacha-grafana" \
+      org.opencontainers.image.description="Grafana with Pacha's plugins baked in. Not affiliated with Grafana Labs." \
+      org.opencontainers.image.source="https://github.com/ubica-ecuador/pacha" \
+      io.pacha.grafana.version="${GRAFANA_EDITION}:${GRAFANA_VERSION}" \
+      io.pacha.kepler-panel.version="${KEPLER_PANEL_VERSION}" \
+      io.pacha.chaski.version="${CHASKI_VERSION}" \
+      io.pacha.duckdb-datasource.version="${DUCKDB_DS_VERSION}" \
+      io.pacha.duckdb-engine.version="${DUCKDB_ENGINE_VERSION}" \
+      io.pacha.infinity.version="${INFINITY_VERSION}" \
+      io.pacha.business-charts.version="${BUSINESS_CHARTS_VERSION}" \
+      io.pacha.business-table.version="${BUSINESS_TABLE_VERSION}" \
+      io.pacha.business-variable.version="${BUSINESS_VARIABLE_VERSION}"

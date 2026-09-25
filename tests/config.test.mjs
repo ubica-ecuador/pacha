@@ -13,7 +13,7 @@ test('compose.dev.yaml refuses to start without KEPLER_DIST', () => {
 
 test('compose.dev.yaml mounts the given dist over the baked plugin, read-only', () => {
   const config = JSON.parse(compose([...DEV, 'config', '--format', 'json'], { env: { ...process.env, KEPLER_DIST: '/tmp/kepler-dist' } }));
-  const mount = config.services.grafana.volumes.find((v) => v.target === '/opt/geostack/plugins/ubica-keplergl-panel');
+  const mount = config.services.grafana.volumes.find((v) => v.target === '/opt/pacha/plugins/ubica-keplergl-panel');
   assert.equal(mount?.source, '/tmp/kepler-dist');
   assert.equal(mount?.read_only, true);
 });

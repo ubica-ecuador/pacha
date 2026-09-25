@@ -6,10 +6,10 @@ providers:
     folderUid: start-here
     type: file
     options:
-      path: /var/lib/geostack/dashboards/start-here
+      path: /var/lib/pacha/dashboards/start-here
   - name: gallery
     folder: Gallery
     folderUid: gallery
     type: file
     options:
-      path: /var/lib/geostack/dashboards/gallery
+      path: /var/lib/pacha/dashboards/gallery

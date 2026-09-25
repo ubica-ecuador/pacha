@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { curlIn, hostPort, remove, runDetached, sh, waitFor } from '../lib/docker.mjs';
 import { ADMIN, api, dsQueryBody, rowsOf } from '../lib/grafana.mjs';
 
-const IMAGE = process.env.GRAFANA_IMAGE ?? 'ghcr.io/ubica-ecuador/geostack-grafana:dev';
+const IMAGE = process.env.GRAFANA_IMAGE ?? 'ghcr.io/ubica-ecuador/pacha-grafana:dev';
 
 const EXPECTED = {
   'ubica-keplergl-panel': { version: '1.0.1', signature: 'unsigned' },
@@ -26,7 +26,7 @@ const EXPECTED = {
 // unreachable from inside the plugin, so the directory has to be named
 // explicitly instead of relying on the image's HOME env var.
 const INIT_SQL =
-  "SET extension_directory='/opt/geostack/duckdb-home/.duckdb/extensions'; SET allow_persistent_secrets = false; " +
+  "SET extension_directory='/opt/pacha/duckdb-home/.duckdb/extensions'; SET allow_persistent_secrets = false; " +
   'LOAD httpfs; LOAD spatial; LOAD json; LOAD excel; LOAD raster; LOAD http_client; ' +
   'LOAD avro; LOAD iceberg; LOAD h3; LOAD a5; LOAD lindel; ' +
   "SET enable_external_file_cache = false; SET disabled_filesystems = 'LocalFileSystem';";
@@ -71,8 +71,8 @@ test('anonymous visitors are Viewers, not Admins', async () => {
 test('safe defaults, and plugins and DuckDB home outside /var/lib/grafana', () => {
   const env = JSON.parse(sh('docker', ['image', 'inspect', '--format', '{{json .Config.Env}}', IMAGE]));
   for (const entry of [
-    'GF_PATHS_PLUGINS=/opt/geostack/plugins',
-    'HOME=/opt/geostack/duckdb-home',
+    'GF_PATHS_PLUGINS=/opt/pacha/plugins',
+    'HOME=/opt/pacha/duckdb-home',
     'GF_AUTH_ANONYMOUS_ENABLED=true',
     'GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer',
     'GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=ubica-keplergl-panel,ubica-chaski-datasource,motherduck-duckdb-datasource',
@@ -87,17 +87,17 @@ test('safe defaults, and plugins and DuckDB home outside /var/lib/grafana', () =
 
 test('versions are exposed as image labels', () => {
   const labels = JSON.parse(sh('docker', ['image', 'inspect', '--format', '{{json .Config.Labels}}', IMAGE]));
-  assert.equal(labels['io.geostack.kepler-panel.version'], '1.0.1');
-  assert.equal(labels['io.geostack.chaski.version'], '1.0.0');
-  assert.equal(labels['io.geostack.duckdb-datasource.version'], '0.4.5');
-  assert.equal(labels['io.geostack.duckdb-engine.version'], '1.5.4');
-  assert.equal(labels['io.geostack.business-charts.version'], '7.2.5');
+  assert.equal(labels['io.pacha.kepler-panel.version'], '1.0.1');
+  assert.equal(labels['io.pacha.chaski.version'], '1.0.0');
+  assert.equal(labels['io.pacha.duckdb-datasource.version'], '0.4.5');
+  assert.equal(labels['io.pacha.duckdb-engine.version'], '1.5.4');
+  assert.equal(labels['io.pacha.business-charts.version'], '7.2.5');
   assert.match(labels['org.opencontainers.image.description'], /Not affiliated with Grafana Labs/);
 });
 
 test("only this architecture's DuckDB binary is left", () => {
   const arch = sh('docker', ['image', 'inspect', '--format', '{{.Architecture}}', IMAGE]);
-  const files = sh('docker', ['run', '--rm', '--entrypoint', 'ls', IMAGE, '/opt/geostack/plugins/motherduck-duckdb-datasource']).split('\n');
+  const files = sh('docker', ['run', '--rm', '--entrypoint', 'ls', IMAGE, '/opt/pacha/plugins/motherduck-duckdb-datasource']).split('\n');
   assert.deepEqual(files.filter((f) => f.startsWith('gpx_')), [`gpx_duckdb_datasource_linux_${arch}`]);
 });
 
@@ -138,6 +138,6 @@ test('DuckDB loads every baked extension with no network at all', async () => {
 // Last on purpose: Grafana's plugin preinstall runs in the background after
 // startup, so by now it would have had time to write into the folder.
 test('nothing is downloaded at startup: the plugin folder holds exactly the seven', () => {
-  const dirs = sh('docker', ['exec', id, 'ls', '/opt/geostack/plugins']).split('\n').sort();
+  const dirs = sh('docker', ['exec', id, 'ls', '/opt/pacha/plugins']).split('\n').sort();
   assert.deepEqual(dirs, Object.keys(EXPECTED).sort());
 });

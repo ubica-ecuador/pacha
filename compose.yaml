@@ -1,11 +1,11 @@
-# Grafana Geospatial Stack: `docker compose up --wait`, then open
+# Pacha: `docker compose up --wait`, then open
 # http://localhost:3000 (or the STACK_PORT you set).
-name: geostack
+name: pacha
 
 services:
   grafana:
     build: images/grafana
-    image: ghcr.io/ubica-ecuador/geostack-grafana:${STACK_VERSION:-dev}
+    image: ghcr.io/ubica-ecuador/pacha-grafana:${STACK_VERSION:-dev}
     environment:
       GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-admin}
@@ -18,7 +18,7 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
       - ./provisioning:/etc/grafana/provisioning:ro
-      - ./dashboards:/var/lib/geostack/dashboards:ro
+      - ./dashboards:/var/lib/pacha/dashboards:ro
     healthcheck:
       test: ['CMD', 'curl', '-fsS', 'http://localhost:3000/api/health']
       interval: 5s
@@ -29,7 +29,7 @@ services:
   # Named `titiler` for good: DuckDB and Infinity queries call http://titiler/.
   titiler:
     build: images/titiler
-    image: ghcr.io/ubica-ecuador/geostack-titiler:${STACK_VERSION:-dev}
+    image: ghcr.io/ubica-ecuador/pacha-titiler:${STACK_VERSION:-dev}
     environment:
       TITILER_API_ROOT_PATH: /titiler
       # Public tiles, no credentials: any page may draw them.
@@ -107,7 +107,7 @@ services:
       GRAFANA_USERNAME: ${GF_SECURITY_ADMIN_USER:-admin}
       GRAFANA_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-admin}
       # From the environment rather than a flag, so it stays out of `ps`.
-      MCP_GRAFANA_SERVER_TOKEN: ${GEOSTACK_MCP_TOKEN:-geostack-local}
+      MCP_GRAFANA_SERVER_TOKEN: ${PACHA_MCP_TOKEN:-pacha-local}
     networks: [mcp]
     ports:
       - '127.0.0.1:8000:8000'

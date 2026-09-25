@@ -39,10 +39,10 @@ FROM ghcr.io/developmentseed/titiler:2.2.1@sha256:bf753ccf0fe0f231bc51a0ddbaebf7
 # Exact versions of what this file installs on top of the base, in one place.
 COPY constraints.txt /opt/ubica/constraints.txt
 
-LABEL org.opencontainers.image.title="geostack-titiler" \
-      org.opencontainers.image.description="TiTiler for the Grafana Geospatial Stack, with an Icechunk-aware /zarr router. Not affiliated with Grafana Labs." \
-      org.opencontainers.image.source="https://github.com/ubica-ecuador/grafana-geospatial-stack" \
-      io.geostack.titiler.base="2.2.1"
+LABEL org.opencontainers.image.title="pacha-titiler" \
+      org.opencontainers.image.description="TiTiler for Pacha, with an Icechunk-aware /zarr router. Not affiliated with Grafana Labs." \
+      org.opencontainers.image.source="https://github.com/ubica-ecuador/pacha" \
+      io.pacha.titiler.base="2.2.1"
 
 # The check asserts the behaviour rather than the version: a floor only says
 # which release was installed, and what matters is that the CAMS grid is

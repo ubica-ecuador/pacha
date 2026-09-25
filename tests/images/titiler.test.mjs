@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { hostPort, remove, runDetached, sh, waitFor } from '../lib/docker.mjs';
 
-const IMAGE = process.env.TITILER_IMAGE ?? 'ghcr.io/ubica-ecuador/geostack-titiler:dev';
+const IMAGE = process.env.TITILER_IMAGE ?? 'ghcr.io/ubica-ecuador/pacha-titiler:dev';
 const GFS = 'stac+https://stac.dynamical.org/noaa-gfs-forecast/collection.json';
 
 let warm;

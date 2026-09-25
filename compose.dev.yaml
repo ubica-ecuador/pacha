@@ -10,5 +10,5 @@ services:
     volumes:
       - type: bind
         source: ${KEPLER_DIST:?set KEPLER_DIST to the Kepler panel's dist/ folder}
-        target: /opt/geostack/plugins/ubica-keplergl-panel
+        target: /opt/pacha/plugins/ubica-keplergl-panel
         read_only: true

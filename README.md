@@ -1,6 +1,8 @@
-# Grafana Geospatial Stack
+# Pacha
 
-Cloud-native geospatial dashboards in Grafana, in one command. The stack bakes in:
+*Pacha* is Quechua for the world and time as one.
+
+Spatiotemporal visualization in Grafana, in one command. The stack bakes in:
 
 - the [Kepler map panel](https://github.com/ubica-ecuador/keplergl-grafana-panel);
 - [Chaski](https://github.com/ubica-ecuador/chaski), DuckDB in the browser;
@@ -28,7 +30,7 @@ Open <http://localhost:3000>. Anonymous visitors can view; sign in as `admin` / 
 | `gateway` | nginx; the only published port                   | `:3000`                           |
 | `grafana` | Grafana 13.2.1 with the plugins baked in         | `/`                               |
 | `titiler` | Tiles for COG, Zarr and Icechunk                 | `/titiler/`                       |
-| `mcp`     | [mcp-grafana](https://github.com/grafana/mcp-grafana) for AI agents | `http://127.0.0.1:8000/mcp`, `Authorization: Bearer $GEOSTACK_MCP_TOKEN` |
+| `mcp`     | [mcp-grafana](https://github.com/grafana/mcp-grafana) for AI agents | `http://127.0.0.1:8000/mcp`, `Authorization: Bearer $PACHA_MCP_TOKEN` |
 
 Plugins and DuckDB's extensions are part of the image, so nothing is downloaded when the stack
 starts. The dashboards read their data where it is published.

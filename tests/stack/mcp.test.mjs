@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { compose } from '../lib/docker.mjs';
 
 const MCP_URL = process.env.MCP_URL ?? 'http://127.0.0.1:8000/mcp';
-const TOKEN = process.env.GEOSTACK_MCP_TOKEN ?? 'geostack-local';
-const INIT = { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'geostack-tests', version: '0.0.0' } };
+const TOKEN = process.env.PACHA_MCP_TOKEN ?? 'pacha-local';
+const INIT = { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'pacha-tests', version: '0.0.0' } };
 
 // One JSON-RPC message over streamable HTTP. The reply may come as plain JSON
 // or as server-sent events; either way, pick the message with our id.

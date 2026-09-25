@@ -16,12 +16,12 @@ group "default" {
 
 target "grafana" {
   context = "images/grafana"
-  tags    = ["${REGISTRY}/geostack-grafana:${STACK_VERSION}"]
+  tags    = ["${REGISTRY}/pacha-grafana:${STACK_VERSION}"]
   labels  = { "org.opencontainers.image.version" = STACK_VERSION }
 }
 
 target "titiler" {
   context = "images/titiler"
-  tags    = ["${REGISTRY}/geostack-titiler:${STACK_VERSION}"]
+  tags    = ["${REGISTRY}/pacha-titiler:${STACK_VERSION}"]
   labels  = { "org.opencontainers.image.version" = STACK_VERSION }
 }

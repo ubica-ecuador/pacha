@@ -6,9 +6,9 @@ import { STACK_URL } from '../lib/stack.mjs';
 
 const healthy = async () => (await fetch(`${STACK_URL}/api/health`)).ok;
 
-test('the project is geostack, with grafana-data as its only volume', () => {
+test('the project is pacha, with grafana-data as its only volume', () => {
   const config = JSON.parse(compose(['config', '--format', 'json']));
-  assert.equal(config.name, 'geostack');
+  assert.equal(config.name, 'pacha');
   assert.deepEqual(Object.keys(config.volumes ?? {}), ['grafana-data']);
 });
 
