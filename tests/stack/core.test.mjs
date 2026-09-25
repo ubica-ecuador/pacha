@@ -120,7 +120,7 @@ test('plugins left in an old volume do not shadow the baked ones', async () => {
     compose(['restart', 'grafana']);
     await waitFor(healthy, { what: 'grafana after restart' });
     const { json } = await api(STACK_URL, '/api/plugins/ubica-keplergl-panel/settings');
-    assert.equal(json.info.version, '1.0.0');
+    assert.equal(json.info.version, '1.0.1');
   } finally {
     compose(['exec', '-T', 'grafana', 'rm', '-rf', '/var/lib/grafana/plugins']);
   }

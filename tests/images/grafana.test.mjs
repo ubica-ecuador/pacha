@@ -6,7 +6,7 @@ import { ADMIN, api, dsQueryBody, rowsOf } from '../lib/grafana.mjs';
 const IMAGE = process.env.GRAFANA_IMAGE ?? 'ghcr.io/ubica-ecuador/geostack-grafana:dev';
 
 const EXPECTED = {
-  'ubica-keplergl-panel': { version: '1.0.0', signature: 'unsigned' },
+  'ubica-keplergl-panel': { version: '1.0.1', signature: 'unsigned' },
   'ubica-chaski-datasource': { version: '1.0.0', signature: 'unsigned' },
   'motherduck-duckdb-datasource': { version: '0.4.5', signature: 'unsigned' },
   'yesoreyeram-infinity-datasource': { version: '4.0.0', signature: 'valid' },
@@ -87,7 +87,7 @@ test('safe defaults, and plugins and DuckDB home outside /var/lib/grafana', () =
 
 test('versions are exposed as image labels', () => {
   const labels = JSON.parse(sh('docker', ['image', 'inspect', '--format', '{{json .Config.Labels}}', IMAGE]));
-  assert.equal(labels['io.geostack.kepler-panel.version'], '1.0.0');
+  assert.equal(labels['io.geostack.kepler-panel.version'], '1.0.1');
   assert.equal(labels['io.geostack.chaski.version'], '1.0.0');
   assert.equal(labels['io.geostack.duckdb-datasource.version'], '0.4.5');
   assert.equal(labels['io.geostack.duckdb-engine.version'], '1.5.4');
