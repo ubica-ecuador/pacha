@@ -55,7 +55,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "# Lower Manhattan in motion\n\n996 yellow-cab trips replayed over the buildings of Lower Manhattan. Each trail is one taxi:\nthe bright head is where the cab is now, and the tail fades behind it. **Press play on the\nmap's clock**; drag with the right button to orbit.\n\nThe data is the example that ships with deck.gl ([visgl/deck.gl-data](https://github.com/visgl/deck.gl-data/tree/master/examples/trips)),\nread in place from GitHub on every load. Its timestamps count seconds from an unnamed start, so the\nclock runs from 00:00 to 00:41 and says nothing about the real hour. The sample was cut at the\n30-minute mark — 279 trips end within ten seconds of it — which is why the count below falls off a\ncliff there.",
+                "content": "# Lower Manhattan in motion\n\n996 yellow-cab trips replayed over the buildings of Lower Manhattan. Each trail is one taxi:\nthe bright head is where the cab is now, and the tail fades behind it. **Press play on the\nmap's clock**; drag with the right button to orbit.\n\nThe data is the example that ships with deck.gl ([visgl/deck.gl-data](https://github.com/visgl/deck.gl-data/tree/master/examples/trips)),\nread in place from GitHub once per visit, into your own browser, where [Chaski](https://github.com/ubica-ecuador/chaski) runs every query on this page. Its timestamps count seconds from an unnamed start, so the\nclock runs from 00:00 to 00:41 and says nothing about the real hour. The sample was cut at the\n30-minute mark — 279 trips end within ten seconds of it — which is why the count below falls off a\ncliff there. **Drag across that curve** to keep only the trips on the road in a window of it.",
                 "mode": "markdown"
               },
               "fieldConfig": {
@@ -81,20 +81,19 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "refId": "A",
+                    "hidden": false,
                     "query": {
                       "kind": "DataQuery",
-                      "group": "motherduck-duckdb-datasource",
+                      "group": "ubica-chaski-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "duckdb"
+                        "name": "duckdbwasm"
                       },
                       "spec": {
-                        "format": 1,
-                        "rawSql": "WITH raw AS (\n  SELECT row_number() OVER () AS n, path, timestamps, timestamps[1] AS t_start, timestamps[-1] AS t_end\n  FROM read_json('https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/trips/trips-v7.json',\n                 maximum_object_size = 100000000)\n  WHERE len(path) >= 2 AND len(path) = len(timestamps)\n),\npts AS (SELECT n, unnest(path) AS p, generate_subscripts(path, 1) AS i FROM raw),\nlegs AS (\n  SELECT coalesce(ST_Distance_Sphere(ST_Point(p[2], p[1]),\n                  ST_Point(lag(p[2]) OVER w, lag(p[1]) OVER w)), 0) AS leg_m\n  FROM pts WINDOW w AS (PARTITION BY n ORDER BY i)\n),\nclock AS (SELECT unnest(range(0, 2490, 10)) AS s)\nSELECT (SELECT count(*) FROM raw)                                   AS \"Trips\",\n       (SELECT sum(len(path))::BIGINT FROM raw)                     AS \"GPS points\",\n       (SELECT round(sum(leg_m) / 1000) FROM legs)                  AS \"Km driven\",\n       (SELECT round(median(t_end - t_start) / 60, 1) FROM raw)     AS \"Median trip, min\",\n       (SELECT max(c) FROM (SELECT count(*) AS c FROM clock JOIN raw ON s BETWEEN t_start AND t_end GROUP BY s)) AS \"Most taxis at once\""
+                        "rawSql": "WITH w AS (\n  SELECT coalesce(try_cast($t_lo AS DOUBLE), '-infinity'::DOUBLE) AS lo,\n         coalesce(try_cast($t_hi AS DOUBLE), 'infinity'::DOUBLE) AS hi\n),\n-- Every trip on the road at some moment of the window.\nsel AS (SELECT t.* FROM $trips t, w WHERE t.t_end >= w.lo AND t.t_start <= w.hi),\nclock AS (SELECT s FROM (SELECT unnest(range(0, 2490, 10)) AS s), w WHERE s BETWEEN w.lo AND w.hi)\nSELECT count(*)                                  AS \"Trips\",\n       coalesce(sum(points), 0)::BIGINT          AS \"GPS points\",\n       coalesce(round(sum(km)), 0)               AS \"Km driven\",\n       round(median(t_end - t_start) / 60, 1)    AS \"Median trip, min\",\n       (SELECT coalesce(max(c), 0) FROM (SELECT count(*) AS c FROM clock JOIN sel ON s BETWEEN t_start AND t_end GROUP BY s))\n                                                 AS \"Most taxis at once\"\nFROM sel"
                       }
-                    },
-                    "refId": "A",
-                    "hidden": false
+                    }
                   }
                 }
               ],
@@ -181,39 +180,37 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "refId": "A",
+                    "hidden": false,
                     "query": {
                       "kind": "DataQuery",
-                      "group": "motherduck-duckdb-datasource",
+                      "group": "ubica-chaski-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "duckdb"
+                        "name": "duckdbwasm"
                       },
                       "spec": {
-                        "format": 1,
-                        "rawSql": "-- deck.gl's own trips example: 996 yellow-cab journeys in Lower Manhattan,\n-- read where it lives. Timestamps are seconds from an unnamed start; they are\n-- pinned here to midnight UTC on 1 January 2026, the zone kepler's clock\n-- shows, so it reads 00:00 to 00:41.\nWITH raw AS (\n  SELECT row_number() OVER () AS n, vendor, path, timestamps\n  FROM read_json('https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/trips/trips-v7.json',\n                 maximum_object_size = 100000000)\n  WHERE len(path) >= 2 AND len(path) = len(timestamps)\n),\npts AS (\n  SELECT n, vendor, timestamps[1] AS t_start, timestamps[-1] AS t_end,\n         unnest(path) AS p, unnest(timestamps) AS ts\n  FROM raw\n),\nlegs AS (\n  SELECT *,\n         -- Distance of each leg from the previous GPS point, for the per-trip total.\n         coalesce(ST_Distance_Sphere(ST_Point(p[2], p[1]),\n                  ST_Point(lag(p[2]) OVER w, lag(p[1]) OVER w)), 0) AS leg_m\n  FROM pts\n  WINDOW w AS (PARTITION BY n ORDER BY ts)\n)\nSELECT 'trip ' || n                                    AS trip_id,\n       'Vendor ' || vendor                             AS vendor,\n       to_timestamp(1767225600 + ts)                   AS time,\n       p[2]                                            AS latitude,\n       p[1]                                            AS longitude,\n       round(sum(leg_m) OVER (PARTITION BY n) / 1000, 2) AS trip_km,\n       round((t_end - t_start) / 60, 1)                AS trip_min\nFROM legs\nORDER BY n, ts"
+                        "rawSql": "-- Pinned to midnight UTC on 1 January 2026, the zone kepler's clock shows,\n-- so it reads 00:00 to 00:41.\nWITH w AS (\n  SELECT coalesce(try_cast($t_lo AS DOUBLE), '-infinity'::DOUBLE) AS lo,\n         coalesce(try_cast($t_hi AS DOUBLE), 'infinity'::DOUBLE) AS hi\n),\n-- Every trip on the road at some moment of the window.\nsel AS (SELECT t.* FROM $trips t, w WHERE t.t_end >= w.lo AND t.t_start <= w.hi),\npts AS (SELECT n, vendor, t_start, t_end, km, unnest(path) AS p, unnest(timestamps) AS ts FROM sel)\nSELECT 'trip ' || n                     AS trip_id,\n       'Vendor ' || vendor              AS vendor,\n       to_timestamp(1767225600 + ts)    AS time,\n       p[2]                             AS latitude,\n       p[1]                             AS longitude,\n       round(km, 2)                     AS trip_km,\n       round((t_end - t_start) / 60, 1) AS trip_min\nFROM pts\nORDER BY n, ts"
                       }
-                    },
-                    "refId": "A",
-                    "hidden": false
+                    }
                   }
                 },
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "refId": "B",
+                    "hidden": false,
                     "query": {
                       "kind": "DataQuery",
-                      "group": "motherduck-duckdb-datasource",
+                      "group": "ubica-chaski-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "duckdb"
+                        "name": "duckdbwasm"
                       },
                       "spec": {
-                        "format": 1,
-                        "rawSql": "-- The footprints and heights that ship beside the trips in deck.gl's example.\n-- Each ring is a bare list of [lng, lat]; closed here so it reads as WKT.\nWITH raw AS (\n  SELECT height, CASE WHEN polygon[1] = polygon[-1] THEN polygon\n                      ELSE list_append(polygon, polygon[1]) END AS ring\n  FROM read_json('https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/trips/buildings.json',\n                 maximum_object_size = 100000000)\n  WHERE len(polygon) >= 3\n)\nSELECT height AS height_m,\n       'POLYGON((' || array_to_string(list_transform(ring, c -> c[1] || ' ' || c[2]), ', ') || '))' AS geom\nFROM raw"
+                        "rawSql": "SELECT height_m, geom FROM $buildings"
                       }
-                    },
-                    "refId": "B",
-                    "hidden": false
+                    }
                   }
                 }
               ],
@@ -536,7 +533,7 @@
         "spec": {
           "id": 4,
           "title": "Taxis on the road",
-          "description": "Cabs mid-trip at each moment, counted every ten seconds.",
+          "description": "Cabs mid-trip at each moment, counted every ten seconds. Drag across it to keep only the trips on the road in that window; the toolbar at the top right clears it.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -545,20 +542,19 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "refId": "A",
+                    "hidden": false,
                     "query": {
                       "kind": "DataQuery",
-                      "group": "motherduck-duckdb-datasource",
+                      "group": "ubica-chaski-datasource",
                       "version": "v0",
                       "datasource": {
-                        "name": "duckdb"
+                        "name": "duckdbwasm"
                       },
                       "spec": {
-                        "format": 1,
-                        "rawSql": "-- How many cabs are mid-trip at each moment, every ten seconds, by vendor.\nWITH raw AS (\n  SELECT vendor, timestamps[1] AS t_start, timestamps[-1] AS t_end\n  FROM read_json('https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/trips/trips-v7.json',\n                 maximum_object_size = 100000000)\n  WHERE len(path) >= 2 AND len(path) = len(timestamps)\n),\nclock AS (SELECT unnest(range(0, 2490, 10)) AS s)\nSELECT to_timestamp(1767225600 + s)              AS time,\n       count(*) FILTER (WHERE raw.vendor = 0)    AS \"Vendor 0\",\n       count(*) FILTER (WHERE raw.vendor = 1)    AS \"Vendor 1\"\nFROM clock LEFT JOIN raw ON s BETWEEN t_start AND t_end\nGROUP BY s\nORDER BY s"
+                        "rawSql": "-- How many cabs are mid-trip at each moment, every ten seconds, by vendor.\n-- Always the whole clock: the brush is drawn over it, not applied to it.\nWITH clock AS (SELECT unnest(range(0, 2490, 10)) AS s)\nSELECT s,\n       count(*) FILTER (WHERE t.vendor = 0) AS v0,\n       count(*) FILTER (WHERE t.vendor = 1) AS v1\nFROM clock LEFT JOIN $trips t ON s BETWEEN t.t_start AND t.t_end\nGROUP BY s\nORDER BY s"
                       }
-                    },
-                    "refId": "A",
-                    "hidden": false
+                    }
                   }
                 }
               ],
@@ -568,109 +564,17 @@
           },
           "vizConfig": {
             "kind": "VizConfig",
-            "group": "timeseries",
-            "version": "13.2.1",
+            "group": "volkovlabs-echarts-panel",
+            "version": "7.2.5",
             "spec": {
               "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "none"
-                }
+                "renderer": "canvas",
+                "editorMode": "code",
+                "getOption": "// Taxis on the road, and a brush that filters the rest of the dashboard.\n//\n// Dragging across the curve writes the selected window, in seconds of the\n// clock, to two dashboard variables (LO and HI); the map and the figures keep\n// only the trips on the road at some moment of it. The curve does not filter\n// itself: it keeps showing the whole half hour the window was cut from.\n// The query frame has columns `s` (seconds), `v0` and `v1` (cabs per vendor).\n// @constants begin\nconst LO = 't_lo';\nconst HI = 't_hi';\nconst STEP = 60;\nconst DOMAIN = [0, 2490];\nconst SERIES = [\n  { field: 'v0', name: 'Vendor 0', color: '#ffb03b' },\n  { field: 'v1', name: 'Vendor 1', color: '#38d6ff' },\n];\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\n\nconst frame = context.panel.data.series[0];\nconst column = (name) => (frame ? frame.fields.find((f) => f.name === name)?.values ?? [] : []);\nconst seconds = Array.from(column('s'), Number);\n\nconst clock = (s) => {\n  const m = Math.floor(s / 60);\n  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;\n};\n\n// Whole minutes only, and never an empty window.\n// The x axis is a category axis, one slot per ten-second sample: ECharts\n// stacks two value axes along x, not y. Brush ranges come and go as slots.\nconst TICK = 10;\nconst slot = (s) => Math.max(0, Math.min(seconds.length - 1, Math.round(s / TICK)));\nconst snap = (slots) => {\n  const lo = Math.max(DOMAIN[0], Math.floor((slots[0] * TICK) / STEP) * STEP);\n  const hi = Math.min(DOMAIN[1], Math.max(Math.ceil((slots[1] * TICK) / STEP) * STEP, lo + STEP));\n  return [lo, hi];\n};\nconst drawBrush = (range) =>\n  chart.dispatchAction({\n    type: 'brush',\n    areas: range ? [{ brushType: 'lineX', xAxisIndex: 0, coordRange: [slot(range[0]), slot(range[1])] }] : [],\n  });\nconst publish = (range) => {\n  location.partial({ ['var-' + LO]: range ? String(range[0]) : '', ['var-' + HI]: range ? String(range[1]) : '' }, true);\n};\n\nchart.off('brushEnd');\nchart.off('brush');\nchart.on('brushEnd', (event) => {\n  const area = event.areas[0];\n  if (!area || !area.coordRange) {\n    publish(undefined);\n    return;\n  }\n  const range = snap(area.coordRange);\n  publish(range);\n  setTimeout(() => drawBrush(range), 0);\n});\nchart.on('brush', (event) => {\n  if (event.command === 'clear') {\n    publish(undefined);\n  }\n});\n\n// Every redraw wipes the brush: draw it back from the variables, which is\n// also how a shared link arrives with its window.\nconst current = [\n  parseFloat(context.grafana.replaceVariables('${' + LO + '}')),\n  parseFloat(context.grafana.replaceVariables('${' + HI + '}')),\n];\nsetTimeout(() => {\n  chart.dispatchAction({ type: 'takeGlobalCursor', key: 'brush', brushOption: { brushType: 'lineX', brushMode: 'single' } });\n  if (current.every(Number.isFinite)) {\n    drawBrush(current);\n  }\n}, 0);\n\nconst muted = theme.colors.text.secondary;\n\nreturn {\n  animation: false,\n  grid: { left: 8, right: 16, top: 30, bottom: 44, containLabel: true },\n  legend: { bottom: 0, left: 0, icon: 'rect', itemWidth: 14, itemHeight: 3, textStyle: { color: muted } },\n  tooltip: {\n    trigger: 'axis',\n    formatter: (items) => {\n      const rows = items.map((it) => `${it.marker}${it.seriesName}: <b>${it.value}</b>`).join('<br/>');\n      return `${clock(Number(items[0].axisValue))}<br/>${rows}`;\n    },\n  },\n  toolbox: {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: { brush: { type: ['lineX', 'clear'], title: { lineX: 'Select a window', clear: 'Clear the filter' } } },\n  },\n  brush: {\n    xAxisIndex: 0,\n    brushType: 'lineX',\n    brushMode: 'single',\n    transformable: true,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.14)', borderColor: muted, borderWidth: 1 },\n  },\n  xAxis: {\n    type: 'category',\n    data: seconds,\n    boundaryGap: false,\n    axisTick: { show: false },\n    axisLabel: { color: muted, interval: (i, s) => Number(s) % 300 === 0, formatter: (s) => clock(Number(s)) },\n  },\n  yAxis: { type: 'value', name: 'taxis', nameTextStyle: { color: muted }, axisLabel: { color: muted }, splitLine: { lineStyle: { opacity: 0.15 } } },\n  series: SERIES.map((s) => {\n    const values = Array.from(column(s.field), Number);\n    return {\n      name: s.name,\n      type: 'line',\n      stack: 'taxis',\n      smooth: true,\n      showSymbol: false,\n      lineStyle: { width: 2, color: s.color },\n      itemStyle: { color: s.color },\n      areaStyle: {\n        color: {\n          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,\n          colorStops: [{ offset: 0, color: s.color + '55' }, { offset: 1, color: s.color + '05' }],\n        },\n      },\n      data: values,\n    };\n  }),\n};\n"
               },
               "fieldConfig": {
-                "defaults": {
-                  "unit": "none",
-                  "decimals": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "taxis",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 18,
-                    "gradientMode": "opacity",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "smooth",
-                    "lineWidth": 2,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "normal"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  }
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Vendor 0"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#ffb03b",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Vendor 1"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#38d6ff",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  }
-                ]
+                "defaults": {},
+                "overrides": []
               }
             }
           }
@@ -765,7 +669,106 @@
       "fiscalYearStartMonth": 0
     },
     "title": "Lower Manhattan in motion",
-    "variables": [],
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "trips",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "refresh": "onDashboardLoad",
+          "skipUrlSync": true,
+          "query": {
+            "kind": "DataQuery",
+            "group": "ubica-chaski-datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "spec": {
+              "refId": "trips",
+              "kind": "dataset",
+              "name": "trips",
+              "source": {
+                "type": "sql",
+                "sql": "-- deck.gl's own trips example, read once into the viewer's browser: one row\n-- per trip. Timestamps are seconds from an unnamed start.\nWITH raw AS (\n  SELECT row_number() OVER () AS n, vendor::INTEGER AS vendor, path, timestamps\n  FROM read_json('https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/trips/trips-v7.json', maximum_object_size = 100000000)\n  WHERE len(path) >= 2 AND len(path) = len(timestamps)\n),\npts AS (SELECT n, unnest(path) AS p, generate_subscripts(path, 1) AS i FROM raw),\nprev AS (\n  SELECT n, radians(p[2]) AS lat, radians(p[1]) AS lng,\n         radians(lag(p[2]) OVER w) AS lat0, radians(lag(p[1]) OVER w) AS lng0\n  FROM pts WINDOW w AS (PARTITION BY n ORDER BY i)\n),\n-- Haversine by hand, on the radius ST_Distance_Sphere uses: calling that would\n-- make the browser fetch the spatial extension, seconds for one column.\nkm AS (\n  SELECT n, sum(coalesce(2 * 6371.0088 * asin(sqrt(\n           power(sin((lat - lat0) / 2), 2) + cos(lat0) * cos(lat) * power(sin((lng - lng0) / 2), 2))), 0)) AS km\n  FROM prev GROUP BY n\n)\nSELECT raw.n, vendor, path, timestamps,\n       timestamps[1]::DOUBLE AS t_start, timestamps[-1]::DOUBLE AS t_end,\n       len(path) AS points, km.km\nFROM raw JOIN km USING (n)"
+              }
+            }
+          },
+          "regex": "",
+          "sort": "disabled",
+          "options": [],
+          "multi": false,
+          "includeAll": false,
+          "allowCustomValue": true
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "buildings",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "refresh": "onDashboardLoad",
+          "skipUrlSync": true,
+          "query": {
+            "kind": "DataQuery",
+            "group": "ubica-chaski-datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "spec": {
+              "refId": "buildings",
+              "kind": "dataset",
+              "name": "buildings",
+              "source": {
+                "type": "sql",
+                "sql": "-- The footprints and heights that ship beside the trips in deck.gl's example.\n-- Each ring is a bare list of [lng, lat]; closed here so it reads as WKT.\nWITH raw AS (\n  SELECT height, CASE WHEN polygon[1] = polygon[-1] THEN polygon\n                      ELSE list_append(polygon, polygon[1]) END AS ring\n  FROM read_json('https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/trips/buildings.json', maximum_object_size = 100000000)\n  WHERE len(polygon) >= 3\n)\nSELECT height AS height_m,\n       'POLYGON((' || array_to_string(list_transform(ring, c -> c[1] || ' ' || c[2]), ', ') || '))' AS geom\nFROM raw"
+              }
+            }
+          },
+          "regex": "",
+          "sort": "disabled",
+          "options": [],
+          "multi": false,
+          "includeAll": false,
+          "allowCustomValue": true
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "name": "t_lo",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "query": "",
+          "hide": "hideVariable",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "name": "t_hi",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "query": "",
+          "hide": "hideVariable",
+          "skipUrlSync": false
+        }
+      }
+    ],
     "description": "deck.gl's taxi-trips example replayed over lit 3D buildings of Lower Manhattan."
   }
 }
