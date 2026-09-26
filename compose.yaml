@@ -4,7 +4,12 @@ name: pacha
 
 services:
   grafana:
-    build: images/grafana
+    build:
+      context: images/grafana
+      args:
+        # release: the pinned version in the Dockerfile. edge: main of the
+        # Kepler repo, as its CI last published it. See .env.example.
+        KEPLER_PANEL_CHANNEL: ${KEPLER_PANEL_CHANNEL:-release}
     image: ghcr.io/ubica-ecuador/pacha-grafana:${STACK_VERSION:-dev}
     environment:
       GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}

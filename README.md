@@ -41,6 +41,12 @@ starts. The dashboards read their data where it is published.
 KEPLER_DIST=../kepler-grafana/dist docker compose -f compose.yaml -f compose.dev.yaml up --wait
 ```
 
+To bake main of the Kepler repo into the image instead of its pinned release,
+set `KEPLER_PANEL_CHANNEL=edge` in `.env` and run `docker compose up -d --build --wait`.
+Every push to Kepler's main is published as its `edge` pre-release; building
+again picks up the latest. Grafana's plugin page then shows a version like
+`1.0.1-edge.072fa31`, the commit that runs.
+
 ## Tests
 
 ```bash

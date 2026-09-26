@@ -11,11 +11,16 @@
 # Every version is an ARG here and a label on the image. Plugins taken from a
 # GitHub release are checked against a sha256: a new version fails the build
 # until its hash moves with it.
+# The one exception is Kepler's edge channel (KEPLER_PANEL_CHANNEL=edge), which
+# follows main of its repo on purpose.
 
 ARG GRAFANA_EDITION=grafana-enterprise
 ARG GRAFANA_VERSION=13.2.1
 ARG KEPLER_PANEL_VERSION=1.0.1
 ARG KEPLER_PANEL_SHA256=e7529cbf661c7e11e9b792ddb585702fd5b8cb83287960ac6fb3f9b0e73adaee
+# release: the version above. edge: main of the Kepler repo, as its CI last
+# published it; not pinned, see the kepler-edge stage.
+ARG KEPLER_PANEL_CHANNEL=release
 ARG CHASKI_VERSION=1.0.0
 ARG CHASKI_SHA256=07529a4db780b857141e954f166264691685b5f42986881a16c85b3cc1be3974
 ARG DUCKDB_DS_VERSION=0.4.5
@@ -30,24 +35,48 @@ ARG BUSINESS_CHARTS_VERSION=7.2.5
 ARG BUSINESS_TABLE_VERSION=3.6.8
 ARG BUSINESS_VARIABLE_VERSION=5.2.0
 
-# --- The three plugins that come from GitHub releases, unsigned. ---
-FROM alpine:3.20 AS fetch
-ARG TARGETARCH
+# --- The Kepler panel, from the channel KEPLER_PANEL_CHANNEL names. ---
+FROM alpine:3.20 AS kepler-release
 ARG KEPLER_PANEL_VERSION
 ARG KEPLER_PANEL_SHA256
+RUN apk add --no-cache curl unzip
+WORKDIR /fetch
+RUN curl -fsSLo kepler.zip "https://github.com/ubica-ecuador/keplergl-grafana-panel/releases/download/v${KEPLER_PANEL_VERSION}/ubica-keplergl-panel-${KEPLER_PANEL_VERSION}.zip" \
+ && echo "${KEPLER_PANEL_SHA256}  kepler.zip" | sha256sum -c - \
+ && mkdir /plugins \
+ && unzip -q kepler.zip -d /plugins
+
+# The Kepler repo's CI publishes every push to main as the pre-release `edge`,
+# with a .sha256 beside the zip. Not pinned, on purpose. ADD fetches the .sha256
+# at every build and keys the cache on its content, so the download below
+# reruns exactly when edge has moved.
+FROM alpine:3.20 AS kepler-edge
+RUN apk add --no-cache curl unzip
+WORKDIR /fetch
+ADD https://github.com/ubica-ecuador/keplergl-grafana-panel/releases/download/edge/ubica-keplergl-panel-edge.zip.sha256 .
+RUN curl -fsSLO "https://github.com/ubica-ecuador/keplergl-grafana-panel/releases/download/edge/ubica-keplergl-panel-edge.zip" \
+ && sha256sum -c ubica-keplergl-panel-edge.zip.sha256 \
+ && mkdir /plugins \
+ && unzip -q ubica-keplergl-panel-edge.zip -d /plugins
+
+# BuildKit builds only the stage this names.
+FROM kepler-${KEPLER_PANEL_CHANNEL} AS kepler
+
+# --- The other two plugins that come from GitHub releases, unsigned. ---
+FROM alpine:3.20 AS fetch
+ARG TARGETARCH
 ARG CHASKI_VERSION
 ARG CHASKI_SHA256
 ARG DUCKDB_DS_VERSION
 ARG DUCKDB_DS_SHA256
 RUN apk add --no-cache curl unzip
 WORKDIR /fetch
-RUN curl -fsSLo kepler.zip "https://github.com/ubica-ecuador/keplergl-grafana-panel/releases/download/v${KEPLER_PANEL_VERSION}/ubica-keplergl-panel-${KEPLER_PANEL_VERSION}.zip" \
- && curl -fsSLo chaski.zip "https://github.com/ubica-ecuador/chaski/releases/download/v${CHASKI_VERSION}/ubica-chaski-datasource-${CHASKI_VERSION}.zip" \
+RUN curl -fsSLo chaski.zip "https://github.com/ubica-ecuador/chaski/releases/download/v${CHASKI_VERSION}/ubica-chaski-datasource-${CHASKI_VERSION}.zip" \
  && curl -fsSLo duckdb.zip "https://github.com/motherduckdb/grafana-duckdb-datasource/releases/download/v${DUCKDB_DS_VERSION}/motherduck-duckdb-datasource-${DUCKDB_DS_VERSION}.zip" \
- && printf '%s  kepler.zip\n%s  chaski.zip\n%s  duckdb.zip\n' \
-      "${KEPLER_PANEL_SHA256}" "${CHASKI_SHA256}" "${DUCKDB_DS_SHA256}" | sha256sum -c - \
+ && printf '%s  chaski.zip\n%s  duckdb.zip\n' "${CHASKI_SHA256}" "${DUCKDB_DS_SHA256}" | sha256sum -c - \
  && mkdir /plugins \
- && for zip in kepler chaski duckdb; do unzip -q "${zip}.zip" -d /plugins; done
+ && for zip in chaski duckdb; do unzip -q "${zip}.zip" -d /plugins; done
+COPY --from=kepler /plugins/ubica-keplergl-panel /plugins/ubica-keplergl-panel
 # The DuckDB zip carries an 80 MB engine for each of five platforms; keep ours.
 RUN find /plugins/motherduck-duckdb-datasource -name 'gpx_*' \
       ! -name "gpx_duckdb_datasource_linux_${TARGETARCH}" -delete \
@@ -80,6 +109,7 @@ FROM grafana/${GRAFANA_EDITION}:${GRAFANA_VERSION}-ubuntu
 ARG GRAFANA_EDITION
 ARG GRAFANA_VERSION
 ARG KEPLER_PANEL_VERSION
+ARG KEPLER_PANEL_CHANNEL
 ARG CHASKI_VERSION
 ARG DUCKDB_DS_VERSION
 ARG DUCKDB_ENGINE_VERSION
@@ -135,6 +165,7 @@ LABEL org.opencontainers.image.title="pacha-grafana" \
       org.opencontainers.image.source="https://github.com/ubica-ecuador/pacha" \
       io.pacha.grafana.version="${GRAFANA_EDITION}:${GRAFANA_VERSION}" \
       io.pacha.kepler-panel.version="${KEPLER_PANEL_VERSION}" \
+      io.pacha.kepler-panel.channel="${KEPLER_PANEL_CHANNEL}" \
       io.pacha.chaski.version="${CHASKI_VERSION}" \
       io.pacha.duckdb-datasource.version="${DUCKDB_DS_VERSION}" \
       io.pacha.duckdb-engine.version="${DUCKDB_ENGINE_VERSION}" \

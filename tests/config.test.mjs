@@ -26,3 +26,14 @@ test('bake builds the image names compose runs', () => {
   assert.deepEqual(bake.target.grafana.tags, [config.services.grafana.image]);
   assert.deepEqual(bake.target.titiler.tags, [config.services.titiler.image]);
 });
+
+// --env-file /dev/null: a developer's own .env may well say edge.
+test('Grafana bakes the release Kepler unless KEPLER_PANEL_CHANNEL says otherwise', () => {
+  const env = { ...process.env };
+  delete env.KEPLER_PANEL_CHANNEL;
+  const channel = (extra = {}) =>
+    JSON.parse(compose(['--env-file', '/dev/null', 'config', '--format', 'json'], { env: { ...env, ...extra } }))
+      .services.grafana.build.args?.KEPLER_PANEL_CHANNEL;
+  assert.equal(channel(), 'release');
+  assert.equal(channel({ KEPLER_PANEL_CHANNEL: 'edge' }), 'edge');
+});
