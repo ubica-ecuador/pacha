@@ -76,7 +76,6 @@ RUN curl -fsSLo chaski.zip "https://github.com/ubica-ecuador/chaski/releases/dow
  && printf '%s  chaski.zip\n%s  duckdb.zip\n' "${CHASKI_SHA256}" "${DUCKDB_DS_SHA256}" | sha256sum -c - \
  && mkdir /plugins \
  && for zip in chaski duckdb; do unzip -q "${zip}.zip" -d /plugins; done
-COPY --from=kepler /plugins/ubica-keplergl-panel /plugins/ubica-keplergl-panel
 # The DuckDB zip carries an 80 MB engine for each of five platforms; keep ours.
 RUN find /plugins/motherduck-duckdb-datasource -name 'gpx_*' \
       ! -name "gpx_duckdb_datasource_linux_${TARGETARCH}" -delete \
@@ -130,6 +129,9 @@ RUN for plugin in \
       grafana cli --pluginsDir /opt/pacha/plugins plugins install ${plugin} || exit 1; \
     done \
  && chown -R 472:0 /opt/pacha/plugins
+# Kepler last among the plugin steps: it's the one that moves on every edge
+# build, so a new edge rebuilds only this layer, not the ones above it.
+COPY --from=kepler --chown=472:0 /plugins/ubica-keplergl-panel /opt/pacha/plugins/ubica-keplergl-panel
 USER 472
 
 # - Anonymous visitors see dashboards and change nothing.
