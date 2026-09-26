@@ -37,3 +37,10 @@ test('Grafana bakes the release Kepler unless KEPLER_PANEL_CHANNEL says otherwis
   assert.equal(channel(), 'release');
   assert.equal(channel({ KEPLER_PANEL_CHANNEL: 'edge' }), 'edge');
 });
+
+// bake is what publishes images to GHCR (P3): those must never bake edge, no
+// matter what a developer's own KEPLER_PANEL_CHANNEL says.
+test('bake always builds the release Kepler, whatever KEPLER_PANEL_CHANNEL says', () => {
+  const bake = JSON.parse(sh('docker', ['buildx', 'bake', '--print'], { env: { ...process.env, KEPLER_PANEL_CHANNEL: 'edge' } }));
+  assert.equal(bake.target.grafana.args.KEPLER_PANEL_CHANNEL, 'release');
+});

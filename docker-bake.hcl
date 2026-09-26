@@ -18,6 +18,9 @@ target "grafana" {
   context = "images/grafana"
   tags    = ["${REGISTRY}/pacha-grafana:${STACK_VERSION}"]
   labels  = { "org.opencontainers.image.version" = STACK_VERSION }
+  # Published images always bake the pinned release; KEPLER_PANEL_CHANNEL is
+  # for `docker compose build` only.
+  args    = { KEPLER_PANEL_CHANNEL = "release" }
 }
 
 target "titiler" {
