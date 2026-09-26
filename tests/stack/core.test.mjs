@@ -66,16 +66,22 @@ test('the tiler is served under /titiler with the prefix taken off', async () =>
 test('on a network shared with other stacks, the gateway still reaches its own Grafana and tiler', async (t) => {
   const net = 'aaa-pacha-decoys'; // sorts before pacha_default
   const gateway = compose(['ps', '-q', 'gateway']);
-  sh('docker', ['network', 'create', net]);
-  const decoys = ['titiler', 'grafana'].map((alias) =>
-    sh('docker', ['run', '-d', '--rm', '--network', net, '--network-alias', alias, 'nginx:1.27-alpine']));
+  const decoys = []; // container ids, filled in as each one starts
   t.after(async () => {
     try { sh('docker', ['network', 'disconnect', net, gateway]); } catch {}
     for (const id of decoys) try { sh('docker', ['rm', '-f', id]); } catch {}
-    sh('docker', ['network', 'rm', net]);
+    try { sh('docker', ['network', 'rm', net]); } catch {}
     compose(['restart', 'gateway']);
     await waitFor(healthy, { what: 'gateway after the decoys' });
   });
+  // A crashed earlier run can leave this network behind; clear it before
+  // creating it. If it's still held by containers from that run, the create
+  // below fails and that's the error the test reports — no extra machinery.
+  try { sh('docker', ['network', 'rm', net]); } catch {}
+  sh('docker', ['network', 'create', net]);
+  for (const alias of ['titiler', 'grafana']) {
+    decoys.push(sh('docker', ['run', '-d', '--rm', '--network', net, '--network-alias', alias, 'nginx:1.27-alpine']));
+  }
   sh('docker', ['network', 'connect', net, gateway]);
   // A restart drops nginx's cached lookups (valid=30s): what follows resolves anew.
   compose(['restart', 'gateway']);
