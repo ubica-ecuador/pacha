@@ -88,6 +88,7 @@ test('safe defaults, and plugins and DuckDB home outside /var/lib/grafana', () =
 test('versions are exposed as image labels', () => {
   const labels = JSON.parse(sh('docker', ['image', 'inspect', '--format', '{{json .Config.Labels}}', IMAGE]));
   assert.equal(labels['io.pacha.kepler-panel.version'], '1.0.1');
+  assert.equal(labels['io.pacha.kepler-panel.channel'], 'release');
   assert.equal(labels['io.pacha.chaski.version'], '1.0.0');
   assert.equal(labels['io.pacha.duckdb-datasource.version'], '0.4.5');
   assert.equal(labels['io.pacha.duckdb-engine.version'], '1.5.4');

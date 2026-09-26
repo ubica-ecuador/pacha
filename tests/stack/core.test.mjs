@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { compose, waitFor } from '../lib/docker.mjs';
+import { compose, sh, waitFor } from '../lib/docker.mjs';
 import { api, basicAuth, duckdb, rawGet } from '../lib/grafana.mjs';
 import { STACK_URL } from '../lib/stack.mjs';
 
@@ -58,6 +58,38 @@ test('the tiler is served under /titiler with the prefix taken off', async () =>
   // verified in tests/images/titiler.test.mjs).
   const doc = await (await fetch(`${STACK_URL}/titiler/api`)).json();
   assert.equal(doc.servers?.[0]?.url, '/titiler');
+});
+
+// grafana.ubica.ec and pacha.ubica.dev put the gateway on their reverse
+// proxy's network too, where `titiler` already names another stack's tiler.
+// The decoys are plain nginx: they answer 404 where Grafana and TiTiler answer.
+test('on a network shared with other stacks, the gateway still reaches its own Grafana and tiler', async (t) => {
+  const net = 'aaa-pacha-decoys'; // sorts before pacha_default
+  const gateway = compose(['ps', '-q', 'gateway']);
+  const decoys = []; // container ids, filled in as each one starts
+  t.after(async () => {
+    try { sh('docker', ['network', 'disconnect', net, gateway]); } catch {}
+    for (const id of decoys) try { sh('docker', ['rm', '-f', id]); } catch {}
+    try { sh('docker', ['network', 'rm', net]); } catch {}
+    compose(['restart', 'gateway']);
+    await waitFor(healthy, { what: 'gateway after the decoys' });
+  });
+  // A crashed earlier run can leave this network behind; clear it before
+  // creating it. If it's still held by containers from that run, the create
+  // below fails and that's the error the test reports — no extra machinery.
+  try { sh('docker', ['network', 'rm', net]); } catch {}
+  sh('docker', ['network', 'create', net]);
+  for (const alias of ['titiler', 'grafana']) {
+    decoys.push(sh('docker', ['run', '-d', '--rm', '--network', net, '--network-alias', alias, 'nginx:1.27-alpine']));
+  }
+  sh('docker', ['network', 'connect', net, gateway]);
+  // A restart drops nginx's cached lookups (valid=30s): what follows resolves anew.
+  compose(['restart', 'gateway']);
+  await waitFor(healthy, { what: 'gateway on the decoy network' });
+  for (let i = 0; i < 5; i++) {
+    assert.equal((await fetch(`${STACK_URL}/titiler/healthz`)).status, 200);
+    assert.equal((await fetch(`${STACK_URL}/api/health`)).status, 200);
+  }
 });
 
 test('Grafana Live upgrades to a websocket through the gateway', async () => {

@@ -4,7 +4,12 @@ name: pacha
 
 services:
   grafana:
-    build: images/grafana
+    build:
+      context: images/grafana
+      args:
+        # release: the pinned version in the Dockerfile. edge: main of the
+        # Kepler repo, as its CI last published it. See .env.example.
+        KEPLER_PANEL_CHANNEL: ${KEPLER_PANEL_CHANNEL:-release}
     image: ghcr.io/ubica-ecuador/pacha-grafana:${STACK_VERSION:-dev}
     environment:
       GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
@@ -19,6 +24,10 @@ services:
       - grafana-data:/var/lib/grafana
       - ./provisioning:/etc/grafana/provisioning:ro
       - ./dashboards:/var/lib/pacha/dashboards:ro
+    networks:
+      default:
+        # The gateway's name for Grafana; see gateway/default.conf.
+        aliases: [pacha-grafana]
     healthcheck:
       test: ['CMD', 'curl', '-fsS', 'http://localhost:3000/api/health']
       interval: 5s
@@ -51,6 +60,10 @@ services:
       GDAL_BAND_BLOCK_CACHE: 'HASHSET'
       VSI_CACHE: 'TRUE'
       VSI_CACHE_SIZE: '5000000'
+    networks:
+      default:
+        # The gateway's name for the tiler. DuckDB keeps calling http://titiler/.
+        aliases: [pacha-titiler]
     healthcheck:
       # Ready once the GFS preload has been tried (see /readyz).
       test: ['CMD', 'curl', '-fsS', 'http://localhost/readyz']

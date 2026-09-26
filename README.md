@@ -41,6 +41,15 @@ starts. The dashboards read their data where it is published.
 KEPLER_DIST=../kepler-grafana/dist docker compose -f compose.yaml -f compose.dev.yaml up --wait
 ```
 
+To bake main of the Kepler repo into the image instead of its pinned release,
+set `KEPLER_PANEL_CHANNEL=edge` in `.env` and run `docker compose up -d --build --wait`.
+Every push to Kepler's main is published as its `edge` pre-release; building
+again picks up the latest. Grafana's plugin page then shows a version like
+`1.0.1-edge.072fa31`, the commit that runs. Edge is not pinned: each rebuild can
+bring in a newer commit. To go back to the pinned release, remove the
+`KEPLER_PANEL_CHANNEL` line and rebuild. Either way, the previous image is left
+dangling on disk; `docker image prune -f` clears it.
+
 ## Tests
 
 ```bash
@@ -49,6 +58,9 @@ npm run test:config
 docker compose build && npm run test:images
 docker compose up --wait && npm run test:stack
 ```
+
+The image tests expect the release channel; unset `KEPLER_PANEL_CHANNEL` (or remove it from `.env`)
+before running them.
 
 ## License
 
