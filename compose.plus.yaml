@@ -1,0 +1,35 @@
+# Overlay: Kepler Geospatial Maps Plus, a local build of the closed-source
+# keplergl-grafana-plus-panel repo, mounted beside the baked plugins. Never
+# baked into the published images.
+#
+#   PLUS_DIST=../keplergl-grafana-plus-panel/dist docker compose -f compose.yaml -f compose.plus.yaml up --wait
+#
+# Or, to keep it on with a plain `docker compose up`, in .env:
+#   PLUS_DIST=../keplergl-grafana-plus-panel/dist
+#   COMPOSE_FILE=compose.yaml:compose.plus.yaml
+#
+# PLUS_DIST is required: a bind mount of a path that does not exist would
+# mount an empty folder, and the app would silently disappear.
+services:
+  grafana:
+    environment:
+      # Replaces the image's list (see images/grafana/Dockerfile): repeat it,
+      # plus the app and the panel it nests.
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: ubica-keplergl-panel,ubica-chaski-datasource,motherduck-duckdb-datasource,ubica-keplerplus-app,ubica-keplerplus-panel
+    volumes:
+      - type: bind
+        source: ${PLUS_DIST:?set PLUS_DIST to the Plus app's dist/ folder}
+        target: /opt/pacha/plugins/ubica-keplerplus-app
+        read_only: true
+      - type: bind
+        source: ./plus/provisioning-plugins
+        target: /etc/grafana/provisioning/plugins
+        read_only: true
+      - type: bind
+        source: ./plus/provisioning-dashboards/plus.yaml
+        target: /etc/grafana/provisioning/dashboards/plus.yaml
+        read_only: true
+      - type: bind
+        source: ./plus/dashboards
+        target: /var/lib/pacha/plus-dashboards
+        read_only: true

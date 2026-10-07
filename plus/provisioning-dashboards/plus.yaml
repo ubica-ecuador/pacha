@@ -1,0 +1,17 @@
+# The dashboards that need Kepler Plus; compose.plus.yaml mounts this file over
+# provisioning/dashboards/plus.yaml. Kept out of dashboards/ so the stack
+# without Plus never shows a dashboard whose panels it cannot draw.
+#
+# allowUiUpdates: these dashboards can be saved from Grafana, to iterate on
+# them there. A save lives only in Grafana's database: export it into
+# plus/dashboards/ to keep it, since a change to the file overwrites it.
+apiVersion: 1
+
+providers:
+  - name: plus
+    folder: Plus
+    folderUid: plus
+    type: file
+    allowUiUpdates: true
+    options:
+      path: /var/lib/pacha/plus-dashboards

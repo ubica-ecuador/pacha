@@ -1,0 +1,8 @@
+# Enables the Plus app; compose.plus.yaml mounts this folder over
+# provisioning/plugins. Kept out of provisioning/ so the stack without Plus never
+# provisions an app it does not have.
+apiVersion: 1
+apps:
+  - type: ubica-keplerplus-app
+    org_id: 1
+    disabled: false

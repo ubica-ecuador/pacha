@@ -1,0 +1,1879 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2beta1",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "air-quality"
+  },
+  "spec": {
+    "title": "Air quality — Sensor.Community, live",
+    "description": "Particulate matter from Sensor.Community's citizen sensors, worldwide, reloaded every 5 minutes.",
+    "tags": [
+      "plus",
+      "chaski",
+      "kepler",
+      "live",
+      "air-quality"
+    ],
+    "links": [],
+    "annotations": [],
+    "cursorSync": "Crosshair",
+    "editable": true,
+    "liveNow": false,
+    "preload": false,
+    "timeSettings": {
+      "from": "now-2d/d",
+      "to": "now-1d/d",
+      "autoRefresh": "5m",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "hideTimepicker": false,
+      "fiscalYearStartMonth": 0,
+      "timezone": "utc"
+    },
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "sensors",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "refresh": "onTimeRangeChanged",
+          "skipUrlSync": true,
+          "query": {
+            "kind": "DataQuery",
+            "group": "ubica-chaski-datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "spec": {
+              "refId": "sensors",
+              "kind": "dataset",
+              "name": "sensors",
+              "source": {
+                "type": "sql",
+                "sql": "-- One row per outdoor sensor that measures particulate matter: its 24-hour\n-- mean and, when it reported in the last 5 minutes, its latest reading.\n-- P2 is PM2.5 and P1 is PM10, in µg/m³. Readings outside 0-500 µg/m³ are left\n-- out: a low-cost sensor in fog, or with a failing fan, reports thousands.\nWITH day AS (\n  SELECT\n    r.sensor.id AS sensor_id,\n    any_value(r.sensor.sensor_type.name) AS sensor_type,\n    any_value(r.location.country) AS country,\n    any_value(r.location.latitude::DOUBLE) AS latitude,\n    any_value(r.location.longitude::DOUBLE) AS longitude,\n    avg(try_cast(list_filter(r.sensordatavalues, lambda x: x.value_type = 'P2')[1].value AS DOUBLE)) AS pm25_24h,\n    avg(try_cast(list_filter(r.sensordatavalues, lambda x: x.value_type = 'P1')[1].value AS DOUBLE)) AS pm10_24h\n  FROM read_json('https://data.sensor.community/static/v2/data.24h.json') AS r\n  WHERE r.location.indoor::INTEGER = 0\n  GROUP BY 1\n),\nnow AS (\n  SELECT\n    r.sensor.id AS sensor_id,\n    max(r.timestamp::TIMESTAMP AT TIME ZONE 'UTC') AS time,\n    avg(try_cast(list_filter(r.sensordatavalues, lambda x: x.value_type = 'P2')[1].value AS DOUBLE)) AS pm25_now,\n    avg(try_cast(list_filter(r.sensordatavalues, lambda x: x.value_type = 'P1')[1].value AS DOUBLE)) AS pm10_now\n  FROM read_json('https://data.sensor.community/static/v2/data.dust.min.json') AS r\n  GROUP BY 1\n)\nSELECT\n  d.sensor_id, d.sensor_type, d.country, d.latitude, d.longitude,\n  round(d.pm25_24h, 1) AS pm25_24h,\n  round(d.pm10_24h, 1) AS pm10_24h,\n  n.time,\n  round(CASE WHEN n.pm25_now BETWEEN 0 AND 500 THEN n.pm25_now END, 1) AS pm25_now,\n  round(CASE WHEN n.pm10_now BETWEEN 0 AND 500 THEN n.pm10_now END, 1) AS pm10_now\nFROM day AS d LEFT JOIN now AS n USING (sensor_id)\nWHERE d.pm25_24h BETWEEN 0 AND 500\n  AND d.latitude BETWEEN -90 AND 90 AND d.longitude BETWEEN -180 AND 180\n  AND NOT (d.latitude = 0 AND d.longitude = 0)"
+              }
+            }
+          },
+          "regex": "",
+          "sort": "disabled",
+          "options": [],
+          "multi": false,
+          "includeAll": false,
+          "allowCustomValue": true
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "names",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "refresh": "onDashboardLoad",
+          "skipUrlSync": true,
+          "query": {
+            "kind": "DataQuery",
+            "group": "ubica-chaski-datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "spec": {
+              "refId": "names",
+              "kind": "dataset",
+              "name": "names",
+              "source": {
+                "type": "sql",
+                "sql": "SELECT f.properties.ISO_A2_EH::VARCHAR AS code, f.properties.NAME_EN::VARCHAR AS name\nFROM read_json('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_110m_admin_0_countries.geojson'), unnest(features) AS t(f)\nWHERE f.properties.ISO_A2_EH::VARCHAR <> '-99'"
+              }
+            }
+          },
+          "regex": "",
+          "sort": "disabled",
+          "options": [],
+          "multi": false,
+          "includeAll": false,
+          "allowCustomValue": true
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "country",
+          "current": {
+            "text": "All",
+            "value": [
+              "$__all"
+            ]
+          },
+          "label": "Country",
+          "hide": "dontHide",
+          "refresh": "onDashboardLoad",
+          "skipUrlSync": false,
+          "query": {
+            "kind": "DataQuery",
+            "group": "ubica-chaski-datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "spec": {
+              "kind": "values",
+              "refId": "country",
+              "sql": "-- Value first, text second: the ISO code filters, the name shows.\nSELECT s.country, any_value(coalesce(n.name, s.country)) AS name\nFROM $sensors AS s LEFT JOIN $names AS n ON n.code = s.country\nGROUP BY s.country\nORDER BY name"
+            }
+          },
+          "regex": "",
+          "regexApplyTo": "value",
+          "sort": "disabled",
+          "options": [],
+          "multi": true,
+          "includeAll": true,
+          "allowCustomValue": false,
+          "allValue": "'__all__'"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "name": "area",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "query": "",
+          "hide": "hideVariable",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "name": "pm_lo",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "query": "",
+          "hide": "hideVariable",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "name": "pm_hi",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "query": "",
+          "hide": "hideVariable",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "name": "sensor",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "query": "",
+          "hide": "hideVariable",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "spark",
+          "current": {
+            "text": "All",
+            "value": [
+              "$__all"
+            ]
+          },
+          "label": "",
+          "hide": "hideVariable",
+          "refresh": "onTimeRangeChanged",
+          "skipUrlSync": true,
+          "query": {
+            "kind": "DataQuery",
+            "group": "ubica-chaski-datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "spec": {
+              "kind": "values",
+              "refId": "spark",
+              "sql": "-- Spread over the countries picked: their sensors' extent is cut into a\n-- 6 x 6 grid, and the cards go to the most polluted sensor of each cell\n-- first, then the second of each, and so on up to 20. The 20 most polluted\n-- alone tend to sit in one city, card over card.\nWITH c AS (\n  SELECT sensor_id, sensor_type, latitude, longitude, pm25_24h FROM $sensors\n  WHERE NOT '__all__' IN ($country) AND country IN ($country) AND pm25_now IS NOT NULL\n),\ngrid AS (\n  SELECT greatest(max(latitude) - min(latitude), max(longitude) - min(longitude), 0.1) / 6 AS size FROM c\n),\nranked AS (\n  SELECT c.*, row_number() OVER (\n    PARTITION BY floor(latitude / grid.size), floor(longitude / grid.size) ORDER BY pm25_24h DESC) AS rk\n  FROM c, grid\n)\nSELECT f FROM (\n  SELECT lower(sensor_type) || '_sensor_' || sensor_id AS f FROM ranked\n  ORDER BY rk, pm25_24h DESC LIMIT 20\n)\nUNION\nSELECT lower(sensor_type) || '_sensor_' || sensor_id FROM $sensors WHERE sensor_id::VARCHAR = $sensor"
+            }
+          },
+          "regex": "",
+          "regexApplyTo": "value",
+          "sort": "disabled",
+          "options": [],
+          "multi": true,
+          "includeAll": true,
+          "allowCustomValue": true
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "archive",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "refresh": "onTimeRangeChanged",
+          "skipUrlSync": true,
+          "query": {
+            "kind": "DataQuery",
+            "group": "ubica-chaski-datasource",
+            "version": "v0",
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "spec": {
+              "kind": "dataset",
+              "name": "archive",
+              "refId": "archive",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: each sensor's readings over the days picked in the time range,\n-- from Sensor.Community's archive, one CSV per sensor and day, published the\n-- day after. Read through the gateway's cache (feeds), and with http_get, which\n-- leaves out a day a sensor did not report (404) instead of failing the query.\n-- At most 7 days, never today (not archived yet). The columns differ by sensor\n-- type, so PM2.5 (P2) is found by name in each file's header. Half-hour means.\nWITH files AS (\n  SELECT f, strftime(d, '%Y-%m-%d') AS day\n  -- Cast: with no sensor picked the list is empty, and an empty list has no type.\n  FROM unnest(CAST([${spark:singlequote}] AS VARCHAR[])) AS s(f),\n       unnest(generate_series(\n         greatest(DATE '${__from:date:YYYY-MM-DD}', DATE '${__to:date:YYYY-MM-DD}' - INTERVAL 6 DAY),\n         least(DATE '${__to:date:YYYY-MM-DD}', current_date - 1),\n         INTERVAL 1 DAY)) AS t(d)\n  WHERE f LIKE '%_sensor_%'\n),\nfetched AS (\n  SELECT http_get('http://feeds/sensor-community/archive/' || day || '/' || day || '_' || f || '.csv') AS r FROM files\n),\nlines AS (\n  SELECT string_split(trim(r->>'body'), chr(10)) AS l FROM fetched WHERE (r->>'status') = '200'\n),\ncells AS (\n  SELECT list_position(string_split(l[1], ';'), 'P2') AS i, string_split(unnest(l[2:]), ';') AS c FROM lines\n)\nSELECT 'Sensor ' || c[1] AS name, c[1] AS sensor_id,\n       any_value(c[4]::DOUBLE) AS latitude, any_value(c[5]::DOUBLE) AS longitude,\n       time_bucket(INTERVAL 30 MINUTE, c[6]::TIMESTAMP) AS time,\n       round(avg(try_cast(c[i] AS DOUBLE)) FILTER (WHERE try_cast(c[i] AS DOUBLE) BETWEEN 0 AND 500), 1) AS pm25\nFROM cells\nWHERE len(c) >= 6 AND c[1] <> ''\nGROUP BY c[1], time_bucket(INTERVAL 30 MINUTE, c[6]::TIMESTAMP)\nORDER BY sensor_id, time",
+                  "refId": "archive"
+                },
+                "type": "datasource"
+              }
+            }
+          },
+          "regex": "",
+          "regexApplyTo": "value",
+          "sort": "disabled",
+          "options": [],
+          "multi": false,
+          "includeAll": false,
+          "allowCustomValue": true
+        }
+      }
+    ],
+    "elements": {
+      "panel-sensors": {
+        "kind": "Panel",
+        "spec": {
+          "id": 1,
+          "title": "Sensors",
+          "description": "Outdoor sensors with a 24-hour PM2.5 mean, within the area, country and range selected.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "WITH area AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n)\nSELECT count(*) AS \"Sensors\"\nFROM $sensors, area\nWHERE (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] > latitude) <> (area.ys[i % len(area.xs) + 1] > latitude)\n        AND longitude < (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\n  AND ('__all__' IN ($country) OR country IN ($country))\n  AND least(pm25_24h, 99.9) >= coalesce(try_cast($pm_lo AS DOUBLE), '-infinity'::DOUBLE)\n  AND least(pm25_24h, 99.9) < coalesce(try_cast($pm_hi AS DOUBLE), 'infinity'::DOUBLE)"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "",
+            "spec": {
+              "options": {
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "colorMode": "none",
+                "graphMode": "none",
+                "textMode": "value",
+                "justifyMode": "auto",
+                "orientation": "auto"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "decimals": 0
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-now": {
+        "kind": "Panel",
+        "spec": {
+          "id": 2,
+          "title": "Live now",
+          "description": "Of those, the sensors that sent a reading in the last 5 minutes.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "WITH area AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n)\nSELECT count(pm25_now) AS \"Live now\"\nFROM $sensors, area\nWHERE (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] > latitude) <> (area.ys[i % len(area.xs) + 1] > latitude)\n        AND longitude < (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\n  AND ('__all__' IN ($country) OR country IN ($country))\n  AND least(pm25_24h, 99.9) >= coalesce(try_cast($pm_lo AS DOUBLE), '-infinity'::DOUBLE)\n  AND least(pm25_24h, 99.9) < coalesce(try_cast($pm_hi AS DOUBLE), 'infinity'::DOUBLE)"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "",
+            "spec": {
+              "options": {
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "colorMode": "none",
+                "graphMode": "none",
+                "textMode": "value",
+                "justifyMode": "auto",
+                "orientation": "auto"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "decimals": 0
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-median": {
+        "kind": "Panel",
+        "spec": {
+          "id": 3,
+          "title": "Median 24 h",
+          "description": "The median sensor's 24-hour PM2.5 mean.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "WITH area AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n)\nSELECT median(pm25_24h) AS \"Median PM2.5\"\nFROM $sensors, area\nWHERE (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] > latitude) <> (area.ys[i % len(area.xs) + 1] > latitude)\n        AND longitude < (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\n  AND ('__all__' IN ($country) OR country IN ($country))\n  AND least(pm25_24h, 99.9) >= coalesce(try_cast($pm_lo AS DOUBLE), '-infinity'::DOUBLE)\n  AND least(pm25_24h, 99.9) < coalesce(try_cast($pm_hi AS DOUBLE), 'infinity'::DOUBLE)"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "",
+            "spec": {
+              "options": {
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "colorMode": "none",
+                "graphMode": "none",
+                "textMode": "value",
+                "justifyMode": "auto",
+                "orientation": "auto"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "conμgm3",
+                  "decimals": 1
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-who": {
+        "kind": "Panel",
+        "spec": {
+          "id": 4,
+          "title": "Meet WHO",
+          "description": "Share of sensors whose 24-hour PM2.5 mean is at or under 15 µg/m³, the WHO 2021 air quality guideline.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "WITH area AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n)\nSELECT avg(CASE WHEN pm25_24h <= 15 THEN 1.0 ELSE 0.0 END) AS \"Meet WHO\"\nFROM $sensors, area\nWHERE (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] > latitude) <> (area.ys[i % len(area.xs) + 1] > latitude)\n        AND longitude < (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\n  AND ('__all__' IN ($country) OR country IN ($country))\n  AND least(pm25_24h, 99.9) >= coalesce(try_cast($pm_lo AS DOUBLE), '-infinity'::DOUBLE)\n  AND least(pm25_24h, 99.9) < coalesce(try_cast($pm_hi AS DOUBLE), 'infinity'::DOUBLE)"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "",
+            "spec": {
+              "options": {
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "colorMode": "none",
+                "graphMode": "none",
+                "textMode": "value",
+                "justifyMode": "auto",
+                "orientation": "auto"
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "percentunit",
+                  "decimals": 0
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-bands": {
+        "kind": "Panel",
+        "spec": {
+          "id": 5,
+          "title": "WHO bands",
+          "description": "Sensors per WHO 2021 band of 24-hour PM2.5, in the map's colours. Click a band to filter the dashboard to it; click it again to clear.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "WITH area AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n)\n-- Selected: $pm_lo to $pm_hi\nSELECT CASE WHEN pm25_24h <= 15 THEN 0 WHEN pm25_24h <= 25 THEN 1 WHEN pm25_24h <= 37.5 THEN 2 WHEN pm25_24h <= 50 THEN 3 WHEN pm25_24h <= 75 THEN 4 ELSE 5 END AS band,\n       count(*) AS n\nFROM $sensors, area\nWHERE (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] > latitude) <> (area.ys[i % len(area.xs) + 1] > latitude)\n        AND longitude < (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\n  AND ('__all__' IN ($country) OR country IN ($country))\nGROUP BY 1 ORDER BY 1"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "volkovlabs-echarts-panel",
+            "version": "7.2.5",
+            "spec": {
+              "options": {
+                "renderer": "canvas",
+                "editorMode": "code",
+                "getOption": "// Sensors per WHO 2021 band of 24-hour PM2.5, in the map's colours: this is\n// the map's legend too. Clicking a band filters the dashboard to it (the same\n// variables the histogram's brush writes); clicking it again clears it.\nconst LO = 'pm_lo';\nconst HI = 'pm_hi';\nconst EDGES = [0, 15, 25, 37.5, 50, 75, 100];\nconst LABELS = ['≤ 15', '15–25', '25–37.5', '37.5–50', '50–75', '> 75'];\nconst COLORS = ['#4F8A9A', '#F2D16B', '#F0A04B', '#E5683C', '#C63A4A', '#8E2C6B'];\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst muted = context.grafana.theme.colors.text.secondary;\n\nconst frame = context.panel.data.series[0];\nconst counts = LABELS.map(() => 0);\nif (frame) {\n  const bands = frame.fields.find((f) => f.name === 'band').values;\n  const ns = frame.fields.find((f) => f.name === 'n').values;\n  Array.from(bands).forEach((b, i) => {\n    counts[Number(b)] = Number(ns[i]);\n  });\n}\nconst total = counts.reduce((a, b) => a + b, 0) || 1;\nconst lo = context.grafana.replaceVariables('${' + LO + '}');\nconst hi = context.grafana.replaceVariables('${' + HI + '}');\nconst active = EDGES.slice(0, -1).findIndex((e, i) => String(e) === lo && String(EDGES[i + 1]) === hi);\n\nchart.off('click');\nchart.on('click', (event) => {\n  const i = event.dataIndex;\n  const same =\n    String(EDGES[i]) === context.grafana.replaceVariables('${' + LO + '}') &&\n    String(EDGES[i + 1]) === context.grafana.replaceVariables('${' + HI + '}');\n  location.partial({ ['var-' + LO]: same ? '' : String(EDGES[i]), ['var-' + HI]: same ? '' : String(EDGES[i + 1]) }, true);\n});\n\nreturn {\n  animation: false,\n  grid: { left: 8, right: 16, top: 24, bottom: 8, containLabel: true },\n  tooltip: {\n    trigger: 'item',\n    formatter: (it) =>\n      `${it.marker}<b>${LABELS[it.dataIndex]} µg/m³</b>${it.dataIndex === 0 ? ' · meets the WHO guideline' : ''}<br/>${counts[it.dataIndex]} sensors (${((100 * counts[it.dataIndex]) / total).toFixed(1)}%)`,\n  },\n  xAxis: { type: 'category', data: LABELS, axisTick: { show: false }, axisLabel: { color: muted, interval: 0, fontSize: 11 } },\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { opacity: 0.15 } } },\n  series: [\n    {\n      type: 'bar',\n      barWidth: '80%',\n      cursor: 'pointer',\n      data: counts.map((n, i) => ({\n        value: n,\n        itemStyle: { color: COLORS[i], opacity: active >= 0 && active !== i ? 0.35 : 1, borderRadius: [4, 4, 0, 0] },\n      })),\n      label: { show: true, position: 'top', color: muted, formatter: (p) => `${((100 * p.value) / total).toFixed(0)}%` },\n    },\n  ],\n};\n"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-histogram": {
+        "kind": "Panel",
+        "spec": {
+          "id": 6,
+          "title": "PM2.5, 24-hour mean",
+          "description": "Drag across the bars to filter the dashboard by 24-hour PM2.5. Grey is every sensor; colour is what the area and country leave. 100 µg/m³ or more falls in the last bar.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "all",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "SELECT floor(least(pm25_24h, 99.9) / 5) * 5 AS bin, count(*) AS n\nFROM $sensors\nGROUP BY 1 ORDER BY 1"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "selected",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "WITH area AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n)\nSELECT floor(least(pm25_24h, 99.9) / 5) * 5 AS bin, count(*) AS n\nFROM $sensors, area\nWHERE (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] > latitude) <> (area.ys[i % len(area.xs) + 1] > latitude)\n        AND longitude < (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\n  AND ('__all__' IN ($country) OR country IN ($country))\nGROUP BY 1 ORDER BY 1"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "volkovlabs-echarts-panel",
+            "version": "7.2.5",
+            "spec": {
+              "options": {
+                "renderer": "canvas",
+                "editorMode": "code",
+                "getOption": "// A histogram whose brush filters the rest of the dashboard.\n//\n// Dragging across it writes the selected range to two dashboard variables\n// (LO and HI); the other panels filter on them, and this one does not, so it\n// keeps showing the whole distribution the other filters leave. Two query\n// frames feed it: `all` (grey, the context) and `selected` (colour, what the\n// other filters leave). Each has columns `bin` (the bin's lower edge) and `n`.\n//\n// A dashboard changes only the constants block below.\n// @constants begin\nconst LO = 'pm_lo';\nconst HI = 'pm_hi';\nconst STEP = 5;\nconst DOMAIN = [0, 100];\nconst UNIT = 'µg/m³';\nconst COLOR = 'orange';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\n\nconst points = (refId) => {\n  const frame = context.panel.data.series.find((f) => f.refId === refId);\n  if (!frame) {\n    return [];\n  }\n  const bins = frame.fields.find((f) => f.name === 'bin').values;\n  const counts = frame.fields.find((f) => f.name === 'n').values;\n  return Array.from(bins, (b, i) => [Number(b) + STEP / 2, Number(counts[i])]);\n};\nconst all = points('all');\nconst selected = points('selected');\nconst domain = DOMAIN || [Math.min(...all.map((p) => p[0] - STEP / 2)), Math.max(...all.map((p) => p[0] + STEP / 2))];\n\n// Whole bins only: a range that cuts a bar in two would count half of it.\nconst snap = (range) => {\n  const lo = Math.floor(range[0] / STEP) * STEP;\n  const hi = Math.max(Math.ceil(range[1] / STEP) * STEP, lo + STEP);\n  return [lo, hi];\n};\nconst drawBrush = (range) =>\n  chart.dispatchAction({ type: 'brush', areas: range ? [{ brushType: 'lineX', xAxisIndex: 0, coordRange: range }] : [] });\nconst publish = (range) => {\n  location.partial({ ['var-' + LO]: range ? String(range[0]) : '', ['var-' + HI]: range ? String(range[1]) : '' }, true);\n};\n\nchart.off('brushEnd');\nchart.off('brush');\nchart.on('brushEnd', (event) => {\n  const area = event.areas[0];\n  if (!area || !area.coordRange) {\n    publish(undefined);\n    return;\n  }\n  const range = snap(area.coordRange);\n  publish(range);\n  setTimeout(() => drawBrush(range), 0);\n});\nchart.on('brush', (event) => {\n  if (event.command === 'clear') {\n    publish(undefined);\n  }\n});\n\n// Every redraw (setOption without merge) wipes the brush: draw it back from\n// the variables, which is also how a shared link arrives with its range.\nconst current = [\n  parseFloat(context.grafana.replaceVariables('${' + LO + '}')),\n  parseFloat(context.grafana.replaceVariables('${' + HI + '}')),\n];\nsetTimeout(() => {\n  chart.dispatchAction({ type: 'takeGlobalCursor', key: 'brush', brushOption: { brushType: 'lineX', brushMode: 'single' } });\n  if (current.every(Number.isFinite)) {\n    drawBrush(current);\n  }\n}, 0);\n\nconst accent = theme.visualization.getColorByName(COLOR);\nconst muted = theme.colors.text.secondary;\n\nreturn {\n  animation: false,\n  // The axis name sits under the axis labels, centred: at the end of the axis\n  // it ran past the grid's right edge and was clipped (\"ma\" for magnitude).\n  // `containLabel` leaves the name out, so `bottom` makes room for it.\n  grid: { left: 8, right: 16, top: 30, bottom: 22, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'none' },\n    formatter: (items) => {\n      const x = items[0].value[0] - STEP / 2;\n      const rows = items.map((it) => `${it.marker}${it.seriesName}: <b>${it.value[1]}</b>`).join('<br/>');\n      return `${x}–${x + STEP} ${UNIT}<br/>${rows}`;\n    },\n  },\n  toolbox: {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: { brush: { type: ['lineX', 'clear'], title: { lineX: 'Select a range', clear: 'Clear the filter' } } },\n  },\n  brush: {\n    xAxisIndex: 0,\n    seriesIndex: [1],\n    brushType: 'lineX',\n    brushMode: 'single',\n    transformable: true,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.12)', borderColor: muted, borderWidth: 1 },\n    outOfBrush: { colorAlpha: 0.25 },\n  },\n  xAxis: { type: 'value', min: domain[0], max: domain[1], name: UNIT, nameLocation: 'middle', nameGap: 24, nameTextStyle: { color: muted }, axisLabel: { color: muted }, splitLine: { show: false } },\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { opacity: 0.15 } } },\n  series: [\n    { name: 'All', type: 'bar', data: all, barWidth: '94%', silent: true, itemStyle: { color: 'rgba(128, 128, 128, 0.22)' } },\n    { name: 'Filtered', type: 'bar', data: selected, barWidth: '94%', barGap: '-100%', itemStyle: { color: accent } },\n  ],\n};\n"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-countries": {
+        "kind": "Panel",
+        "spec": {
+          "id": 7,
+          "title": "Countries by median PM2.5",
+          "description": "The 25 countries with the highest median 24-hour PM2.5, among those with at least 5 sensors in the area drawn. Click a bar to filter the dashboard to that country, and to draw its interpolated surface on the map; click it again to clear.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "WITH area AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n)\n-- Selected: $country\nSELECT country, count(*) AS sensors, median(pm25_24h) AS median\nFROM $sensors, area\nWHERE (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] > latitude) <> (area.ys[i % len(area.xs) + 1] > latitude)\n        AND longitude < (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\nGROUP BY country\nHAVING count(*) >= 5\nORDER BY median DESC\nLIMIT 25"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "volkovlabs-echarts-panel",
+            "version": "7.2.5",
+            "spec": {
+              "options": {
+                "renderer": "canvas",
+                "editorMode": "code",
+                "getOption": "// Countries ranked by their median sensor's 24-hour PM2.5, each bar in the\n// colour of its WHO band. Clicking a bar picks that country alone in the\n// Country picker at the top; clicking the only one picked goes back to All.\nconst VAR = 'country';\nconst BANDS = [15, 25, 37.5, 50, 75];\nconst COLORS = ['#4F8A9A', '#F2D16B', '#F0A04B', '#E5683C', '#C63A4A', '#8E2C6B'];\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\n\nconst frame = context.panel.data.series[0];\nconst col = (name) => (frame ? Array.from(frame.fields.find((f) => f.name === name).values) : []);\nconst codes = col('country');\nconst medians = col('median').map(Number);\nconst sensors = col('sensors').map(Number);\n\nlet names;\ntry {\n  names = new Intl.DisplayNames(['en'], { type: 'region' });\n} catch (e) {\n  names = { of: (c) => c };\n}\nconst label = (code) => {\n  try {\n    return names.of(code) || code;\n  } catch (e) {\n    return code;\n  }\n};\nconst band = (v) => BANDS.filter((b) => v > b).length;\n\n// The codes picked, or none for All (whose value is '__all__').\nconst picked = () =>\n  context.grafana\n    .replaceVariables('${' + VAR + ':csv}')\n    .split(',')\n    .map((c) => c.replace(/'/g, '').trim())\n    .filter((c) => c && c !== '__all__' && c !== '$__all');\nconst selected = picked();\n\n// Highest at the top: a category axis draws its first item at the bottom.\nconst rows = codes.map((c, i) => ({ code: c, name: label(c), median: medians[i], sensors: sensors[i] })).reverse();\n\nchart.off('click');\nchart.on('click', (event) => {\n  const code = rows[event.dataIndex].code;\n  const now = picked();\n  const alone = now.length === 1 && now[0] === code;\n  location.partial({ ['var-' + VAR]: alone ? '$__all' : code }, true);\n});\n\nreturn {\n  animation: false,\n  grid: { left: 8, right: 48, top: 8, bottom: 8, containLabel: true },\n  tooltip: {\n    trigger: 'item',\n    formatter: (it) => {\n      const r = rows[it.dataIndex];\n      const alone = selected.length === 1 && selected[0] === r.code;\n      return `<b>${r.name}</b><br/>Median: <b>${r.median.toFixed(1)} µg/m³</b><br/>${r.sensors} sensors<br/><i>Click to ${alone ? 'go back to all countries' : 'pick it alone'}</i>`;\n    },\n  },\n  xAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { opacity: 0.15 } } },\n  yAxis: {\n    type: 'category',\n    data: rows.map((r) => r.name),\n    axisTick: { show: false },\n    axisLabel: { color: muted, width: 110, overflow: 'truncate', interval: 0, fontSize: 11 },\n  },\n  series: [\n    {\n      type: 'bar',\n      barWidth: '70%',\n      cursor: 'pointer',\n      data: rows.map((r) => ({\n        value: r.median,\n        itemStyle: {\n          color: COLORS[band(r.median)],\n          opacity: selected.length && !selected.includes(r.code) ? 0.35 : 1,\n          borderRadius: [0, 4, 4, 0],\n        },\n      })),\n      label: { show: true, position: 'right', color: muted, formatter: (p) => p.value.toFixed(1) },\n    },\n  ],\n};\n"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "id": 8,
+          "title": "PM2.5 by sensor and country",
+          "description": "Every outdoor Sensor.Community sensor, over each country's median, in the WHO 2021 bands of 24-hour PM2.5: at or under 15 µg/m³ meets the guideline; 25, 37.5, 50 and 75 are its interim targets. Choose a country (click its bar) to draw an interpolated surface of it, up to 25 km from any sensor. Click a country to pick it in the Country picker; click a sensor to see its readings; draw an area to filter the rest of the dashboard.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "SELECT sensor_id, sensor_type, country, latitude, longitude, pm25_24h, pm10_24h, pm25_now, pm10_now, time\nFROM $sensors\nWHERE ('__all__' IN ($country) OR country IN ($country))\n  AND least(pm25_24h, 99.9) >= coalesce(try_cast($pm_lo AS DOUBLE), '-infinity'::DOUBLE)\n  AND least(pm25_24h, 99.9) < coalesce(try_cast($pm_hi AS DOUBLE), 'infinity'::DOUBLE)"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "B",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "SELECT country, median(pm25_24h) AS avg_pm25\nFROM $sensors\nGROUP BY country\nHAVING count(*) >= 5"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "C",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "SELECT latitude, longitude, pm25_24h\nFROM $sensors\nWHERE NOT '__all__' IN ($country) AND country IN ($country)"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "D",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "SELECT * FROM $archive"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "ubica-keplerplus-panel",
+            "version": "0.1.0",
+            "spec": {
+              "options": {
+                "timeSync": "off",
+                "areaVariable": "area",
+                "variableMappings": [
+                  {
+                    "source": "click",
+                    "field": "sensor_id",
+                    "variable": "sensor"
+                  },
+                  {
+                    "source": "click",
+                    "field": "country_code",
+                    "variable": "country",
+                    "keepOnDeselect": true
+                  }
+                ],
+                "basemap": "dark-matter",
+                "followGrafanaTheme": true,
+                "showSidePanel": false,
+                "mapConfig": {
+                  "version": "v1",
+                  "config": {
+                    "visState": {
+                      "filters": [],
+                      "layers": [
+                        {
+                          "id": "trends",
+                          "type": "sparkline",
+                          "config": {
+                            "dataId": "grafana-D",
+                            "label": "PM2.5 over the days picked (µg/m³)",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "columnMode": "points",
+                            "isVisible": true,
+                            "visConfig": {
+                              "colorRange": {
+                                "name": "WHO 2021 PM2.5 (24 h)",
+                                "type": "custom",
+                                "category": "Custom",
+                                "colors": [
+                                  "#4F8A9A",
+                                  "#F2D16B",
+                                  "#F0A04B",
+                                  "#E5683C",
+                                  "#C63A4A",
+                                  "#8E2C6B"
+                                ],
+                                "colorMap": [
+                                  [
+                                    15,
+                                    "#4F8A9A"
+                                  ],
+                                  [
+                                    25,
+                                    "#F2D16B"
+                                  ],
+                                  [
+                                    37.5,
+                                    "#F0A04B"
+                                  ],
+                                  [
+                                    50,
+                                    "#E5683C"
+                                  ],
+                                  [
+                                    75,
+                                    "#C63A4A"
+                                  ],
+                                  [
+                                    null,
+                                    "#8E2C6B"
+                                  ]
+                                ]
+                              },
+                              "sparkScale": "perSite",
+                              "sparkUnit": " µg/m³",
+                              "sparkSize": "M",
+                              "sparkCards": "auto",
+                              "sparkFill": true,
+                              "sparkOverlap": "some",
+                              "sparkMin": 0
+                            },
+                            "textLabel": [
+                              {
+                                "field": {
+                                  "name": "name",
+                                  "type": "string"
+                                },
+                                "size": 22,
+                                "anchor": "middle",
+                                "alignment": "center"
+                              }
+                            ]
+                          },
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "pm25",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "id": "sensors",
+                          "type": "point",
+                          "config": {
+                            "dataId": "grafana-A",
+                            "label": "Sensor PM2.5, 24 h (µg/m³)",
+                            "color": [
+                              231,
+                              29,
+                              37
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "columnMode": "points",
+                            "isVisible": true,
+                            "visConfig": {
+                              "radius": 4,
+                              "fixedRadius": false,
+                              "opacity": 0.9,
+                              "outline": false,
+                              "filled": true,
+                              "colorRange": {
+                                "name": "WHO 2021 PM2.5 (24 h)",
+                                "type": "custom",
+                                "category": "Custom",
+                                "colors": [
+                                  "#4F8A9A",
+                                  "#F2D16B",
+                                  "#F0A04B",
+                                  "#E5683C",
+                                  "#C63A4A",
+                                  "#8E2C6B"
+                                ],
+                                "colorMap": [
+                                  [
+                                    15,
+                                    "#4F8A9A"
+                                  ],
+                                  [
+                                    25,
+                                    "#F2D16B"
+                                  ],
+                                  [
+                                    37.5,
+                                    "#F0A04B"
+                                  ],
+                                  [
+                                    50,
+                                    "#E5683C"
+                                  ],
+                                  [
+                                    75,
+                                    "#C63A4A"
+                                  ],
+                                  [
+                                    null,
+                                    "#8E2C6B"
+                                  ]
+                                ]
+                              }
+                            }
+                          },
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "pm25_24h",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeField": null,
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "id": "surface",
+                          "type": "surface",
+                          "config": {
+                            "dataId": "grafana-C",
+                            "label": "Interpolated PM2.5, 24 h (µg/m³)",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "columnMode": "points",
+                            "isVisible": true,
+                            "visConfig": {
+                              "opacity": 0.6,
+                              "colorRange": {
+                                "name": "WHO 2021 PM2.5 (24 h)",
+                                "type": "custom",
+                                "category": "Custom",
+                                "colors": [
+                                  "#4F8A9A",
+                                  "#F2D16B",
+                                  "#F0A04B",
+                                  "#E5683C",
+                                  "#C63A4A",
+                                  "#8E2C6B"
+                                ],
+                                "colorMap": [
+                                  [
+                                    15,
+                                    "#4F8A9A"
+                                  ],
+                                  [
+                                    25,
+                                    "#F2D16B"
+                                  ],
+                                  [
+                                    37.5,
+                                    "#F0A04B"
+                                  ],
+                                  [
+                                    50,
+                                    "#E5683C"
+                                  ],
+                                  [
+                                    75,
+                                    "#C63A4A"
+                                  ],
+                                  [
+                                    null,
+                                    "#8E2C6B"
+                                  ]
+                                ]
+                              },
+                              "surfaceMode": "interpolate",
+                              "surfaceReduce": "mean",
+                              "surfaceBands": true,
+                              "surfaceIsolines": true,
+                              "surfaceLabels": false,
+                              "surfaceResolution": "medium",
+                              "surfacePower": 2,
+                              "surfaceMaxDistance": 25000,
+                              "surfaceExtent": "hull",
+                              "surfaceMargin": 0
+                            }
+                          },
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "pm25_24h",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "id": "countries",
+                          "type": "geojson",
+                          "config": {
+                            "dataId": "grafana-B",
+                            "label": "Country median PM2.5, 24 h (µg/m³)",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "columnMode": "geojson",
+                            "isVisible": true,
+                            "visConfig": {
+                              "opacity": 0.3,
+                              "stroked": true,
+                              "thickness": 0.5,
+                              "filled": true,
+                              "colorRange": {
+                                "name": "WHO 2021 PM2.5 (24 h)",
+                                "type": "custom",
+                                "category": "Custom",
+                                "colors": [
+                                  "#4F8A9A",
+                                  "#F2D16B",
+                                  "#F0A04B",
+                                  "#E5683C",
+                                  "#C63A4A",
+                                  "#8E2C6B"
+                                ],
+                                "colorMap": [
+                                  [
+                                    15,
+                                    "#4F8A9A"
+                                  ],
+                                  [
+                                    25,
+                                    "#F2D16B"
+                                  ],
+                                  [
+                                    37.5,
+                                    "#F0A04B"
+                                  ],
+                                  [
+                                    50,
+                                    "#E5683C"
+                                  ],
+                                  [
+                                    75,
+                                    "#C63A4A"
+                                  ],
+                                  [
+                                    null,
+                                    "#8E2C6B"
+                                  ]
+                                ]
+                              }
+                            }
+                          },
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "avg_pm25",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        }
+                      ],
+                      "layerOrder": [
+                        "trends",
+                        "sensors",
+                        "surface",
+                        "countries"
+                      ],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {
+                              "grafana-A": [
+                                {
+                                  "name": "sensor_id",
+                                  "format": null
+                                },
+                                {
+                                  "name": "country",
+                                  "format": null
+                                },
+                                {
+                                  "name": "sensor_type",
+                                  "format": null
+                                },
+                                {
+                                  "name": "pm25_24h",
+                                  "format": null
+                                },
+                                {
+                                  "name": "pm10_24h",
+                                  "format": null
+                                },
+                                {
+                                  "name": "pm25_now",
+                                  "format": null
+                                },
+                                {
+                                  "name": "pm10_now",
+                                  "format": null
+                                },
+                                {
+                                  "name": "time",
+                                  "format": null
+                                }
+                              ],
+                              "grafana-B": [
+                                {
+                                  "name": "country",
+                                  "format": null
+                                },
+                                {
+                                  "name": "avg_pm25",
+                                  "format": null
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "splitMaps": [],
+                      "animationConfig": {
+                        "currentTime": null,
+                        "speed": 1
+                      }
+                    },
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": 42,
+                      "longitude": 35,
+                      "pitch": 0,
+                      "zoom": 2.3
+                    },
+                    "mapStyle": {
+                      "styleType": "dark-matter"
+                    }
+                  }
+                },
+                "places": {
+                  "B": {
+                    "column": "country",
+                    "kind": "country",
+                    "colourBy": {
+                      "op": "count"
+                    },
+                    "output": "choropleth"
+                  }
+                },
+                "alerts": {
+                  "show": false
+                }
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-trends": {
+        "kind": "Panel",
+        "spec": {
+          "id": 12,
+          "title": "PM2.5 over the days picked",
+          "description": "Half-hour PM2.5 of the sensors with a card on the map (20 spread over the countries picked, the most polluted of each part first, and the one clicked), in grey, with their median in orange. The dashed line is the WHO 2021 guideline, 15 µg/m³, which is set for a 24-hour mean. The time range picks the days; the archive ends yesterday. The crosshair is shared: hover here and the map's cards show the same moment.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "SELECT time, name, pm25 FROM $archive ORDER BY time"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "B",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "SELECT time, median(pm25) AS pm25 FROM $archive GROUP BY time ORDER BY time"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [
+                {
+                  "kind": "prepareTimeSeries",
+                  "spec": {
+                    "id": "prepareTimeSeries",
+                    "options": {
+                      "format": "multi"
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.2.1",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "conμgm3",
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": null,
+                        "color": "transparent"
+                      },
+                      {
+                        "value": 15,
+                        "color": "#F2D16B"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "#8e8e8e"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": true,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "dashed"
+                    }
+                  },
+                  "displayName": "${__field.labels.name}"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byFrameRefID",
+                      "options": "B"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "Median of these sensors"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "orange"
+                        }
+                      },
+                      {
+                        "id": "custom.lineWidth",
+                        "value": 3
+                      },
+                      {
+                        "id": "custom.hideFrom",
+                        "value": {
+                          "legend": false,
+                          "tooltip": false,
+                          "viz": false
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-selected": {
+        "kind": "Panel",
+        "spec": {
+          "id": 9,
+          "title": "Selected sensor",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "ubica-chaski-datasource",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "spec": {
+                        "rawSql": "SELECT sensor_id AS \"Sensor\", country AS \"Country\", sensor_type AS \"Type\",\n       round(latitude, 3) AS \"Latitude\", round(longitude, 3) AS \"Longitude\",\n       pm25_24h AS \"PM2.5, 24 h\", pm10_24h AS \"PM10, 24 h\",\n       pm25_now AS \"PM2.5, now\", pm10_now AS \"PM10, now\",\n       coalesce(strftime(time AT TIME ZONE 'UTC', '%H:%M UTC'), 'not in the last 5 min') AS \"Last reading\"\nFROM $sensors\nWHERE sensor_id::VARCHAR = $sensor"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "",
+            "spec": {
+              "options": {
+                "showHeader": true,
+                "cellHeight": "sm",
+                "frameIndex": 0
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Sensor"
+                    },
+                    "properties": [
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Open on the Sensor.Community map",
+                            "url": "https://maps.sensor.community/#14/${__data.fields.Latitude}/${__data.fields.Longitude}",
+                            "targetBlank": true
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byRegexp",
+                      "options": "PM.*"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "conμgm3"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-hint": {
+        "kind": "Panel",
+        "spec": {
+          "id": 10,
+          "title": "How to use this map",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "",
+            "spec": {
+              "options": {
+                "mode": "markdown",
+                "content": "**Pick countries** at the top, **click a country** on the map, or **click its bar**. **Click a sensor** on the map to see its readings and a card with its last days. Picking countries zooms the figures to them, draws their interpolated surface, and puts up cards for 20 of their sensors, spread over them, the most polluted of each part first. The **time range** picks the days the cards show.\n\n**Click a WHO band**, **drag** across the PM2.5 bars or **draw** an area on the map: every panel follows, answered in your browser. The data reloads every 5 minutes."
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "id": 11,
+          "title": "About the data",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "text",
+            "version": "",
+            "spec": {
+              "options": {
+                "mode": "markdown",
+                "content": "### Where the data comes from\n\n[Sensor.Community](https://sensor.community/) (formerly Luftdaten) is a citizen science network: volunteers build low-cost particulate matter sensors, most of them the Nova SDS011, and hang them outside their windows. Each sensor sends a reading every few minutes, and the network publishes them [as open data](https://github.com/opendata-stuttgart/meta/wiki/EN-APIs) under the [Open Database License (ODbL 1.0)](https://opendatacommons.org/licenses/odbl/1-0/).\n\nThis dashboard reads two of its files, straight from your browser:\n\n- **`data.24h.json`**: each sensor's mean over the last 24 hours. The map, the histogram and the figures use it.\n- **`data.dust.min.json`**: the last 5 minutes. *Live now* and a sensor's *now* columns come from it.\n\nBoth are refreshed by Sensor.Community every few minutes, and the dashboard reloads them every 5 minutes.\n\nThe sparkline cards on the map come from a third source, the [archive](https://archive.sensor.community/): one file per sensor and day, with a reading every few minutes, shown here as half-hour means. The archive is published the day after, so the cards never reach today; the time range picks their days (up to 7). These files are read by Grafana's server, through a cache, since a missing day would otherwise fail the whole query.\n\n### How to read it\n\n- **PM2.5** and **PM10** are the mass of airborne particles under 2.5 and 10 micrometres across, in µg/m³.\n- The colours are the [WHO 2021 air quality guidelines](https://www.who.int/publications/i/item/9789240034228) for PM2.5 over 24 hours: **15 µg/m³** is the guideline; 25, 37.5, 50 and 75 are its interim targets. The guideline is set for a 24-hour mean, which is why the map is coloured by it rather than by the last 5 minutes.\n- These are **low-cost sensors, uncorrected**. Their optical counters read high in humid air and fog, and drift with age; no reading here is a regulatory measurement. Read the map for patterns across many sensors, not for one sensor's exact value.\n- Indoor sensors are left out, and so are readings outside 0–500 µg/m³ (a failing sensor can report thousands).\n\n### The map\n\nThree layers, in the same colours: each sensor; under them, each country's median sensor (countries with at least 5); and, once a country is chosen, a surface interpolated between its sensors (inverse distance weighting, up to 25 km from the nearest one). The surface fills the gaps between sensors with a guess, not a measurement: where they are sparse, trust it less.\n\n### How it works\n\nBoth files are loaded into DuckDB running in your browser (the Chaski data source). Every filter and click is answered there, without a round trip to the server. The map is the Kepler Geospatial Maps Plus panel, which places the countries and draws the surface; the charts are Business Charts (Apache ECharts)."
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "TabsLayout",
+      "spec": {
+        "tabs": [
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "title": "Explore",
+              "layout": {
+                "kind": "RowsLayout",
+                "spec": {
+                  "rows": [
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "title": "Top",
+                        "hideHeader": true,
+                        "collapse": false,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 0,
+                                  "y": 0,
+                                  "width": 16,
+                                  "height": 19,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-map"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 16,
+                                  "y": 0,
+                                  "width": 4,
+                                  "height": 3,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-sensors"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 20,
+                                  "y": 0,
+                                  "width": 4,
+                                  "height": 3,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-now"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 16,
+                                  "y": 3,
+                                  "width": 4,
+                                  "height": 3,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-median"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 20,
+                                  "y": 3,
+                                  "width": 4,
+                                  "height": 3,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-who"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 16,
+                                  "y": 6,
+                                  "width": 8,
+                                  "height": 6,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-bands"
+                                  }
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 16,
+                                  "y": 12,
+                                  "width": 8,
+                                  "height": 7,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-histogram"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "title": "Trends",
+                        "hideHeader": true,
+                        "collapse": false,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 0,
+                                  "y": 0,
+                                  "width": 24,
+                                  "height": 9,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-trends"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "title": "Hint",
+                        "hideHeader": true,
+                        "collapse": false,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 0,
+                                  "y": 0,
+                                  "width": 24,
+                                  "height": 3,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-hint"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "conditionalRendering": {
+                          "kind": "ConditionalRenderingGroup",
+                          "spec": {
+                            "visibility": "show",
+                            "condition": "and",
+                            "items": [
+                              {
+                                "kind": "ConditionalRenderingVariable",
+                                "spec": {
+                                  "variable": "sensor",
+                                  "operator": "equals",
+                                  "value": ""
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "title": "Selection",
+                        "hideHeader": true,
+                        "collapse": false,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 0,
+                                  "y": 0,
+                                  "width": 24,
+                                  "height": 4,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-selected"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "conditionalRendering": {
+                          "kind": "ConditionalRenderingGroup",
+                          "spec": {
+                            "visibility": "show",
+                            "condition": "and",
+                            "items": [
+                              {
+                                "kind": "ConditionalRenderingVariable",
+                                "spec": {
+                                  "variable": "sensor",
+                                  "operator": "notEquals",
+                                  "value": ""
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "title": "Countries",
+                        "hideHeader": true,
+                        "collapse": false,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "x": 0,
+                                  "y": 0,
+                                  "width": 24,
+                                  "height": 11,
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-countries"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "title": "About the data",
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 24,
+                        "height": 14,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-about"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
