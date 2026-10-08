@@ -9,20 +9,20 @@
       {
         "kind": "AnnotationQuery",
         "spec": {
-          "query": {
-            "kind": "DataQuery",
-            "group": "grafana",
-            "version": "v0",
-            "datasource": {
-              "name": "-- Grafana --"
-            },
-            "spec": {}
-          },
+          "builtIn": true,
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations & Alerts",
-          "builtIn": true
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
         }
       }
     ],
@@ -33,48 +33,44 @@
       "panel-1": {
         "kind": "Panel",
         "spec": {
-          "id": 1,
-          "title": "",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
               "queries": [],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "",
+          "transparent": true,
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "text",
-            "version": "13.2.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
               "options": {
                 "code": {
                   "language": "plaintext",
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### Public transit observability with GTFS Realtime — fleet edition\n\nThe MBTA demo (Boston) rebuilt on two of our own pieces: the **Fleet** layer of Kepler Plus and **Chaski**, DuckDB in your browser. Same three levels: **feed health** — is the data arriving, and on time? —, **street operations** — where are the vehicles, and which ones are running bunched? — and **service reliability** — is the scheduled headway being kept?\n\nEvery 15 s the server reads each GTFS-RT feed once, through a 15 s cache (the MBTA asks for no more than one request every 10 s), and hands the rows to Chaski; the 30 days of **LAMP** history load once per visit. From there every panel is answered in your browser: the filters at the top — **mode, route, status and occupancy** — and the time range recompute the whole page without going back to the server (status and occupancy only apply to vehicles; feed age is not filtered).\n\nOn the map each vehicle is a fleet asset, drawn as a 3D model of its kind — bus, subway train, commuter train or ferry — with a beacon in the colour of its freshness: turned to its heading, it glides to its new position on each refresh, and the map remembers its last ten minutes of positions to draw the trail behind it — the feed itself only brings the latest one. Keep the page open for a few refreshes to see the trails grow. **Click a vehicle** and the *Vehicle cam* rides behind it.\n\n<small>Data: Massachusetts Bay Transportation Authority, under the MassDOT Developers License Agreement. Independent dashboard, not affiliated with the MBTA.</small>",
+                "content": "### Public transit observability with GTFS Realtime — fleet edition\n\nThe MBTA demo (Boston) rebuilt on two of our own pieces: the **Fleet** layer of Kepler Plus and **Chaski**, DuckDB in your browser. Same three levels: **feed health** — is the data arriving, and on time? —, **street operations** — where are the vehicles, and which ones are running bunched? — and **service reliability** — is the scheduled headway being kept?\n\nEvery 15 s the server reads each GTFS-RT feed once, through a 15 s cache (the MBTA asks for no more than one request every 10 s), and hands the rows to Chaski; the 30 days of **LAMP** history load once per visit. From there every panel is answered in your browser: the filters at the top — **mode, route, status and occupancy** — and the time range recompute the whole page without going back to the server (status and occupancy only apply to vehicles; feed age is not filtered).\n\nOn the map each vehicle is a fleet asset, drawn as a 3D model of its kind — bus, subway train, commuter train or ferry — with a beacon in the colour of its freshness: turned to its heading, it glides to its new position on each refresh, and the map remembers its last ten minutes of positions to draw the trail behind it — the feed itself only brings the latest one. Keep the page open for a few refreshes to see the trails grow. **Click a vehicle** and the *Vehicle cam* rides behind it.\n\n\u003csmall\u003eData: Massachusetts Bay Transportation Authority, under the MassDOT Developers License Agreement. Independent dashboard, not affiliated with the MBTA.\u003c/small\u003e",
                 "mode": "markdown"
-              },
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
               }
-            }
-          },
-          "transparent": true
+            },
+            "version": "13.2.1"
+          }
         }
       },
       "panel-11": {
         "kind": "Panel",
         "spec": {
-          "id": 11,
-          "title": "Headways by line",
-          "description": "From the MBTA's LAMP archive: every time a train passes a station, with its actual and scheduled headway; Actual and Scheduled are mean headways. Excess wait = expected wait, actual minus scheduled, where expected wait = Σh² / 2Σh (the metric used by the MBTA, TfL and the MTA). Gaps: headways over 1.5 times the schedule. Bunched: under a quarter of it. Minutes.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -82,50 +78,36 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "rawSql": "WITH h AS (SELECT * FROM $headways WHERE $__timeFilter(time)\n    AND 'Subway' IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route)))\n-- Hourly sums from the server, added up over the range. Excess wait: a\n-- rider's expected wait, Σh²/2Σh, real minus scheduled. Means, not medians:\n-- a median does not add up from hourly pieces.\nSELECT line                                         AS \"Line\",\n       sum(n)::BIGINT                               AS \"Samples\",\n       round(sum(sh) / sum(n) / 60.0, 1)            AS \"Actual\",\n       round(sum(shs) / sum(n) / 60.0, 1)           AS \"Scheduled\",\n       round((sum(sh2) / (2 * sum(sh)) - sum(shs2) / (2 * sum(shs))) / 60.0, 2)                              AS \"Excess wait\",\n       round(100.0 * sum(bunched) / sum(n), 1)      AS \"Bunched\",\n       round(100.0 * sum(gaps) / sum(n), 1)         AS \"Gaps\"\nFROM h GROUP BY 1 ORDER BY 1"
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "From the MBTA's LAMP archive: every time a train passes a station, with its actual and scheduled headway; Actual and Scheduled are mean headways. Excess wait = expected wait, actual minus scheduled, where expected wait = Σh² / 2Σh (the metric used by the MBTA, TfL and the MTA). Gaps: headways over 1.5 times the schedule. Bunched: under a quarter of it. Minutes.",
+          "id": 11,
+          "links": [],
+          "title": "Headways by line",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "table",
-            "version": "13.2.1",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "cellHeight": "sm",
-                "showHeader": true
-              },
               "fieldConfig": {
                 "defaults": {
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  },
                   "custom": {
                     "align": "auto",
                     "cellOptions": {
@@ -135,6 +117,19 @@
                       "reducers": []
                     },
                     "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -311,18 +306,19 @@
                     ]
                   }
                 ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
               }
-            }
+            },
+            "version": "13.2.1"
           }
         }
       },
       "panel-12": {
         "kind": "Panel",
         "spec": {
-          "id": 12,
-          "title": "Gaps by hour — % of headways above 1.5 × the schedule",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -330,61 +326,36 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH h AS (SELECT * FROM $headways WHERE $__timeFilter(time)\n    AND 'Subway' IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route)))\nSELECT time,\n       CASE WHEN sum(n) FILTER (WHERE line = 'Red') >= 20\n         THEN round(100.0 * sum(gaps) FILTER (WHERE line = 'Red') / sum(n) FILTER (WHERE line = 'Red'), 1) END AS \"Red\",\n       CASE WHEN sum(n) FILTER (WHERE line = 'Orange') >= 20\n         THEN round(100.0 * sum(gaps) FILTER (WHERE line = 'Orange') / sum(n) FILTER (WHERE line = 'Orange'), 1) END AS \"Orange\",\n       CASE WHEN sum(n) FILTER (WHERE line = 'Blue') >= 20\n         THEN round(100.0 * sum(gaps) FILTER (WHERE line = 'Blue') / sum(n) FILTER (WHERE line = 'Blue'), 1) END AS \"Blue\",\n       CASE WHEN sum(n) FILTER (WHERE line = 'Green') >= 20\n         THEN round(100.0 * sum(gaps) FILTER (WHERE line = 'Green') / sum(n) FILTER (WHERE line = 'Green'), 1) END AS \"Green\"\nFROM h GROUP BY 1 ORDER BY 1"
-                      }
+                        "rawSql": "WITH h AS (SELECT * FROM $headways WHERE $__timeFilter(time)\n    AND 'Subway' IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route)))\nSELECT time,\n       CASE WHEN sum(n) FILTER (WHERE line = 'Red') \u003e= 20\n         THEN round(100.0 * sum(gaps) FILTER (WHERE line = 'Red') / sum(n) FILTER (WHERE line = 'Red'), 1) END AS \"Red\",\n       CASE WHEN sum(n) FILTER (WHERE line = 'Orange') \u003e= 20\n         THEN round(100.0 * sum(gaps) FILTER (WHERE line = 'Orange') / sum(n) FILTER (WHERE line = 'Orange'), 1) END AS \"Orange\",\n       CASE WHEN sum(n) FILTER (WHERE line = 'Blue') \u003e= 20\n         THEN round(100.0 * sum(gaps) FILTER (WHERE line = 'Blue') / sum(n) FILTER (WHERE line = 'Blue'), 1) END AS \"Blue\",\n       CASE WHEN sum(n) FILTER (WHERE line = 'Green') \u003e= 20\n         THEN round(100.0 * sum(gaps) FILTER (WHERE line = 'Green') / sum(n) FILTER (WHERE line = 'Green'), 1) END AS \"Green\"\nFROM h GROUP BY 1 ORDER BY 1"
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "",
+          "id": 12,
+          "links": [],
+          "title": "Gaps by hour — % of headways above 1.5 × the schedule",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "timeseries",
-            "version": "13.2.1",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "desc"
-                }
-              },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "percent",
-                  "min": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  },
                   "color": {
                     "mode": "palette-classic"
                   },
@@ -421,7 +392,22 @@
                     "thresholdsStyle": {
                       "mode": "off"
                     }
-                  }
+                  },
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percent"
                 },
                 "overrides": [
                   {
@@ -485,18 +471,28 @@
                     ]
                   }
                 ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
               }
-            }
+            },
+            "version": "13.2.1"
           }
         }
       },
       "panel-13": {
         "kind": "Panel",
         "spec": {
-          "id": 13,
-          "title": "The ten stations with the most excess wait",
-          "description": "By station and direction, with at least 100 measured samples in the range. It is the table an operations manager opens first: it says where regularity breaks down, not just how much.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -504,50 +500,36 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH h AS (SELECT * FROM $headways WHERE $__timeFilter(time)\n    AND 'Subway' IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route)))\nSELECT h.line                                 AS \"Line\",\n       coalesce(s.name, h.station_id)         AS \"Station\",\n       h.toward                               AS \"Toward\",\n       sum(n)::BIGINT                         AS \"Samples\",\n       round((sum(sh2) / (2 * sum(sh)) - sum(shs2) / (2 * sum(shs))) / 60.0, 1)                        AS \"Excess wait\",\n       round(100.0 * sum(gaps) / sum(n), 1)   AS \"Gaps\"\nFROM h LEFT JOIN $stops s ON s.stop_id = h.station_id\nGROUP BY ALL\nHAVING sum(n) >= 100\nORDER BY \"Excess wait\" DESC\nLIMIT 10"
-                      }
+                        "rawSql": "WITH h AS (SELECT * FROM $headways WHERE $__timeFilter(time)\n    AND 'Subway' IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route)))\nSELECT h.line                                 AS \"Line\",\n       coalesce(s.name, h.station_id)         AS \"Station\",\n       h.toward                               AS \"Toward\",\n       sum(n)::BIGINT                         AS \"Samples\",\n       round((sum(sh2) / (2 * sum(sh)) - sum(shs2) / (2 * sum(shs))) / 60.0, 1)                        AS \"Excess wait\",\n       round(100.0 * sum(gaps) / sum(n), 1)   AS \"Gaps\"\nFROM h LEFT JOIN $stops s ON s.stop_id = h.station_id\nGROUP BY ALL\nHAVING sum(n) \u003e= 100\nORDER BY \"Excess wait\" DESC\nLIMIT 10"
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "By station and direction, with at least 100 measured samples in the range. It is the table an operations manager opens first: it says where regularity breaks down, not just how much.",
+          "id": 13,
+          "links": [],
+          "title": "The ten stations with the most excess wait",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "table",
-            "version": "13.2.1",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "cellHeight": "sm",
-                "showHeader": true
-              },
               "fieldConfig": {
                 "defaults": {
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  },
                   "custom": {
                     "align": "auto",
                     "cellOptions": {
@@ -557,6 +539,19 @@
                       "reducers": []
                     },
                     "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -685,18 +680,19 @@
                     ]
                   }
                 ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
               }
-            }
+            },
+            "version": "13.2.1"
           }
         }
       },
       "panel-14": {
         "kind": "Panel",
         "spec": {
-          "id": 14,
-          "title": "Where regularity breaks down",
-          "description": "Every subway station with at least 100 measured samples in some direction, carrying its worst direction in the range. Color and size grow with the excess wait.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -704,31 +700,38 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH h AS (SELECT * FROM $headways WHERE $__timeFilter(time)\n    AND 'Subway' IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route)))\n,\n-- Excess wait per station, line and direction first, as in the table. Pooling\n-- the headways of two lines into one Σh² would describe a wait no rider has.\nsegment AS (\n  SELECT station_id, line, toward,\n         sum(n) AS samples,\n         (sum(sh2) / (2 * sum(sh)) - sum(shs2) / (2 * sum(shs))) / 60.0 AS ewt,\n         100.0 * sum(gaps) / sum(n) AS gaps\n  FROM h GROUP BY ALL HAVING sum(n) >= 100\n),\n-- One point per station, carrying its worst direction.\nstation AS (\n  SELECT station_id,\n         string_agg(DISTINCT line, ' / ' ORDER BY line) AS lines,\n         sum(samples)::BIGINT                           AS samples,\n         max(ewt)                                       AS ewt,\n         arg_max(line || ' to ' || toward, ewt)         AS worst_direction,\n         arg_max(gaps, ewt)                             AS gaps\n  FROM segment GROUP BY 1\n)\n-- No column called count or direction: the panel reads both as field roles.\nSELECT s.name                        AS station,\n       e.lines,\n       e.worst_direction,\n       s.lat                         AS latitude,\n       s.lng                         AS longitude,\n       e.samples,\n       round(e.ewt, 2)               AS excess_wait,\n       round(e.gaps, 1)              AS gaps,\n       -- Size channel: better-than-scheduled stations come out negative.\n       round(greatest(e.ewt, 0), 2)  AS size_weight,\n       CASE WHEN e.ewt < 1 THEN '< 1 min' WHEN e.ewt < 2 THEN '1–2 min' ELSE '> 2 min' END AS band\nFROM station e JOIN $stops s ON s.stop_id = e.station_id"
-                      }
+                        "rawSql": "WITH h AS (SELECT * FROM $headways WHERE $__timeFilter(time)\n    AND 'Subway' IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route)))\n,\n-- Excess wait per station, line and direction first, as in the table. Pooling\n-- the headways of two lines into one Σh² would describe a wait no rider has.\nsegment AS (\n  SELECT station_id, line, toward,\n         sum(n) AS samples,\n         (sum(sh2) / (2 * sum(sh)) - sum(shs2) / (2 * sum(shs))) / 60.0 AS ewt,\n         100.0 * sum(gaps) / sum(n) AS gaps\n  FROM h GROUP BY ALL HAVING sum(n) \u003e= 100\n),\n-- One point per station, carrying its worst direction.\nstation AS (\n  SELECT station_id,\n         string_agg(DISTINCT line, ' / ' ORDER BY line) AS lines,\n         sum(samples)::BIGINT                           AS samples,\n         max(ewt)                                       AS ewt,\n         arg_max(line || ' to ' || toward, ewt)         AS worst_direction,\n         arg_max(gaps, ewt)                             AS gaps\n  FROM segment GROUP BY 1\n)\n-- No column called count or direction: the panel reads both as field roles.\nSELECT s.name                        AS station,\n       e.lines,\n       e.worst_direction,\n       s.lat                         AS latitude,\n       s.lng                         AS longitude,\n       e.samples,\n       round(e.ewt, 2)               AS excess_wait,\n       round(e.gaps, 1)              AS gaps,\n       -- Size channel: better-than-scheduled stations come out negative.\n       round(greatest(e.ewt, 0), 2)  AS size_weight,\n       CASE WHEN e.ewt \u003c 1 THEN '\u003c 1 min' WHEN e.ewt \u003c 2 THEN '1–2 min' ELSE '\u003e 2 min' END AS band\nFROM station e JOIN $stops s ON s.stop_id = e.station_id"
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Every subway station with at least 100 measured samples in some direction, carrying its worst direction in the range. Color and size grow with the excess wait.",
+          "id": 14,
+          "links": [],
+          "title": "Where regularity breaks down",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "ubica-keplergl-panel",
-            "version": "1.0.1-edge.cb64e48",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
               "options": {
                 "basemap": "dark-matter",
                 "clickArea": false,
@@ -1092,22 +1095,15 @@
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table"
-              },
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
               }
-            }
+            },
+            "version": "1.0.1-edge.cb64e48"
           }
         }
       },
       "panel-18": {
         "kind": "Panel",
         "spec": {
-          "id": 18,
-          "title": "Vehicle cam — the vehicle clicked on the map",
-          "description": "The camera rides behind the vehicle clicked on the main map, facing its heading, and follows it on every refresh. Click another vehicle, here or on the main map, to switch. Dragging pauses the camera for ten seconds; the chip at the top switches between chase, orbit and follow.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1115,31 +1111,52 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "rawSql": "-- The fleet within the four filters, as on the main map; the camera follows\n-- $vehicle, written by a click on either map.\nSELECT vehicle, unit, route, mode, type, status, occupancy, heading,\n       latitude, longitude, time, age_s, freshness\nFROM $vehicles\nWHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))\n    AND status IN ($status)\n    AND occupancy IN ($occupancy)"
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "The camera rides behind the vehicle clicked on the main map, facing its heading, and follows it on every refresh. Click another vehicle, here or on the main map, to switch. Dragging pauses the camera for ten seconds; the chip at the top switches between chase, orbit and follow.",
+          "id": 18,
+          "links": [],
+          "title": "Vehicle cam — the vehicle clicked on the map",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "ubica-keplerplus-panel",
-            "version": "0.1.0",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
               "options": {
                 "alerts": {},
                 "basemap": "dark-matter",
@@ -1384,7 +1401,7 @@
                                     "#d29922"
                                   ],
                                   [
-                                    "> 90 s",
+                                    "\u003e 90 s",
                                     "#f85149"
                                   ]
                                 ],
@@ -1516,36 +1533,15 @@
                     "variable": "vehicle"
                   }
                 ]
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  }
-                },
-                "overrides": []
               }
-            }
+            },
+            "version": "0.1.0"
           }
         }
       },
       "panel-3": {
         "kind": "Panel",
         "spec": {
-          "id": 3,
-          "title": "Is the data arriving, and on time?",
-          "description": "Feed age: seconds since the timestamp in the feed header (includes up to 15 s of caching and the time since the last refresh). Green up to 60 s, amber up to 90 s, red beyond: GTFS Realtime best practices ask for data younger than 90 s. Positions older than 90 s: vehicles whose last report trails the header by more than that. Predictions without a vehicle: trips with estimated times but no vehicle assigned — normal for future departures, suspicious if it grows at rush hour.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1553,69 +1549,55 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH v AS (SELECT * FROM $vehicles WHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))\n    AND status IN ($status)\n    AND occupancy IN ($occupancy)),\nt AS (SELECT * FROM $trips WHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route)))\nSELECT\n  -- About the feed, so it reads the unfiltered rows.\n  (SELECT (epoch(now()) - max(feed_ts))::BIGINT FROM $vehicles)                AS \"Feed age\",\n  (SELECT count(*)::BIGINT FROM v)                                             AS \"Vehicles reporting\",\n  (SELECT round(100.0 * avg((age_s > 90)::INT), 1) FROM v)                     AS \"Positions older than 90 s\",\n  (SELECT count(*)::BIGINT FROM t)                                             AS \"Trips with predictions\",\n  (SELECT count(*) FILTER (WHERE relationship = 'CANCELED')::BIGINT FROM t)    AS \"Canceled trips\",\n  (SELECT count(*) FILTER (WHERE relationship = 'ADDED')::BIGINT FROM t)       AS \"Added trips\",\n  (SELECT round(100.0 * avg((vehicle IS NULL)::INT), 1) FROM t)                AS \"Predictions without a vehicle\"\n"
-                      }
+                        "rawSql": "WITH v AS (SELECT * FROM $vehicles WHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))\n    AND status IN ($status)\n    AND occupancy IN ($occupancy)),\nt AS (SELECT * FROM $trips WHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route)))\nSELECT\n  -- About the feed, so it reads the unfiltered rows.\n  (SELECT (epoch(now()) - max(feed_ts))::BIGINT FROM $vehicles)                AS \"Feed age\",\n  (SELECT count(*)::BIGINT FROM v)                                             AS \"Vehicles reporting\",\n  (SELECT round(100.0 * avg((age_s \u003e 90)::INT), 1) FROM v)                     AS \"Positions older than 90 s\",\n  (SELECT count(*)::BIGINT FROM t)                                             AS \"Trips with predictions\",\n  (SELECT count(*) FILTER (WHERE relationship = 'CANCELED')::BIGINT FROM t)    AS \"Canceled trips\",\n  (SELECT count(*) FILTER (WHERE relationship = 'ADDED')::BIGINT FROM t)       AS \"Added trips\",\n  (SELECT round(100.0 * avg((vehicle IS NULL)::INT), 1) FROM t)                AS \"Predictions without a vehicle\"\n"
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Feed age: seconds since the timestamp in the feed header (includes up to 15 s of caching and the time since the last refresh). Green up to 60 s, amber up to 90 s, red beyond: GTFS Realtime best practices ask for data younger than 90 s. Positions older than 90 s: vehicles whose last report trails the header by more than that. Predictions without a vehicle: trips with estimated times but no vehicle assigned — normal for future departures, suspicious if it grows at rush hour.",
+          "id": 3,
+          "links": [],
+          "title": "Is the data arriving, and on time?",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "13.2.1",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "colorMode": "value",
-                "graphMode": "none",
-                "justifyMode": "center",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "value_and_name",
-                "wideLayout": true
-              },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "none",
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
                   "decimals": 0,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "value": 0,
-                        "color": "green"
+                        "color": "green",
+                        "value": 0
                       },
                       {
-                        "value": 80,
-                        "color": "red"
+                        "color": "red",
+                        "value": 80
                       }
                     ]
                   },
-                  "color": {
-                    "mode": "fixed",
-                    "fixedColor": "text"
-                  }
+                  "unit": "none"
                 },
                 "overrides": [
                   {
@@ -1715,18 +1697,32 @@
                     ]
                   }
                 ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
               }
-            }
+            },
+            "version": "13.2.1"
           }
         }
       },
       "panel-5": {
         "kind": "Panel",
         "spec": {
-          "id": 5,
-          "title": "Fleet now — colored by position freshness",
-          "description": "Each vehicle from the latest vehicle positions feed is a fleet asset: a 3D model of a bus, subway train, commuter train or ferry, turned to the heading it reports and topped by a beacon, gliding to its new position on every refresh, with a trail of where it went over the last five minutes — remembered by the map while the page stays open. Green: reported 30 s ago or less; amber: up to 90 s; red: longer — a vehicle the system believes is in service but that stopped reporting. Click a vehicle to see its next stops in the table on the right. Picking a row in the bunched buses table zooms the map to that pair and marks it with two rings that follow those buses on every refresh. Moving arrows run from each vehicle to its next two stops, where the MBTA predicts it within five minutes.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1734,67 +1730,88 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "rawSql": "-- Only what the fleet layer and the tooltip read, within the four filters.\nSELECT vehicle, unit, route, mode, type, status, occupancy, heading,\n       latitude, longitude, time, age_s, freshness\nFROM $vehicles\nWHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))\n    AND status IN ($status)\n    AND occupancy IN ($occupancy)"
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 },
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "rawSql": "-- The pair picked in the bunching table (variables parA and parB), so the\n-- rings follow both buses on every refresh. Empty until a row is clicked,\n-- which matches nothing.\nSELECT unit, route, latitude, longitude\nFROM $vehicles\nWHERE vehicle IN ($parA, $parB)"
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "B",
-                    "hidden": false
+                    "refId": "B"
                   }
                 },
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Where each vehicle is headed: from where it is now to its next two stops,\n-- drawn as arrows. Only stops predicted within five minutes of the feed, where\n-- the prediction is freshest and the arrow stays close to its vehicle. One\n-- whose next stop is the first of its trip has not started it: it waits at the\n-- terminal or is on its way there, and a line to that stop would not be a\n-- route, so it gets no arrow.\nWITH veh AS (\n  SELECT vehicle, trip, route, latitude AS lat, longitude AS lng, feed_ts AS qt\n  FROM $vehicles\n  WHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))\n    AND status IN ($status)\n    AND occupancy IN ($occupancy)\n),\nahead AS (\n  SELECT v.vehicle, u.seq, u.stop\n  FROM $upcoming u JOIN veh v ON v.trip = u.trip\n  WHERE NOT u.skipped AND u.t > v.qt AND u.t <= v.qt + 300\n  QUALIFY row_number() OVER (PARTITION BY v.vehicle ORDER BY u.seq) <= 2\n),\nstarted AS (\n  SELECT vehicle FROM ahead GROUP BY vehicle HAVING min(seq) > 1\n),\npts AS (\n  SELECT vehicle, 0 AS seq, lat, lng FROM veh WHERE vehicle IN (SELECT vehicle FROM started)\n  UNION ALL\n  SELECT a.vehicle, a.seq, s.lat, s.lng\n  FROM ahead a JOIN $stops s ON s.stop_id = a.stop\n  WHERE a.vehicle IN (SELECT vehicle FROM started)\n),\nhop AS (\n  SELECT vehicle, lat, lng, lead(lat) OVER w AS lat1, lead(lng) OVER w AS lng1\n  FROM pts WINDOW w AS (PARTITION BY vehicle ORDER BY seq)\n)\nSELECT h.lat  AS origin_lat,\n       h.lng  AS origin_lng,\n       h.lat1 AS dest_lat,\n       h.lng1 AS dest_lng,\n       count(*)::BIGINT   AS trips,\n       any_value(v.route) AS route\nFROM hop h JOIN veh v USING (vehicle)\nWHERE h.lat1 IS NOT NULL\nGROUP BY 1, 2, 3, 4"
-                      }
+                        "rawSql": "-- Where each vehicle is headed: from where it is now to its next two stops,\n-- drawn as arrows. Only stops predicted within five minutes of the feed, where\n-- the prediction is freshest and the arrow stays close to its vehicle. One\n-- whose next stop is the first of its trip has not started it: it waits at the\n-- terminal or is on its way there, and a line to that stop would not be a\n-- route, so it gets no arrow.\nWITH veh AS (\n  SELECT vehicle, trip, route, latitude AS lat, longitude AS lng, feed_ts AS qt\n  FROM $vehicles\n  WHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))\n    AND status IN ($status)\n    AND occupancy IN ($occupancy)\n),\nahead AS (\n  SELECT v.vehicle, u.seq, u.stop\n  FROM $upcoming u JOIN veh v ON v.trip = u.trip\n  WHERE NOT u.skipped AND u.t \u003e v.qt AND u.t \u003c= v.qt + 300\n  QUALIFY row_number() OVER (PARTITION BY v.vehicle ORDER BY u.seq) \u003c= 2\n),\nstarted AS (\n  SELECT vehicle FROM ahead GROUP BY vehicle HAVING min(seq) \u003e 1\n),\npts AS (\n  SELECT vehicle, 0 AS seq, lat, lng FROM veh WHERE vehicle IN (SELECT vehicle FROM started)\n  UNION ALL\n  SELECT a.vehicle, a.seq, s.lat, s.lng\n  FROM ahead a JOIN $stops s ON s.stop_id = a.stop\n  WHERE a.vehicle IN (SELECT vehicle FROM started)\n),\nhop AS (\n  SELECT vehicle, lat, lng, lead(lat) OVER w AS lat1, lead(lng) OVER w AS lng1\n  FROM pts WINDOW w AS (PARTITION BY vehicle ORDER BY seq)\n)\nSELECT h.lat  AS origin_lat,\n       h.lng  AS origin_lng,\n       h.lat1 AS dest_lat,\n       h.lng1 AS dest_lng,\n       count(*)::BIGINT   AS trips,\n       any_value(v.route) AS route\nFROM hop h JOIN veh v USING (vehicle)\nWHERE h.lat1 IS NOT NULL\nGROUP BY 1, 2, 3, 4"
+                      },
+                      "version": "v0"
                     },
-                    "refId": "C",
-                    "hidden": false
+                    "refId": "C"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Each vehicle from the latest vehicle positions feed is a fleet asset: a 3D model of a bus, subway train, commuter train or ferry, turned to the heading it reports and topped by a beacon, gliding to its new position on every refresh, with a trail of where it went over the last five minutes — remembered by the map while the page stays open. Green: reported 30 s ago or less; amber: up to 90 s; red: longer — a vehicle the system believes is in service but that stopped reporting. Click a vehicle to see its next stops in the table on the right. Picking a row in the bunched buses table zooms the map to that pair and marks it with two rings that follow those buses on every refresh. Moving arrows run from each vehicle to its next two stops, where the MBTA predicts it within five minutes.",
+          "id": 5,
+          "links": [],
+          "title": "Fleet now — colored by position freshness",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "ubica-keplerplus-panel",
-            "version": "0.1.0",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
               "options": {
                 "alerts": {},
                 "basemap": "dark-matter",
@@ -2444,36 +2461,15 @@
                     "zoom": 16
                   }
                 ]
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  }
-                },
-                "overrides": []
               }
-            }
+            },
+            "version": "0.1.0"
           }
         }
       },
       "panel-6": {
         "kind": "Panel",
         "spec": {
-          "id": 6,
-          "title": "Bunched buses now",
-          "description": "Pairs of buses on the same route and direction less than 250 m apart. A bus right behind another means a gap behind both: the wait at the next stop grows even with the scheduled fleet on the road. Positions older than 90 s and the first two stops of the route, where buses lay over at the terminal, are left out. Distance: red below 50 m, orange up to 150 m, yellow up to 250 m. Click a row to zoom the map to the pair.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -2481,56 +2477,36 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Two buses of the same route and direction closer than 250 m. Stale\n-- positions and the first two stops (terminal layovers) are left out. The\n-- pair's midpoint and vehicle ids ride along hidden: the row's data link\n-- writes them to lat/lng (the map centres) and parA/parB (the map rings them).\nWITH bus AS (\n  SELECT vehicle AS id, unit, route, dir_id, latitude AS lat, longitude AS lon, stop\n  FROM $vehicles\n  WHERE age_s <= 90\n    AND stop_seq > 2\n    AND mode = 'Bus'\n    -- Mode and route only: status and occupancy do not make two buses bunched.\n    AND mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))\n),\npairs AS (\n  SELECT a.route, a.unit AS a, b.unit AS b, a.id AS id_a, b.id AS id_b, a.stop,\n         (a.lat + b.lat) / 2 AS center_lat,\n         (a.lon + b.lon) / 2 AS center_lng,\n         2 * 6371000 * asin(sqrt(pow(sin(radians(b.lat - a.lat) / 2), 2)\n           + cos(radians(a.lat)) * cos(radians(b.lat)) * pow(sin(radians(b.lon - a.lon) / 2), 2))) AS meters\n  FROM bus a JOIN bus b ON a.route = b.route AND a.dir_id = b.dir_id AND a.unit < b.unit\n)\nSELECT p.route                        AS \"Route\",\n       p.a || ' + ' || p.b            AS \"Buses\",\n       coalesce(s.name, p.stop)       AS \"Near\",\n       round(p.meters)::BIGINT        AS \"Distance\",\n       -- Text, not numbers: a data link interpolates the cell's *formatted*\n       -- value, and the table's automatic decimals print 42.344533 as 42.3.\n       printf('%.6f', p.center_lat)   AS center_lat,\n       printf('%.6f', p.center_lng)   AS center_lng,\n       p.id_a,\n       p.id_b\nFROM pairs p LEFT JOIN $stops s ON s.stop_id = p.stop\nWHERE p.meters < 250\nORDER BY p.meters"
-                      }
+                        "rawSql": "-- Two buses of the same route and direction closer than 250 m. Stale\n-- positions and the first two stops (terminal layovers) are left out. The\n-- pair's midpoint and vehicle ids ride along hidden: the row's data link\n-- writes them to lat/lng (the map centres) and parA/parB (the map rings them).\nWITH bus AS (\n  SELECT vehicle AS id, unit, route, dir_id, latitude AS lat, longitude AS lon, stop\n  FROM $vehicles\n  WHERE age_s \u003c= 90\n    AND stop_seq \u003e 2\n    AND mode = 'Bus'\n    -- Mode and route only: status and occupancy do not make two buses bunched.\n    AND mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))\n),\npairs AS (\n  SELECT a.route, a.unit AS a, b.unit AS b, a.id AS id_a, b.id AS id_b, a.stop,\n         (a.lat + b.lat) / 2 AS center_lat,\n         (a.lon + b.lon) / 2 AS center_lng,\n         2 * 6371000 * asin(sqrt(pow(sin(radians(b.lat - a.lat) / 2), 2)\n           + cos(radians(a.lat)) * cos(radians(b.lat)) * pow(sin(radians(b.lon - a.lon) / 2), 2))) AS meters\n  FROM bus a JOIN bus b ON a.route = b.route AND a.dir_id = b.dir_id AND a.unit \u003c b.unit\n)\nSELECT p.route                        AS \"Route\",\n       p.a || ' + ' || p.b            AS \"Buses\",\n       coalesce(s.name, p.stop)       AS \"Near\",\n       round(p.meters)::BIGINT        AS \"Distance\",\n       -- Text, not numbers: a data link interpolates the cell's *formatted*\n       -- value, and the table's automatic decimals print 42.344533 as 42.3.\n       printf('%.6f', p.center_lat)   AS center_lat,\n       printf('%.6f', p.center_lng)   AS center_lng,\n       p.id_a,\n       p.id_b\nFROM pairs p LEFT JOIN $stops s ON s.stop_id = p.stop\nWHERE p.meters \u003c 250\nORDER BY p.meters"
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Pairs of buses on the same route and direction less than 250 m apart. A bus right behind another means a gap behind both: the wait at the next stop grows even with the scheduled fleet on the road. Positions older than 90 s and the first two stops of the route, where buses lay over at the terminal, are left out. Distance: red below 50 m, orange up to 150 m, yellow up to 250 m. Click a row to zoom the map to the pair.",
+          "id": 6,
+          "links": [],
+          "title": "Bunched buses now",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "table",
-            "version": "13.2.1",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "cellHeight": "sm",
-                "showHeader": true
-              },
               "fieldConfig": {
                 "defaults": {
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  },
-                  "links": [
-                    {
-                      "title": "Zoom the map to this pair",
-                      "url": "/d/gtfs-rt-mbta-fleet${__url.params:exclude:var-lat,var-lng,var-parA,var-parB}&var-lat=${__data.fields.center_lat}&var-lng=${__data.fields.center_lng}&var-parA=${__data.fields.id_a}&var-parB=${__data.fields.id_b}"
-                    }
-                  ],
                   "custom": {
                     "align": "auto",
                     "cellOptions": {
@@ -2540,6 +2516,25 @@
                       "reducers": []
                     },
                     "inspect": false
+                  },
+                  "links": [
+                    {
+                      "title": "Zoom the map to this pair",
+                      "url": "/d/gtfs-rt-mbta-fleet${__url.params:exclude:var-lat,var-lng,var-parA,var-parB}\u0026var-lat=${__data.fields.center_lat}\u0026var-lng=${__data.fields.center_lng}\u0026var-parA=${__data.fields.id_a}\u0026var-parB=${__data.fields.id_b}"
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -2653,18 +2648,19 @@
                     ]
                   }
                 ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
               }
-            }
+            },
+            "version": "13.2.1"
           }
         }
       },
       "panel-7": {
         "kind": "Panel",
         "spec": {
-          "id": 7,
-          "title": "Next stops of the selected vehicle",
-          "description": "TripUpdates predictions for the vehicle picked on the map. Empty until the first click.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -2672,51 +2668,36 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- $vehicle is written by a click on the map; empty until then, which\n-- matches nothing. By time, not stop sequence: a vehicle may already carry its\n-- next trip, whose sequence starts over.\nSELECT u.route                                      AS \"Route\",\n       coalesce(s.name, u.stop)                     AS \"Stop\",\n       to_timestamp(u.t)                            AS \"Estimated arrival\",\n       round((u.t - epoch(now())) / 60.0)::BIGINT   AS \"Due in\"\nFROM $upcoming u LEFT JOIN $stops s ON s.stop_id = u.stop\nWHERE u.vehicle = $vehicle\n  AND u.t >= epoch(now()) - 60\nORDER BY u.t, u.seq\nLIMIT 15"
-                      }
+                        "rawSql": "-- $vehicle is written by a click on the map; empty until then, which\n-- matches nothing. By time, not stop sequence: a vehicle may already carry its\n-- next trip, whose sequence starts over.\nSELECT u.route                                      AS \"Route\",\n       coalesce(s.name, u.stop)                     AS \"Stop\",\n       to_timestamp(u.t)                            AS \"Estimated arrival\",\n       round((u.t - epoch(now())) / 60.0)::BIGINT   AS \"Due in\"\nFROM $upcoming u LEFT JOIN $stops s ON s.stop_id = u.stop\nWHERE u.vehicle = $vehicle\n  AND u.t \u003e= epoch(now()) - 60\nORDER BY u.t, u.seq\nLIMIT 15"
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "TripUpdates predictions for the vehicle picked on the map. Empty until the first click.",
+          "id": 7,
+          "links": [],
+          "title": "Next stops of the selected vehicle",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "table",
-            "version": "13.2.1",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "cellHeight": "sm",
-                "showHeader": true
-              },
               "fieldConfig": {
                 "defaults": {
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  },
-                  "noValue": "Click a vehicle on the map",
                   "custom": {
                     "align": "auto",
                     "cellOptions": {
@@ -2726,6 +2707,20 @@
                       "reducers": []
                     },
                     "inspect": false
+                  },
+                  "noValue": "Click a vehicle on the map",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -2774,18 +2769,19 @@
                     ]
                   }
                 ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
               }
-            }
+            },
+            "version": "13.2.1"
           }
         }
       },
       "panel-8": {
         "kind": "Panel",
         "spec": {
-          "id": 8,
-          "title": "Freshness by mode",
-          "description": "Where the stale positions concentrate. At the MBTA it is usually the subway: trains parked in yards stay published.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -2793,50 +2789,36 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT mode                                        AS \"Mode\",\n       count(*)::BIGINT                            AS \"Vehicles\",\n       count(*) FILTER (WHERE age_s > 90)::BIGINT  AS \"Positions older than 90 s\",\n       max(age_s)::BIGINT                          AS \"Oldest position\"\nFROM $vehicles\nWHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))\n    AND status IN ($status)\n    AND occupancy IN ($occupancy)\nGROUP BY 1 ORDER BY 2 DESC"
-                      }
+                        "rawSql": "SELECT mode                                        AS \"Mode\",\n       count(*)::BIGINT                            AS \"Vehicles\",\n       count(*) FILTER (WHERE age_s \u003e 90)::BIGINT  AS \"Positions older than 90 s\",\n       max(age_s)::BIGINT                          AS \"Oldest position\"\nFROM $vehicles\nWHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))\n    AND status IN ($status)\n    AND occupancy IN ($occupancy)\nGROUP BY 1 ORDER BY 2 DESC"
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Where the stale positions concentrate. At the MBTA it is usually the subway: trains parked in yards stay published.",
+          "id": 8,
+          "links": [],
+          "title": "Freshness by mode",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "table",
-            "version": "13.2.1",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "cellHeight": "sm",
-                "showHeader": true
-              },
               "fieldConfig": {
                 "defaults": {
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  },
                   "custom": {
                     "align": "auto",
                     "cellOptions": {
@@ -2846,6 +2828,19 @@
                       "reducers": []
                     },
                     "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -2902,18 +2897,19 @@
                     ]
                   }
                 ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
               }
-            }
+            },
+            "version": "13.2.1"
           }
         }
       },
       "panel-9": {
         "kind": "Panel",
         "spec": {
-          "id": 9,
-          "title": "Active service alerts",
-          "description": "Alerts feed: notices in effect right now, grouped by the effect the agency declares.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -2921,31 +2917,58 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "rawSql": "-- One row per alert and route it names: an alert counts once, if any of its\n-- routes is inside the mode and route selection.\nSELECT effect                    AS \"Effect\",\n       count(DISTINCT alert)::BIGINT AS \"Alerts\"\nFROM $alerts\nWHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))\nGROUP BY 1 ORDER BY 2 DESC"
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Alerts feed: notices in effect right now, grouped by the effect the agency declares.",
+          "id": 9,
+          "links": [],
+          "title": "Active service alerts",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "bargauge",
-            "version": "13.2.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#d29922",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
               "options": {
                 "displayMode": "basic",
                 "legend": {
@@ -2969,32 +2992,9 @@
                 "showUnfilled": true,
                 "sizing": "auto",
                 "valueMode": "color"
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "decimals": 0,
-                  "min": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "fixed",
-                    "fixedColor": "#d29922"
-                  }
-                },
-                "overrides": []
               }
-            }
+            },
+            "version": "13.2.1"
           }
         }
       }
@@ -3006,7 +3006,6 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "Intro",
               "collapse": false,
               "hideHeader": true,
               "layout": {
@@ -3016,25 +3015,25 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 0,
-                        "y": 0,
-                        "width": 24,
-                        "height": 8,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-1"
-                        }
+                        },
+                        "height": 8,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
                       }
                     }
                   ]
                 }
-              }
+              },
+              "title": "Intro"
             }
           },
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "Feed health · live",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -3043,25 +3042,25 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 0,
-                        "y": 0,
-                        "width": 24,
-                        "height": 4,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-3"
-                        }
+                        },
+                        "height": 4,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
                       }
                     }
                   ]
                 }
-              }
+              },
+              "title": "Feed health · live"
             }
           },
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "Street operations · live",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -3070,90 +3069,90 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 0,
-                        "y": 0,
-                        "width": 15,
-                        "height": 20,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-5"
-                        }
+                        },
+                        "height": 20,
+                        "width": 15,
+                        "x": 0,
+                        "y": 0
                       }
                     },
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 15,
-                        "y": 0,
-                        "width": 9,
-                        "height": 11,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-18"
-                        }
+                        },
+                        "height": 11,
+                        "width": 9,
+                        "x": 15,
+                        "y": 0
                       }
                     },
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 15,
-                        "y": 11,
-                        "width": 9,
-                        "height": 9,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-7"
-                        }
+                        },
+                        "height": 9,
+                        "width": 9,
+                        "x": 15,
+                        "y": 11
                       }
                     },
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 0,
-                        "y": 20,
-                        "width": 8,
-                        "height": 8,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-6"
-                        }
+                        },
+                        "height": 8,
+                        "width": 8,
+                        "x": 0,
+                        "y": 20
                       }
                     },
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 8,
-                        "y": 20,
-                        "width": 8,
-                        "height": 8,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-8"
-                        }
+                        },
+                        "height": 8,
+                        "width": 8,
+                        "x": 8,
+                        "y": 20
                       }
                     },
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 16,
-                        "y": 20,
-                        "width": 8,
-                        "height": 8,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-9"
-                        }
+                        },
+                        "height": 8,
+                        "width": 8,
+                        "x": 16,
+                        "y": 20
                       }
                     }
                   ]
                 }
-              }
+              },
+              "title": "Street operations · live"
             }
           },
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "Subway reliability · history (the last 30 days up to yesterday, within the time range and the mode and route filters)",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -3162,58 +3161,59 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 0,
-                        "y": 0,
-                        "width": 12,
-                        "height": 8,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-11"
-                        }
+                        },
+                        "height": 8,
+                        "width": 12,
+                        "x": 0,
+                        "y": 0
                       }
                     },
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 12,
-                        "y": 0,
-                        "width": 12,
-                        "height": 8,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-12"
-                        }
+                        },
+                        "height": 8,
+                        "width": 12,
+                        "x": 12,
+                        "y": 0
                       }
                     },
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 0,
-                        "y": 8,
-                        "width": 12,
-                        "height": 12,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-13"
-                        }
+                        },
+                        "height": 12,
+                        "width": 12,
+                        "x": 0,
+                        "y": 8
                       }
                     },
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 12,
-                        "y": 8,
-                        "width": 12,
-                        "height": 12,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-14"
-                        }
+                        },
+                        "height": 12,
+                        "width": 12,
+                        "x": 12,
+                        "y": 8
                       }
                     }
                   ]
                 }
-              }
+              },
+              "title": "Subway reliability · history (the last 30 days up to yesterday, within the time range and the mode and route filters)"
             }
           }
         ]
@@ -3223,17 +3223,13 @@
     "liveNow": false,
     "preload": false,
     "tags": [
-      "plus",
       "chaski",
       "kepler",
-      "fleet",
-      "gtfs-rt",
-      "transit"
+      "kepler-plus",
+      "transit",
+      "live"
     ],
     "timeSettings": {
-      "timezone": "America/New_York",
-      "from": "now-7d",
-      "to": "now",
       "autoRefresh": "15s",
       "autoRefreshIntervals": [
         "15s",
@@ -3243,29 +3239,33 @@
         "5m",
         "15m"
       ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-7d",
       "hideTimepicker": false,
-      "fiscalYearStartMonth": 0
+      "timezone": "America/New_York",
+      "to": "now"
     },
-    "title": "Real-time public transit — MBTA (fleet · Chaski)",
+    "title": "Real-time public transit — MBTA",
     "variables": [
       {
         "kind": "QueryVariable",
         "spec": {
-          "name": "vehicles",
+          "allowCustomValue": true,
           "current": {
             "text": "",
             "value": ""
           },
           "hide": "hideVariable",
-          "refresh": "onTimeRangeChanged",
-          "skipUrlSync": true,
+          "includeAll": false,
+          "multi": false,
+          "name": "vehicles",
+          "options": [],
           "query": {
-            "kind": "DataQuery",
-            "group": "ubica-chaski-datasource",
-            "version": "v0",
             "datasource": {
               "name": "duckdbwasm"
             },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
             "spec": {
               "kind": "dataset",
               "name": "vehicles",
@@ -3283,40 +3283,40 @@
                   "editorMode": "code",
                   "format": 1,
                   "rawQuery": true,
-                  "rawSql": "-- Server side: the feed sends no CORS headers, so DuckDB in the grafana\n-- container reads it through the gateway's 15 s cache, and every panel then\n-- filters these rows in the browser. One row per vehicle; `vehicle` is the\n-- fleet layer's asset and `time` its ping, so the map remembers each vehicle's\n-- last positions across refreshes and draws its trail. Not `vehicle_id`: the\n-- panel would read that as a trip.\n-- One request per feed: http_get fetches the whole file at once, and the JSON\n-- is parsed from memory. read_json would read it in several passes, and a pass\n-- landing after the cache renews the feed (every 15 s) fails DuckDB's ETag\n-- check.\nWITH feed AS MATERIALIZED (SELECT (http_get('http://feeds/mbta/realtime/VehiclePositions_enhanced.json')->>'body')::JSON AS doc),\nvp AS (SELECT (doc->>'$.header.timestamp')::BIGINT AS hts, unnest(json_extract(doc, '$.entity[*]')) AS e FROM feed),\nv AS (\n  SELECT hts,\n         e->>'$.vehicle.vehicle.id'              AS vehicle,\n         e->>'$.vehicle.vehicle.label'           AS unit,\n         e->>'$.vehicle.trip.route_id'           AS route,\n         e->>'$.vehicle.trip.trip_id'            AS trip,\n         (e->>'$.vehicle.trip.direction_id')::INTEGER     AS dir_id,\n         e->>'$.vehicle.stop_id'                 AS stop,\n         (e->>'$.vehicle.current_stop_sequence')::INTEGER AS stop_seq,\n         (e->>'$.vehicle.position.bearing')::DOUBLE       AS heading,\n         (e->>'$.vehicle.position.latitude')::DOUBLE      AS latitude,\n         (e->>'$.vehicle.position.longitude')::DOUBLE     AS longitude,\n         e->>'$.vehicle.current_status'          AS current_status,\n         e->>'$.vehicle.occupancy_status'        AS occupancy_status,\n         (e->>'$.vehicle.timestamp')::BIGINT     AS ts\n  FROM vp\n)\nSELECT\n  vehicle,\n  unit,\n  route,\n  CASE\n    WHEN route IN ('Red', 'Orange', 'Blue', 'Mattapan') OR route LIKE 'Green-%' THEN 'Subway'\n    WHEN route LIKE 'CR-%'   THEN 'Commuter rail'\n    WHEN route LIKE 'Boat-%' THEN 'Ferry'\n    ELSE 'Bus'\n  END                                   AS mode,\n  -- Picks the 3D model: bus, subway (metro), commuter rail (train), ferry.\n  lower(CASE\n    WHEN route IN ('Red', 'Orange', 'Blue', 'Mattapan') OR route LIKE 'Green-%' THEN 'Subway'\n    WHEN route LIKE 'CR-%'   THEN 'Commuter rail'\n    WHEN route LIKE 'Boat-%' THEN 'Ferry'\n    ELSE 'Bus'\n  END)                            AS type,\n  trip,\n  dir_id,\n  stop,\n  stop_seq,\n  heading,\n  latitude,\n  longitude,\n  CASE current_status\n    WHEN 'IN_TRANSIT_TO' THEN 'In transit'\n    WHEN 'STOPPED_AT'    THEN 'Stopped at stop'\n    WHEN 'INCOMING_AT'   THEN 'Arriving at stop'\n    ELSE 'No data'\n  END                                   AS status,\n  CASE occupancy_status\n    WHEN 'EMPTY'                      THEN 'Empty'\n    WHEN 'MANY_SEATS_AVAILABLE'       THEN 'Many seats'\n    WHEN 'FEW_SEATS_AVAILABLE'        THEN 'Few seats'\n    WHEN 'STANDING_ROOM_ONLY'         THEN 'Standing room only'\n    WHEN 'CRUSHED_STANDING_ROOM_ONLY' THEN 'Crushed'\n    WHEN 'FULL'                       THEN 'Full'\n    WHEN 'NOT_ACCEPTING_PASSENGERS'   THEN 'Not accepting passengers'\n    ELSE 'No data'\n  END                                   AS occupancy,\n  to_timestamp(ts)                      AS time,\n  (hts - ts)::BIGINT                    AS age_s,\n  CASE\n    WHEN hts - ts <= 30 THEN '≤ 30 s'\n    WHEN hts - ts <= 90 THEN '30–90 s'\n    ELSE '> 90 s'\n  END                                   AS freshness,\n  hts                                   AS feed_ts\nFROM v\nWHERE latitude IS NOT NULL\n",
+                  "rawSql": "-- Server side: the feed sends no CORS headers, so DuckDB in the grafana\n-- container reads it through the gateway's 15 s cache, and every panel then\n-- filters these rows in the browser. One row per vehicle; `vehicle` is the\n-- fleet layer's asset and `time` its ping, so the map remembers each vehicle's\n-- last positions across refreshes and draws its trail. Not `vehicle_id`: the\n-- panel would read that as a trip.\n-- One request per feed: http_get fetches the whole file at once, and the JSON\n-- is parsed from memory. read_json would read it in several passes, and a pass\n-- landing after the cache renews the feed (every 15 s) fails DuckDB's ETag\n-- check.\nWITH feed AS MATERIALIZED (SELECT (http_get('http://feeds/mbta/realtime/VehiclePositions_enhanced.json')-\u003e\u003e'body')::JSON AS doc),\nvp AS (SELECT (doc-\u003e\u003e'$.header.timestamp')::BIGINT AS hts, unnest(json_extract(doc, '$.entity[*]')) AS e FROM feed),\nv AS (\n  SELECT hts,\n         e-\u003e\u003e'$.vehicle.vehicle.id'              AS vehicle,\n         e-\u003e\u003e'$.vehicle.vehicle.label'           AS unit,\n         e-\u003e\u003e'$.vehicle.trip.route_id'           AS route,\n         e-\u003e\u003e'$.vehicle.trip.trip_id'            AS trip,\n         (e-\u003e\u003e'$.vehicle.trip.direction_id')::INTEGER     AS dir_id,\n         e-\u003e\u003e'$.vehicle.stop_id'                 AS stop,\n         (e-\u003e\u003e'$.vehicle.current_stop_sequence')::INTEGER AS stop_seq,\n         (e-\u003e\u003e'$.vehicle.position.bearing')::DOUBLE       AS heading,\n         (e-\u003e\u003e'$.vehicle.position.latitude')::DOUBLE      AS latitude,\n         (e-\u003e\u003e'$.vehicle.position.longitude')::DOUBLE     AS longitude,\n         e-\u003e\u003e'$.vehicle.current_status'          AS current_status,\n         e-\u003e\u003e'$.vehicle.occupancy_status'        AS occupancy_status,\n         (e-\u003e\u003e'$.vehicle.timestamp')::BIGINT     AS ts\n  FROM vp\n)\nSELECT\n  vehicle,\n  unit,\n  route,\n  CASE\n    WHEN route IN ('Red', 'Orange', 'Blue', 'Mattapan') OR route LIKE 'Green-%' THEN 'Subway'\n    WHEN route LIKE 'CR-%'   THEN 'Commuter rail'\n    WHEN route LIKE 'Boat-%' THEN 'Ferry'\n    ELSE 'Bus'\n  END                                   AS mode,\n  -- Picks the 3D model: bus, subway (metro), commuter rail (train), ferry.\n  lower(CASE\n    WHEN route IN ('Red', 'Orange', 'Blue', 'Mattapan') OR route LIKE 'Green-%' THEN 'Subway'\n    WHEN route LIKE 'CR-%'   THEN 'Commuter rail'\n    WHEN route LIKE 'Boat-%' THEN 'Ferry'\n    ELSE 'Bus'\n  END)                            AS type,\n  trip,\n  dir_id,\n  stop,\n  stop_seq,\n  heading,\n  latitude,\n  longitude,\n  CASE current_status\n    WHEN 'IN_TRANSIT_TO' THEN 'In transit'\n    WHEN 'STOPPED_AT'    THEN 'Stopped at stop'\n    WHEN 'INCOMING_AT'   THEN 'Arriving at stop'\n    ELSE 'No data'\n  END                                   AS status,\n  CASE occupancy_status\n    WHEN 'EMPTY'                      THEN 'Empty'\n    WHEN 'MANY_SEATS_AVAILABLE'       THEN 'Many seats'\n    WHEN 'FEW_SEATS_AVAILABLE'        THEN 'Few seats'\n    WHEN 'STANDING_ROOM_ONLY'         THEN 'Standing room only'\n    WHEN 'CRUSHED_STANDING_ROOM_ONLY' THEN 'Crushed'\n    WHEN 'FULL'                       THEN 'Full'\n    WHEN 'NOT_ACCEPTING_PASSENGERS'   THEN 'Not accepting passengers'\n    ELSE 'No data'\n  END                                   AS occupancy,\n  to_timestamp(ts)                      AS time,\n  (hts - ts)::BIGINT                    AS age_s,\n  CASE\n    WHEN hts - ts \u003c= 30 THEN '≤ 30 s'\n    WHEN hts - ts \u003c= 90 THEN '30–90 s'\n    ELSE '\u003e 90 s'\n  END                                   AS freshness,\n  hts                                   AS feed_ts\nFROM v\nWHERE latitude IS NOT NULL\n",
                   "refId": "vehicles"
                 },
                 "type": "datasource"
               }
-            }
+            },
+            "version": "v0"
           },
+          "refresh": "onTimeRangeChanged",
           "regex": "",
           "regexApplyTo": "value",
-          "sort": "disabled",
-          "options": [],
-          "multi": false,
-          "includeAll": false,
-          "allowCustomValue": true
+          "skipUrlSync": true,
+          "sort": "disabled"
         }
       },
       {
         "kind": "QueryVariable",
         "spec": {
-          "name": "trips",
+          "allowCustomValue": true,
           "current": {
             "text": "",
             "value": ""
           },
           "hide": "hideVariable",
-          "refresh": "onTimeRangeChanged",
-          "skipUrlSync": true,
+          "includeAll": false,
+          "multi": false,
+          "name": "trips",
+          "options": [],
           "query": {
-            "kind": "DataQuery",
-            "group": "ubica-chaski-datasource",
-            "version": "v0",
             "datasource": {
               "name": "duckdbwasm"
             },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
             "spec": {
               "kind": "dataset",
               "name": "trips",
@@ -3334,40 +3334,40 @@
                   "editorMode": "code",
                   "format": 1,
                   "rawQuery": true,
-                  "rawSql": "-- Server side, as the vehicles: one row per trip with predictions.\n-- One request per feed: http_get fetches the whole file at once, and the JSON\n-- is parsed from memory. read_json would read it in several passes, and a pass\n-- landing after the cache renews the feed (every 15 s) fails DuckDB's ETag\n-- check.\nWITH feed AS MATERIALIZED (SELECT (http_get('http://feeds/mbta/realtime/TripUpdates_enhanced.json')->>'body')::JSON AS doc),\ntu AS (SELECT (doc->>'$.header.timestamp')::BIGINT AS hts, unnest(json_extract(doc, '$.entity[*]')) AS e FROM feed)\nSELECT e->>'$.trip_update.trip.trip_id'               AS trip,\n       e->>'$.trip_update.trip.route_id'              AS route,\n       CASE\n    WHEN (e->>'$.trip_update.trip.route_id') IN ('Red', 'Orange', 'Blue', 'Mattapan') OR (e->>'$.trip_update.trip.route_id') LIKE 'Green-%' THEN 'Subway'\n    WHEN (e->>'$.trip_update.trip.route_id') LIKE 'CR-%'   THEN 'Commuter rail'\n    WHEN (e->>'$.trip_update.trip.route_id') LIKE 'Boat-%' THEN 'Ferry'\n    ELSE 'Bus'\n  END  AS mode,\n       e->>'$.trip_update.trip.schedule_relationship' AS relationship,\n       e->>'$.trip_update.vehicle.id'                 AS vehicle\nFROM tu\n",
+                  "rawSql": "-- Server side, as the vehicles: one row per trip with predictions.\n-- One request per feed: http_get fetches the whole file at once, and the JSON\n-- is parsed from memory. read_json would read it in several passes, and a pass\n-- landing after the cache renews the feed (every 15 s) fails DuckDB's ETag\n-- check.\nWITH feed AS MATERIALIZED (SELECT (http_get('http://feeds/mbta/realtime/TripUpdates_enhanced.json')-\u003e\u003e'body')::JSON AS doc),\ntu AS (SELECT (doc-\u003e\u003e'$.header.timestamp')::BIGINT AS hts, unnest(json_extract(doc, '$.entity[*]')) AS e FROM feed)\nSELECT e-\u003e\u003e'$.trip_update.trip.trip_id'               AS trip,\n       e-\u003e\u003e'$.trip_update.trip.route_id'              AS route,\n       CASE\n    WHEN (e-\u003e\u003e'$.trip_update.trip.route_id') IN ('Red', 'Orange', 'Blue', 'Mattapan') OR (e-\u003e\u003e'$.trip_update.trip.route_id') LIKE 'Green-%' THEN 'Subway'\n    WHEN (e-\u003e\u003e'$.trip_update.trip.route_id') LIKE 'CR-%'   THEN 'Commuter rail'\n    WHEN (e-\u003e\u003e'$.trip_update.trip.route_id') LIKE 'Boat-%' THEN 'Ferry'\n    ELSE 'Bus'\n  END  AS mode,\n       e-\u003e\u003e'$.trip_update.trip.schedule_relationship' AS relationship,\n       e-\u003e\u003e'$.trip_update.vehicle.id'                 AS vehicle\nFROM tu\n",
                   "refId": "trips"
                 },
                 "type": "datasource"
               }
-            }
+            },
+            "version": "v0"
           },
+          "refresh": "onTimeRangeChanged",
           "regex": "",
           "regexApplyTo": "value",
-          "sort": "disabled",
-          "options": [],
-          "multi": false,
-          "includeAll": false,
-          "allowCustomValue": true
+          "skipUrlSync": true,
+          "sort": "disabled"
         }
       },
       {
         "kind": "QueryVariable",
         "spec": {
-          "name": "upcoming",
+          "allowCustomValue": true,
           "current": {
             "text": "",
             "value": ""
           },
           "hide": "hideVariable",
-          "refresh": "onTimeRangeChanged",
-          "skipUrlSync": true,
+          "includeAll": false,
+          "multi": false,
+          "name": "upcoming",
+          "options": [],
           "query": {
-            "kind": "DataQuery",
-            "group": "ubica-chaski-datasource",
-            "version": "v0",
             "datasource": {
               "name": "duckdbwasm"
             },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
             "spec": {
               "kind": "dataset",
               "name": "upcoming",
@@ -3385,40 +3385,40 @@
                   "editorMode": "code",
                   "format": 1,
                   "rawQuery": true,
-                  "rawSql": "-- Server side: every stop each trip still has ahead, from a minute ago on.\n-- The browser picks the selected vehicle's next stops and every vehicle's next\n-- two from here.\n-- One request per feed: http_get fetches the whole file at once, and the JSON\n-- is parsed from memory. read_json would read it in several passes, and a pass\n-- landing after the cache renews the feed (every 15 s) fails DuckDB's ETag\n-- check.\nWITH feed AS MATERIALIZED (SELECT (http_get('http://feeds/mbta/realtime/TripUpdates_enhanced.json')->>'body')::JSON AS doc),\ntu AS (SELECT (doc->>'$.header.timestamp')::BIGINT AS hts, unnest(json_extract(doc, '$.entity[*]')) AS e FROM feed),\nst AS (\n  SELECT e->>'$.trip_update.trip.trip_id'  AS trip,\n         e->>'$.trip_update.trip.route_id' AS route,\n         e->>'$.trip_update.vehicle.id'    AS vehicle,\n         unnest(json_extract(e, '$.trip_update.stop_time_update[*]')) AS s\n  FROM tu\n),\np AS (\n  SELECT trip, route, vehicle,\n         (s->>'$.stop_sequence')::INTEGER AS seq,\n         s->>'$.stop_id'                  AS stop,\n         coalesce((s->>'$.arrival.time')::BIGINT, (s->>'$.departure.time')::BIGINT) AS t,\n         coalesce(s->>'$.schedule_relationship', 'SCHEDULED') = 'SKIPPED' AS skipped\n  FROM st\n)\nSELECT trip, route, vehicle, seq, stop, t, skipped\nFROM p\nWHERE t >= epoch(now()) - 60\n-- Fifteen ahead per trip is all the panels read.\nQUALIFY row_number() OVER (PARTITION BY trip ORDER BY seq) <= 15\n",
+                  "rawSql": "-- Server side: every stop each trip still has ahead, from a minute ago on.\n-- The browser picks the selected vehicle's next stops and every vehicle's next\n-- two from here.\n-- One request per feed: http_get fetches the whole file at once, and the JSON\n-- is parsed from memory. read_json would read it in several passes, and a pass\n-- landing after the cache renews the feed (every 15 s) fails DuckDB's ETag\n-- check.\nWITH feed AS MATERIALIZED (SELECT (http_get('http://feeds/mbta/realtime/TripUpdates_enhanced.json')-\u003e\u003e'body')::JSON AS doc),\ntu AS (SELECT (doc-\u003e\u003e'$.header.timestamp')::BIGINT AS hts, unnest(json_extract(doc, '$.entity[*]')) AS e FROM feed),\nst AS (\n  SELECT e-\u003e\u003e'$.trip_update.trip.trip_id'  AS trip,\n         e-\u003e\u003e'$.trip_update.trip.route_id' AS route,\n         e-\u003e\u003e'$.trip_update.vehicle.id'    AS vehicle,\n         unnest(json_extract(e, '$.trip_update.stop_time_update[*]')) AS s\n  FROM tu\n),\np AS (\n  SELECT trip, route, vehicle,\n         (s-\u003e\u003e'$.stop_sequence')::INTEGER AS seq,\n         s-\u003e\u003e'$.stop_id'                  AS stop,\n         coalesce((s-\u003e\u003e'$.arrival.time')::BIGINT, (s-\u003e\u003e'$.departure.time')::BIGINT) AS t,\n         coalesce(s-\u003e\u003e'$.schedule_relationship', 'SCHEDULED') = 'SKIPPED' AS skipped\n  FROM st\n)\nSELECT trip, route, vehicle, seq, stop, t, skipped\nFROM p\nWHERE t \u003e= epoch(now()) - 60\n-- Fifteen ahead per trip is all the panels read.\nQUALIFY row_number() OVER (PARTITION BY trip ORDER BY seq) \u003c= 15\n",
                   "refId": "upcoming"
                 },
                 "type": "datasource"
               }
-            }
+            },
+            "version": "v0"
           },
+          "refresh": "onTimeRangeChanged",
           "regex": "",
           "regexApplyTo": "value",
-          "sort": "disabled",
-          "options": [],
-          "multi": false,
-          "includeAll": false,
-          "allowCustomValue": true
+          "skipUrlSync": true,
+          "sort": "disabled"
         }
       },
       {
         "kind": "QueryVariable",
         "spec": {
-          "name": "alerts",
+          "allowCustomValue": true,
           "current": {
             "text": "",
             "value": ""
           },
           "hide": "hideVariable",
-          "refresh": "onTimeRangeChanged",
-          "skipUrlSync": true,
+          "includeAll": false,
+          "multi": false,
+          "name": "alerts",
+          "options": [],
           "query": {
-            "kind": "DataQuery",
-            "group": "ubica-chaski-datasource",
-            "version": "v0",
             "datasource": {
               "name": "duckdbwasm"
             },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
             "spec": {
               "kind": "dataset",
               "name": "alerts",
@@ -3436,40 +3436,40 @@
                   "editorMode": "code",
                   "format": 1,
                   "rawQuery": true,
-                  "rawSql": "-- Server side: the alerts in effect now, one row per route each one names.\n-- One request per feed: http_get fetches the whole file at once, and the JSON\n-- is parsed from memory. read_json would read it in several passes, and a pass\n-- landing after the cache renews the feed (every 15 s) fails DuckDB's ETag\n-- check.\nWITH feed AS MATERIALIZED (SELECT (http_get('http://feeds/mbta/realtime/Alerts_enhanced.json')->>'body')::JSON AS doc),\nal AS (SELECT (doc->>'$.header.timestamp')::BIGINT AS hts, unnest(json_extract(doc, '$.entity[*]')) AS e FROM feed),\nactive AS (\n  SELECT e FROM al\n  -- Some period has started and has not ended (no end = open).\n  WHERE len(list_filter(json_extract(e, '$.alert.active_period[*]'),\n          p -> (p->>'$.start')::BIGINT <= epoch(now())\n               AND coalesce((p->>'$.end')::BIGINT, 9999999999) >= epoch(now()))) > 0\n),\nx AS (\n  SELECT e->>'$.id' AS alert, e->>'$.alert.effect' AS eff,\n         unnest(json_extract(e, '$.alert.informed_entity[*]'))->>'$.route_id' AS route\n  FROM active\n)\nSELECT DISTINCT\n  alert,\n  CASE eff\n    WHEN 'NO_SERVICE'          THEN 'No service'\n    WHEN 'REDUCED_SERVICE'     THEN 'Reduced service'\n    WHEN 'SIGNIFICANT_DELAYS'  THEN 'Significant delays'\n    WHEN 'DETOUR'              THEN 'Detour'\n    WHEN 'ADDITIONAL_SERVICE'  THEN 'Additional service'\n    WHEN 'MODIFIED_SERVICE'    THEN 'Modified service'\n    WHEN 'STOP_MOVED'          THEN 'Stop moved'\n    WHEN 'ACCESSIBILITY_ISSUE' THEN 'Accessibility'\n    WHEN 'OTHER_EFFECT'        THEN 'Other'\n    ELSE 'Unknown'\n  END AS effect,\n  route,\n  CASE\n    WHEN route IN ('Red', 'Orange', 'Blue', 'Mattapan') OR route LIKE 'Green-%' THEN 'Subway'\n    WHEN route LIKE 'CR-%'   THEN 'Commuter rail'\n    WHEN route LIKE 'Boat-%' THEN 'Ferry'\n    ELSE 'Bus'\n  END AS mode\nFROM x\nWHERE route IS NOT NULL\n",
+                  "rawSql": "-- Server side: the alerts in effect now, one row per route each one names.\n-- One request per feed: http_get fetches the whole file at once, and the JSON\n-- is parsed from memory. read_json would read it in several passes, and a pass\n-- landing after the cache renews the feed (every 15 s) fails DuckDB's ETag\n-- check.\nWITH feed AS MATERIALIZED (SELECT (http_get('http://feeds/mbta/realtime/Alerts_enhanced.json')-\u003e\u003e'body')::JSON AS doc),\nal AS (SELECT (doc-\u003e\u003e'$.header.timestamp')::BIGINT AS hts, unnest(json_extract(doc, '$.entity[*]')) AS e FROM feed),\nactive AS (\n  SELECT e FROM al\n  -- Some period has started and has not ended (no end = open).\n  WHERE len(list_filter(json_extract(e, '$.alert.active_period[*]'),\n          p -\u003e (p-\u003e\u003e'$.start')::BIGINT \u003c= epoch(now())\n               AND coalesce((p-\u003e\u003e'$.end')::BIGINT, 9999999999) \u003e= epoch(now()))) \u003e 0\n),\nx AS (\n  SELECT e-\u003e\u003e'$.id' AS alert, e-\u003e\u003e'$.alert.effect' AS eff,\n         unnest(json_extract(e, '$.alert.informed_entity[*]'))-\u003e\u003e'$.route_id' AS route\n  FROM active\n)\nSELECT DISTINCT\n  alert,\n  CASE eff\n    WHEN 'NO_SERVICE'          THEN 'No service'\n    WHEN 'REDUCED_SERVICE'     THEN 'Reduced service'\n    WHEN 'SIGNIFICANT_DELAYS'  THEN 'Significant delays'\n    WHEN 'DETOUR'              THEN 'Detour'\n    WHEN 'ADDITIONAL_SERVICE'  THEN 'Additional service'\n    WHEN 'MODIFIED_SERVICE'    THEN 'Modified service'\n    WHEN 'STOP_MOVED'          THEN 'Stop moved'\n    WHEN 'ACCESSIBILITY_ISSUE' THEN 'Accessibility'\n    WHEN 'OTHER_EFFECT'        THEN 'Other'\n    ELSE 'Unknown'\n  END AS effect,\n  route,\n  CASE\n    WHEN route IN ('Red', 'Orange', 'Blue', 'Mattapan') OR route LIKE 'Green-%' THEN 'Subway'\n    WHEN route LIKE 'CR-%'   THEN 'Commuter rail'\n    WHEN route LIKE 'Boat-%' THEN 'Ferry'\n    ELSE 'Bus'\n  END AS mode\nFROM x\nWHERE route IS NOT NULL\n",
                   "refId": "alerts"
                 },
                 "type": "datasource"
               }
-            }
+            },
+            "version": "v0"
           },
+          "refresh": "onTimeRangeChanged",
           "regex": "",
           "regexApplyTo": "value",
-          "sort": "disabled",
-          "options": [],
-          "multi": false,
-          "includeAll": false,
-          "allowCustomValue": true
+          "skipUrlSync": true,
+          "sort": "disabled"
         }
       },
       {
         "kind": "QueryVariable",
         "spec": {
-          "name": "stops",
+          "allowCustomValue": true,
           "current": {
             "text": "",
             "value": ""
           },
           "hide": "hideVariable",
-          "refresh": "onDashboardLoad",
-          "skipUrlSync": true,
+          "includeAll": false,
+          "multi": false,
+          "name": "stops",
+          "options": [],
           "query": {
-            "kind": "DataQuery",
-            "group": "ubica-chaski-datasource",
-            "version": "v0",
             "datasource": {
               "name": "duckdbwasm"
             },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
             "spec": {
               "kind": "dataset",
               "name": "stops",
@@ -3492,35 +3492,35 @@
                 },
                 "type": "datasource"
               }
-            }
+            },
+            "version": "v0"
           },
+          "refresh": "onDashboardLoad",
           "regex": "",
           "regexApplyTo": "value",
-          "sort": "disabled",
-          "options": [],
-          "multi": false,
-          "includeAll": false,
-          "allowCustomValue": true
+          "skipUrlSync": true,
+          "sort": "disabled"
         }
       },
       {
         "kind": "QueryVariable",
         "spec": {
-          "name": "headways",
+          "allowCustomValue": true,
           "current": {
             "text": "",
             "value": ""
           },
           "hide": "hideVariable",
-          "refresh": "onDashboardLoad",
-          "skipUrlSync": true,
+          "includeAll": false,
+          "multi": false,
+          "name": "headways",
+          "options": [],
           "query": {
-            "kind": "DataQuery",
-            "group": "ubica-chaski-datasource",
-            "version": "v0",
             "datasource": {
               "name": "duckdbwasm"
             },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
             "spec": {
               "kind": "dataset",
               "name": "headways",
@@ -3538,85 +3538,83 @@
                   "editorMode": "code",
                   "format": 1,
                   "rawQuery": true,
-                  "rawSql": "-- Server side, once per visit: LAMP, the MBTA's performance archive, one\n-- Parquet per service day. The last 30 days up to yesterday in Boston: today's\n-- file may not exist yet, and a missing file fails the whole read. Summed per\n-- hour, station, line and direction, so the panels add the sums up over the\n-- dashboard range in the browser, and a new range needs no new load.\nWITH d AS (\n  SELECT trunk_route_id AS line,\n         route_id,\n         parent_station,\n         direction_destination,\n         to_timestamp(stop_timestamp) AS t,\n         coalesce(headway_branch_seconds, headway_trunk_seconds)     AS h,\n         coalesce(scheduled_headway_branch, scheduled_headway_trunk) AS hs\n  FROM read_parquet([\n  'http://feeds/mbta/lamp/subway-on-time-performance-v1/' || strftime(d, '%Y-%m-%d') || '-subway-on-time-performance-v1.parquet'\n  FOR d IN generate_series(\n    (now() AT TIME ZONE 'America/New_York')::DATE - 30,\n    (now() AT TIME ZONE 'America/New_York')::DATE - 1,\n    INTERVAL 1 DAY)\n])\n),\n-- Branch headways where the station is on a branch (Green-B/C/D/E), trunk\n-- headways otherwise; comparing a branch stop against the trunk schedule\n-- invents gaps. Intervals of an hour or more are the overnight break, and some\n-- rows carry headways but no stop timestamp.\nok AS (\n  SELECT * FROM d\n  WHERE t IS NOT NULL AND h > 0 AND hs > 0 AND h < 3600 AND hs < 3600\n)\nSELECT time_bucket(INTERVAL 1 HOUR, o.t)           AS time,\n       o.line, o.route_id AS route, o.parent_station AS station_id,\n       o.direction_destination                       AS toward,\n       count(*)::BIGINT                              AS n,\n       sum(h)::DOUBLE AS sh, sum(h ^ 2)::DOUBLE AS sh2,\n       sum(hs)::DOUBLE AS shs, sum(hs ^ 2)::DOUBLE AS shs2,\n       count(*) FILTER (WHERE h < 0.25 * hs)::BIGINT AS bunched,\n       count(*) FILTER (WHERE h > 1.5 * hs)::BIGINT  AS gaps\nFROM ok o\nGROUP BY ALL\n",
+                  "rawSql": "-- Server side, once per visit: LAMP, the MBTA's performance archive, one\n-- Parquet per service day. The last 30 days up to yesterday in Boston: today's\n-- file may not exist yet, and a missing file fails the whole read. Summed per\n-- hour, station, line and direction, so the panels add the sums up over the\n-- dashboard range in the browser, and a new range needs no new load.\nWITH d AS (\n  SELECT trunk_route_id AS line,\n         route_id,\n         parent_station,\n         direction_destination,\n         to_timestamp(stop_timestamp) AS t,\n         coalesce(headway_branch_seconds, headway_trunk_seconds)     AS h,\n         coalesce(scheduled_headway_branch, scheduled_headway_trunk) AS hs\n  FROM read_parquet([\n  'http://feeds/mbta/lamp/subway-on-time-performance-v1/' || strftime(d, '%Y-%m-%d') || '-subway-on-time-performance-v1.parquet'\n  FOR d IN generate_series(\n    (now() AT TIME ZONE 'America/New_York')::DATE - 30,\n    (now() AT TIME ZONE 'America/New_York')::DATE - 1,\n    INTERVAL 1 DAY)\n])\n),\n-- Branch headways where the station is on a branch (Green-B/C/D/E), trunk\n-- headways otherwise; comparing a branch stop against the trunk schedule\n-- invents gaps. Intervals of an hour or more are the overnight break, and some\n-- rows carry headways but no stop timestamp.\nok AS (\n  SELECT * FROM d\n  WHERE t IS NOT NULL AND h \u003e 0 AND hs \u003e 0 AND h \u003c 3600 AND hs \u003c 3600\n)\nSELECT time_bucket(INTERVAL 1 HOUR, o.t)           AS time,\n       o.line, o.route_id AS route, o.parent_station AS station_id,\n       o.direction_destination                       AS toward,\n       count(*)::BIGINT                              AS n,\n       sum(h)::DOUBLE AS sh, sum(h ^ 2)::DOUBLE AS sh2,\n       sum(hs)::DOUBLE AS shs, sum(hs ^ 2)::DOUBLE AS shs2,\n       count(*) FILTER (WHERE h \u003c 0.25 * hs)::BIGINT AS bunched,\n       count(*) FILTER (WHERE h \u003e 1.5 * hs)::BIGINT  AS gaps\nFROM ok o\nGROUP BY ALL\n",
                   "refId": "headways"
                 },
                 "type": "datasource"
               }
-            }
+            },
+            "version": "v0"
           },
+          "refresh": "onDashboardLoad",
           "regex": "",
           "regexApplyTo": "value",
-          "sort": "disabled",
-          "options": [],
-          "multi": false,
-          "includeAll": false,
-          "allowCustomValue": true
+          "skipUrlSync": true,
+          "sort": "disabled"
         }
       },
       {
         "kind": "CustomVariable",
         "spec": {
-          "name": "mode",
-          "query": "Bus,Subway,Commuter rail,Ferry",
+          "allowCustomValue": true,
           "current": {
             "text": "All",
             "value": [
               "$__all"
             ]
           },
-          "options": [],
-          "multi": true,
+          "hide": "dontHide",
           "includeAll": true,
           "label": "Mode",
-          "hide": "dontHide",
+          "multi": true,
+          "name": "mode",
+          "options": [],
+          "query": "Bus,Subway,Commuter rail,Ferry",
           "skipUrlSync": false,
-          "allowCustomValue": true,
           "valuesFormat": "csv"
         }
       },
       {
         "kind": "QueryVariable",
         "spec": {
-          "name": "route",
+          "allValue": "'__all__'",
+          "allowCustomValue": true,
           "current": {
             "text": "All",
             "value": [
               "$__all"
             ]
           },
-          "label": "Route",
           "hide": "dontHide",
-          "refresh": "onDashboardLoad",
-          "skipUrlSync": false,
+          "includeAll": true,
+          "label": "Route",
+          "multi": true,
+          "name": "route",
+          "options": [],
           "query": {
-            "kind": "DataQuery",
-            "group": "ubica-chaski-datasource",
-            "version": "v0",
             "datasource": {
               "name": "duckdbwasm"
             },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
             "spec": {
               "kind": "values",
               "refId": "route",
               "sql": "-- Routes with a vehicle on the road now, within the modes picked.\nSELECT route FROM (\n  SELECT DISTINCT route, mode FROM $vehicles\n  WHERE route IS NOT NULL AND mode IN (${mode:sqlstring})\n)\nORDER BY CASE mode WHEN 'Subway' THEN 0 WHEN 'Commuter rail' THEN 1 WHEN 'Ferry' THEN 2 ELSE 3 END,\n         try_cast(route AS INTEGER) NULLS LAST, route"
-            }
+            },
+            "version": "v0"
           },
+          "refresh": "onDashboardLoad",
           "regex": "",
           "regexApplyTo": "value",
-          "sort": "disabled",
-          "options": [],
-          "multi": true,
-          "includeAll": true,
-          "allValue": "'__all__'",
-          "allowCustomValue": true
+          "skipUrlSync": false,
+          "sort": "disabled"
         }
       },
       {
         "kind": "CustomVariable",
         "spec": {
-          "name": "status",
-          "query": "In transit,Stopped at stop,Arriving at stop,No data",
+          "allowCustomValue": true,
           "current": {
             "text": [
               "All"
@@ -3625,104 +3623,105 @@
               "$__all"
             ]
           },
-          "options": [],
-          "multi": true,
+          "hide": "dontHide",
           "includeAll": true,
           "label": "Status",
-          "hide": "dontHide",
+          "multi": true,
+          "name": "status",
+          "options": [],
+          "query": "In transit,Stopped at stop,Arriving at stop,No data",
           "skipUrlSync": false,
-          "allowCustomValue": true,
           "valuesFormat": "csv"
         }
       },
       {
         "kind": "CustomVariable",
         "spec": {
-          "name": "occupancy",
-          "query": "Many seats,Few seats,Standing room only,Crushed,Full,Not accepting passengers,Empty,No data",
+          "allowCustomValue": true,
           "current": {
             "text": "All",
             "value": [
               "$__all"
             ]
           },
-          "options": [],
-          "multi": true,
+          "hide": "dontHide",
           "includeAll": true,
           "label": "Occupancy",
-          "hide": "dontHide",
+          "multi": true,
+          "name": "occupancy",
+          "options": [],
+          "query": "Many seats,Few seats,Standing room only,Crushed,Full,Not accepting passengers,Empty,No data",
           "skipUrlSync": false,
-          "allowCustomValue": true,
           "valuesFormat": "csv"
         }
       },
       {
         "kind": "TextVariable",
         "spec": {
-          "name": "vehicle",
           "current": {
             "text": "",
             "value": ""
           },
-          "query": "",
+          "hide": "hideVariable",
           "label": "Vehicle (map click)",
-          "hide": "hideVariable",
+          "name": "vehicle",
+          "query": "",
           "skipUrlSync": false
         }
       },
       {
         "kind": "TextVariable",
         "spec": {
-          "name": "lat",
           "current": {
             "text": "",
             "value": ""
           },
-          "query": "",
+          "hide": "hideVariable",
           "label": "Pair latitude (bunching row)",
-          "hide": "hideVariable",
+          "name": "lat",
+          "query": "",
           "skipUrlSync": false
         }
       },
       {
         "kind": "TextVariable",
         "spec": {
-          "name": "lng",
           "current": {
             "text": "",
             "value": ""
           },
-          "query": "",
+          "hide": "hideVariable",
           "label": "Pair longitude (bunching row)",
-          "hide": "hideVariable",
+          "name": "lng",
+          "query": "",
           "skipUrlSync": false
         }
       },
       {
         "kind": "TextVariable",
         "spec": {
-          "name": "parA",
           "current": {
             "text": "",
             "value": ""
           },
-          "query": "",
+          "hide": "hideVariable",
           "label": "First bus of the pair",
-          "hide": "hideVariable",
+          "name": "parA",
+          "query": "",
           "skipUrlSync": false
         }
       },
       {
         "kind": "TextVariable",
         "spec": {
-          "name": "parB",
           "current": {
             "text": "",
             "value": ""
           },
-          "query": "",
-          "label": "Second bus of the pair",
           "hide": "hideVariable",
+          "label": "Second bus of the pair",
+          "name": "parB",
+          "query": "",
           "skipUrlSync": false
         }
       }

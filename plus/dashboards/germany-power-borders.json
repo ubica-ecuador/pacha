@@ -9,32 +9,43 @@
       {
         "kind": "AnnotationQuery",
         "spec": {
-          "query": {
-            "kind": "DataQuery",
-            "group": "grafana",
-            "version": "v0",
-            "datasource": {
-              "name": "-- Grafana --"
-            },
-            "spec": {}
-          },
+          "builtIn": true,
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations & Alerts",
-          "builtIn": true
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
         }
       },
       {
         "kind": "AnnotationQuery",
         "spec": {
+          "enable": true,
+          "filter": {
+            "ids": [
+              4,
+              5,
+              8,
+              9
+            ]
+          },
+          "hide": false,
+          "iconColor": "rgba(255, 179, 0, 0.25)",
+          "name": "Map step",
           "query": {
-            "kind": "DataQuery",
-            "group": "yesoreyeram-infinity-datasource",
-            "version": "v0",
             "datasource": {
               "name": "infinity"
             },
+            "group": "yesoreyeram-infinity-datasource",
+            "kind": "DataQuery",
             "spec": {
               "columns": [
                 {
@@ -59,19 +70,8 @@
               "refId": "MapStep",
               "source": "inline",
               "type": "json"
-            }
-          },
-          "enable": true,
-          "hide": false,
-          "iconColor": "rgba(255, 179, 0, 0.25)",
-          "name": "Map step",
-          "filter": {
-            "ids": [
-              4,
-              5,
-              8,
-              9
-            ]
+            },
+            "version": "v0"
           }
         }
       }
@@ -79,485 +79,30 @@
     "cursorSync": "Crosshair",
     "description": "Germany's eleven power borders every 15 minutes, on the Kepler Plus traffic, gauge and sparkline layers over the European grid, every panel answered in the browser by Chaski.",
     "editable": true,
-    "links": [],
-    "liveNow": false,
-    "preload": false,
-    "tags": [
-      "plus",
-      "chaski",
-      "kepler",
-      "energy",
-      "grid",
-      "electricity"
-    ],
-    "timeSettings": {
-      "timezone": "Europe/Berlin",
-      "from": "now-1d/d",
-      "to": "now/d",
-      "autoRefresh": "5m",
-      "autoRefreshIntervals": [
-        "1m",
-        "5m",
-        "15m",
-        "30m"
-      ],
-      "hideTimepicker": false,
-      "fiscalYearStartMonth": 0
-    },
-    "title": "Germany's power borders — live (Plus · Chaski)",
-    "variables": [
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "name": "grid",
-          "current": {
-            "text": "",
-            "value": ""
-          },
-          "hide": "hideVariable",
-          "refresh": "onDashboardLoad",
-          "skipUrlSync": true,
-          "query": {
-            "kind": "DataQuery",
-            "group": "ubica-chaski-datasource",
-            "version": "v0",
-            "datasource": {
-              "name": "duckdbwasm"
-            },
-            "spec": {
-              "kind": "dataset",
-              "name": "grid",
-              "refId": "grid",
-              "source": {
-                "type": "datasource",
-                "datasource": {
-                  "type": "motherduck-duckdb-datasource",
-                  "uid": "duckdb"
-                },
-                "query": {
-                  "datasource": {
-                    "type": "motherduck-duckdb-datasource",
-                    "uid": "duckdb"
-                  },
-                  "editorMode": "code",
-                  "format": 1,
-                  "rawQuery": true,
-                  "rawSql": "-- Server side, once per visit: the European transmission grid, 220 kV and\n-- up, from PyPSA-Eur's network built on OpenStreetMap (v0.7, Zenodo, ODbL),\n-- read through the gateway's week-long cache. AC lines and HVDC links, each\n-- with the countries at its two ends and its rating in MW; simplified to\n-- about a kilometre, which is a twentieth of the text at the zooms the map\n-- shows. `border` names Germany's neighbour on a line that crosses into it.\nWITH bus AS (\n  SELECT bus_id, country FROM read_csv('http://feeds/zenodo/records/18619025/files/buses.csv', quote = '''')\n),\nline AS (\n  SELECT line_id AS id, 'AC' AS kind, bus0, bus1, voltage, s_nom AS rating_mw, circuits, length, geometry\n  FROM read_csv('http://feeds/zenodo/records/18619025/files/lines.csv', quote = '''')\n  UNION ALL\n  SELECT link_id, 'HVDC', bus0, bus1, voltage, p_nom, 1, length, geometry\n  FROM read_csv('http://feeds/zenodo/records/18619025/files/links.csv', quote = '''')\n)\nSELECT id, kind, voltage::INTEGER AS voltage,\n       CASE WHEN kind = 'HVDC' THEN 'HVDC'\n            WHEN voltage >= 500 THEN '500–750 kV'\n            WHEN voltage >= 380 THEN '380–420 kV'\n            ELSE '220–330 kV' END AS class,\n       round(rating_mw)::INTEGER AS rating_mw, circuits::INTEGER AS circuits,\n       round(length / 1000, 1) AS length_km,\n       b0.country AS country0, b1.country AS country1,\n       CASE WHEN b0.country = 'DE' AND b1.country <> 'DE' THEN b1.country\n            WHEN b1.country = 'DE' AND b0.country <> 'DE' THEN b0.country END AS border,\n       ST_AsGeoJSON(ST_SimplifyPreserveTopology(ST_GeomFromText(geometry), 0.01))::VARCHAR AS geometry\nFROM line\nJOIN bus b0 ON b0.bus_id = line.bus0\nJOIN bus b1 ON b1.bus_id = line.bus1\n",
-                  "refId": "grid"
-                }
-              }
-            }
-          },
-          "regex": "",
-          "regexApplyTo": "value",
-          "sort": "disabled",
-          "options": [],
-          "multi": false,
-          "includeAll": false,
-          "allowCustomValue": true
-        }
-      },
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "name": "flows",
-          "current": {
-            "text": "",
-            "value": ""
-          },
-          "hide": "hideVariable",
-          "refresh": "onTimeRangeChanged",
-          "skipUrlSync": true,
-          "query": {
-            "kind": "DataQuery",
-            "group": "ubica-chaski-datasource",
-            "version": "v0",
-            "datasource": {
-              "name": "duckdbwasm"
-            },
-            "spec": {
-              "kind": "dataset",
-              "name": "flows",
-              "refId": "flows",
-              "source": {
-                "type": "datasource",
-                "datasource": {
-                  "type": "motherduck-duckdb-datasource",
-                  "uid": "duckdb"
-                },
-                "query": {
-                  "datasource": {
-                    "type": "motherduck-duckdb-datasource",
-                    "uid": "duckdb"
-                  },
-                  "editorMode": "code",
-                  "format": 1,
-                  "rawQuery": true,
-                  "rawSql": "-- Server side: Energy-Charts sends no CORS headers, and answers DuckDB's\n-- Host header with 503, so DuckDB reads it through the gateway (10 min cache;\n-- see gateway/feeds.conf). Germany's borders only: the public API allows two\n-- requests a minute per endpoint, and Germany reports all eleven of its\n-- borders in one. Yesterday and today in Berlin, 15 min steps, GW, positive\n-- = import into Germany. One row per step and border: the physical flow and\n-- the scheduled (traded) exchange; their difference is the loop flow.\nWITH day AS (SELECT strftime((now() AT TIME ZONE 'Europe/Berlin')::DATE - 1, '%Y-%m-%d') AS d0,\n                    strftime((now() AT TIME ZONE 'Europe/Berlin')::DATE, '%Y-%m-%d') AS d1),\ndoc AS MATERIALIZED (\n  SELECT kind, (http_get('http://feeds/energy-charts/v2/' || kind || '?country=de&start=' || d0 || '&end=' || d1)->>'body')::JSON AS doc\n  FROM day, (VALUES ('cbpf'), ('cbet')) k(kind)\n),\nstep AS (SELECT kind, unnest(json_extract(doc, '$.data[*]')) AS r FROM doc),\nv AS (\n  SELECT kind, (r->>'timestamp')::TIMESTAMPTZ AS time, unnest(json_keys(r->'values')) AS border, r->'values' AS vals FROM step\n),\nwide AS (\n  SELECT time, border,\n         max(CASE WHEN kind = 'cbpf' THEN (vals->>border)::DOUBLE END) AS physical_gw,\n         max(CASE WHEN kind = 'cbet' THEN (vals->>border)::DOUBLE END) AS scheduled_gw\n  FROM v\n  GROUP BY ALL\n),\n-- The newest steps arrive half filled, with some borders at exactly zero\n-- until their operator reports. A step with more exact zeros than is usual\n-- that day is not ready: its physical flows are left out. Not \"no zeros at\n-- all\", or one cable out of service would empty the whole dashboard.\nzeros AS (\n  SELECT time, count(*) FILTER (WHERE physical_gw = 0) AS n\n  FROM wide WHERE border <> 'sum' AND physical_gw IS NOT NULL GROUP BY 1\n),\nready AS (SELECT time FROM zeros WHERE n <= (SELECT median(n) FROM zeros))\nSELECT time, border,\n       CASE WHEN time IN (SELECT time FROM ready) THEN physical_gw END AS physical_gw,\n       scheduled_gw\nFROM wide\nWHERE physical_gw IS NOT NULL OR scheduled_gw IS NOT NULL\nORDER BY time, border\n",
-                  "refId": "flows"
-                }
-              }
-            }
-          },
-          "regex": "",
-          "regexApplyTo": "value",
-          "sort": "disabled",
-          "options": [],
-          "multi": false,
-          "includeAll": false,
-          "allowCustomValue": true
-        }
-      },
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "name": "mix",
-          "current": {
-            "text": "",
-            "value": ""
-          },
-          "hide": "hideVariable",
-          "refresh": "onTimeRangeChanged",
-          "skipUrlSync": true,
-          "query": {
-            "kind": "DataQuery",
-            "group": "ubica-chaski-datasource",
-            "version": "v0",
-            "datasource": {
-              "name": "duckdbwasm"
-            },
-            "spec": {
-              "kind": "dataset",
-              "name": "mix",
-              "refId": "mix",
-              "source": {
-                "type": "datasource",
-                "datasource": {
-                  "type": "motherduck-duckdb-datasource",
-                  "uid": "duckdb"
-                },
-                "query": {
-                  "datasource": {
-                    "type": "motherduck-duckdb-datasource",
-                    "uid": "duckdb"
-                  },
-                  "editorMode": "code",
-                  "format": 1,
-                  "rawQuery": true,
-                  "rawSql": "-- Server side, through the gateway as the flows: Germany's public net\n-- generation by source, its load and the renewable share of that load, 15 min\n-- steps, yesterday and today in Berlin. Long: one row per step and series.\nWITH day AS (SELECT strftime((now() AT TIME ZONE 'Europe/Berlin')::DATE - 1, '%Y-%m-%d') AS d0,\n                    strftime((now() AT TIME ZONE 'Europe/Berlin')::DATE, '%Y-%m-%d') AS d1),\ndoc AS MATERIALIZED (\n  SELECT (http_get('http://feeds/energy-charts/v2/public_power?country=de&start=' || d0 || '&end=' || d1)->>'body')::JSON AS doc FROM day\n),\nnames AS (SELECT unnest(json_extract_string(doc, '$.series[*].id')) AS series, unnest(json_extract_string(doc, '$.series[*].name')) AS name FROM doc),\nstep AS (SELECT unnest(json_extract(doc, '$.data[*]')) AS r FROM doc),\nv AS (SELECT (r->>'timestamp')::TIMESTAMPTZ AS time, unnest(json_keys(r->'values')) AS series, r->'values' AS vals FROM step)\nSELECT time, series, name, (vals->>series)::DOUBLE AS value\nFROM v JOIN names USING (series)\nWHERE (vals->>series) IS NOT NULL\nORDER BY time, series\n",
-                  "refId": "mix"
-                }
-              }
-            }
-          },
-          "regex": "",
-          "regexApplyTo": "value",
-          "sort": "disabled",
-          "options": [],
-          "multi": false,
-          "includeAll": false,
-          "allowCustomValue": true
-        }
-      },
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "name": "price",
-          "current": {
-            "text": "",
-            "value": ""
-          },
-          "hide": "hideVariable",
-          "refresh": "onTimeRangeChanged",
-          "skipUrlSync": true,
-          "query": {
-            "kind": "DataQuery",
-            "group": "ubica-chaski-datasource",
-            "version": "v0",
-            "datasource": {
-              "name": "duckdbwasm"
-            },
-            "spec": {
-              "kind": "dataset",
-              "name": "price",
-              "refId": "price",
-              "source": {
-                "type": "datasource",
-                "datasource": {
-                  "type": "motherduck-duckdb-datasource",
-                  "uid": "duckdb"
-                },
-                "query": {
-                  "datasource": {
-                    "type": "motherduck-duckdb-datasource",
-                    "uid": "duckdb"
-                  },
-                  "editorMode": "code",
-                  "format": 1,
-                  "rawQuery": true,
-                  "rawSql": "-- Server side: the day-ahead price for Germany-Luxembourg, EUR/MWh, 15 min\n-- steps, yesterday and today in Berlin. Known in advance for the whole day.\nWITH day AS (SELECT strftime((now() AT TIME ZONE 'Europe/Berlin')::DATE - 1, '%Y-%m-%d') AS d0,\n                    strftime((now() AT TIME ZONE 'Europe/Berlin')::DATE, '%Y-%m-%d') AS d1),\ndoc AS MATERIALIZED (\n  SELECT (http_get('http://feeds/energy-charts/v2/price?bzn=DE-LU&start=' || d0 || '&end=' || d1)->>'body')::JSON AS doc FROM day\n)\nSELECT (r->>'timestamp')::TIMESTAMPTZ AS time, (r->>'$.values.day_ahead_price')::DOUBLE AS price\nFROM (SELECT unnest(json_extract(doc, '$.data[*]')) AS r FROM doc)\nWHERE (r->>'$.values.day_ahead_price') IS NOT NULL\nORDER BY time\n",
-                  "refId": "price"
-                }
-              }
-            }
-          },
-          "regex": "",
-          "regexApplyTo": "value",
-          "sort": "disabled",
-          "options": [],
-          "multi": false,
-          "includeAll": false,
-          "allowCustomValue": true
-        }
-      },
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "name": "shares",
-          "current": {
-            "text": "",
-            "value": ""
-          },
-          "hide": "hideVariable",
-          "refresh": "onTimeRangeChanged",
-          "skipUrlSync": true,
-          "query": {
-            "kind": "DataQuery",
-            "group": "ubica-chaski-datasource",
-            "version": "v0",
-            "datasource": {
-              "name": "duckdbwasm"
-            },
-            "spec": {
-              "kind": "dataset",
-              "name": "shares",
-              "refId": "shares",
-              "source": {
-                "type": "datasource",
-                "datasource": {
-                  "type": "motherduck-duckdb-datasource",
-                  "uid": "duckdb"
-                },
-                "query": {
-                  "datasource": {
-                    "type": "motherduck-duckdb-datasource",
-                    "uid": "duckdb"
-                  },
-                  "editorMode": "code",
-                  "format": 1,
-                  "rawQuery": true,
-                  "rawSql": "-- Server side: the renewable share of load in Germany and each neighbour,\n-- 15 min steps from midnight, forecast to the end of tomorrow. /signal allows\n-- 20 requests a minute, so all twelve countries fit. signal: -1 grid\n-- congestion, 0 low, 1 average, 2 high renewable share.\nWITH c AS (SELECT unnest(['de','at','be','ch','cz','dk','fr','lu','nl','no','pl','se']) AS c),\ndoc AS MATERIALIZED (\n  SELECT upper(c) AS iso, (http_get('http://feeds/energy-charts/v2/signal?country=' || c)->>'body')::JSON AS doc FROM c\n)\nSELECT iso, (r->>'timestamp')::TIMESTAMPTZ AS time,\n       (r->>'$.values.share')::DOUBLE AS share,\n       (r->>'$.values.signal')::INTEGER AS signal,\n       (r->>'timestamp')::TIMESTAMPTZ > (doc->>'generated_at')::TIMESTAMPTZ AS forecast\nFROM (SELECT iso, doc, unnest(json_extract(doc, '$.data[*]')) AS r FROM doc)\nWHERE (r->>'$.values.share') IS NOT NULL\nORDER BY iso, time\n",
-                  "refId": "shares"
-                }
-              }
-            }
-          },
-          "regex": "",
-          "regexApplyTo": "value",
-          "sort": "disabled",
-          "options": [],
-          "multi": false,
-          "includeAll": false,
-          "allowCustomValue": true
-        }
-      },
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "name": "freq",
-          "current": {
-            "text": "",
-            "value": ""
-          },
-          "hide": "hideVariable",
-          "refresh": "onTimeRangeChanged",
-          "skipUrlSync": true,
-          "query": {
-            "kind": "DataQuery",
-            "group": "ubica-chaski-datasource",
-            "version": "v0",
-            "datasource": {
-              "name": "duckdbwasm"
-            },
-            "spec": {
-              "kind": "dataset",
-              "name": "freq",
-              "refId": "freq",
-              "source": {
-                "type": "datasource",
-                "datasource": {
-                  "type": "motherduck-duckdb-datasource",
-                  "uid": "duckdb"
-                },
-                "query": {
-                  "datasource": {
-                    "type": "motherduck-duckdb-datasource",
-                    "uid": "duckdb"
-                  },
-                  "editorMode": "code",
-                  "format": 1,
-                  "rawQuery": true,
-                  "rawSql": "-- Server side: the mains frequency of Continental Europe, measured in\n-- Freiburg once a second, today in UTC (one minute's cache). Ten-second steps:\n-- the mean and the extremes inside each. The endpoint answers 404 now and\n-- then for a minute; then this returns no rows rather than failing the load.\nWITH res AS MATERIALIZED (SELECT http_get('http://feeds/energy-charts/v2/frequency?region=DE-Freiburg') AS r),\ndoc AS (SELECT (r->>'body')::JSON AS doc FROM res WHERE (r->>'status') = '200'),\ns AS (SELECT (r->>'timestamp')::TIMESTAMPTZ AS t, (r->>'$.values.frequency')::DOUBLE AS hz\n      FROM (SELECT unnest(json_extract(doc, '$.data[*]')) AS r FROM doc))\nSELECT time_bucket(INTERVAL 10 SECOND, t) AS time, avg(hz) AS hz, min(hz) AS hz_min, max(hz) AS hz_max\nFROM s WHERE hz IS NOT NULL GROUP BY 1 ORDER BY 1\n",
-                  "refId": "freq"
-                }
-              }
-            }
-          },
-          "regex": "",
-          "regexApplyTo": "value",
-          "sort": "disabled",
-          "options": [],
-          "multi": false,
-          "includeAll": false,
-          "allowCustomValue": true
-        }
-      },
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "name": "countries",
-          "current": {
-            "text": "",
-            "value": ""
-          },
-          "hide": "hideVariable",
-          "refresh": "onDashboardLoad",
-          "skipUrlSync": true,
-          "query": {
-            "kind": "DataQuery",
-            "group": "ubica-chaski-datasource",
-            "version": "v0",
-            "datasource": {
-              "name": "duckdbwasm"
-            },
-            "spec": {
-              "refId": "countries",
-              "kind": "dataset",
-              "name": "countries",
-              "source": {
-                "type": "sql",
-                "sql": "-- Germany and its eleven neighbours: the id Energy-Charts gives the series\n-- of each border, and where the map draws the country (near its middle, on\n-- land). The row for Germany carries `sum`, the net over all its borders.\n-- No apostrophes in these comments: Chaski would read one as a quote and\n-- leave the macros after it unexpanded.\nSELECT iso, id, name, lat::DOUBLE AS lat, lng::DOUBLE AS lng FROM (VALUES\n  ('DE', 'sum', 'Germany', 51.1, 10.4),\n  ('AT', 'austria', 'Austria', 47.6, 14.1),\n  ('BE', 'belgium', 'Belgium', 50.6, 4.6),\n  ('CH', 'switzerland', 'Switzerland', 46.8, 8.2),\n  ('CZ', 'czech_republic', 'Czechia', 49.8, 15.5),\n  ('DK', 'denmark', 'Denmark', 55.9, 9.4),\n  ('FR', 'france', 'France', 47.0, 2.6),\n  ('LU', 'luxembourg', 'Luxembourg', 49.7, 6.1),\n  ('NL', 'netherlands', 'Netherlands', 52.2, 5.6),\n  ('NO', 'norway', 'Norway', 60.6, 8.5),\n  ('PL', 'poland', 'Poland', 52.1, 19.4),\n  ('SE', 'sweden', 'Sweden', 59.4, 15.3)\n) AS t(iso, id, name, lat, lng)"
-              }
-            }
-          },
-          "regex": "",
-          "regexApplyTo": "value",
-          "sort": "disabled",
-          "options": [],
-          "multi": false,
-          "includeAll": false,
-          "allowCustomValue": true
-        }
-      },
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "name": "map_from",
-          "current": {
-            "text": "",
-            "value": ""
-          },
-          "label": "Map step from",
-          "hide": "hideVariable",
-          "refresh": "onDashboardLoad",
-          "skipUrlSync": false,
-          "query": {
-            "kind": "DataQuery",
-            "group": "ubica-chaski-datasource",
-            "version": "v0",
-            "datasource": {
-              "name": "duckdbwasm"
-            },
-            "spec": {
-              "kind": "values",
-              "refId": "map_from",
-              "sql": "-- The latest 15 minutes with flows, as UTC ISO 8601: where the time bar of\n-- the map opens. The bar writes it back as it moves.\nSELECT strftime(max(time), '%Y-%m-%dT%H:%M:%S.%g') || 'Z' AS step\nFROM $flows WHERE physical_gw IS NOT NULL"
-            }
-          },
-          "regex": "",
-          "regexApplyTo": "value",
-          "sort": "disabled",
-          "options": [],
-          "multi": false,
-          "includeAll": false,
-          "allowCustomValue": true
-        }
-      },
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "name": "map_to",
-          "current": {
-            "text": "",
-            "value": ""
-          },
-          "label": "Map step to",
-          "hide": "hideVariable",
-          "refresh": "onDashboardLoad",
-          "skipUrlSync": false,
-          "query": {
-            "kind": "DataQuery",
-            "group": "ubica-chaski-datasource",
-            "version": "v0",
-            "datasource": {
-              "name": "duckdbwasm"
-            },
-            "spec": {
-              "kind": "values",
-              "refId": "map_to",
-              "sql": "-- The latest 15 minutes with flows, as UTC ISO 8601: where the time bar of\n-- the map opens. The bar writes it back as it moves.\nSELECT strftime(max(time) + INTERVAL 15 MINUTE - INTERVAL 1 MILLISECOND, '%Y-%m-%dT%H:%M:%S.%g') || 'Z' AS step\nFROM $flows WHERE physical_gw IS NOT NULL"
-            }
-          },
-          "regex": "",
-          "regexApplyTo": "value",
-          "sort": "disabled",
-          "options": [],
-          "multi": false,
-          "includeAll": false,
-          "allowCustomValue": true
-        }
-      },
-      {
-        "kind": "CustomVariable",
-        "spec": {
-          "name": "border",
-          "query": "Austria : AT,Belgium : BE,Switzerland : CH,Czechia : CZ,Denmark : DK,France : FR,Luxembourg : LU,Netherlands : NL,Norway : NO,Poland : PL,Sweden : SE",
-          "current": {
-            "text": "France",
-            "value": "FR"
-          },
-          "options": [],
-          "multi": false,
-          "includeAll": false,
-          "label": "Border",
-          "hide": "dontHide",
-          "skipUrlSync": false,
-          "allowCustomValue": false,
-          "valuesFormat": "csv"
-        }
-      }
-    ],
     "elements": {
       "panel-1": {
         "kind": "Panel",
         "spec": {
-          "id": 1,
-          "title": "",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
               "queries": [],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "text",
-            "version": "13.2.1",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
               "options": {
                 "code": {
                   "language": "plaintext",
@@ -566,22 +111,15 @@
                 },
                 "content": "### Germany's power borders, live\n\nEvery 15 minutes, how much electricity crosses each of Germany's eleven borders, and which way. The\n**map** draws each border as an arc from the exporting country to the importing one: comets pace with\nthe megawatts, and the colour says how much of the border's line rating is in use. The rings show each\ncountry's renewable share of its load, as last measured. Underneath runs the European transmission grid, 220 kV and up,\nwith the lines that cross into Germany drawn bright.\n\nThe map opens on the latest 15 minutes. **Press play** on its time bar to run the day step by step, or\ndrag the bar to any moment: an amber band marks that moment on the charts. **Hover** the dot halfway\nalong an arc for that border over the whole range; it follows the charts' crosshair. **Click** an arc\nor a ring to pick that border for the charts beside it.\n\nData: [Energy-Charts](https://energy-charts.info) by Fraunhofer ISE (CC BY 4.0); the physical flows\nreach it three to four hours late, the price and the renewable share sooner. Grid: [PyPSA-Eur's network](https://zenodo.org/records/18619025) built on OpenStreetMap\n(v0.7, February 2026, ODbL). Line ratings are thermal limits, not the capacity the operators offer for\ntrade. The public API allows two requests a minute, so the gateway asks once every 10 minutes for\neveryone, and the dashboard covers Germany's borders only.",
                 "mode": "markdown"
-              },
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
               }
-            }
+            },
+            "version": "13.2.1"
           }
         }
       },
-      "panel-2": {
+      "panel-10": {
         "kind": "Panel",
         "spec": {
-          "id": 2,
-          "title": "Germany right now",
-          "description": "Net import: the physical flow summed over all eleven borders; negative means Germany exports. Renewable share: of the load, as Energy-Charts measures it. Price: day-ahead, Germany-Luxembourg bidding zone, for the current 15 minutes. Frequency: Continental Europe, measured in Freiburg; 50 Hz is balance, below it demand outruns supply. Flow data age: since the latest 15 minutes Energy-Charts has published; the operators report them three to four hours late.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -589,61 +127,226 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Right now: the latest value of each, whatever the dashboard range.\nWITH step AS (SELECT max(time) AS t FROM $flows WHERE physical_gw IS NOT NULL)\nSELECT\n  (SELECT physical_gw FROM $flows, step WHERE time = step.t AND border = 'sum') AS \"Net import\",\n  (SELECT arg_max(share, time) FROM $shares WHERE iso = 'DE' AND NOT forecast)   AS \"Renewable share of load\",\n  (SELECT arg_max(price, time) FROM $price WHERE epoch(time) <= epoch(now()))   AS \"Day-ahead price\",\n  (SELECT arg_max(hz, time) FROM $freq)                                         AS \"Grid frequency\",\n  (SELECT (epoch(now()) - epoch(t)) / 60 FROM step)                              AS \"Flow data age\""
-                      }
+                        "rawSql": "-- The last hour of mains frequency, ten-second steps: the mean, and the\n-- band between the lowest and highest reading inside each.\nSELECT time, hz AS \"Frequency\", hz_min AS \"Lowest\", hz_max AS \"Highest\"\nFROM $freq WHERE $__timeFilter(time) ORDER BY time"
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {
+                "timeFrom": "1h"
+              },
+              "transformations": []
             }
           },
+          "description": "The whole synchronous grid, from Portugal to Turkey, turns at one frequency. Above 50 Hz supply outruns demand, below it demand outruns supply; reserves step in beyond ±0.2 Hz. Measured once a second in Freiburg by Fraunhofer ISE.",
+          "id": 10,
+          "links": [],
+          "title": "Grid frequency, Continental Europe — last hour",
           "vizConfig": {
+            "group": "timeseries",
             "kind": "VizConfig",
-            "group": "stat",
-            "version": "13.2.1",
             "spec": {
-              "options": {
-                "colorMode": "value",
-                "graphMode": "none",
-                "justifyMode": "center",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "value_and_name",
-                "wideLayout": true
-              },
               "fieldConfig": {
                 "defaults": {
+                  "color": {
+                    "fixedColor": "#00E5FF",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "axisSoftMax": 50.1,
+                    "axisSoftMin": 49.9,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "dashed"
+                    }
+                  },
+                  "decimals": 3,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "value": null,
-                        "color": "text"
+                        "color": "red",
+                        "value": null
+                      },
+                      {
+                        "color": "orange",
+                        "value": 49.8
+                      },
+                      {
+                        "color": "transparent",
+                        "value": 49.9
+                      },
+                      {
+                        "color": "orange",
+                        "value": 50.1
+                      },
+                      {
+                        "color": "red",
+                        "value": 50.2
                       }
                     ]
                   },
+                  "unit": "hertz"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Lowest"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.lineWidth",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.hideFrom",
+                        "value": {
+                          "legend": true,
+                          "tooltip": false,
+                          "viz": false
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Highest"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.lineWidth",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.fillBelowTo",
+                        "value": "Lowest"
+                      },
+                      {
+                        "id": "custom.fillOpacity",
+                        "value": 25
+                      },
+                      {
+                        "id": "custom.hideFrom",
+                        "value": {
+                          "legend": true,
+                          "tooltip": false,
+                          "viz": false
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Right now: the latest value of each, whatever the dashboard range.\nWITH step AS (SELECT max(time) AS t FROM $flows WHERE physical_gw IS NOT NULL)\nSELECT\n  (SELECT physical_gw FROM $flows, step WHERE time = step.t AND border = 'sum') AS \"Net import\",\n  (SELECT arg_max(share, time) FROM $shares WHERE iso = 'DE' AND NOT forecast)   AS \"Renewable share of load\",\n  (SELECT arg_max(price, time) FROM $price WHERE epoch(time) \u003c= epoch(now()))   AS \"Day-ahead price\",\n  (SELECT arg_max(hz, time) FROM $freq)                                         AS \"Grid frequency\",\n  (SELECT (epoch(now()) - epoch(t)) / 60 FROM step)                              AS \"Flow data age\""
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Net import: the physical flow summed over all eleven borders; negative means Germany exports. Renewable share: of the load, as Energy-Charts measures it. Price: day-ahead, Germany-Luxembourg bidding zone, for the current 15 minutes. Frequency: Continental Europe, measured in Freiburg; 50 Hz is balance, below it demand outruns supply. Flow data age: since the latest 15 minutes Energy-Charts has published; the operators report them three to four hours late.",
+          "id": 2,
+          "links": [],
+          "title": "Germany right now",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
                   "color": {
                     "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "text",
+                        "value": null
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -667,12 +370,12 @@
                           "mode": "absolute",
                           "steps": [
                             {
-                              "value": null,
-                              "color": "blue"
+                              "color": "blue",
+                              "value": null
                             },
                             {
-                              "value": 0,
-                              "color": "orange"
+                              "color": "orange",
+                              "value": 0
                             }
                           ]
                         }
@@ -699,16 +402,16 @@
                           "mode": "absolute",
                           "steps": [
                             {
-                              "value": null,
-                              "color": "red"
+                              "color": "red",
+                              "value": null
                             },
                             {
-                              "value": 30,
-                              "color": "orange"
+                              "color": "orange",
+                              "value": 30
                             },
                             {
-                              "value": 60,
-                              "color": "green"
+                              "color": "green",
+                              "value": 60
                             }
                           ]
                         }
@@ -751,24 +454,24 @@
                           "mode": "absolute",
                           "steps": [
                             {
-                              "value": null,
-                              "color": "red"
+                              "color": "red",
+                              "value": null
                             },
                             {
-                              "value": 49.8,
-                              "color": "orange"
+                              "color": "orange",
+                              "value": 49.8
                             },
                             {
-                              "value": 49.9,
-                              "color": "green"
+                              "color": "green",
+                              "value": 49.9
                             },
                             {
-                              "value": 50.1,
-                              "color": "orange"
+                              "color": "orange",
+                              "value": 50.1
                             },
                             {
-                              "value": 50.2,
-                              "color": "red"
+                              "color": "red",
+                              "value": 50.2
                             }
                           ]
                         }
@@ -795,12 +498,12 @@
                           "mode": "absolute",
                           "steps": [
                             {
-                              "value": null,
-                              "color": "text"
+                              "color": "text",
+                              "value": null
                             },
                             {
-                              "value": 360,
-                              "color": "orange"
+                              "color": "orange",
+                              "value": 360
                             }
                           ]
                         }
@@ -808,18 +511,32 @@
                     ]
                   }
                 ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
               }
-            }
+            },
+            "version": "13.2.1"
           }
         }
       },
       "panel-3": {
         "kind": "Panel",
         "spec": {
-          "id": 3,
-          "title": "Flows across the borders — press play to run the day",
-          "description": "One 15-minute step at a time, the latest first; the time bar plays the range step by step, and an amber band marks the step on the charts. Arcs run from exporter to importer, comets pace with the megawatts, colour is the share of the border's thermal line rating in use (cyan under 25 %, red over 75 %). Rings: renewable share of each country's load as last measured; they stay put while the arcs play. The dot halfway along each arc holds that border over the whole range: hover it for its card, pin it to keep it; the card on Germany is the net. The cards follow the crosshair of the charts. Click an arc or a ring to pick that border.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -827,565 +544,163 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- The physical flow on each border, every 15 minutes in the range: the time\n-- bar of the map shows one step at a time. An arc from the exporter to the\n-- importer; its comets pace with the megawatts, its colour is the share of\n-- the line rating across that border in use (thermal, from the grid).\nWITH rating AS (\n  SELECT border AS iso, sum(rating_mw) AS rating_mw FROM $grid\n  WHERE border IS NOT NULL GROUP BY 1\n),\nde AS (SELECT lat, lng FROM $countries WHERE iso = 'DE'),\nf AS (\n  SELECT f.time, c.iso, c.name, c.lat, c.lng, f.physical_gw, f.scheduled_gw\n  FROM $flows f JOIN $countries c ON c.id = f.border\n  WHERE $__timeFilter(f.time) AND c.iso <> 'DE' AND f.physical_gw IS NOT NULL\n)\nSELECT f.time, f.iso, f.name AS neighbour,\n       CASE WHEN physical_gw >= 0 THEN f.name ELSE 'Germany' END AS exporter,\n       CASE WHEN physical_gw >= 0 THEN 'Germany' ELSE f.name END AS importer,\n       CASE WHEN physical_gw >= 0 THEN f.lat ELSE de.lat END AS srclat,\n       CASE WHEN physical_gw >= 0 THEN f.lng ELSE de.lng END AS srclng,\n       CASE WHEN physical_gw >= 0 THEN de.lat ELSE f.lat END AS dstlat,\n       CASE WHEN physical_gw >= 0 THEN de.lng ELSE f.lng END AS dstlng,\n       round(abs(physical_gw) * 1000)::INTEGER                       AS mw,\n       round(100 * abs(physical_gw) * 1000 / rating.rating_mw, 1)    AS load,\n       round(scheduled_gw * 1000)::INTEGER                           AS traded_mw,\n       round((physical_gw - scheduled_gw) * 1000)::INTEGER           AS loop_mw,\n       rating.rating_mw\nFROM f JOIN rating USING (iso), de"
-                      }
+                        "rawSql": "-- The physical flow on each border, every 15 minutes in the range: the time\n-- bar of the map shows one step at a time. An arc from the exporter to the\n-- importer; its comets pace with the megawatts, its colour is the share of\n-- the line rating across that border in use (thermal, from the grid).\nWITH rating AS (\n  SELECT border AS iso, sum(rating_mw) AS rating_mw FROM $grid\n  WHERE border IS NOT NULL GROUP BY 1\n),\nde AS (SELECT lat, lng FROM $countries WHERE iso = 'DE'),\nf AS (\n  SELECT f.time, c.iso, c.name, c.lat, c.lng, f.physical_gw, f.scheduled_gw\n  FROM $flows f JOIN $countries c ON c.id = f.border\n  WHERE $__timeFilter(f.time) AND c.iso \u003c\u003e 'DE' AND f.physical_gw IS NOT NULL\n)\nSELECT f.time, f.iso, f.name AS neighbour,\n       CASE WHEN physical_gw \u003e= 0 THEN f.name ELSE 'Germany' END AS exporter,\n       CASE WHEN physical_gw \u003e= 0 THEN 'Germany' ELSE f.name END AS importer,\n       CASE WHEN physical_gw \u003e= 0 THEN f.lat ELSE de.lat END AS srclat,\n       CASE WHEN physical_gw \u003e= 0 THEN f.lng ELSE de.lng END AS srclng,\n       CASE WHEN physical_gw \u003e= 0 THEN de.lat ELSE f.lat END AS dstlat,\n       CASE WHEN physical_gw \u003e= 0 THEN de.lng ELSE f.lng END AS dstlng,\n       round(abs(physical_gw) * 1000)::INTEGER                       AS mw,\n       round(100 * abs(physical_gw) * 1000 / rating.rating_mw, 1)    AS load,\n       round(scheduled_gw * 1000)::INTEGER                           AS traded_mw,\n       round((physical_gw - scheduled_gw) * 1000)::INTEGER           AS loop_mw,\n       rating.rating_mw\nFROM f JOIN rating USING (iso), de"
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 },
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "rawSql": "-- The renewable share of the load of each country, as last measured. Not\n-- under the time bar: Energy-Charts publishes these from midnight today on,\n-- while the flows trail by hours, so for much of the range no step has both.\nSELECT c.iso, c.name, c.lat AS latitude, c.lng AS longitude,\n       arg_max(s.share, s.time) AS renewable_pct,\n       CASE arg_max(s.signal, s.time) WHEN 2 THEN 'High' WHEN 1 THEN 'Average' WHEN 0 THEN 'Low'\n                                      WHEN -1 THEN 'Grid congestion' END AS signal,\n       strftime(max(s.time), '%H:%M UTC') AS measured\nFROM $shares s JOIN $countries c USING (iso)\nWHERE NOT s.forecast\nGROUP BY ALL"
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "B",
-                    "hidden": false
+                    "refId": "B"
                   }
                 },
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "rawSql": "-- The grid inside each country, dim, coloured by voltage.\nSELECT id, class, voltage, rating_mw, circuits, length_km,\n       country0 || '–' || country1 AS countries, geometry AS geom\nFROM $grid WHERE border IS NULL"
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "C",
-                    "hidden": false
+                    "refId": "C"
                   }
                 },
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "rawSql": "-- The lines and HVDC cables that cross into Germany, bright: the physical\n-- ties the arcs above stand for.\nSELECT id, class, voltage, rating_mw, circuits, length_km,\n       country0 || '–' || country1 AS countries, border, geometry AS geom\nFROM $grid WHERE border IS NOT NULL"
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "D",
-                    "hidden": false
+                    "refId": "D"
                   }
                 },
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "rawSql": "-- The flow on every border over the whole range, MW into Germany, for the\n-- cards on the map: each sits halfway along its arc, where the power crosses,\n-- and shows on hover. The card for the net over all borders sits just north\n-- of Germany. Not under the time bar: a card shows the whole range, and the\n-- crosshair of the charts runs along it.\nWITH de AS (SELECT lat, lng FROM $countries WHERE iso = 'DE')\nSELECT f.time, c.iso, c.name,\n       CASE WHEN c.iso = 'DE' THEN 52.4 ELSE (c.lat + de.lat) / 2 END AS latitude,\n       CASE WHEN c.iso = 'DE' THEN 10.4 ELSE (c.lng + de.lng) / 2 END AS longitude,\n       round(f.physical_gw * 1000) AS mw\nFROM $flows f JOIN $countries c ON c.id = f.border, de\nWHERE $__timeFilter(f.time) AND f.physical_gw IS NOT NULL"
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "E",
-                    "hidden": false
+                    "refId": "E"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "One 15-minute step at a time, the latest first; the time bar plays the range step by step, and an amber band marks the step on the charts. Arcs run from exporter to importer, comets pace with the megawatts, colour is the share of the border's thermal line rating in use (cyan under 25 %, red over 75 %). Rings: renewable share of each country's load as last measured; they stay put while the arcs play. The dot halfway along each arc holds that border over the whole range: hover it for its card, pin it to keep it; the card on Germany is the net. The cards follow the crosshair of the charts. Click an arc or a ring to pick that border.",
+          "id": 3,
+          "links": [],
+          "title": "Flows across the borders — press play to run the day",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "ubica-keplerplus-panel",
-            "version": "0.1.0",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
               "options": {
                 "alerts": {},
-                "places": {},
                 "basemap": "dark-matter",
-                "timeSync": "variables",
-                "peerTimeSync": false,
-                "hoverSync": true,
-                "showSidePanel": false,
                 "clickArea": false,
                 "clickConfirm": false,
-                "variableMappings": [
-                  {
-                    "field": "iso",
-                    "source": "click",
-                    "variable": "border"
-                  }
-                ],
+                "hoverPublishSpike": true,
+                "hoverSync": true,
                 "mapConfig": {
-                  "version": "v1",
                   "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "latitude": 51.0,
+                      "longitude": 10.6,
+                      "pitch": 35,
+                      "zoom": 4.6
+                    },
+                    "mapStyle": {
+                      "styleType": "dark-matter"
+                    },
                     "visState": {
                       "filters": [
                         {
-                          "id": "step",
+                          "animationWindow": "interval",
                           "dataId": [
                             "grafana-A"
                           ],
+                          "enabled": true,
+                          "id": "step",
                           "name": [
                             "time"
                           ],
+                          "plotType": {
+                            "aggregation": "count",
+                            "interval": "15-minute",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "timezone": "Europe/Berlin",
                           "type": "timeRange",
                           "value": [
                             4102444800000,
                             4102444800000
                           ],
-                          "enabled": true,
                           "view": "minified",
-                          "speed": 1,
-                          "animationWindow": "interval",
-                          "plotType": {
-                            "type": "histogram",
-                            "interval": "15-minute",
-                            "aggregation": "count"
-                          },
-                          "yAxis": null,
-                          "timezone": "Europe/Berlin"
+                          "yAxis": null
                         }
                       ],
-                      "layers": [
-                        {
-                          "id": "border-trends",
-                          "type": "sparkline",
-                          "config": {
-                            "dataId": "grafana-E",
-                            "label": "Flow into Germany over the range",
-                            "columns": {
-                              "lat": "latitude",
-                              "lng": "longitude"
-                            },
-                            "columnMode": "points",
-                            "isVisible": true,
-                            "visConfig": {
-                              "sparkScale": "perSite",
-                              "sparkUnit": " MW",
-                              "sparkSize": "S",
-                              "sparkCards": "hover",
-                              "sparkPinned": [
-                                "10.4,52.4"
-                              ],
-                              "sparkAlerts": false,
-                              "colorRange": {
-                                "name": "Import or export",
-                                "type": "custom",
-                                "category": "Custom",
-                                "colors": [
-                                  "#5794F2",
-                                  "#FF9830"
-                                ],
-                                "colorMap": [
-                                  [
-                                    0,
-                                    "#5794F2"
-                                  ],
-                                  [
-                                    null,
-                                    "#FF9830"
-                                  ]
-                                ]
-                              }
-                            }
-                          },
-                          "visualChannels": {
-                            "colorField": {
-                              "name": "mw",
-                              "type": "real"
-                            },
-                            "colorScale": "custom"
-                          }
-                        },
-                        {
-                          "id": "renewables",
-                          "type": "gauge",
-                          "config": {
-                            "dataId": "grafana-B",
-                            "label": "Renewable share of load, latest",
-                            "color": [
-                              115,
-                              191,
-                              105
-                            ],
-                            "columns": {
-                              "lat": "latitude",
-                              "lng": "longitude"
-                            },
-                            "columnMode": "points",
-                            "isVisible": true,
-                            "visConfig": {
-                              "radius": 16,
-                              "gaugeMax": 100,
-                              "gaugeMin": 0,
-                              "gaugeTextMode": "percent",
-                              "gaugeCentreText": true,
-                              "gaugeUpright": true,
-                              "gaugeThickness": 4,
-                              "gaugeTextSize": 10,
-                              "colorRange": {
-                                "name": "Renewable share",
-                                "type": "custom",
-                                "category": "Custom",
-                                "colors": [
-                                  "#E02F44",
-                                  "#FF9830",
-                                  "#73BF69"
-                                ],
-                                "colorMap": [
-                                  [
-                                    30,
-                                    "#E02F44"
-                                  ],
-                                  [
-                                    60,
-                                    "#FF9830"
-                                  ],
-                                  [
-                                    null,
-                                    "#73BF69"
-                                  ]
-                                ]
-                              }
-                            },
-                            "textLabel": [
-                              {
-                                "size": 11,
-                                "anchor": "middle",
-                                "alignment": "center",
-                                "color": [
-                                  235,
-                                  240,
-                                  245
-                                ],
-                                "outlineWidth": 1,
-                                "outlineColor": [
-                                  11,
-                                  15,
-                                  24,
-                                  255
-                                ],
-                                "offset": [
-                                  0,
-                                  26
-                                ],
-                                "background": false,
-                                "backgroundColor": [
-                                  0,
-                                  0,
-                                  200,
-                                  255
-                                ],
-                                "collisionEnabled": false,
-                                "weight": 400,
-                                "field": {
-                                  "name": "name",
-                                  "type": "string"
-                                }
-                              }
-                            ]
-                          },
-                          "visualChannels": {
-                            "colorField": {
-                              "name": "renewable_pct",
-                              "type": "real"
-                            },
-                            "colorScale": "custom"
-                          }
-                        },
-                        {
-                          "id": "flows",
-                          "type": "traffic",
-                          "config": {
-                            "dataId": "grafana-A",
-                            "label": "Cross-border flow",
-                            "columns": {
-                              "lat0": "srclat",
-                              "lng0": "srclng",
-                              "lat1": "dstlat",
-                              "lng1": "dstlng"
-                            },
-                            "columnMode": "points",
-                            "isVisible": true,
-                            "visConfig": {
-                              "thickness": 1.5,
-                              "opacity": 0.35,
-                              "sizeRange": [
-                                1,
-                                6
-                              ],
-                              "colorRange": {
-                                "name": "Line rating in use",
-                                "type": "custom",
-                                "category": "Custom",
-                                "colors": [
-                                  "#00E5FF",
-                                  "#FFC233",
-                                  "#FF8A00",
-                                  "#FF2B2B"
-                                ],
-                                "colorMap": [
-                                  [
-                                    25,
-                                    "#00E5FF"
-                                  ],
-                                  [
-                                    50,
-                                    "#FFC233"
-                                  ],
-                                  [
-                                    75,
-                                    "#FF8A00"
-                                  ],
-                                  [
-                                    null,
-                                    "#FF2B2B"
-                                  ]
-                                ]
-                              },
-                              "trafficLapsRange": [
-                                1,
-                                6
-                              ],
-                              "trafficCycle": 5,
-                              "trafficTrail": 0.6,
-                              "trafficAnimate": true,
-                              "trafficGlow": true,
-                              "trafficShape": "arc",
-                              "trafficArcHeight": 0.5,
-                              "trafficDirectionMode": "straight"
-                            }
-                          },
-                          "visualChannels": {
-                            "colorField": {
-                              "name": "load",
-                              "type": "real"
-                            },
-                            "colorScale": "custom",
-                            "sizeField": {
-                              "name": "mw",
-                              "type": "integer"
-                            },
-                            "sizeScale": "linear",
-                            "speedField": {
-                              "name": "mw",
-                              "type": "integer"
-                            },
-                            "speedScale": "linear"
-                          }
-                        },
-                        {
-                          "id": "ties",
-                          "type": "geojson",
-                          "config": {
-                            "dataId": "grafana-D",
-                            "label": "Lines into Germany",
-                            "color": [
-                              79,
-                              179,
-                              191
-                            ],
-                            "columns": {
-                              "geojson": "_geojson"
-                            },
-                            "isVisible": true,
-                            "visConfig": {
-                              "opacity": 0.95,
-                              "thickness": 2.5,
-                              "strokeOpacity": 0.95,
-                              "stroked": true,
-                              "filled": false,
-                              "colorRange": {
-                                "name": "Lines into Germany",
-                                "type": "customOrdinal",
-                                "category": "Custom",
-                                "colors": [
-                                  "#2A6F8F",
-                                  "#4FB3BF",
-                                  "#B9E3E8",
-                                  "#B877D9"
-                                ],
-                                "colorMap": [
-                                  [
-                                    "220–330 kV",
-                                    "#2A6F8F"
-                                  ],
-                                  [
-                                    "380–420 kV",
-                                    "#4FB3BF"
-                                  ],
-                                  [
-                                    "500–750 kV",
-                                    "#B9E3E8"
-                                  ],
-                                  [
-                                    "HVDC",
-                                    "#B877D9"
-                                  ]
-                                ]
-                              },
-                              "strokeColorRange": {
-                                "name": "Lines into Germany",
-                                "type": "customOrdinal",
-                                "category": "Custom",
-                                "colors": [
-                                  "#2A6F8F",
-                                  "#4FB3BF",
-                                  "#B9E3E8",
-                                  "#B877D9"
-                                ],
-                                "colorMap": [
-                                  [
-                                    "220–330 kV",
-                                    "#2A6F8F"
-                                  ],
-                                  [
-                                    "380–420 kV",
-                                    "#4FB3BF"
-                                  ],
-                                  [
-                                    "500–750 kV",
-                                    "#B9E3E8"
-                                  ],
-                                  [
-                                    "HVDC",
-                                    "#B877D9"
-                                  ]
-                                ]
-                              }
-                            }
-                          },
-                          "visualChannels": {
-                            "strokeColorField": {
-                              "name": "class",
-                              "type": "string"
-                            },
-                            "strokeColorScale": "customOrdinal"
-                          }
-                        },
-                        {
-                          "id": "grid",
-                          "type": "geojson",
-                          "config": {
-                            "dataId": "grafana-C",
-                            "label": "Transmission grid",
-                            "color": [
-                              79,
-                              179,
-                              191
-                            ],
-                            "columns": {
-                              "geojson": "_geojson"
-                            },
-                            "isVisible": true,
-                            "visConfig": {
-                              "opacity": 0.35,
-                              "thickness": 0.6,
-                              "strokeOpacity": 0.35,
-                              "stroked": true,
-                              "filled": false,
-                              "colorRange": {
-                                "name": "Transmission grid",
-                                "type": "customOrdinal",
-                                "category": "Custom",
-                                "colors": [
-                                  "#2A6F8F",
-                                  "#4FB3BF",
-                                  "#B9E3E8",
-                                  "#B877D9"
-                                ],
-                                "colorMap": [
-                                  [
-                                    "220–330 kV",
-                                    "#2A6F8F"
-                                  ],
-                                  [
-                                    "380–420 kV",
-                                    "#4FB3BF"
-                                  ],
-                                  [
-                                    "500–750 kV",
-                                    "#B9E3E8"
-                                  ],
-                                  [
-                                    "HVDC",
-                                    "#B877D9"
-                                  ]
-                                ]
-                              },
-                              "strokeColorRange": {
-                                "name": "Transmission grid",
-                                "type": "customOrdinal",
-                                "category": "Custom",
-                                "colors": [
-                                  "#2A6F8F",
-                                  "#4FB3BF",
-                                  "#B9E3E8",
-                                  "#B877D9"
-                                ],
-                                "colorMap": [
-                                  [
-                                    "220–330 kV",
-                                    "#2A6F8F"
-                                  ],
-                                  [
-                                    "380–420 kV",
-                                    "#4FB3BF"
-                                  ],
-                                  [
-                                    "500–750 kV",
-                                    "#B9E3E8"
-                                  ],
-                                  [
-                                    "HVDC",
-                                    "#B877D9"
-                                  ]
-                                ]
-                              }
-                            }
-                          },
-                          "visualChannels": {
-                            "strokeColorField": {
-                              "name": "class",
-                              "type": "string"
-                            },
-                            "strokeColorScale": "customOrdinal"
-                          }
-                        }
-                      ],
-                      "layerBlending": "additive",
-                      "splitMaps": [],
                       "interactionConfig": {
                         "tooltip": {
-                          "enabled": true,
                           "compareMode": false,
                           "compareType": "absolute",
+                          "enabled": true,
                           "fieldsToShow": {
                             "grafana-A": [
                               {
@@ -1474,44 +789,446 @@
                             ]
                           }
                         }
-                      }
-                    },
-                    "mapState": {
-                      "bearing": 0,
-                      "dragRotate": true,
-                      "latitude": 51.0,
-                      "longitude": 10.6,
-                      "pitch": 35,
-                      "zoom": 4.6
-                    },
-                    "mapStyle": {
-                      "styleType": "dark-matter"
+                      },
+                      "layerBlending": "additive",
+                      "layers": [
+                        {
+                          "config": {
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-E",
+                            "isVisible": true,
+                            "label": "Flow into Germany over the range",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    0,
+                                    "#5794F2"
+                                  ],
+                                  [
+                                    null,
+                                    "#FF9830"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#5794F2",
+                                  "#FF9830"
+                                ],
+                                "name": "Import or export",
+                                "type": "custom"
+                              },
+                              "sparkAlerts": false,
+                              "sparkCards": "hover",
+                              "sparkPinned": [
+                                "10.4,52.4"
+                              ],
+                              "sparkScale": "perSite",
+                              "sparkSize": "S",
+                              "sparkUnit": " MW"
+                            }
+                          },
+                          "id": "border-trends",
+                          "type": "sparkline",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "mw",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              115,
+                              191,
+                              105
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "isVisible": true,
+                            "label": "Renewable share of load, latest",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  235,
+                                  240,
+                                  245
+                                ],
+                                "field": {
+                                  "name": "name",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  26
+                                ],
+                                "outlineColor": [
+                                  11,
+                                  15,
+                                  24,
+                                  255
+                                ],
+                                "outlineWidth": 1,
+                                "size": 11,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    30,
+                                    "#E02F44"
+                                  ],
+                                  [
+                                    60,
+                                    "#FF9830"
+                                  ],
+                                  [
+                                    null,
+                                    "#73BF69"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#E02F44",
+                                  "#FF9830",
+                                  "#73BF69"
+                                ],
+                                "name": "Renewable share",
+                                "type": "custom"
+                              },
+                              "gaugeCentreText": true,
+                              "gaugeMax": 100,
+                              "gaugeMin": 0,
+                              "gaugeTextMode": "percent",
+                              "gaugeTextSize": 10,
+                              "gaugeThickness": 4,
+                              "gaugeUpright": true,
+                              "radius": 16
+                            }
+                          },
+                          "id": "renewables",
+                          "type": "gauge",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "renewable_pct",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "columnMode": "points",
+                            "columns": {
+                              "lat0": "srclat",
+                              "lat1": "dstlat",
+                              "lng0": "srclng",
+                              "lng1": "dstlng"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Cross-border flow",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    25,
+                                    "#00E5FF"
+                                  ],
+                                  [
+                                    50,
+                                    "#FFC233"
+                                  ],
+                                  [
+                                    75,
+                                    "#FF8A00"
+                                  ],
+                                  [
+                                    null,
+                                    "#FF2B2B"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#00E5FF",
+                                  "#FFC233",
+                                  "#FF8A00",
+                                  "#FF2B2B"
+                                ],
+                                "name": "Line rating in use",
+                                "type": "custom"
+                              },
+                              "opacity": 0.35,
+                              "sizeRange": [
+                                1,
+                                6
+                              ],
+                              "thickness": 1.5,
+                              "trafficAnimate": true,
+                              "trafficArcHeight": 0.5,
+                              "trafficCycle": 5,
+                              "trafficDirectionMode": "straight",
+                              "trafficGlow": true,
+                              "trafficLapsRange": [
+                                1,
+                                6
+                              ],
+                              "trafficShape": "arc",
+                              "trafficTrail": 0.6
+                            }
+                          },
+                          "id": "flows",
+                          "type": "traffic",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "load",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeField": {
+                              "name": "mw",
+                              "type": "integer"
+                            },
+                            "sizeScale": "linear",
+                            "speedField": {
+                              "name": "mw",
+                              "type": "integer"
+                            },
+                            "speedScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              79,
+                              179,
+                              191
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-D",
+                            "isVisible": true,
+                            "label": "Lines into Germany",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "220–330 kV",
+                                    "#2A6F8F"
+                                  ],
+                                  [
+                                    "380–420 kV",
+                                    "#4FB3BF"
+                                  ],
+                                  [
+                                    "500–750 kV",
+                                    "#B9E3E8"
+                                  ],
+                                  [
+                                    "HVDC",
+                                    "#B877D9"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#2A6F8F",
+                                  "#4FB3BF",
+                                  "#B9E3E8",
+                                  "#B877D9"
+                                ],
+                                "name": "Lines into Germany",
+                                "type": "customOrdinal"
+                              },
+                              "filled": false,
+                              "opacity": 0.95,
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "220–330 kV",
+                                    "#2A6F8F"
+                                  ],
+                                  [
+                                    "380–420 kV",
+                                    "#4FB3BF"
+                                  ],
+                                  [
+                                    "500–750 kV",
+                                    "#B9E3E8"
+                                  ],
+                                  [
+                                    "HVDC",
+                                    "#B877D9"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#2A6F8F",
+                                  "#4FB3BF",
+                                  "#B9E3E8",
+                                  "#B877D9"
+                                ],
+                                "name": "Lines into Germany",
+                                "type": "customOrdinal"
+                              },
+                              "strokeOpacity": 0.95,
+                              "stroked": true,
+                              "thickness": 2.5
+                            }
+                          },
+                          "id": "ties",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "strokeColorField": {
+                              "name": "class",
+                              "type": "string"
+                            },
+                            "strokeColorScale": "customOrdinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              79,
+                              179,
+                              191
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-C",
+                            "isVisible": true,
+                            "label": "Transmission grid",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "220–330 kV",
+                                    "#2A6F8F"
+                                  ],
+                                  [
+                                    "380–420 kV",
+                                    "#4FB3BF"
+                                  ],
+                                  [
+                                    "500–750 kV",
+                                    "#B9E3E8"
+                                  ],
+                                  [
+                                    "HVDC",
+                                    "#B877D9"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#2A6F8F",
+                                  "#4FB3BF",
+                                  "#B9E3E8",
+                                  "#B877D9"
+                                ],
+                                "name": "Transmission grid",
+                                "type": "customOrdinal"
+                              },
+                              "filled": false,
+                              "opacity": 0.35,
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "220–330 kV",
+                                    "#2A6F8F"
+                                  ],
+                                  [
+                                    "380–420 kV",
+                                    "#4FB3BF"
+                                  ],
+                                  [
+                                    "500–750 kV",
+                                    "#B9E3E8"
+                                  ],
+                                  [
+                                    "HVDC",
+                                    "#B877D9"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#2A6F8F",
+                                  "#4FB3BF",
+                                  "#B9E3E8",
+                                  "#B877D9"
+                                ],
+                                "name": "Transmission grid",
+                                "type": "customOrdinal"
+                              },
+                              "strokeOpacity": 0.35,
+                              "stroked": true,
+                              "thickness": 0.6
+                            }
+                          },
+                          "id": "grid",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "strokeColorField": {
+                              "name": "class",
+                              "type": "string"
+                            },
+                            "strokeColorScale": "customOrdinal"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
                     }
-                  }
+                  },
+                  "version": "v1"
                 },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1000,
+                "publishWhilePlaying": true,
+                "showSidePanel": false,
+                "timeSync": "variables",
                 "timeVariables": {
                   "from": "map_from",
                   "to": "map_to"
                 },
-                "publishWhilePlaying": true,
-                "publishIntervalMs": 1000,
-                "hoverPublishSpike": true
-              },
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
+                "variableMappings": [
+                  {
+                    "field": "iso",
+                    "source": "click",
+                    "variable": "border"
+                  }
+                ]
               }
-            }
+            },
+            "version": "0.1.0"
           }
         }
       },
       "panel-4": {
         "kind": "Panel",
         "spec": {
-          "id": 4,
-          "title": "Physical flow by border — above zero into Germany",
-          "description": "",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1519,48 +1236,36 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "rawSql": "-- Physical flow on each border over the range, MW, positive into Germany.\nSELECT * FROM (\n  PIVOT (\n    SELECT f.time, CASE WHEN c.iso = 'DE' THEN 'Net, all borders' ELSE c.name END AS name,\n           round(f.physical_gw * 1000) AS mw\n    FROM $flows f JOIN $countries c ON c.id = f.border\n    WHERE $__timeFilter(f.time) AND f.physical_gw IS NOT NULL\n  ) ON name USING first(mw)\n) ORDER BY time"
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "",
+          "id": 4,
+          "links": [],
+          "title": "Physical flow by border — above zero into Germany",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "timeseries",
-            "version": "13.2.1",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "right",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "none"
-                }
-              },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "suffix: MW",
-                  "decimals": 0,
                   "color": {
                     "mode": "palette-classic"
                   },
@@ -1597,7 +1302,9 @@
                     "thresholdsStyle": {
                       "mode": "off"
                     }
-                  }
+                  },
+                  "decimals": 0,
+                  "unit": "suffix: MW"
                 },
                 "overrides": [
                   {
@@ -1609,8 +1316,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "text"
+                          "fixedColor": "text",
+                          "mode": "fixed"
                         }
                       },
                       {
@@ -1620,55 +1327,12 @@
                     ]
                   }
                 ]
-              }
-            }
-          }
-        }
-      },
-      "panel-5": {
-        "kind": "Panel",
-        "spec": {
-          "id": 5,
-          "title": "${border:text}: physical flow, trade and loop flow",
-          "description": "Physical: what the meters at the border measured. Traded: the exchange the market scheduled. Loop flow: physical minus traded — power that takes this border because the grid, not the market, decides its path. Pick a border above or click one on the map.",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "spec": {
-                        "rawSql": "-- The picked border: what flowed, what was traded, and the difference, the\n-- loop flow that crosses this border on its way between two other places.\n-- The trade is scheduled the day before, so it runs on past the latest flow.\nSELECT f.time,\n       round(f.physical_gw * 1000)                    AS \"Physical flow\",\n       round(f.scheduled_gw * 1000)                   AS \"Traded\",\n       round((f.physical_gw - f.scheduled_gw) * 1000) AS \"Loop flow\"\nFROM $flows f JOIN $countries c ON c.id = f.border\nWHERE c.iso = $border AND $__timeFilter(f.time)\nORDER BY 1"
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "timeseries",
-            "version": "13.2.1",
-            "spec": {
+              },
               "options": {
                 "legend": {
                   "calcs": [],
                   "displayMode": "list",
-                  "placement": "bottom",
+                  "placement": "right",
                   "showLegend": true
                 },
                 "tooltip": {
@@ -1676,11 +1340,52 @@
                   "mode": "multi",
                   "sort": "none"
                 }
-              },
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The picked border: what flowed, what was traded, and the difference, the\n-- loop flow that crosses this border on its way between two other places.\n-- The trade is scheduled the day before, so it runs on past the latest flow.\nSELECT f.time,\n       round(f.physical_gw * 1000)                    AS \"Physical flow\",\n       round(f.scheduled_gw * 1000)                   AS \"Traded\",\n       round((f.physical_gw - f.scheduled_gw) * 1000) AS \"Loop flow\"\nFROM $flows f JOIN $countries c ON c.id = f.border\nWHERE c.iso = $border AND $__timeFilter(f.time)\nORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Physical: what the meters at the border measured. Traded: the exchange the market scheduled. Loop flow: physical minus traded — power that takes this border because the grid, not the market, decides its path. Pick a border above or click one on the map.",
+          "id": 5,
+          "links": [],
+          "title": "${border:text}: physical flow, trade and loop flow",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
               "fieldConfig": {
                 "defaults": {
-                  "unit": "suffix: MW",
-                  "decimals": 0,
                   "color": {
                     "mode": "palette-classic"
                   },
@@ -1717,7 +1422,9 @@
                     "thresholdsStyle": {
                       "mode": "off"
                     }
-                  }
+                  },
+                  "decimals": 0,
+                  "unit": "suffix: MW"
                 },
                 "overrides": [
                   {
@@ -1729,8 +1436,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#00E5FF"
+                          "fixedColor": "#00E5FF",
+                          "mode": "fixed"
                         }
                       }
                     ]
@@ -1744,18 +1451,18 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "text"
+                          "fixedColor": "text",
+                          "mode": "fixed"
                         }
                       },
                       {
                         "id": "custom.lineStyle",
                         "value": {
-                          "fill": "dash",
                           "dash": [
                             6,
                             4
-                          ]
+                          ],
+                          "fill": "dash"
                         }
                       }
                     ]
@@ -1769,8 +1476,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#FF9830"
+                          "fixedColor": "#FF9830",
+                          "mode": "fixed"
                         }
                       },
                       {
@@ -1784,18 +1491,28 @@
                     ]
                   }
                 ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
               }
-            }
+            },
+            "version": "13.2.1"
           }
         }
       },
       "panel-7": {
         "kind": "Panel",
         "spec": {
-          "id": 7,
-          "title": "Borders over the range",
-          "description": "MW. Mean: above zero, Germany imported on balance. Peak in, peak out: the largest import and export. Time importing: the share of the range Germany drew power across it. Line rating, peak use: the thermal rating of every line and cable across the border, and the largest flow against it; from PyPSA-Eur's grid, which the operators never offer in full. Loop flow: the mean gap between physical flow and trade.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1803,47 +1520,36 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Each border over the range: how much and which way, how close to the line\n-- rating, and how much of it is loop flow.\nWITH rating AS (\n  SELECT border AS iso, sum(rating_mw) AS rating_mw FROM $grid\n  WHERE border IS NOT NULL GROUP BY 1\n),\nf AS (\n  SELECT c.iso, c.name, f.physical_gw * 1000 AS mw, f.scheduled_gw * 1000 AS traded\n  FROM $flows f JOIN $countries c ON c.id = f.border\n  WHERE $__timeFilter(f.time) AND f.physical_gw IS NOT NULL AND c.iso <> 'DE'\n)\nSELECT name                                      AS \"Border\",\n       round(avg(mw))                            AS \"Mean\",\n       round(greatest(max(mw), 0))               AS \"Peak in\",\n       round(greatest(-min(mw), 0))              AS \"Peak out\",\n       round(100 * avg((mw > 0)::INTEGER))       AS \"Time importing\",\n       rating.rating_mw                          AS \"Line rating\",\n       round(100 * max(abs(mw)) / rating.rating_mw, 1) AS \"Peak use\",\n       round(avg(abs(mw - traded)))              AS \"Loop flow\"\nFROM f JOIN rating USING (iso)\nGROUP BY name, rating.rating_mw\nORDER BY \"Mean\" DESC"
-                      }
+                        "rawSql": "-- Each border over the range: how much and which way, how close to the line\n-- rating, and how much of it is loop flow.\nWITH rating AS (\n  SELECT border AS iso, sum(rating_mw) AS rating_mw FROM $grid\n  WHERE border IS NOT NULL GROUP BY 1\n),\nf AS (\n  SELECT c.iso, c.name, f.physical_gw * 1000 AS mw, f.scheduled_gw * 1000 AS traded\n  FROM $flows f JOIN $countries c ON c.id = f.border\n  WHERE $__timeFilter(f.time) AND f.physical_gw IS NOT NULL AND c.iso \u003c\u003e 'DE'\n)\nSELECT name                                      AS \"Border\",\n       round(avg(mw))                            AS \"Mean\",\n       round(greatest(max(mw), 0))               AS \"Peak in\",\n       round(greatest(-min(mw), 0))              AS \"Peak out\",\n       round(100 * avg((mw \u003e 0)::INTEGER))       AS \"Time importing\",\n       rating.rating_mw                          AS \"Line rating\",\n       round(100 * max(abs(mw)) / rating.rating_mw, 1) AS \"Peak use\",\n       round(avg(abs(mw - traded)))              AS \"Loop flow\"\nFROM f JOIN rating USING (iso)\nGROUP BY name, rating.rating_mw\nORDER BY \"Mean\" DESC"
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "MW. Mean: above zero, Germany imported on balance. Peak in, peak out: the largest import and export. Time importing: the share of the range Germany drew power across it. Line rating, peak use: the thermal rating of every line and cable across the border, and the largest flow against it; from PyPSA-Eur's grid, which the operators never offer in full. Loop flow: the mean gap between physical flow and trade.",
+          "id": 7,
+          "links": [],
+          "title": "Borders over the range",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "table",
-            "version": "13.2.1",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "cellHeight": "sm",
-                "showHeader": true,
-                "footer": {
-                  "show": false,
-                  "reducer": [
-                    "sum"
-                  ],
-                  "countRows": false,
-                  "fields": ""
-                }
-              },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "suffix: MW",
-                  "decimals": 0,
                   "custom": {
                     "align": "auto",
                     "cellOptions": {
@@ -1852,15 +1558,17 @@
                     "inspect": false,
                     "minWidth": 90
                   },
+                  "decimals": 0,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "value": null,
-                        "color": "text"
+                        "color": "text",
+                        "value": null
                       }
                     ]
-                  }
+                  },
+                  "unit": "suffix: MW"
                 },
                 "overrides": [
                   {
@@ -1899,12 +1607,12 @@
                           "mode": "absolute",
                           "steps": [
                             {
-                              "value": null,
-                              "color": "blue"
+                              "color": "blue",
+                              "value": null
                             },
                             {
-                              "value": 0,
-                              "color": "orange"
+                              "color": "orange",
+                              "value": 0
                             }
                           ]
                         }
@@ -1924,8 +1632,8 @@
                       {
                         "id": "custom.cellOptions",
                         "value": {
-                          "type": "gauge",
-                          "mode": "basic"
+                          "mode": "basic",
+                          "type": "gauge"
                         }
                       },
                       {
@@ -1943,8 +1651,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "orange"
+                          "fixedColor": "orange",
+                          "mode": "fixed"
                         }
                       }
                     ]
@@ -1981,20 +1689,20 @@
                           "mode": "absolute",
                           "steps": [
                             {
-                              "value": null,
-                              "color": "#00E5FF"
+                              "color": "#00E5FF",
+                              "value": null
                             },
                             {
-                              "value": 25,
-                              "color": "#FFC233"
+                              "color": "#FFC233",
+                              "value": 25
                             },
                             {
-                              "value": 50,
-                              "color": "#FF8A00"
+                              "color": "#FF8A00",
+                              "value": 50
                             },
                             {
-                              "value": 75,
-                              "color": "#FF2B2B"
+                              "color": "#FF2B2B",
+                              "value": 75
                             }
                           ]
                         }
@@ -2002,18 +1710,27 @@
                     ]
                   }
                 ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "countRows": false,
+                  "fields": "",
+                  "reducer": [
+                    "sum"
+                  ],
+                  "show": false
+                },
+                "showHeader": true
               }
-            }
+            },
+            "version": "13.2.1"
           }
         }
       },
       "panel-8": {
         "kind": "Panel",
         "spec": {
-          "id": 8,
-          "title": "What Germany generates, and what it uses",
-          "description": "Public net generation by source, as Energy-Charts publishes it, stacked, with the load dashed on top. The gap between the stack and the load is what came in across the borders or out of storage; a stack above the load went out.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -2021,49 +1738,36 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "duckdbwasm"
                       },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "rawSql": "-- Public net generation in Germany by source, stacked, GW, against the load.\n-- Where the stack falls short of the load, imports (or storage) make it up.\nSELECT time,\n       sum(value) FILTER (WHERE series IN ('fossil_brown_coal_lignite')) / 1000 AS \"Lignite\",\n       sum(value) FILTER (WHERE series IN ('fossil_hard_coal', 'fossil_coal_derived_gas')) / 1000 AS \"Hard coal\",\n       sum(value) FILTER (WHERE series IN ('fossil_gas')) / 1000 AS \"Gas\",\n       sum(value) FILTER (WHERE series IN ('fossil_oil')) / 1000 AS \"Oil\",\n       sum(value) FILTER (WHERE series IN ('waste', 'others')) / 1000 AS \"Waste and other\",\n       sum(value) FILTER (WHERE series IN ('biomass')) / 1000 AS \"Biomass\",\n       sum(value) FILTER (WHERE series IN ('hydro_run_of_river', 'hydro_water_reservoir', 'hydro_pumped_storage', 'geothermal')) / 1000 AS \"Hydro\",\n       sum(value) FILTER (WHERE series IN ('wind_offshore')) / 1000 AS \"Wind offshore\",\n       sum(value) FILTER (WHERE series IN ('wind_onshore')) / 1000 AS \"Wind onshore\",\n       sum(value) FILTER (WHERE series IN ('solar')) / 1000 AS \"Solar\",\n       sum(value) FILTER (WHERE series = 'load') / 1000 AS \"Load\"\nFROM $mix\nWHERE $__timeFilter(time)\nGROUP BY time ORDER BY time"
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
-              "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {},
+              "transformations": []
             }
           },
+          "description": "Public net generation by source, as Energy-Charts publishes it, stacked, with the load dashed on top. The gap between the stack and the load is what came in across the borders or out of storage; a stack above the load went out.",
+          "id": 8,
+          "links": [],
+          "title": "What Germany generates, and what it uses",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "timeseries",
-            "version": "13.2.1",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "none"
-                }
-              },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "gwatt",
-                  "decimals": 1,
-                  "min": 0,
                   "color": {
                     "mode": "palette-classic"
                   },
@@ -2100,7 +1804,10 @@
                     "thresholdsStyle": {
                       "mode": "off"
                     }
-                  }
+                  },
+                  "decimals": 1,
+                  "min": 0,
+                  "unit": "gwatt"
                 },
                 "overrides": [
                   {
@@ -2112,8 +1819,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#8B5A2B"
+                          "fixedColor": "#8B5A2B",
+                          "mode": "fixed"
                         }
                       }
                     ]
@@ -2127,8 +1834,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#6E6E6E"
+                          "fixedColor": "#6E6E6E",
+                          "mode": "fixed"
                         }
                       }
                     ]
@@ -2142,8 +1849,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#E8823A"
+                          "fixedColor": "#E8823A",
+                          "mode": "fixed"
                         }
                       }
                     ]
@@ -2157,8 +1864,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#B07AA1"
+                          "fixedColor": "#B07AA1",
+                          "mode": "fixed"
                         }
                       }
                     ]
@@ -2172,8 +1879,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#A3A3A3"
+                          "fixedColor": "#A3A3A3",
+                          "mode": "fixed"
                         }
                       }
                     ]
@@ -2187,8 +1894,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#3B9C3B"
+                          "fixedColor": "#3B9C3B",
+                          "mode": "fixed"
                         }
                       }
                     ]
@@ -2202,8 +1909,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#4DB6E6"
+                          "fixedColor": "#4DB6E6",
+                          "mode": "fixed"
                         }
                       }
                     ]
@@ -2217,8 +1924,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#1F5FBF"
+                          "fixedColor": "#1F5FBF",
+                          "mode": "fixed"
                         }
                       }
                     ]
@@ -2232,8 +1939,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#7EB6FF"
+                          "fixedColor": "#7EB6FF",
+                          "mode": "fixed"
                         }
                       }
                     ]
@@ -2247,8 +1954,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#FFD23F"
+                          "fixedColor": "#FFD23F",
+                          "mode": "fixed"
                         }
                       }
                     ]
@@ -2262,8 +1969,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "text"
+                          "fixedColor": "text",
+                          "mode": "fixed"
                         }
                       },
                       {
@@ -2284,60 +1991,17 @@
                       {
                         "id": "custom.lineStyle",
                         "value": {
-                          "fill": "dash",
                           "dash": [
                             8,
                             4
-                          ]
+                          ],
+                          "fill": "dash"
                         }
                       }
                     ]
                   }
                 ]
-              }
-            }
-          }
-        }
-      },
-      "panel-9": {
-        "kind": "Panel",
-        "spec": {
-          "id": 9,
-          "title": "Price falls as renewables rise",
-          "description": "Germany-Luxembourg day-ahead price (left axis) and Germany's renewable share of load (right axis), measured and then forecast. Sunny, windy hours push the price down, sometimes below zero.",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "spec": {
-                        "rawSql": "-- Price against the renewable share: the day-ahead price is known for the\n-- whole day; the renewable share is measured, then forecast.\nSELECT time,\n       p.price                                    AS \"Day-ahead price\",\n       CASE WHEN NOT s.forecast THEN s.share END  AS \"Renewable share\",\n       CASE WHEN s.forecast THEN s.share END      AS \"Renewable share, forecast\"\nFROM (SELECT time, price FROM $price WHERE $__timeFilter(time)) p\nFULL JOIN (SELECT time, share, forecast FROM $shares WHERE iso = 'DE' AND $__timeFilter(time)) s USING (time)\nORDER BY time"
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "timeseries",
-            "version": "13.2.1",
-            "spec": {
+              },
               "options": {
                 "legend": {
                   "calcs": [],
@@ -2350,10 +2014,52 @@
                   "mode": "multi",
                   "sort": "none"
                 }
-              },
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-9": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Price against the renewable share: the day-ahead price is known for the\n-- whole day; the renewable share is measured, then forecast.\nSELECT time,\n       p.price                                    AS \"Day-ahead price\",\n       CASE WHEN NOT s.forecast THEN s.share END  AS \"Renewable share\",\n       CASE WHEN s.forecast THEN s.share END      AS \"Renewable share, forecast\"\nFROM (SELECT time, price FROM $price WHERE $__timeFilter(time)) p\nFULL JOIN (SELECT time, share, forecast FROM $shares WHERE iso = 'DE' AND $__timeFilter(time)) s USING (time)\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Germany-Luxembourg day-ahead price (left axis) and Germany's renewable share of load (right axis), measured and then forecast. Sunny, windy hours push the price down, sometimes below zero.",
+          "id": 9,
+          "links": [],
+          "title": "Price falls as renewables rise",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
               "fieldConfig": {
                 "defaults": {
-                  "decimals": 0,
                   "color": {
                     "mode": "palette-classic"
                   },
@@ -2390,7 +2096,8 @@
                     "thresholdsStyle": {
                       "mode": "off"
                     }
-                  }
+                  },
+                  "decimals": 0
                 },
                 "overrides": [
                   {
@@ -2406,8 +2113,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#FF9830"
+                          "fixedColor": "#FF9830",
+                          "mode": "fixed"
                         }
                       },
                       {
@@ -2441,8 +2148,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#73BF69"
+                          "fixedColor": "#73BF69",
+                          "mode": "fixed"
                         }
                       },
                       {
@@ -2476,69 +2183,24 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#73BF69"
+                          "fixedColor": "#73BF69",
+                          "mode": "fixed"
                         }
                       },
                       {
                         "id": "custom.lineStyle",
                         "value": {
-                          "fill": "dash",
                           "dash": [
                             4,
                             4
-                          ]
+                          ],
+                          "fill": "dash"
                         }
                       }
                     ]
                   }
                 ]
-              }
-            }
-          }
-        }
-      },
-      "panel-10": {
-        "kind": "Panel",
-        "spec": {
-          "id": 10,
-          "title": "Grid frequency, Continental Europe — last hour",
-          "description": "The whole synchronous grid, from Portugal to Turkey, turns at one frequency. Above 50 Hz supply outruns demand, below it demand outruns supply; reserves step in beyond ±0.2 Hz. Measured once a second in Freiburg by Fraunhofer ISE.",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "ubica-chaski-datasource",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "spec": {
-                        "rawSql": "-- The last hour of mains frequency, ten-second steps: the mean, and the\n-- band between the lowest and highest reading inside each.\nSELECT time, hz AS \"Frequency\", hz_min AS \"Lowest\", hz_max AS \"Highest\"\nFROM $freq WHERE $__timeFilter(time) ORDER BY time"
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {
-                "timeFrom": "1h"
-              }
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "timeseries",
-            "version": "13.2.1",
-            "spec": {
+              },
               "options": {
                 "legend": {
                   "calcs": [],
@@ -2551,129 +2213,9 @@
                   "mode": "multi",
                   "sort": "none"
                 }
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "hertz",
-                  "decimals": 3,
-                  "color": {
-                    "mode": "fixed",
-                    "fixedColor": "#00E5FF"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 0,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "dashed"
-                    },
-                    "axisSoftMin": 49.9,
-                    "axisSoftMax": 50.1
-                  },
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": null,
-                        "color": "red"
-                      },
-                      {
-                        "value": 49.8,
-                        "color": "orange"
-                      },
-                      {
-                        "value": 49.9,
-                        "color": "transparent"
-                      },
-                      {
-                        "value": 50.1,
-                        "color": "orange"
-                      },
-                      {
-                        "value": 50.2,
-                        "color": "red"
-                      }
-                    ]
-                  }
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Lowest"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.lineWidth",
-                        "value": 0
-                      },
-                      {
-                        "id": "custom.hideFrom",
-                        "value": {
-                          "legend": true,
-                          "tooltip": false,
-                          "viz": false
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Highest"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.lineWidth",
-                        "value": 0
-                      },
-                      {
-                        "id": "custom.fillBelowTo",
-                        "value": "Lowest"
-                      },
-                      {
-                        "id": "custom.fillOpacity",
-                        "value": 25
-                      },
-                      {
-                        "id": "custom.hideFrom",
-                        "value": {
-                          "legend": true,
-                          "tooltip": false,
-                          "viz": false
-                        }
-                      }
-                    ]
-                  }
-                ]
               }
-            }
+            },
+            "version": "13.2.1"
           }
         }
       }
@@ -2685,7 +2227,6 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "Intro",
               "collapse": false,
               "hideHeader": true,
               "layout": {
@@ -2695,25 +2236,25 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 0,
-                        "y": 0,
-                        "width": 24,
-                        "height": 7,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-1"
-                        }
+                        },
+                        "height": 7,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
                       }
                     }
                   ]
                 }
-              }
+              },
+              "title": "Intro"
             }
           },
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "Now",
               "collapse": false,
               "hideHeader": false,
               "layout": {
@@ -2723,25 +2264,25 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 0,
-                        "y": 0,
-                        "width": 24,
-                        "height": 4,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-2"
-                        }
+                        },
+                        "height": 4,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
                       }
                     }
                   ]
                 }
-              }
+              },
+              "title": "Now"
             }
           },
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "Across the borders",
               "collapse": false,
               "hideHeader": false,
               "layout": {
@@ -2751,64 +2292,64 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 0,
-                        "y": 0,
-                        "width": 15,
-                        "height": 20,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-3"
-                        }
+                        },
+                        "height": 20,
+                        "width": 15,
+                        "x": 0,
+                        "y": 0
                       }
                     },
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 15,
-                        "y": 0,
-                        "width": 9,
-                        "height": 10,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-4"
-                        }
+                        },
+                        "height": 10,
+                        "width": 9,
+                        "x": 15,
+                        "y": 0
                       }
                     },
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 15,
-                        "y": 10,
-                        "width": 9,
-                        "height": 10,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-5"
-                        }
+                        },
+                        "height": 10,
+                        "width": 9,
+                        "x": 15,
+                        "y": 10
                       }
                     },
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 0,
-                        "y": 20,
-                        "width": 24,
-                        "height": 13,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-7"
-                        }
+                        },
+                        "height": 13,
+                        "width": 24,
+                        "x": 0,
+                        "y": 20
                       }
                     }
                   ]
                 }
-              }
+              },
+              "title": "Across the borders"
             }
           },
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "Generation, price and frequency",
               "collapse": false,
               "hideHeader": false,
               "layout": {
@@ -2818,49 +2359,507 @@
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 0,
-                        "y": 0,
-                        "width": 24,
-                        "height": 10,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-8"
-                        }
+                        },
+                        "height": 10,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
                       }
                     },
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 0,
-                        "y": 10,
-                        "width": 12,
-                        "height": 9,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-9"
-                        }
+                        },
+                        "height": 9,
+                        "width": 12,
+                        "x": 0,
+                        "y": 10
                       }
                     },
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
-                        "x": 12,
-                        "y": 10,
-                        "width": 12,
-                        "height": 9,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-10"
-                        }
+                        },
+                        "height": 9,
+                        "width": 12,
+                        "x": 12,
+                        "y": 10
                       }
                     }
                   ]
                 }
-              }
+              },
+              "title": "Generation, price and frequency"
             }
           }
         ]
       }
-    }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "infinity",
+      "kepler-plus",
+      "energy",
+      "live"
+    ],
+    "timeSettings": {
+      "autoRefresh": "5m",
+      "autoRefreshIntervals": [
+        "1m",
+        "5m",
+        "15m",
+        "30m"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-1d/d",
+      "hideTimepicker": false,
+      "timezone": "Europe/Berlin",
+      "to": "now/d"
+    },
+    "title": "Germany's power borders — live",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "grid",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "grid",
+              "refId": "grid",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the European transmission grid, 220 kV and\n-- up, from PyPSA-Eur's network built on OpenStreetMap (v0.7, Zenodo, ODbL),\n-- read through the gateway's week-long cache. AC lines and HVDC links, each\n-- with the countries at its two ends and its rating in MW; simplified to\n-- about a kilometre, which is a twentieth of the text at the zooms the map\n-- shows. `border` names Germany's neighbour on a line that crosses into it.\nWITH bus AS (\n  SELECT bus_id, country FROM read_csv('http://feeds/zenodo/records/18619025/files/buses.csv', quote = '''')\n),\nline AS (\n  SELECT line_id AS id, 'AC' AS kind, bus0, bus1, voltage, s_nom AS rating_mw, circuits, length, geometry\n  FROM read_csv('http://feeds/zenodo/records/18619025/files/lines.csv', quote = '''')\n  UNION ALL\n  SELECT link_id, 'HVDC', bus0, bus1, voltage, p_nom, 1, length, geometry\n  FROM read_csv('http://feeds/zenodo/records/18619025/files/links.csv', quote = '''')\n)\nSELECT id, kind, voltage::INTEGER AS voltage,\n       CASE WHEN kind = 'HVDC' THEN 'HVDC'\n            WHEN voltage \u003e= 500 THEN '500–750 kV'\n            WHEN voltage \u003e= 380 THEN '380–420 kV'\n            ELSE '220–330 kV' END AS class,\n       round(rating_mw)::INTEGER AS rating_mw, circuits::INTEGER AS circuits,\n       round(length / 1000, 1) AS length_km,\n       b0.country AS country0, b1.country AS country1,\n       CASE WHEN b0.country = 'DE' AND b1.country \u003c\u003e 'DE' THEN b1.country\n            WHEN b1.country = 'DE' AND b0.country \u003c\u003e 'DE' THEN b0.country END AS border,\n       ST_AsGeoJSON(ST_SimplifyPreserveTopology(ST_GeomFromText(geometry), 0.01))::VARCHAR AS geometry\nFROM line\nJOIN bus b0 ON b0.bus_id = line.bus0\nJOIN bus b1 ON b1.bus_id = line.bus1\n",
+                  "refId": "grid"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "flows",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "flows",
+              "refId": "flows",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: Energy-Charts sends no CORS headers, and answers DuckDB's\n-- Host header with 503, so DuckDB reads it through the gateway (10 min cache;\n-- see gateway/feeds.conf). Germany's borders only: the public API allows two\n-- requests a minute per endpoint, and Germany reports all eleven of its\n-- borders in one. Yesterday and today in Berlin, 15 min steps, GW, positive\n-- = import into Germany. One row per step and border: the physical flow and\n-- the scheduled (traded) exchange; their difference is the loop flow.\nWITH day AS (SELECT strftime((now() AT TIME ZONE 'Europe/Berlin')::DATE - 1, '%Y-%m-%d') AS d0,\n                    strftime((now() AT TIME ZONE 'Europe/Berlin')::DATE, '%Y-%m-%d') AS d1),\ndoc AS MATERIALIZED (\n  SELECT kind, (http_get('http://feeds/energy-charts/v2/' || kind || '?country=de\u0026start=' || d0 || '\u0026end=' || d1)-\u003e\u003e'body')::JSON AS doc\n  FROM day, (VALUES ('cbpf'), ('cbet')) k(kind)\n),\nstep AS (SELECT kind, unnest(json_extract(doc, '$.data[*]')) AS r FROM doc),\nv AS (\n  SELECT kind, (r-\u003e\u003e'timestamp')::TIMESTAMPTZ AS time, unnest(json_keys(r-\u003e'values')) AS border, r-\u003e'values' AS vals FROM step\n),\nwide AS (\n  SELECT time, border,\n         max(CASE WHEN kind = 'cbpf' THEN (vals-\u003e\u003eborder)::DOUBLE END) AS physical_gw,\n         max(CASE WHEN kind = 'cbet' THEN (vals-\u003e\u003eborder)::DOUBLE END) AS scheduled_gw\n  FROM v\n  GROUP BY ALL\n),\n-- The newest steps arrive half filled, with some borders at exactly zero\n-- until their operator reports. A step with more exact zeros than is usual\n-- that day is not ready: its physical flows are left out. Not \"no zeros at\n-- all\", or one cable out of service would empty the whole dashboard.\nzeros AS (\n  SELECT time, count(*) FILTER (WHERE physical_gw = 0) AS n\n  FROM wide WHERE border \u003c\u003e 'sum' AND physical_gw IS NOT NULL GROUP BY 1\n),\nready AS (SELECT time FROM zeros WHERE n \u003c= (SELECT median(n) FROM zeros))\nSELECT time, border,\n       CASE WHEN time IN (SELECT time FROM ready) THEN physical_gw END AS physical_gw,\n       scheduled_gw\nFROM wide\nWHERE physical_gw IS NOT NULL OR scheduled_gw IS NOT NULL\nORDER BY time, border\n",
+                  "refId": "flows"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "mix",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "mix",
+              "refId": "mix",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, through the gateway as the flows: Germany's public net\n-- generation by source, its load and the renewable share of that load, 15 min\n-- steps, yesterday and today in Berlin. Long: one row per step and series.\nWITH day AS (SELECT strftime((now() AT TIME ZONE 'Europe/Berlin')::DATE - 1, '%Y-%m-%d') AS d0,\n                    strftime((now() AT TIME ZONE 'Europe/Berlin')::DATE, '%Y-%m-%d') AS d1),\ndoc AS MATERIALIZED (\n  SELECT (http_get('http://feeds/energy-charts/v2/public_power?country=de\u0026start=' || d0 || '\u0026end=' || d1)-\u003e\u003e'body')::JSON AS doc FROM day\n),\nnames AS (SELECT unnest(json_extract_string(doc, '$.series[*].id')) AS series, unnest(json_extract_string(doc, '$.series[*].name')) AS name FROM doc),\nstep AS (SELECT unnest(json_extract(doc, '$.data[*]')) AS r FROM doc),\nv AS (SELECT (r-\u003e\u003e'timestamp')::TIMESTAMPTZ AS time, unnest(json_keys(r-\u003e'values')) AS series, r-\u003e'values' AS vals FROM step)\nSELECT time, series, name, (vals-\u003e\u003eseries)::DOUBLE AS value\nFROM v JOIN names USING (series)\nWHERE (vals-\u003e\u003eseries) IS NOT NULL\nORDER BY time, series\n",
+                  "refId": "mix"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "price",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "price",
+              "refId": "price",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the day-ahead price for Germany-Luxembourg, EUR/MWh, 15 min\n-- steps, yesterday and today in Berlin. Known in advance for the whole day.\nWITH day AS (SELECT strftime((now() AT TIME ZONE 'Europe/Berlin')::DATE - 1, '%Y-%m-%d') AS d0,\n                    strftime((now() AT TIME ZONE 'Europe/Berlin')::DATE, '%Y-%m-%d') AS d1),\ndoc AS MATERIALIZED (\n  SELECT (http_get('http://feeds/energy-charts/v2/price?bzn=DE-LU\u0026start=' || d0 || '\u0026end=' || d1)-\u003e\u003e'body')::JSON AS doc FROM day\n)\nSELECT (r-\u003e\u003e'timestamp')::TIMESTAMPTZ AS time, (r-\u003e\u003e'$.values.day_ahead_price')::DOUBLE AS price\nFROM (SELECT unnest(json_extract(doc, '$.data[*]')) AS r FROM doc)\nWHERE (r-\u003e\u003e'$.values.day_ahead_price') IS NOT NULL\nORDER BY time\n",
+                  "refId": "price"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "shares",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "shares",
+              "refId": "shares",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the renewable share of load in Germany and each neighbour,\n-- 15 min steps from midnight, forecast to the end of tomorrow. /signal allows\n-- 20 requests a minute, so all twelve countries fit. signal: -1 grid\n-- congestion, 0 low, 1 average, 2 high renewable share.\nWITH c AS (SELECT unnest(['de','at','be','ch','cz','dk','fr','lu','nl','no','pl','se']) AS c),\ndoc AS MATERIALIZED (\n  SELECT upper(c) AS iso, (http_get('http://feeds/energy-charts/v2/signal?country=' || c)-\u003e\u003e'body')::JSON AS doc FROM c\n)\nSELECT iso, (r-\u003e\u003e'timestamp')::TIMESTAMPTZ AS time,\n       (r-\u003e\u003e'$.values.share')::DOUBLE AS share,\n       (r-\u003e\u003e'$.values.signal')::INTEGER AS signal,\n       (r-\u003e\u003e'timestamp')::TIMESTAMPTZ \u003e (doc-\u003e\u003e'generated_at')::TIMESTAMPTZ AS forecast\nFROM (SELECT iso, doc, unnest(json_extract(doc, '$.data[*]')) AS r FROM doc)\nWHERE (r-\u003e\u003e'$.values.share') IS NOT NULL\nORDER BY iso, time\n",
+                  "refId": "shares"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "freq",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "freq",
+              "refId": "freq",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the mains frequency of Continental Europe, measured in\n-- Freiburg once a second, today in UTC (one minute's cache). Ten-second steps:\n-- the mean and the extremes inside each. The endpoint answers 404 now and\n-- then for a minute; then this returns no rows rather than failing the load.\nWITH res AS MATERIALIZED (SELECT http_get('http://feeds/energy-charts/v2/frequency?region=DE-Freiburg') AS r),\ndoc AS (SELECT (r-\u003e\u003e'body')::JSON AS doc FROM res WHERE (r-\u003e\u003e'status') = '200'),\ns AS (SELECT (r-\u003e\u003e'timestamp')::TIMESTAMPTZ AS t, (r-\u003e\u003e'$.values.frequency')::DOUBLE AS hz\n      FROM (SELECT unnest(json_extract(doc, '$.data[*]')) AS r FROM doc))\nSELECT time_bucket(INTERVAL 10 SECOND, t) AS time, avg(hz) AS hz, min(hz) AS hz_min, max(hz) AS hz_max\nFROM s WHERE hz IS NOT NULL GROUP BY 1 ORDER BY 1\n",
+                  "refId": "freq"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "countries",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "countries",
+              "refId": "countries",
+              "source": {
+                "sql": "-- Germany and its eleven neighbours: the id Energy-Charts gives the series\n-- of each border, and where the map draws the country (near its middle, on\n-- land). The row for Germany carries `sum`, the net over all its borders.\n-- No apostrophes in these comments: Chaski would read one as a quote and\n-- leave the macros after it unexpanded.\nSELECT iso, id, name, lat::DOUBLE AS lat, lng::DOUBLE AS lng FROM (VALUES\n  ('DE', 'sum', 'Germany', 51.1, 10.4),\n  ('AT', 'austria', 'Austria', 47.6, 14.1),\n  ('BE', 'belgium', 'Belgium', 50.6, 4.6),\n  ('CH', 'switzerland', 'Switzerland', 46.8, 8.2),\n  ('CZ', 'czech_republic', 'Czechia', 49.8, 15.5),\n  ('DK', 'denmark', 'Denmark', 55.9, 9.4),\n  ('FR', 'france', 'France', 47.0, 2.6),\n  ('LU', 'luxembourg', 'Luxembourg', 49.7, 6.1),\n  ('NL', 'netherlands', 'Netherlands', 52.2, 5.6),\n  ('NO', 'norway', 'Norway', 60.6, 8.5),\n  ('PL', 'poland', 'Poland', 52.1, 19.4),\n  ('SE', 'sweden', 'Sweden', 59.4, 15.3)\n) AS t(iso, id, name, lat, lng)",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Map step from",
+          "multi": false,
+          "name": "map_from",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "map_from",
+              "sql": "-- The latest 15 minutes with flows, as UTC ISO 8601: where the time bar of\n-- the map opens. The bar writes it back as it moves.\nSELECT strftime(max(time), '%Y-%m-%dT%H:%M:%S.%g') || 'Z' AS step\nFROM $flows WHERE physical_gw IS NOT NULL"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Map step to",
+          "multi": false,
+          "name": "map_to",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "map_to",
+              "sql": "-- The latest 15 minutes with flows, as UTC ISO 8601: where the time bar of\n-- the map opens. The bar writes it back as it moves.\nSELECT strftime(max(time) + INTERVAL 15 MINUTE - INTERVAL 1 MILLISECOND, '%Y-%m-%dT%H:%M:%S.%g') || 'Z' AS step\nFROM $flows WHERE physical_gw IS NOT NULL"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "France",
+            "value": "FR"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Border",
+          "multi": false,
+          "name": "border",
+          "options": [],
+          "query": "Austria : AT,Belgium : BE,Switzerland : CH,Czechia : CZ,Denmark : DK,France : FR,Luxembourg : LU,Netherlands : NL,Norway : NO,Poland : PL,Sweden : SE",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      }
+    ]
   }
 }

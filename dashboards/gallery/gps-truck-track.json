@@ -9,35 +9,44 @@
       {
         "kind": "AnnotationQuery",
         "spec": {
-          "query": {
-            "kind": "DataQuery",
-            "group": "grafana",
-            "version": "v0",
-            "datasource": {
-              "name": "-- Grafana --"
-            },
-            "spec": {}
-          },
+          "builtIn": true,
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations & Alerts",
-          "builtIn": true,
           "legacyOptions": {
             "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
           }
         }
       },
       {
         "kind": "AnnotationQuery",
         "spec": {
+          "enable": true,
+          "filter": {
+            "ids": [
+              2,
+              3
+            ]
+          },
+          "hide": false,
+          "iconColor": "rgba(255, 179, 0, 0.22)",
+          "name": "Map time brush",
           "query": {
-            "kind": "DataQuery",
-            "group": "yesoreyeram-infinity-datasource",
-            "version": "v0",
             "datasource": {
               "name": "infinity"
             },
+            "group": "yesoreyeram-infinity-datasource",
+            "kind": "DataQuery",
             "spec": {
               "columns": [
                 {
@@ -62,31 +71,19 @@
               "refId": "Brush",
               "source": "inline",
               "type": "json"
-            }
-          },
-          "enable": true,
-          "hide": false,
-          "iconColor": "rgba(255, 179, 0, 0.22)",
-          "name": "Map time brush",
-          "filter": {
-            "ids": [
-              2,
-              3
-            ]
+            },
+            "version": "v0"
           }
         }
       }
     ],
     "cursorSync": "Crosshair",
+    "description": "A truck's GPS track on the map, with its speed and elevation over time. Hover a curve, the track or the time bar, and the others follow.",
     "editable": true,
     "elements": {
       "panel-1": {
         "kind": "Panel",
         "spec": {
-          "id": 1,
-          "title": "GPS position",
-          "description": "Route © OpenStreetMap contributors (ODbL), routed by OSRM; speed and elevation are synthetic. Hover a graph, the track or the time bar: the others follow.",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -94,13 +91,13 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "yesoreyeram-infinity-datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "infinity"
                       },
+                      "group": "yesoreyeram-infinity-datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "columns": [
                           {
@@ -149,13 +146,14 @@
                         "parser": "backend",
                         "source": "inline",
                         "type": "csv"
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
                   "kind": "filterByValue",
@@ -187,15 +185,21 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "description": "Route © OpenStreetMap contributors (ODbL), routed by OSRM; speed and elevation are synthetic. Hover a graph, the track or the time bar: the others follow.",
+          "id": 1,
+          "links": [],
+          "title": "GPS position",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "ubica-keplergl-panel",
-            "version": "",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
               "options": {
                 "hoverMaxAgeSeconds": 10,
                 "hoverPublishSpike": true,
@@ -522,21 +526,15 @@
                   "from": "brush_from",
                   "to": "brush_to"
                 }
-              },
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
               }
-            }
+            },
+            "version": ""
           }
         }
       },
       "panel-10": {
         "kind": "Panel",
         "spec": {
-          "id": 10,
-          "title": "Distance",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -544,22 +542,23 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "-- Dashboard --"
                       },
+                      "group": "datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 1
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
                   "kind": "filterByValue",
@@ -591,15 +590,27 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "id": 10,
+          "links": [],
+          "title": "Distance",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#1e88e5",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "unit": "lengthkm"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -612,28 +623,15 @@
                   "values": false
                 },
                 "textMode": "value"
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "lengthkm",
-                  "decimals": 1,
-                  "color": {
-                    "mode": "fixed",
-                    "fixedColor": "#1e88e5"
-                  }
-                },
-                "overrides": []
               }
-            }
+            },
+            "version": ""
           }
         }
       },
       "panel-11": {
         "kind": "Panel",
         "spec": {
-          "id": 11,
-          "title": "Duration",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -641,22 +639,23 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "-- Dashboard --"
                       },
+                      "group": "datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 1
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
                   "kind": "filterByValue",
@@ -688,15 +687,26 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "id": 11,
+          "links": [],
+          "title": "Duration",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#3949ab",
+                    "mode": "fixed"
+                  },
+                  "unit": "dtdurations"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -709,27 +719,15 @@
                   "values": false
                 },
                 "textMode": "value"
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "dtdurations",
-                  "color": {
-                    "mode": "fixed",
-                    "fixedColor": "#3949ab"
-                  }
-                },
-                "overrides": []
               }
-            }
+            },
+            "version": ""
           }
         }
       },
       "panel-12": {
         "kind": "Panel",
         "spec": {
-          "id": 12,
-          "title": "Average speed",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -737,22 +735,23 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "-- Dashboard --"
                       },
+                      "group": "datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 1
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
                   "kind": "filterByValue",
@@ -784,15 +783,27 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "id": 12,
+          "links": [],
+          "title": "Average speed",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#43a047",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "velocitykmh"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -805,28 +816,15 @@
                   "values": false
                 },
                 "textMode": "value"
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "velocitykmh",
-                  "decimals": 0,
-                  "color": {
-                    "mode": "fixed",
-                    "fixedColor": "#43a047"
-                  }
-                },
-                "overrides": []
               }
-            }
+            },
+            "version": ""
           }
         }
       },
       "panel-13": {
         "kind": "Panel",
         "spec": {
-          "id": 13,
-          "title": "Max speed",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -834,22 +832,23 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "-- Dashboard --"
                       },
+                      "group": "datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 1
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
                   "kind": "filterByValue",
@@ -881,15 +880,27 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "id": 13,
+          "links": [],
+          "title": "Max speed",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#fb8c00",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "velocitykmh"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -902,28 +913,15 @@
                   "values": false
                 },
                 "textMode": "value"
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "velocitykmh",
-                  "decimals": 0,
-                  "color": {
-                    "mode": "fixed",
-                    "fixedColor": "#fb8c00"
-                  }
-                },
-                "overrides": []
               }
-            }
+            },
+            "version": ""
           }
         }
       },
       "panel-14": {
         "kind": "Panel",
         "spec": {
-          "id": 14,
-          "title": "Elevation gain",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -931,22 +929,23 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "-- Dashboard --"
                       },
+                      "group": "datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 1
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
                   "kind": "filterByValue",
@@ -978,15 +977,27 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "id": 14,
+          "links": [],
+          "title": "Elevation gain",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#8d6e63",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "lengthm"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -999,28 +1010,15 @@
                   "values": false
                 },
                 "textMode": "value"
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "lengthm",
-                  "decimals": 0,
-                  "color": {
-                    "mode": "fixed",
-                    "fixedColor": "#8d6e63"
-                  }
-                },
-                "overrides": []
               }
-            }
+            },
+            "version": ""
           }
         }
       },
       "panel-15": {
         "kind": "Panel",
         "spec": {
-          "id": 15,
-          "title": "Max elevation",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1028,22 +1026,23 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "-- Dashboard --"
                       },
+                      "group": "datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 1
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
                   "kind": "filterByValue",
@@ -1075,15 +1074,27 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "id": 15,
+          "links": [],
+          "title": "Max elevation",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "stat",
-            "version": "",
+            "kind": "VizConfig",
             "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#6d4c41",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "lengthm"
+                },
+                "overrides": []
+              },
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
@@ -1096,28 +1107,15 @@
                   "values": false
                 },
                 "textMode": "value"
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "lengthm",
-                  "decimals": 0,
-                  "color": {
-                    "mode": "fixed",
-                    "fixedColor": "#6d4c41"
-                  }
-                },
-                "overrides": []
               }
-            }
+            },
+            "version": ""
           }
         }
       },
       "panel-2": {
         "kind": "Panel",
         "spec": {
-          "id": 2,
-          "title": "Speed (km/h)",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1125,22 +1123,23 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "-- Dashboard --"
                       },
+                      "group": "datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 1
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
                   "kind": "filterFieldsByName",
@@ -1156,28 +1155,18 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "id": 2,
+          "links": [],
+          "title": "Speed (km/h)",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "timeseries",
-            "version": "",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "legend": {
-                  "showLegend": false
-                },
-                "tooltip": {
-                  "mode": "single"
-                }
-              },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "velocitykmh",
-                  "min": 0,
-                  "max": 90,
                   "color": {
                     "mode": "continuous-GrYlRd"
                   },
@@ -1187,20 +1176,29 @@
                     "gradientMode": "scheme",
                     "lineWidth": 2,
                     "showPoints": "never"
-                  }
+                  },
+                  "max": 90,
+                  "min": 0,
+                  "unit": "velocitykmh"
                 },
                 "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "showLegend": false
+                },
+                "tooltip": {
+                  "mode": "single"
+                }
               }
-            }
+            },
+            "version": ""
           }
         }
       },
       "panel-3": {
         "kind": "Panel",
         "spec": {
-          "id": 3,
-          "title": "Elevation (m)",
-          "links": [],
           "data": {
             "kind": "QueryGroup",
             "spec": {
@@ -1208,22 +1206,23 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "hidden": false,
                     "query": {
-                      "kind": "DataQuery",
-                      "group": "datasource",
-                      "version": "v0",
                       "datasource": {
                         "name": "-- Dashboard --"
                       },
+                      "group": "datasource",
+                      "kind": "DataQuery",
                       "spec": {
                         "panelId": 1
-                      }
+                      },
+                      "version": "v0"
                     },
-                    "refId": "A",
-                    "hidden": false
+                    "refId": "A"
                   }
                 }
               ],
+              "queryOptions": {},
               "transformations": [
                 {
                   "kind": "filterFieldsByName",
@@ -1239,29 +1238,21 @@
                     }
                   }
                 }
-              ],
-              "queryOptions": {}
+              ]
             }
           },
+          "id": 3,
+          "links": [],
+          "title": "Elevation (m)",
           "vizConfig": {
-            "kind": "VizConfig",
             "group": "timeseries",
-            "version": "",
+            "kind": "VizConfig",
             "spec": {
-              "options": {
-                "legend": {
-                  "showLegend": false
-                },
-                "tooltip": {
-                  "mode": "single"
-                }
-              },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "lengthm",
                   "color": {
-                    "mode": "fixed",
-                    "fixedColor": "#8d6e63"
+                    "fixedColor": "#8d6e63",
+                    "mode": "fixed"
                   },
                   "custom": {
                     "axisWidth": 64,
@@ -1269,11 +1260,21 @@
                     "gradientMode": "opacity",
                     "lineWidth": 2,
                     "showPoints": "never"
-                  }
+                  },
+                  "unit": "lengthm"
                 },
                 "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "showLegend": false
+                },
+                "tooltip": {
+                  "mode": "single"
+                }
               }
-            }
+            },
+            "version": ""
           }
         }
       }
@@ -1285,118 +1286,118 @@
           {
             "kind": "GridLayoutItem",
             "spec": {
-              "x": 0,
-              "y": 0,
-              "width": 4,
-              "height": 4,
               "element": {
                 "kind": "ElementReference",
                 "name": "panel-10"
-              }
+              },
+              "height": 4,
+              "width": 4,
+              "x": 0,
+              "y": 0
             }
           },
           {
             "kind": "GridLayoutItem",
             "spec": {
-              "x": 4,
-              "y": 0,
-              "width": 4,
-              "height": 4,
               "element": {
                 "kind": "ElementReference",
                 "name": "panel-11"
-              }
+              },
+              "height": 4,
+              "width": 4,
+              "x": 4,
+              "y": 0
             }
           },
           {
             "kind": "GridLayoutItem",
             "spec": {
-              "x": 8,
-              "y": 0,
-              "width": 4,
-              "height": 4,
               "element": {
                 "kind": "ElementReference",
                 "name": "panel-12"
-              }
+              },
+              "height": 4,
+              "width": 4,
+              "x": 8,
+              "y": 0
             }
           },
           {
             "kind": "GridLayoutItem",
             "spec": {
-              "x": 12,
-              "y": 0,
-              "width": 4,
-              "height": 4,
               "element": {
                 "kind": "ElementReference",
                 "name": "panel-13"
-              }
+              },
+              "height": 4,
+              "width": 4,
+              "x": 12,
+              "y": 0
             }
           },
           {
             "kind": "GridLayoutItem",
             "spec": {
-              "x": 16,
-              "y": 0,
-              "width": 4,
-              "height": 4,
               "element": {
                 "kind": "ElementReference",
                 "name": "panel-14"
-              }
+              },
+              "height": 4,
+              "width": 4,
+              "x": 16,
+              "y": 0
             }
           },
           {
             "kind": "GridLayoutItem",
             "spec": {
-              "x": 20,
-              "y": 0,
-              "width": 4,
-              "height": 4,
               "element": {
                 "kind": "ElementReference",
                 "name": "panel-15"
-              }
+              },
+              "height": 4,
+              "width": 4,
+              "x": 20,
+              "y": 0
             }
           },
           {
             "kind": "GridLayoutItem",
             "spec": {
-              "x": 0,
-              "y": 4,
-              "width": 10,
-              "height": 10,
               "element": {
                 "kind": "ElementReference",
                 "name": "panel-2"
-              }
+              },
+              "height": 10,
+              "width": 10,
+              "x": 0,
+              "y": 4
             }
           },
           {
             "kind": "GridLayoutItem",
             "spec": {
-              "x": 10,
-              "y": 4,
-              "width": 14,
-              "height": 21,
               "element": {
                 "kind": "ElementReference",
                 "name": "panel-1"
-              }
+              },
+              "height": 21,
+              "width": 14,
+              "x": 10,
+              "y": 4
             }
           },
           {
             "kind": "GridLayoutItem",
             "spec": {
-              "x": 0,
-              "y": 14,
-              "width": 10,
-              "height": 11,
               "element": {
                 "kind": "ElementReference",
                 "name": "panel-3"
-              }
+              },
+              "height": 11,
+              "width": 10,
+              "x": 0,
+              "y": 14
             }
           }
         ]
@@ -1406,14 +1407,11 @@
     "liveNow": false,
     "preload": false,
     "tags": [
+      "infinity",
       "kepler",
-      "gps",
-      "temporal-cursor"
+      "gps"
     ],
     "timeSettings": {
-      "timezone": "America/New_York",
-      "from": "2026-01-13T14:09:44Z",
-      "to": "2026-01-13T14:41:55Z",
       "autoRefresh": "",
       "autoRefreshIntervals": [
         "5s",
@@ -1427,36 +1425,39 @@
         "2h",
         "1d"
       ],
+      "fiscalYearStartMonth": 0,
+      "from": "2026-01-13T14:09:44Z",
       "hideTimepicker": false,
-      "fiscalYearStartMonth": 0
+      "timezone": "America/New_York",
+      "to": "2026-01-13T14:41:55Z"
     },
     "title": "GPS truck track",
     "variables": [
       {
         "kind": "TextVariable",
         "spec": {
-          "name": "brush_from",
           "current": {
             "text": "",
             "value": ""
           },
-          "query": "",
-          "label": "brush_from",
           "hide": "hideVariable",
+          "label": "brush_from",
+          "name": "brush_from",
+          "query": "",
           "skipUrlSync": false
         }
       },
       {
         "kind": "TextVariable",
         "spec": {
-          "name": "brush_to",
           "current": {
             "text": "",
             "value": ""
           },
-          "query": "",
-          "label": "brush_to",
           "hide": "hideVariable",
+          "label": "brush_to",
+          "name": "brush_to",
+          "query": "",
           "skipUrlSync": false
         }
       }
