@@ -51,8 +51,16 @@ render() {
 
 migrate_legacy_folders() {
   for uid in $LEGACY_FOLDERS; do
-    folder=$(grafana GET "/apis/folder.grafana.app/v1beta1/namespaces/default/folders/$uid" 2>/dev/null) || continue
-    printf '%s' "$folder" | grep -q '"grafana.app/managedBy": *"classic-file-provisioning"' || continue
+    # Only a 404 means there is no such folder; anything else (401, 5xx, a
+    # reset while Grafana warms up) is an error, not a reason to skip it.
+    status=$(curl -s -o /tmp/pacha-folder.json -w '%{http_code}' -u "$GF_SECURITY_ADMIN_USER:$GF_SECURITY_ADMIN_PASSWORD" \
+      "$GRAFANA/apis/folder.grafana.app/v1beta1/namespaces/default/folders/$uid")
+    case $status in
+      200) ;;
+      404) continue ;;
+      *) log "reading folder $uid failed: HTTP $status"; return 1 ;;
+    esac
+    grep -q '"grafana.app/managedBy": *"classic-file-provisioning"' /tmp/pacha-folder.json || continue
     # Grafana deletes the classic dashboards itself at start, maybe after
     # /api/health is already up: give it a moment before calling the folder busy.
     tries=0
@@ -71,6 +79,27 @@ migrate_legacy_folders() {
   done
 }
 
+# wait_synced NAME: returns once the repository's sync has run, so that a green
+# healthcheck means its dashboards are there, as classic provisioning did. On
+# an existing volume the last sync's state answers at once.
+wait_synced() {
+  tries=0
+  while :; do
+    repo=$(grafana GET "$REPOS/$1") || { log "reading $1 failed: $repo"; return 1; }
+    state=$(printf '%s' "$repo" | grep -o '"state": *"[a-z]*"' | head -n 1 | sed 's/.*"\([a-z]*\)"$/\1/')
+    case $state in
+      success | warning) return 0 ;;
+      error) log "the sync of $1 failed; its status is under Administration > Provisioning"; return 1 ;;
+    esac
+    tries=$((tries + 1))
+    if [ "$tries" -ge 60 ]; then
+      log "the sync of $1 has not finished after 2 minutes (state '$state')"
+      return 1
+    fi
+    sleep 2
+  done
+}
+
 apply_repositories() {
   for dir in "$HERE"/*/; do
     name=$(basename "$dir")
@@ -82,6 +111,7 @@ apply_repositories() {
         return 1
       }
       log "applied $name ($PACHA_REPO_TYPE)"
+      wait_synced "$name" || return 1
     else
       status=$(curl -s -o /dev/null -w '%{http_code}' -u "$GF_SECURITY_ADMIN_USER:$GF_SECURITY_ADMIN_PASSWORD" \
         -X DELETE "$GRAFANA$REPOS/$name")
@@ -128,5 +158,10 @@ main() {
   log "repositories applied"
 }
 
-main &
+# Detached in a subshell, so its parent is Docker's init (init: true), which
+# reaps it, not Grafana, which would leave it a zombie.
+(main &)
+# Only the job above needs the token. Grafana forwards its environment to the
+# DuckDB and Infinity plugins, and DuckDB runs SQL from anonymous visitors.
+unset PACHA_GIT_TOKEN
 exec /run.sh "$@"
