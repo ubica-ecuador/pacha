@@ -23,7 +23,7 @@ const PLACES = `places_fixture AS (SELECT * FROM (VALUES
 ) AS t(name, latitude, longitude, pop_min, pop_max))`;
 
 async function exposure() {
-  const sql = datasetSql(loadDashboard('dashboards/start-here/earthquakes.json'), 'exposure')
+  const sql = datasetSql(loadDashboard('dashboards/gallery/earthquakes.json'), 'exposure')
     .replaceAll('$quakes', 'quakes_fixture')
     .replaceAll('$places', 'places_fixture');
   // The dataset's SQL starts with its own WITH; the fixtures go in front of it.

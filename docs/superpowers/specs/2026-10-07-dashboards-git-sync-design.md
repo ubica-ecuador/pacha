@@ -3,6 +3,9 @@
 Date: 2026-10-07
 Status: implemented
 
+Changed after implementation: the Start here folder is gone; Earthquakes
+lives in Gallery under its old uid, so its URL is unchanged.
+
 ## Problem
 
 Pacha's dashboards are files in this repo, loaded by Grafana's classic file

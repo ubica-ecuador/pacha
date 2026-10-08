@@ -13,7 +13,6 @@ One directory per folder. Its `_folder.json` holds the folder's uid and title.
 
 | Folder     | Directory                 | Holds                                  |
 |------------|---------------------------|----------------------------------------|
-| Start here | `start-here/`             | the one or two dashboards to open first |
 | Gallery    | `gallery/`                | examples on the free stack             |
 | Plus       | `../plus/dashboards/`     | what needs Kepler Plus; only with the Plus overlay |
 
@@ -57,6 +56,3 @@ Showcase dashboards still to build, each its own piece of work:
    read remotely and aggregated into `h3` or `a5` cells on the server.
 4. **An Iceberg table.** A public Iceberg table read with time travel between
    snapshots.
-
-When the first DuckDB dashboard exists, Start here should show one dashboard
-per engine.

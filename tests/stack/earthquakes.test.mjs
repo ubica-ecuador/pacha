@@ -27,10 +27,10 @@ const settled = async (view) => {
   });
 };
 
-test('is provisioned in Start here under its old uid', async () => {
+test('is provisioned in Gallery under its old uid', async () => {
   const { status, json } = await api(STACK_URL, '/api/dashboards/uid/earthquakes');
   assert.equal(status, 200);
-  assert.equal(json.meta.folderUid, 'start-here');
+  assert.equal(json.meta.folderUid, 'gallery');
 });
 
 test('loads for an anonymous visitor within 45 s, with no panel in error', async () => {
