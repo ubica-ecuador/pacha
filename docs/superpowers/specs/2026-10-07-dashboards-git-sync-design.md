@@ -1,7 +1,7 @@
 # Dashboards as code with Git Sync
 
 Date: 2026-10-07
-Status: approved design, awaiting spec review
+Status: approved
 
 ## Problem
 
@@ -114,12 +114,15 @@ mounted `provisioning/` folder. Compose's `post_start` hooks would be cleaner,
 but need Compose 2.30 and the dev machine runs 2.27.1. The script:
 
 1. Starts a background job, then `exec`s the image's own `/run.sh`, so
-   Grafana stays the main process and receives stop signals as today.
+   Grafana stays the main process and receives stop signals as today. The
+   service sets `init: true`, so Docker's init reaps the finished job.
 2. The background job waits for `/api/health`, then for each definition:
    substitutes the variables with `awk` (the image has no `envsubst`, `jq` or
-   Python), and creates the Repository (`POST`) or updates it (`PUT`) through
-   `/apis/provisioning.grafana.app/v0alpha1/namespaces/default/repositories`,
-   using `curl`, which the healthcheck already relies on.
+   Python), and `PUT`s it to
+   `/apis/provisioning.grafana.app/v0alpha1/namespaces/default/repositories/<name>`
+   with `curl`, which the healthcheck already relies on. Verified: a `PUT`
+   without a `resourceVersion` creates a missing Repository (201) and updates
+   an existing one.
 3. An empty definition means the repository must not exist: the job deletes
    the Repository named after the file. Without the overlay, that removes
    `plus` and its dashboards.
@@ -146,12 +149,14 @@ Added to the grafana service in `compose.yaml`:
   need the mounts.
 
 **File ownership in dev.** Grafana runs as uid 472, which cannot write files
-owned by the developer. The grafana service runs as `${PACHA_UID:-472}:0`
-instead, with the developer's uid set in `.env`; the official image supports an
-arbitrary uid with group 0, and the volume and `/opt/pacha` are already owned
-by group 0. Files Grafana writes are then the developer's. To verify during
-implementation: Grafana starts cleanly under that uid against an existing
-volume.
+owned by the developer. Running Grafana under the developer's uid fails against
+an existing volume (`grafana.db` is `0640`, owned by 472: "attempt to write a
+readonly database"), so Grafana keeps its uid. Instead, a one-time
+`scripts/dev-acl.sh` grants uid 472 read-write on `dashboards/` and
+`plus/dashboards/` through host ACLs, default ACLs included. Verified: 472 can
+then modify files in place, create files and folders, and the developer can
+still edit and delete everything, including what Grafana created. Files that
+git checks out inherit the default ACL. Public instances need none of this.
 
 ### Folders
 
@@ -212,10 +217,13 @@ Rollout, the same on dev and on a public instance:
 1. Remove the classic dashboard providers: `provisioning/dashboards/providers.yaml`,
    the empty `provisioning/dashboards/plus.yaml` placeholder,
    `plus/provisioning-dashboards/`, and their mounts in `compose.plus.yaml`.
-2. On start, Grafana should delete the dashboards of providers that no longer
-   exist. To verify. If it does not, the start script deletes the
-   dashboards still marked as classically provisioned before it creates the
-   repositories, since Git Sync refuses them.
+2. On start, Grafana deletes the dashboards of providers that no longer
+   exist (verified), but keeps their folders, still marked as owned by classic
+   provisioning, and Git Sync refuses to adopt them ("already managed by").
+   The start script deletes each of `start-here`, `gallery` and `plus` when it
+   is still classic-owned and empty, and stops with an error when it is not
+   empty, rather than delete a dashboard someone saved there by hand. This step
+   is a one-off migration and can go once every environment has run it.
 3. The start script creates the repositories; the dashboards come back
    with the same uids and folders.
 
@@ -227,18 +235,19 @@ Rollout, the same on dev and on a public instance:
 - Git Sync checks a file's hash before writing, so a public instance does not
   overwrite a `main` that moved on.
 
-## Open points for implementation
+## Settled by probes
 
-1. Grafana under `${PACHA_UID}:0` against an existing volume (dev file
-   ownership).
-2. Whether removing a classic provider deletes its dashboards on start.
-3. Whether a Repository can change type in place (`local` to `github`). Each
-   environment keeps one type, so this should not arise; the start script
-   fails clearly if it does rather than deleting.
-4. Whether the `folder` target's wrapper folder takes the uid `plus` (from the
-   repository name, or a `_folder.json` at the root of `plus/dashboards/`). If
-   neither works, `plus` becomes folderless over a `plus/dashboards/plus/`
-   subdirectory with its own `_folder.json`.
+On a throwaway Grafana with its own volume:
+
+1. Grafana under the developer's uid against an existing volume: fails; host
+   ACLs instead (see File ownership in dev).
+2. Removing a classic provider deletes its dashboards on start, not its
+   folders (see Rollout).
+3. Changing a Repository's type in place is refused without a new token. Each
+   environment keeps one type; the start script reports the API's error and
+   does not delete to work around it.
+4. The `folder` target's wrapper folder takes the repository's name as uid
+   (`plus`) and its title as title (Plus).
 
 ## Showcase backlog
 
