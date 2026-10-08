@@ -11,6 +11,10 @@ services:
         # Kepler repo, as its CI last published it. See .env.example.
         KEPLER_PANEL_CHANNEL: ${KEPLER_PANEL_CHANNEL:-release}
     image: ghcr.io/ubica-ecuador/pacha-grafana:${STACK_VERSION:-dev}
+    # Applies the Git Sync repositories in provisioning/repositories/, then runs
+    # the image's /run.sh. init reaps the script's background job.
+    entrypoint: ['/etc/grafana/provisioning/repositories/start.sh']
+    init: true
     environment:
       GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-admin}
@@ -20,16 +24,27 @@ services:
       # yourself when the stack is reached under another host (a reverse proxy,
       # a different machine name).
       GF_SERVER_ROOT_URL: ${GF_SERVER_ROOT_URL:-http://localhost:${STACK_PORT:-3000}/}
+      # Git Sync: local repositories may only point under /var/lib/pacha.
+      GF_PATHS_PERMITTED_PROVISIONING_PATHS: /var/lib/pacha
+      GF_PROVISIONING_REPOSITORY_TYPES: 'local|github'
+      # local: this clone's dashboards/, read-write (dev). github: main of the
+      # repo on GitHub, which a public instance commits to. See .env.example.
+      PACHA_REPO_TYPE: ${PACHA_REPO_TYPE:-local}
+      PACHA_GIT_URL: ${PACHA_GIT_URL:-https://github.com/ubica-ecuador/pacha}
+      PACHA_GIT_BRANCH: ${PACHA_GIT_BRANCH:-main}
+      PACHA_GIT_TOKEN: ${PACHA_GIT_TOKEN:-}
     volumes:
       - grafana-data:/var/lib/grafana
       - ./provisioning:/etc/grafana/provisioning:ro
-      - ./dashboards:/var/lib/pacha/dashboards:ro
+      # Read-write: Git Sync writes saves back here. See scripts/dev-acl.sh.
+      - ./dashboards:/var/lib/pacha/dashboards
     networks:
       default:
         # The gateway's name for Grafana; see gateway/default.conf.
         aliases: [pacha-grafana]
     healthcheck:
-      test: ['CMD', 'curl', '-fsS', 'http://localhost:3000/api/health']
+      # Healthy once the Git Sync repositories are applied too (start.sh).
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:3000/api/health && test -f /tmp/pacha-repositories-applied']
       interval: 5s
       timeout: 3s
       retries: 30

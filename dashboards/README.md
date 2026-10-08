@@ -3,8 +3,9 @@
 Every dashboard here is synced with Grafana by Git Sync. A save in Grafana,
 from the UI or from an agent through MCP, writes the file. In dev it shows up
 in `git status`; on a public instance it is a commit on `main`. A change to a
-file (an edit, `git pull`, a branch switch) reaches Grafana within 10 s in dev,
-60 s on a public instance.
+file (an edit, `git pull`, a branch switch) reaches Grafana within about a
+minute: Grafana polls the files, and in practice runs a sync every 25 to 60 s
+even though dev asks for 10.
 
 ## Folders
 

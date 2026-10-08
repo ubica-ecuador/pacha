@@ -1,0 +1,15 @@
+# dashboards/ in this clone, read-write. Each subfolder is a top-level folder.
+apiVersion: provisioning.grafana.app/v0alpha1
+kind: Repository
+metadata:
+  name: pacha
+spec:
+  title: Pacha
+  type: local
+  local:
+    path: /var/lib/pacha/dashboards
+  sync:
+    enabled: true
+    target: folderless
+    intervalSeconds: 10
+  workflows: [write]
