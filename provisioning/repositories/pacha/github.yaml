@@ -1,0 +1,21 @@
+# main of the repo on GitHub (public instances): a save in Grafana is a commit
+# there. Polls every 60 s; no webhook, so GitHub never has to reach Grafana.
+apiVersion: provisioning.grafana.app/v0alpha1
+kind: Repository
+metadata:
+  name: pacha
+spec:
+  title: Pacha
+  type: github
+  github:
+    url: ${PACHA_GIT_URL}
+    branch: ${PACHA_GIT_BRANCH}
+    path: dashboards/
+  sync:
+    enabled: true
+    target: folderless
+    intervalSeconds: 60
+  workflows: [write]
+secure:
+  token:
+    create: "${PACHA_GIT_TOKEN}"

@@ -1,0 +1,22 @@
+# The Plus overlay's repository on a public instance: plus/dashboards/ on main
+# of the repo on GitHub, inside the Plus folder. A save in Grafana is a commit
+# there. Polls every 60 s; no webhook, so GitHub never has to reach Grafana.
+apiVersion: provisioning.grafana.app/v0alpha1
+kind: Repository
+metadata:
+  name: plus
+spec:
+  title: Plus
+  type: github
+  github:
+    url: ${PACHA_GIT_URL}
+    branch: ${PACHA_GIT_BRANCH}
+    path: plus/dashboards/
+  sync:
+    enabled: true
+    target: folder
+    intervalSeconds: 60
+  workflows: [write]
+secure:
+  token:
+    create: "${PACHA_GIT_TOKEN}"

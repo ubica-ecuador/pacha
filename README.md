@@ -23,6 +23,21 @@ Open <http://localhost:3000>. Anonymous visitors can view; sign in as `admin` / 
 `GF_SECURITY_ADMIN_PASSWORD` in `.env`, starting from `.env.example`). Is port 3000 taken? Run
 `STACK_PORT=3100 docker compose up --wait`. When the stack is reached under another host name (not localhost), set `GF_SERVER_ROOT_URL` in `.env` to that URL — Grafana Live checks browser origins against it.
 
+## Dashboards
+
+Grafana's Git Sync keeps the dashboards in `dashboards/` (and `plus/dashboards/`
+with the Plus overlay) in step with Grafana. In dev, a save in Grafana, from the
+UI or from an agent through MCP, writes the file in this clone; commit it like
+any other change. Run once per clone, so Grafana may write there:
+
+```bash
+scripts/dev-acl.sh
+```
+
+On a public instance, set `PACHA_REPO_TYPE=github` and `PACHA_GIT_TOKEN` in
+`.env` (see `.env.example`): Grafana then follows `main` on GitHub and commits
+each save to it. Folders, tags and conventions: [dashboards/README.md](dashboards/README.md).
+
 ## What runs
 
 | Service   | What it does                                     | Reached at                        |
