@@ -1,0 +1,17 @@
+# plus/dashboards/ in this clone, read-write, inside the Plus folder (whose uid
+# is this repository's name). compose.plus.yaml mounts this folder over
+# provisioning/repositories/plus/.
+apiVersion: provisioning.grafana.app/v0alpha1
+kind: Repository
+metadata:
+  name: plus
+spec:
+  title: Plus
+  type: local
+  local:
+    path: /var/lib/pacha/plus-dashboards
+  sync:
+    enabled: true
+    target: folder
+    intervalSeconds: 10
+  workflows: [write]

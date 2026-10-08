@@ -10,6 +10,10 @@
 #
 # PLUS_DIST is required: a bind mount of a path that does not exist would
 # mount an empty folder, and the app would silently disappear.
+#
+# The Plus dashboards come from the `plus` Git Sync repository
+# (plus/repositories/), synced with plus/dashboards/. Without this overlay,
+# start.sh deletes that repository, and the Plus folder goes with it.
 services:
   grafana:
     environment:
@@ -25,11 +29,12 @@ services:
         source: ./plus/provisioning-plugins
         target: /etc/grafana/provisioning/plugins
         read_only: true
+      # The plus Repository; without this mount, start.sh deletes it.
       - type: bind
-        source: ./plus/provisioning-dashboards/plus.yaml
-        target: /etc/grafana/provisioning/dashboards/plus.yaml
+        source: ./plus/repositories
+        target: /etc/grafana/provisioning/repositories/plus
         read_only: true
+      # Read-write: Git Sync writes saves back here. See scripts/dev-acl.sh.
       - type: bind
         source: ./plus/dashboards
         target: /var/lib/pacha/plus-dashboards
-        read_only: true

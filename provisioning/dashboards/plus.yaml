@@ -1,5 +1,0 @@
-# Empty on purpose: compose.plus.yaml mounts plus/provisioning-dashboards/plus.yaml
-# here. The file has to exist, since provisioning/ is mounted read-only and
-# Docker cannot create a mountpoint inside it.
-apiVersion: 1
-providers: []
