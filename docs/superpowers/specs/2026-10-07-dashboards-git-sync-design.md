@@ -95,32 +95,45 @@ working tree, committed by hand like any other.
 
 ### Definitions and bootstrap
 
-The Repository definitions are files in the repo:
+The Repository definitions are files in the repo, in the
+`provisioning.grafana.app/v0alpha1` `Repository` shape (the API accepts YAML):
 
 - `provisioning/repositories/pacha.yaml`
-- `plus/repositories/plus.yaml`
+- `provisioning/repositories/plus.yaml`, an empty placeholder. The Plus
+  overlay mounts `plus/repositories/plus.yaml` over it, the same pattern the
+  overlay already uses for plugins and datasources, since `provisioning/` is
+  mounted read-only.
 
-They use the `provisioning.grafana.app/v0alpha1` `Repository` shape, with the
-environment-specific values as `${VARIABLES}`: `PACHA_REPO_TYPE` (`local` or
+Environment-specific values are `${VARIABLES}`: `PACHA_REPO_TYPE` (`local` or
 `github`), the GitHub URL and branch, the token, the sync interval. Defaults
 give dev.
 
-A one-shot compose service, `provision`, runs after Grafana is healthy:
+No extra service. Compose replaces the grafana service's `entrypoint` with
+`provisioning/repositories/start.sh`, a short script already inside the
+mounted `provisioning/` folder. Compose's `post_start` hooks would be cleaner,
+but need Compose 2.30 and the dev machine runs 2.27.1. The script:
 
-1. Substitutes the variables into each definition.
-2. Creates or updates each Repository through
-   `/apis/provisioning.grafana.app/v0alpha1/namespaces/default/repositories`.
-   An unchanged definition is a no-op.
-3. Deletes the `plus` Repository when the Plus overlay is not on. The overlay
-   mounts `plus/repositories/` into the service; its absence is the signal.
-4. Exits non-zero on any failure, so `docker compose up --wait` reports it.
+1. Starts a background job, then `exec`s the image's own `/run.sh`, so
+   Grafana stays the main process and receives stop signals as today.
+2. The background job waits for `/api/health`, then for each definition:
+   substitutes the variables with `awk` (the image has no `envsubst`, `jq` or
+   Python), and creates the Repository (`POST`) or updates it (`PUT`) through
+   `/apis/provisioning.grafana.app/v0alpha1/namespaces/default/repositories`,
+   using `curl`, which the healthcheck already relies on.
+3. An empty definition means the repository must not exist: the job deletes
+   the Repository named after the file. Without the overlay, that removes
+   `plus` and its dashboards.
+4. On success it writes a marker file. The healthcheck requires the marker as
+   well as `/api/health`, so `docker compose up --wait` fails when the
+   repositories were not applied. On failure the job logs why to Grafana's
+   stdout and writes no marker.
 
-It joins the default network and logs in with the admin credentials compose
-already passes to Grafana. It is not on the `mcp` network.
+The script logs in with the admin credentials compose already passes to
+Grafana, over `localhost` inside the container.
 
 The Repository state lives in Grafana's database, in the `grafana-data`
-volume. A restart keeps it; a new volume gets it back from the service, and
-Git Sync then repopulates every dashboard from the files.
+volume. A restart keeps it; a new volume gets it back from the script on the
+next start, and Git Sync then repopulates every dashboard from the files.
 
 ### Grafana configuration
 
@@ -200,10 +213,10 @@ Rollout, the same on dev and on a public instance:
    the empty `provisioning/dashboards/plus.yaml` placeholder,
    `plus/provisioning-dashboards/`, and their mounts in `compose.plus.yaml`.
 2. On start, Grafana should delete the dashboards of providers that no longer
-   exist. To verify. If it does not, the `provision` service deletes the
+   exist. To verify. If it does not, the start script deletes the
    dashboards still marked as classically provisioned before it creates the
    repositories, since Git Sync refuses them.
-3. The `provision` service creates the repositories; the dashboards come back
+3. The start script creates the repositories; the dashboards come back
    with the same uids and folders.
 
 ## Conflicts
@@ -220,8 +233,8 @@ Rollout, the same on dev and on a public instance:
    ownership).
 2. Whether removing a classic provider deletes its dashboards on start.
 3. Whether a Repository can change type in place (`local` to `github`). Each
-   environment keeps one type, so this should not arise; the `provision`
-   service fails clearly if it does rather than deleting.
+   environment keeps one type, so this should not arise; the start script
+   fails clearly if it does rather than deleting.
 4. Whether the `folder` target's wrapper folder takes the uid `plus` (from the
    repository name, or a `_folder.json` at the root of `plus/dashboards/`). If
    neither works, `plus` becomes folderless over a `plus/dashboards/plus/`
