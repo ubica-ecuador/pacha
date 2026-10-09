@@ -13,9 +13,6 @@
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "legacyOptions": {
-            "type": "dashboard"
-          },
           "name": "Annotations \u0026 Alerts",
           "query": {
             "datasource": {
@@ -113,17 +110,38 @@
           "links": [],
           "title": "Migrant corridors",
           "vizConfig": {
-            "group": "ubica-keplergl-panel",
+            "group": "ubica-keplerplus-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
+                "alerts": {},
                 "basemap": "positron",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
                 "flowRenderMode": "curved",
                 "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
                 "mapConfig": {
                   "config": {
                     "mapState": {
@@ -176,15 +194,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": 4.272003904023034,
-                      "longitude": -36.161387016142946,
+                      "latitude": 3.1052944842368064,
+                      "longitude": -53.448513546787076,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_3D",
                       "maxPitch": 85,
                       "pitch": 45,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 1.8201636900184115
+                      "zoom": 2.2001696994525055
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -200,7 +218,8 @@
                         230.92517894351974
                       ],
                       "topLayerGroups": {
-                        "label": true
+                        "label": true,
+                        "poi": true
                       },
                       "visibleLayerGroups": {
                         "3d building": false,
@@ -208,6 +227,7 @@
                         "building": true,
                         "label": true,
                         "land": true,
+                        "poi": true,
                         "road": true,
                         "water": true
                       }
@@ -215,6 +235,9 @@
                     "uiState": {
                       "locale": "en",
                       "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
                         "mapLegend": {
                           "active": false
                         }
@@ -262,7 +285,7 @@
                           "type": "timeRange",
                           "value": [
                             646790400000,
-                            1719792000000
+                            1719792001000
                           ],
                           "view": "minified"
                         }
@@ -318,7 +341,7 @@
                       "layerOrder": [
                         "partners",
                         "corridors",
-                        "flows",
+                        "w90fmkb",
                         "stock"
                       ],
                       "layers": [
@@ -355,6 +378,7 @@
                                   200,
                                   255
                                 ],
+                                "collisionEnabled": false,
                                 "color": [
                                   33,
                                   33,
@@ -465,6 +489,7 @@
                                   200,
                                   255
                                 ],
+                                "collisionEnabled": false,
                                 "color": [
                                   255,
                                   255,
@@ -530,9 +555,8 @@
                               92,
                               119
                             ],
-                            "columnMode": "LAT_LNG",
+                            "columnMode": "points",
                             "columns": {
-                              "count": "count",
                               "lat0": "lat0",
                               "lat1": "lat1",
                               "lng0": "lng0",
@@ -559,6 +583,7 @@
                                   200,
                                   255
                                 ],
+                                "collisionEnabled": false,
                                 "color": [
                                   255,
                                   255,
@@ -580,6 +605,7 @@
                               }
                             ],
                             "visConfig": {
+                              "allowHover": true,
                               "colorRange": {
                                 "category": "ColorBrewer",
                                 "colors": [
@@ -593,24 +619,49 @@
                                 "name": "PuRd",
                                 "type": "sequential"
                               },
-                              "darkBaseMapEnabled": true,
-                              "flowAdaptiveScalesEnabled": true,
-                              "flowClusteringEnabled": false,
-                              "flowFadeAmount": 50,
-                              "flowFadeEnabled": false,
-                              "flowLineCurviness": 1,
-                              "flowLineThicknessScale": 1.6,
-                              "flowLinesRenderingMode": "animated-straight",
-                              "flowLocationTotalsEnabled": false,
-                              "maxTopFlowsDisplayNum": 7877,
-                              "opacity": 0.9
+                              "elevationScale": 1,
+                              "historyField": "color",
+                              "opacity": 0.9,
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "targetColor": [
+                                195,
+                                40,
+                                153
+                              ],
+                              "thickness": 2,
+                              "trafficAnimate": true,
+                              "trafficArcHeight": 1,
+                              "trafficCycle": 4,
+                              "trafficDashLength": 0.5,
+                              "trafficDirectionMode": "lanes",
+                              "trafficGlow": false,
+                              "trafficLaneBend": 0.12,
+                              "trafficLapsRange": [
+                                1,
+                                6
+                              ],
+                              "trafficShape": "arc",
+                              "trafficSpacing": 40,
+                              "trafficStyle": "comets",
+                              "trafficTrail": 0.25
                             }
                           },
-                          "id": "flows",
-                          "type": "flow",
+                          "id": "w90fmkb",
+                          "type": "traffic",
                           "visualChannels": {
                             "colorScale": "quantile",
-                            "sizeScale": "linear"
+                            "reverseColorScale": "quantile",
+                            "reverseSizeScale": "linear",
+                            "reverseSpeedScale": "linear",
+                            "sizeScale": "linear",
+                            "speedField": {
+                              "name": "count",
+                              "type": "integer"
+                            },
+                            "speedScale": "linear"
                           }
                         },
                         {
@@ -646,6 +697,7 @@
                                   200,
                                   255
                                 ],
+                                "collisionEnabled": false,
                                 "color": [
                                   255,
                                   255,
@@ -729,10 +781,13 @@
                   "version": "v1"
                 },
                 "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
                 "publishWhilePlaying": false,
+                "rasterBands": "",
                 "rasterColormap": "",
                 "rasterPainted": false,
-                "saveRequest": 5,
+                "saveRequest": 6,
                 "showSidePanel": false,
                 "timeSync": "variables",
                 "timeVariables": {
@@ -958,7 +1013,7 @@
                 }
               }
             },
-            "version": ""
+            "version": "7.2.5"
           }
         }
       },
@@ -1038,7 +1093,7 @@
                 }
               }
             },
-            "version": ""
+            "version": "7.2.5"
           }
         }
       },
@@ -1341,6 +1396,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 7,
           "links": [],
           "title": "Source and notes",
