@@ -1,0 +1,1544 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2beta1",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "gfs-wind-synoptic"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "NOAA GFS 10 m wind, sea-level pressure and rain over South America, read live from ERDDAP, with the latest airport observations set against the forecast.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "id": 1,
+          "links": [],
+          "title": "What you are looking at",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**NOAA GFS 10 m wind, sea-level pressure and rain** over South America, live from [PacIOOS ERDDAP](https://pae-paha.pacioos.hawaii.edu/erddap/griddap/ncep_global.html) with DuckDB: the next two days, every three hours, one degree apart.\n\n**The map** draws the wind as streamlines and arrows, the isobars as still lines coloured by how tightly they crowd, and rain above 0.3 mm/h as dots; its layer panel is live. **The bar at the bottom walks the forecast**: it opens on the step nearest to now; drag it or press play. **The tables** sum up each country's 48 hours and check the forecast against airport METARs.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- NOAA GFS 10 m wind, sea-level pressure and rain for the next two days in ONE\n-- request: 17 three-hourly steps of 70 x 67 = 4,690 cells, 79,730 rows, from\n-- 56 S to 13 N and 100 W to 34 W: the whole of Brazil and the south of Chile.\n--\n-- Every other cell of the 0.5 degree archive, so one per degree -- a regular\n-- lattice, which the velocity layers need: they deduce the spacing from the\n-- coordinates and draw nothing if it wobbles.\n--\n-- Every step comes back, each row with its time, and the map's clock -- the bar\n-- at the bottom -- chooses which one is drawn: the latest inside its window.\n-- The dashboard's range, now-90m to now+90m, is that window when the map opens,\n-- so the step on show is the one nearest to now.\n--\n-- The request starts at the step at or before now - 90 minutes, so the window\n-- lies wholly inside the data. Started any later, kepler would clip the\n-- window's leading edge to the first step and leave it narrower than the three\n-- hours between steps, and a window that narrow, playing, spends stretches with\n-- no step inside it and draws nothing.\n--\n-- The window is written into the URL from `now()` itself, not from a variable:\n-- it stays the same URL for three hours, and no hidden variable rides along in\n-- shared links. `{0}` and `{1}` are `format`'s, not Grafana's.\n--\n-- The URL goes to ERDDAP through the cache in gateway/feeds.conf,\n-- `feeds` on this compose network: ERDDAP is asked once per three-hour\n-- window and every visitor after the first is answered from the cache. That is\n-- what keeps this query under the 30 s or so a dashboard query is allowed:\n-- ERDDAP builds each answer on the spot and the same one has taken from 2 s to\n-- 6 minutes. The cache also answers DuckDB's HEAD, which ERDDAP built in full.\n--\n-- `.csv0` has no header and no units row, so read_csv names by position. Only\n-- `[` and `]` need escaping (%5B/%5D). The four subscripts must be written\n-- identically or ERDDAP answers 400.\n--\n-- The wait is ERDDAP's and DuckDB's together, on a miss. ERDDAP's cost grows\n-- with every variable: u and v alone take about 7 s, these four 18 to 25 s,\n-- and far longer when ERDDAP is busy. `SET force_download` would stop DuckDB's\n-- HEAD, but it outlives this query on a connection every dashboard shares, and\n-- would stop range requests into large Parquet elsewhere; `http_get` cannot send\n-- this URL at all -- it rewrites the query string, and ERDDAP answers 400.\n--\n-- The countries ride along in the same query, so the country table below\n-- costs no second trip to ERDDAP: it reads these rows through the Dashboard\n-- datasource. Each cell belongs to the country its centre falls in (Natural\n-- Earth 1:110m, a pinned release through jsDelivr: GitHub's raw host once\n-- stalled a load for 107 s. Read with read_json, since GDAL's /vsicurl fails\n-- TLS here),\n-- and every row carries its country's figures for its own hour: the wind and\n-- rain averaged over the country's cells, each weighted by its area -- a\n-- one-degree cell at 40 S is three quarters the size of one at the equator --\n-- and the strongest wind in any of them. The map's tooltip shows them too.\nWITH grid AS (\n  SELECT column0         AS time,\n         column1         AS latitude,\n         column2 - 360   AS longitude,\n         column3         AS u,\n         column4         AS v,\n         column5 / 100   AS pressure_hpa,  -- Pa\n         -- The same pressure a hundred thousand times over, for the isobars only:\n         -- the layer takes its slope per metre, so this one's reads in hPa per\n         -- 100 km, the unit its legend then shows.\n         column5 * 1000  AS isobar_field,\n         column6 * 3600  AS rain_mm_h,     -- kg m-2 s-1, a millimetre of water per square metre\n         -- What the dots are sized by. Capped, so the rare cloudburst does not set\n         -- the scale and shrink ordinary rain to specks.\n         least(column6 * 3600, 10) AS rain_mm_h_capped\n  FROM read_csv(\n    format('http://feeds/erddap/griddap/ncep_global.csv0?ugrd10m%5B({0}):1:({1})%5D%5B(-56.0):2:(13.0)%5D%5B(260.0):2:(326.0)%5D,vgrd10m%5B({0}):1:({1})%5D%5B(-56.0):2:(13.0)%5D%5B(260.0):2:(326.0)%5D,prmslmsl%5B({0}):1:({1})%5D%5B(-56.0):2:(13.0)%5D%5B(260.0):2:(326.0)%5D,pratesfc%5B({0}):1:({1})%5D%5B(-56.0):2:(13.0)%5D%5B(260.0):2:(326.0)%5D',\n      strftime(time_bucket(INTERVAL 3 HOUR, (now() AT TIME ZONE 'UTC') - INTERVAL 90 MINUTE),\n               '%Y-%m-%dT%H:%M:%SZ'),\n      strftime(time_bucket(INTERVAL 3 HOUR, (now() AT TIME ZONE 'UTC') - INTERVAL 90 MINUTE) + INTERVAL 48 HOUR,\n               '%Y-%m-%dT%H:%M:%SZ')),\n    header = false,\n    columns = {'column0': 'TIMESTAMP', 'column1': 'DOUBLE', 'column2': 'DOUBLE', 'column3': 'DOUBLE',\n               'column4': 'DOUBLE', 'column5': 'DOUBLE', 'column6': 'DOUBLE'},\n    nullstr = 'NaN')\n  WHERE column3 IS NOT NULL AND column4 IS NOT NULL AND column5 IS NOT NULL\n),\ncountries AS (\n  SELECT f -\u003e\u003e '$.properties.NAME' AS country, ST_GeomFromGeoJSON(f -\u003e '$.geometry') AS geom\n  FROM (SELECT unnest(features) AS f\n        FROM read_json('https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_110m_admin_0_countries.geojson',\n                       columns = {'features': 'JSON[]'}))\n  WHERE f -\u003e\u003e '$.properties.CONTINENT' = 'South America'\n),\ncell_country AS (\n  SELECT cell.latitude, cell.longitude, countries.country\n  FROM (SELECT DISTINCT latitude, longitude FROM grid) AS cell\n  JOIN countries ON ST_Contains(countries.geom, ST_Point(cell.longitude, cell.latitude))\n),\nweighed AS (\n  SELECT grid.*, cell_country.country,\n         sqrt(u * u + v * v)     AS speed,\n         cos(radians(latitude)) AS area\n  FROM grid LEFT JOIN cell_country USING (latitude, longitude)\n)\nSELECT time, latitude, longitude, u, v, pressure_hpa, isobar_field, rain_mm_h, rain_mm_h_capped, country,\n       CASE WHEN country IS NOT NULL THEN\n         sum(speed * area) OVER hour / sum(area) OVER hour END     AS country_wind,\n       CASE WHEN country IS NOT NULL THEN max(speed) OVER hour END AS country_wind_max,\n       CASE WHEN country IS NOT NULL THEN\n         sum(rain_mm_h * area) OVER hour / sum(area) OVER hour END AS country_rain\nFROM weighed\nWINDOW hour AS (PARTITION BY country, time)\n-- Hour by hour, as ERDDAP sent it: the country table collects each country's\n-- hours in the order it meets them.\nORDER BY time, latitude DESC, longitude\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Wind streamlines over the sea-level pressure field's contours, which are traced as still lines and coloured by the gradient in hPa per 100 km: where they crowd, the wind is strong. Near the surface, friction turns the wind a little toward the low, and near the equator, where the Coriolis force fades, it cuts across the isobars. They stand still because, drawn moving, they would run against the wind south of the equator. Along the Andes they crowd for want of a sea: the pressure there is carried down to a sea level kilometres below the ground, so read that bright band as the mountains, not the weather.",
+          "id": 4,
+          "links": [],
+          "title": "Pressure and wind: the synoptic chart",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": -11.573623798150368,
+                      "longitude": -78.88766119526345,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 60,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 3.7201636900184116
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "dark-matter",
+                      "threeDBuildingColor": [
+                        9.311499150948377,
+                        9.311499150948377,
+                        9.311499150948377
+                      ],
+                      "topLayerGroups": {
+                        "water": false
+                      },
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": false,
+                        "label": false,
+                        "land": true,
+                        "road": false,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "2qmfvb2gc",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "defaultTimeFormat": "L  H A",
+                            "interval": "3-hour",
+                            "type": "histogram"
+                          },
+                          "speed": 0.5,
+                          "type": "timeRange",
+                          "value": [
+                            1789800075000,
+                            1789812288000
+                          ],
+                          "view": "enlarged"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "zgl6jzue19",
+                          "name": [
+                            "rain_mm_h"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "range",
+                          "value": [
+                            0.32,
+                            22.62
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "country"
+                              },
+                              {
+                                "name": "country_wind"
+                              },
+                              {
+                                "name": "country_rain"
+                              },
+                              {
+                                "name": "pressure_hpa"
+                              },
+                              {
+                                "name": "rain_mm_h"
+                              },
+                              {
+                                "name": "u"
+                              },
+                              {
+                                "name": "v"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "synoptic-rain",
+                        "synoptic-barbs",
+                        "synoptic-wind",
+                        "synoptic-isobars"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              90,
+                              170,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Rain",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "ColorBrewer",
+                                "colors": [
+                                  "#FFF7FB",
+                                  "#DBDAEB",
+                                  "#9BB9D9",
+                                  "#4394C3",
+                                  "#0667A1",
+                                  "#023858"
+                                ],
+                                "name": "PuBu",
+                                "type": "sequential"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.75,
+                              "outline": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                18.2
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "synoptic-rain",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeField": {
+                              "name": "rain_mm_h_capped",
+                              "type": "real"
+                            },
+                            "sizeScale": "sqrt",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              235,
+                              240,
+                              245
+                            ],
+                            "columnMode": "components",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude",
+                              "u": "u",
+                              "v": "v"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Arrows",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "calmOpacity": 0.2,
+                              "colorBySpeed": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#4FC3D9",
+                                  "#7DE0C0",
+                                  "#C3F0A0",
+                                  "#FFF3B0",
+                                  "#FFB870",
+                                  "#FF7A5A"
+                                ],
+                                "name": "Breeze",
+                                "type": "sequential"
+                              },
+                              "directionConvention": "from",
+                              "elevationScale": 1,
+                              "fixedSpeedRange": false,
+                              "gradientDirection": "downhill",
+                              "heightMeters": 0,
+                              "opacity": 0.95,
+                              "opacityBySpeed": false,
+                              "placement": "screen",
+                              "sizeBySpeed": false,
+                              "sizeRange": [
+                                12,
+                                40
+                              ],
+                              "smoothing": 0,
+                              "spacingPx": 70,
+                              "speedUnit": "m/s",
+                              "symbol": "arrow",
+                              "symbolSize": 30
+                            }
+                          },
+                          "id": "synoptic-barbs",
+                          "type": "vectorfield",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              71,
+                              211,
+                              217
+                            ],
+                            "columnMode": "components",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude",
+                              "u": "u",
+                              "v": "v"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Wind",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "animate": true,
+                              "calmOpacity": 0.1,
+                              "colorBySpeed": false,
+                              "colorRange": {
+                                "category": "ColorBrewer",
+                                "colors": [
+                                  "#FFF7FB",
+                                  "#DBDAEB",
+                                  "#9BB9D9",
+                                  "#4394C3",
+                                  "#0667A1",
+                                  "#023858"
+                                ],
+                                "name": "PuBu",
+                                "type": "sequential"
+                              },
+                              "cycleSeconds": 20,
+                              "density": 10500,
+                              "directionConvention": "from",
+                              "elevationScale": 1,
+                              "fixedSpeedRange": false,
+                              "gradientDirection": "downhill",
+                              "heightMeters": 0,
+                              "lifeFraction": 0.8,
+                              "lineLength": 30,
+                              "opacity": 1,
+                              "opacityBySpeed": true,
+                              "seamlessLoop": true,
+                              "smoothing": 3,
+                              "thickness": 2.1,
+                              "trailShare": 8,
+                              "widthBySpeed": false,
+                              "widthRange": [
+                                1,
+                                5
+                              ],
+                              "zoomResponse": 0.4
+                            }
+                          },
+                          "id": "synoptic-wind",
+                          "type": "flowfield",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              200,
+                              210,
+                              220
+                            ],
+                            "columnMode": "gradient",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude",
+                              "value": "isobar_field"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Isobars",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "animate": false,
+                              "calmOpacity": 0.12,
+                              "colorBySpeed": true,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#355C7D",
+                                  "#766493",
+                                  "#B5698A",
+                                  "#D37D87",
+                                  "#E8968C",
+                                  "#F8B195"
+                                ],
+                                "name": "Sunrise",
+                                "type": "sequential"
+                              },
+                              "cycleSeconds": 60,
+                              "density": 900,
+                              "directionConvention": "from",
+                              "elevationScale": 1,
+                              "fixedSpeedRange": false,
+                              "gradientDirection": "contours",
+                              "heightMeters": 0,
+                              "lifeFraction": 0.55,
+                              "lineLength": 60,
+                              "opacity": 0.9,
+                              "opacityBySpeed": true,
+                              "seamlessLoop": true,
+                              "smoothing": 3,
+                              "thickness": 1.4,
+                              "trailShare": 4,
+                              "widthBySpeed": true,
+                              "widthRange": [
+                                0.8,
+                                2.4
+                              ],
+                              "zoomResponse": 0
+                            }
+                          },
+                          "id": "synoptic-isobars",
+                          "type": "flowfield",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "screen",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": true,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 10,
+                "showSidePanel": true,
+                "timeSync": "toMap",
+                "tripLayerMode": "table"
+              }
+            },
+            "version": "1.0.0"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The latest METAR from every airport in the map's box, set against the GFS\n-- cell nearest to it, at the forecast step nearest to half an hour ago.\n--\n-- aviationweather.gov answers with one row per airport, its latest report. The\n-- direction is a number or the string \"VRB\" for a variable wind, so it arrives\n-- as JSON and is read as text first.\n--\n-- The GFS side comes through the same cache as the map's (feeds), and is\n-- the full half-degree grid, not the map's one-degree lattice,\n-- at ONE step: the one nearest to half an hour ago. METARs are at most about\n-- an hour old, so that is the step nearest to all of them but a few, and one\n-- step is half of two: over this box ERDDAP once took more than the 30 s\n-- Grafana allows a query, and two steps were the reason.\nWITH metar AS (\n  SELECT icaoId                                       AS icao,\n         name,\n         lat,\n         lon,\n         to_timestamp(obsTime) AT TIME ZONE 'UTC'      AS observed,\n         TRY_CAST(wdir::VARCHAR AS INTEGER)           AS obs_dir,  -- NULL for \"VRB\"\n         wspd                                         AS obs_kn\n  -- In five boxes, not one. The API thins what it returns as the box grows: the\n  -- whole map's box gave 49 airports, these five give 202 -- and nine or twelve\n  -- smaller ones give the same 202, so that is all there is. Each of the five\n  -- holds airports, which matters: a box with none answers 204 with an empty\n  -- body, not an empty list. And not many more: a burst of requests drew a 504.\n  -- A station on a shared edge can come back twice; the QUALIFY below keeps one.\n  FROM read_json(['https://aviationweather.gov/api/data/metar?bbox=-10,-100,13,-67\u0026format=json',\n                  'https://aviationweather.gov/api/data/metar?bbox=-10,-67,13,-34\u0026format=json',\n                  'https://aviationweather.gov/api/data/metar?bbox=-33,-100,-10,-60\u0026format=json',\n                  'https://aviationweather.gov/api/data/metar?bbox=-33,-60,-10,-34\u0026format=json',\n                  'https://aviationweather.gov/api/data/metar?bbox=-56,-100,-33,-34\u0026format=json'],\n                 format = 'array',\n                 columns = {'icaoId': 'VARCHAR', 'name': 'VARCHAR', 'lat': 'DOUBLE', 'lon': 'DOUBLE',\n                            'obsTime': 'BIGINT', 'wdir': 'JSON', 'wspd': 'DOUBLE'})\n),\ngfs AS (\n  SELECT column0                                                AS step,\n         column1                                                AS lat,\n         column2 - 360                                          AS lon,\n         sqrt(column3 * column3 + column4 * column4) * 1.943844 AS kn,  -- m/s to knots\n         -- Where the wind comes FROM, as a METAR reports it.\n         (degrees(atan2(-column3, -column4)) + 360) % 360       AS dir\n  FROM read_csv(\n    format('http://feeds/erddap/griddap/ncep_global.csv0?ugrd10m%5B({0})%5D%5B(-56.0):1:(13.0)%5D%5B(260.0):1:(326.0)%5D,vgrd10m%5B({0})%5D%5B(-56.0):1:(13.0)%5D%5B(260.0):1:(326.0)%5D',\n      -- The step nearest to now - 30 min: the bucket of now - 30 min + 90 min.\n      strftime(time_bucket(INTERVAL 3 HOUR, (now() AT TIME ZONE 'UTC') + INTERVAL 60 MINUTE), '%Y-%m-%dT%H:%M:%SZ')),\n    header = false,\n    columns = {'column0': 'TIMESTAMP', 'column1': 'DOUBLE', 'column2': 'DOUBLE',\n               'column3': 'DOUBLE', 'column4': 'DOUBLE'},\n    nullstr = 'NaN')\n  WHERE column3 IS NOT NULL AND column4 IS NOT NULL\n)\nSELECT icao                          AS \"Airport\",\n       name                          AS \"Name\",\n       round(kn - obs_kn, 1)         AS \"Speed error kn\",\n       -- The short way round the compass. Left empty for a variable or a light\n       -- wind: under 3 kn the vane says little, and those would swamp the mean.\n       CASE WHEN obs_dir IS NULL OR obs_kn \u003c 3 THEN NULL\n            ELSE round(abs(((obs_dir - dir + 540) % 360) - 180)) END AS \"Direction error °\",\n       obs_dir                       AS \"Observed from\",\n       obs_kn                        AS \"Observed kn\",\n       round(dir)                    AS \"GFS from\",\n       round(kn, 1)                  AS \"GFS kn\",\n       observed                      AS \"Observed\"\nFROM metar\nJOIN gfs ON gfs.lat = round(metar.lat * 2) / 2 AND gfs.lon = round(metar.lon * 2) / 2\nQUALIFY row_number() OVER (PARTITION BY icao ORDER BY abs(epoch(step) - epoch(observed))) = 1\nORDER BY abs(kn - obs_kn) DESC\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The latest METAR from each airport in the map's box against the GFS half-degree cell nearest to it, at the forecast step nearest to half an hour ago, which is the nearest to all but a few of the observations. Sorted by the size of the speed error. It stays on the present whatever the map's bar says: an observation exists only for now. A half-degree cell is not a mountain airport: at Quito part of the error is the grid's.",
+          "id": 5,
+          "links": [],
+          "title": "Airports: forecast against observation",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false,
+                    "width": 100
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Speed error kn"
+                    },
+                    "properties": [
+                      {
+                        "id": "min",
+                        "value": -15
+                      },
+                      {
+                        "id": "max",
+                        "value": 15
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "continuous-BlYlRd"
+                        }
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "gradient",
+                          "type": "color-background"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Direction error °"
+                    },
+                    "properties": [
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "max",
+                        "value": 180
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "continuous-GrYlRd"
+                        }
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "gradient",
+                          "type": "color-background"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byRegexp",
+                      "options": ".* from"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "degree"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 115
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byRegexp",
+                      "options": ".* kn"
+                    },
+                    "properties": [
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Name"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 220
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Airport"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byRegexp",
+                      "options": "^Observed$"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "time:HH:mm"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byRegexp",
+                      "options": ".*error.*"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 130
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byNames",
+                      "options": {
+                        "mode": "include",
+                        "names": [
+                          "Speed error kn",
+                          "Direction error °"
+                        ]
+                      }
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.footer.reducers",
+                        "value": [
+                          "mean"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
+                      "group": "datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "panelId": 4
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "kind": "filterByValue",
+                  "spec": {
+                    "id": "filterByValue",
+                    "options": {
+                      "filters": [
+                        {
+                          "config": {
+                            "id": "isNull",
+                            "options": {}
+                          },
+                          "fieldName": "country"
+                        }
+                      ],
+                      "match": "any",
+                      "type": "exclude"
+                    }
+                  }
+                },
+                {
+                  "kind": "groupBy",
+                  "spec": {
+                    "id": "groupBy",
+                    "options": {
+                      "fields": {
+                        "country": {
+                          "aggregations": [],
+                          "operation": "groupby"
+                        },
+                        "country_rain": {
+                          "aggregations": [
+                            "lastNotNull"
+                          ],
+                          "operation": "aggregate"
+                        },
+                        "country_wind": {
+                          "aggregations": [
+                            "lastNotNull"
+                          ],
+                          "operation": "aggregate"
+                        },
+                        "country_wind_max": {
+                          "aggregations": [
+                            "lastNotNull"
+                          ],
+                          "operation": "aggregate"
+                        },
+                        "time": {
+                          "aggregations": [],
+                          "operation": "groupby"
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "groupBy",
+                  "spec": {
+                    "id": "groupBy",
+                    "options": {
+                      "fields": {
+                        "country": {
+                          "aggregations": [],
+                          "operation": "groupby"
+                        },
+                        "country_rain (lastNotNull)": {
+                          "aggregations": [
+                            "allValues",
+                            "mean"
+                          ],
+                          "operation": "aggregate"
+                        },
+                        "country_wind (lastNotNull)": {
+                          "aggregations": [
+                            "allValues",
+                            "mean"
+                          ],
+                          "operation": "aggregate"
+                        },
+                        "country_wind_max (lastNotNull)": {
+                          "aggregations": [
+                            "max"
+                          ],
+                          "operation": "aggregate"
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "calculateField",
+                  "spec": {
+                    "id": "calculateField",
+                    "options": {
+                      "alias": "Rain in 48 h",
+                      "binary": {
+                        "left": {
+                          "matcher": {
+                            "id": "byName",
+                            "options": "country_rain (lastNotNull) (mean)"
+                          }
+                        },
+                        "operator": "*",
+                        "right": {
+                          "fixed": "48"
+                        }
+                      },
+                      "mode": "binary",
+                      "replaceFields": false
+                    }
+                  }
+                },
+                {
+                  "kind": "organize",
+                  "spec": {
+                    "id": "organize",
+                    "options": {
+                      "excludeByName": {
+                        "country_rain (lastNotNull) (mean)": true
+                      },
+                      "indexByName": {
+                        "Rain in 48 h": 5,
+                        "country": 0,
+                        "country_rain (lastNotNull) (allValues)": 4,
+                        "country_wind (lastNotNull) (allValues)": 1,
+                        "country_wind (lastNotNull) (mean)": 2,
+                        "country_wind_max (lastNotNull) (max)": 3
+                      },
+                      "renameByName": {
+                        "country": "Country",
+                        "country_rain (lastNotNull) (allValues)": "Rain, 48 h",
+                        "country_wind (lastNotNull) (allValues)": "Wind, 48 h",
+                        "country_wind (lastNotNull) (mean)": "Mean wind",
+                        "country_wind_max (lastNotNull) (max)": "Peak wind"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "sortBy",
+                  "spec": {
+                    "id": "sortBy",
+                    "options": {
+                      "sort": [
+                        {
+                          "desc": true,
+                          "field": "Rain in 48 h"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "description": "Each country's wind and rain, hour by hour over the next two days, from the map's own rows: no second request to ERDDAP. Averages are over the country's one-degree cells, each weighted by its area; the peak is the strongest wind in any of them. A cell counts for the country its centre falls in, so a small country has few cells (Ecuador 20, Uruguay 17); French Guiana counts as France in Natural Earth and is not here. Rain in 48 h is the mean rate times 48: GFS gives rates averaged over its steps, not totals. The table does not follow the map's bar. Each small chart is scaled to its own row, so read the shape there and the size in the figure beside it.",
+          "id": 6,
+          "links": [],
+          "title": "Countries: the next 48 hours",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Country"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 73
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Wind, 48 h"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "drawStyle": "line",
+                          "fillOpacity": 35,
+                          "gradientMode": "scheme",
+                          "hideValue": true,
+                          "lineInterpolation": "smooth",
+                          "lineWidth": 2,
+                          "showPoints": "never",
+                          "type": "sparkline"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "continuous-GrYlRd"
+                        }
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "max",
+                        "value": 10
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 106
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Mean wind"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "gradient",
+                          "type": "color-background"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "continuous-GrYlRd"
+                        }
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "max",
+                        "value": 10
+                      },
+                      {
+                        "id": "unit",
+                        "value": "velocityms"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 65
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Peak wind"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "gradient",
+                          "type": "color-background"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "continuous-GrYlRd"
+                        }
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "max",
+                        "value": 20
+                      },
+                      {
+                        "id": "unit",
+                        "value": "velocityms"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Rain, 48 h"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "drawStyle": "line",
+                          "fillOpacity": 35,
+                          "gradientMode": "scheme",
+                          "hideValue": true,
+                          "lineInterpolation": "smooth",
+                          "lineWidth": 2,
+                          "showPoints": "never",
+                          "type": "sparkline"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "continuous-blues"
+                        }
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "max",
+                        "value": 1.5
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 94
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Rain in 48 h"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "gradient",
+                          "type": "color-background"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "continuous-blues"
+                        }
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "max",
+                        "value": 40
+                      },
+                      {
+                        "id": "unit",
+                        "value": "suffix: mm"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 87
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "md",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 3,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 21,
+              "width": 16,
+              "x": 0,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              },
+              "height": 21,
+              "width": 8,
+              "x": 16,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 16,
+              "width": 24,
+              "x": 0,
+              "y": 24
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "duckdb",
+      "kepler",
+      "weather"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-90m",
+      "hideTimepicker": false,
+      "timezone": "utc",
+      "to": "now+90m"
+    },
+    "title": "Wind, pressure and airports — NOAA GFS over South America",
+    "variables": []
+  }
+}

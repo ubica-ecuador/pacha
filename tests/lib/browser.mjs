@@ -24,7 +24,7 @@ export function parseStatNumber(text) {
   return suffix ? value * SUFFIXES[suffix] : value;
 }
 
-export async function openDashboard(pathAndQuery, { anonymous = true, timeoutMs = 45_000, datasets = [] } = {}) {
+export async function openDashboard(pathAndQuery, { anonymous = true, timeoutMs = 45_000, datasets = [], chaski = true } = {}) {
   const browser = await chromium.launch();
   const context = await browser.newContext({ baseURL: STACK_URL, viewport: { width: 1600, height: 1400 } });
   if (!anonymous) {
@@ -42,14 +42,16 @@ export async function openDashboard(pathAndQuery, { anonymous = true, timeoutMs 
     await page.goto(pathAndQuery);
     // Finished: panels are on the page, none is loading, and Chaski has loaded
     // its datasets — every one of `datasets` by name, when given, not just any.
+    // A dashboard with no Chaski dataset (`chaski: false`) waits for its panels only.
     await page.waitForFunction(
-      ([loading, names]) =>
+      ([loading, names, chaski]) =>
         document.querySelectorAll('[data-viz-panel-key]').length > 0 &&
         document.querySelectorAll(loading).length === 0 &&
-        (names.length > 0
-          ? names.every((name) => window.__duckdbwasm?.stats?.loads?.some((l) => l.name === name && l.ok))
-          : (window.__duckdbwasm?.stats?.loads?.length ?? 0) > 0),
-      [LOADING, datasets],
+        (!chaski ||
+          (names.length > 0
+            ? names.every((name) => window.__duckdbwasm?.stats?.loads?.some((l) => l.name === name && l.ok))
+            : (window.__duckdbwasm?.stats?.loads?.length ?? 0) > 0)),
+      [LOADING, datasets, chaski],
       { timeout: timeoutMs, polling: 250 },
     );
   } catch (error) {

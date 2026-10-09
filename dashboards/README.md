@@ -23,12 +23,13 @@ needs it; the other facets change only with the stack.
 
 - **Engine, at least one:** `chaski` (queries in the browser), `duckdb`
   (queries on the server), `infinity` (reads HTTP or JSON).
-- **Visualization:** `kepler`, `kepler-plus`, `business-charts`,
+- **Visualization:** `kepler`, `business-charts`,
   `business-table`.
 - **Theme and behaviour:** `seismic`, `mobility`, `transit`, `energy`,
-  `air-quality`, `gps`, `live` (feeds that reload by themselves).
+  `air-quality`, `gps`, `weather`, `migration`, `live` (feeds that reload by
+  themselves).
 
-No tag repeats a folder: filter what needs Plus with `kepler-plus`.
+Every Plus dashboard carries `plus`: filter what needs Plus with it.
 
 ## Conventions
 

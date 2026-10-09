@@ -1,5 +1,5 @@
 {
-  "apiVersion": "dashboard.grafana.app/v2beta1",
+  "apiVersion": "dashboard.grafana.app/v2",
   "kind": "Dashboard",
   "metadata": {
     "name": "gtfs-rt-mbta-fleet"
@@ -1097,7 +1097,7 @@
                 "tripLayerMode": "table"
               }
             },
-            "version": "1.0.1-edge.cb64e48"
+            "version": "1.1.0"
           }
         }
       },
@@ -3225,12 +3225,12 @@
     "tags": [
       "chaski",
       "kepler",
-      "kepler-plus",
+      "plus",
       "transit",
       "live"
     ],
     "timeSettings": {
-      "autoRefresh": "15s",
+      "autoRefresh": "20s",
       "autoRefreshIntervals": [
         "15s",
         "20s",

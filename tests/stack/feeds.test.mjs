@@ -60,3 +60,87 @@ test('DuckDB reads the PyPSA-Eur grid through feeds', async () => {
   );
   assert.ok(row.n > 1000, `only ${row.n} buses`);
 });
+
+// CMU's package-delivery drone flights behind drone-delivery-flights. Figshare
+// answers with a redirect to an S3 link signed for 10 s; the gateway follows it
+// and keeps the file under its own address.
+const FLIGHT_PARAMETERS = '/figshare/files/26385034';
+
+test('DuckDB reads the drone flights through feeds', async () => {
+  const [row] = await duckdb(STACK_URL, `SELECT count(*)::INTEGER AS n FROM read_csv('http://feeds${FLIGHT_PARAMETERS}')`);
+  assert.equal(row.n, 209);
+});
+
+test('a figshare file is fetched once and then served from the cache', () => {
+  const headers = () => compose(['exec', '-T', 'grafana', 'curl', '-s', '-o', '/dev/null', '-D', '-', `http://feeds${FLIGHT_PARAMETERS}`]);
+  headers();
+  assert.match(headers(), /X-Cache-Status: HIT/i);
+});
+
+// TriMet behind trimet-live-fleet. Every call needs an AppID, which the
+// gateway adds from TRIMET_APP_ID; without one in .env TriMet refuses, and
+// these tests are skipped.
+const TRIMET = '/trimet/ws/v2/vehicles';
+const trimetKey = compose(['exec', '-T', 'gateway', 'printenv', 'TRIMET_APP_ID']).trim();
+const noTrimetKey = !trimetKey && 'TRIMET_APP_ID is not set';
+
+test('DuckDB reads TriMet through feeds, the AppID added on the way', { skip: noTrimetKey }, async () => {
+  const [row] = await duckdb(
+    STACK_URL,
+    `SELECT json_array_length(content::JSON, '$.resultSet.vehicle')::INTEGER AS n FROM read_text('http://feeds${TRIMET}')`,
+  );
+  assert.ok(row.n > 10, `only ${row.n} vehicles`);
+});
+
+test('TriMet is kept gzipped and handed over plain, once per cache period', { skip: noTrimetKey }, () => {
+  const headers = (...extra) => compose(['exec', '-T', 'grafana', 'curl', '-s', '-o', '/dev/null', '-D', '-', ...extra, `http://feeds${TRIMET}`]);
+  headers();
+  const plain = headers();
+  assert.match(plain, /X-Cache-Status: HIT/i);
+  assert.doesNotMatch(plain, /Content-Encoding/i);
+  assert.match(headers('-H', 'Accept-Encoding: gzip'), /Content-Encoding: gzip/i);
+});
+
+test('the AppID never leaves the gateway', { skip: noTrimetKey }, () => {
+  const answer = compose(['exec', '-T', 'grafana', 'curl', '-s', '-D', '-', `http://feeds${TRIMET}`]);
+  assert.ok(!answer.includes(trimetKey));
+});
+
+// NOAA's GFS on PacIOOS ERDDAP, behind gfs-wind-synoptic. One grid cell at the
+// latest step: small enough to be quick even on a miss. ERDDAP wants its
+// brackets percent-encoded, and the gateway passes them on as they came.
+const ERDDAP = '/erddap/griddap/ncep_global.csv0?ugrd10m%5B(last)%5D%5B(-2.0):1:(-2.0)%5D%5B(281.0):1:(281.0)%5D';
+
+test('DuckDB reads ERDDAP through feeds', async () => {
+  const [row] = await duckdb(
+    STACK_URL,
+    `SELECT count(*)::INTEGER AS n FROM read_csv('http://feeds${ERDDAP}', header = false, nullstr = 'NaN')`,
+  );
+  assert.equal(row.n, 1);
+});
+
+test('an ERDDAP answer is built once and then served from the cache', () => {
+  const headers = () => compose(['exec', '-T', 'grafana', 'curl', '-s', '-o', '/dev/null', '-D', '-', `http://feeds${ERDDAP}`]);
+  headers();
+  assert.match(headers(), /X-Cache-Status: HIT/i);
+});
+
+
+// NYC's buildings and subway on GeoLens, behind nyc-skyline-plus. The export
+// is generated per request, with a new ETag each time; from the cache every
+// read sees the same file. The stations are the smallest.
+const STATIONS = '/geolens/datasets/c646ff35-82eb-442f-a524-efcbb1645023.parquet';
+
+test('DuckDB reads a GeoLens parquet through feeds', async () => {
+  const [row] = await duckdb(STACK_URL, `SELECT count(*)::INTEGER AS n FROM read_parquet('http://feeds${STATIONS}')`);
+  assert.equal(row.n, 496);
+});
+
+test('a GeoLens export is fetched once and then served from the cache, one ETag', () => {
+  const headers = () => compose(['exec', '-T', 'grafana', 'curl', '-s', '-o', '/dev/null', '-D', '-', `http://feeds${STATIONS}`]);
+  const etag = (answer) => answer.match(/^etag: (.+)$/im)?.[1];
+  const first = headers();
+  const second = headers();
+  assert.match(second, /X-Cache-Status: HIT/i);
+  assert.equal(etag(second), etag(first));
+});

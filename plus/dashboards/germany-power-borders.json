@@ -1,5 +1,5 @@
 {
-  "apiVersion": "dashboard.grafana.app/v2beta1",
+  "apiVersion": "dashboard.grafana.app/v2",
   "kind": "Dashboard",
   "metadata": {
     "name": "germany-power-borders"
@@ -109,7 +109,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### Germany's power borders, live\n\nEvery 15 minutes, how much electricity crosses each of Germany's eleven borders, and which way. The\n**map** draws each border as an arc from the exporting country to the importing one: comets pace with\nthe megawatts, and the colour says how much of the border's line rating is in use. The rings show each\ncountry's renewable share of its load, as last measured. Underneath runs the European transmission grid, 220 kV and up,\nwith the lines that cross into Germany drawn bright.\n\nThe map opens on the latest 15 minutes. **Press play** on its time bar to run the day step by step, or\ndrag the bar to any moment: an amber band marks that moment on the charts. **Hover** the dot halfway\nalong an arc for that border over the whole range; it follows the charts' crosshair. **Click** an arc\nor a ring to pick that border for the charts beside it.\n\nData: [Energy-Charts](https://energy-charts.info) by Fraunhofer ISE (CC BY 4.0); the physical flows\nreach it three to four hours late, the price and the renewable share sooner. Grid: [PyPSA-Eur's network](https://zenodo.org/records/18619025) built on OpenStreetMap\n(v0.7, February 2026, ODbL). Line ratings are thermal limits, not the capacity the operators offer for\ntrade. The public API allows two requests a minute, so the gateway asks once every 10 minutes for\neveryone, and the dashboard covers Germany's borders only.",
+                "content": "### Germany's power borders, live\n\nEvery 15 minutes, how much electricity crosses each of Germany's eleven borders, and which way. The\n**map** draws each border as an arc from the exporting country to the importing one: comets pace with\nthe megawatts, and the colour says how much of the border's line rating is in use. The rings show each\ncountry's renewable share of its load in the same 15 minutes, published from midnight today. Underneath runs the European transmission grid, 220 kV and up,\nwith the lines that cross into Germany drawn bright.\n\nThe map opens on the latest 15 minutes. **Press play** on its time bar to run the day step by step, or\ndrag the bar to any moment: an amber band marks that moment on the charts. **Hover** the dot halfway\nalong an arc for that border over the whole range; it follows the charts' crosshair. **Click** an arc\nor a ring to pick that border for the charts beside it.\n\nData: [Energy-Charts](https://energy-charts.info) by Fraunhofer ISE (CC BY 4.0); the physical flows\nreach it three to four hours late, the price and the renewable share sooner. Grid: [PyPSA-Eur's network](https://zenodo.org/records/18619025) built on OpenStreetMap\n(v0.7, February 2026, ODbL). Line ratings are thermal limits, not the capacity the operators offer for\ntrade. The public API allows two requests a minute, so the gateway asks once every 10 minutes for\neveryone, and the dashboard covers Germany's borders only.",
                 "mode": "markdown"
               }
             },
@@ -205,7 +205,7 @@
                     "steps": [
                       {
                         "color": "red",
-                        "value": null
+                        "value": 0
                       },
                       {
                         "color": "orange",
@@ -337,6 +337,7 @@
               "fieldConfig": {
                 "defaults": {
                   "color": {
+                    "fixedColor": "#ad46ff",
                     "mode": "thresholds"
                   },
                   "thresholds": {
@@ -344,7 +345,7 @@
                     "steps": [
                       {
                         "color": "text",
-                        "value": null
+                        "value": 0
                       }
                     ]
                   }
@@ -371,7 +372,7 @@
                           "steps": [
                             {
                               "color": "blue",
-                              "value": null
+                              "value": 0
                             },
                             {
                               "color": "orange",
@@ -403,7 +404,7 @@
                           "steps": [
                             {
                               "color": "red",
-                              "value": null
+                              "value": 0
                             },
                             {
                               "color": "orange",
@@ -455,7 +456,7 @@
                           "steps": [
                             {
                               "color": "red",
-                              "value": null
+                              "value": 0
                             },
                             {
                               "color": "orange",
@@ -499,7 +500,7 @@
                           "steps": [
                             {
                               "color": "text",
-                              "value": null
+                              "value": 0
                             },
                             {
                               "color": "orange",
@@ -513,9 +514,9 @@
                 ]
               },
               "options": {
-                "colorMode": "value",
+                "colorMode": "background",
                 "graphMode": "none",
-                "justifyMode": "center",
+                "justifyMode": "auto",
                 "orientation": "auto",
                 "percentChangeColorMode": "standard",
                 "reduceOptions": {
@@ -526,7 +527,7 @@
                   "values": false
                 },
                 "showPercentChange": false,
-                "textMode": "value_and_name",
+                "textMode": "auto",
                 "wideLayout": true
               }
             },
@@ -570,7 +571,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- The renewable share of the load of each country, as last measured. Not\n-- under the time bar: Energy-Charts publishes these from midnight today on,\n-- while the flows trail by hours, so for much of the range no step has both.\nSELECT c.iso, c.name, c.lat AS latitude, c.lng AS longitude,\n       arg_max(s.share, s.time) AS renewable_pct,\n       CASE arg_max(s.signal, s.time) WHEN 2 THEN 'High' WHEN 1 THEN 'Average' WHEN 0 THEN 'Low'\n                                      WHEN -1 THEN 'Grid congestion' END AS signal,\n       strftime(max(s.time), '%H:%M UTC') AS measured\nFROM $shares s JOIN $countries c USING (iso)\nWHERE NOT s.forecast\nGROUP BY ALL"
+                        "rawSql": "-- The renewable share of the load of each country, every 15 minutes, under\n-- the time bar with the arcs: one row per step with flows and country, so a\n-- ring stays on the map in every step. Energy-Charts publishes the shares\n-- from midnight today on: before that, and wherever a step has none yet, the\n-- share is empty and the ring stays empty, rather than reading 0 %.\nWITH step AS (\n  SELECT DISTINCT time FROM $flows WHERE $__timeFilter(time) AND physical_gw IS NOT NULL\n)\nSELECT step.time, c.iso, c.name, c.lat AS latitude, c.lng AS longitude,\n       s.share AS renewable_pct,\n       CASE s.signal WHEN 2 THEN 'High' WHEN 1 THEN 'Average' WHEN 0 THEN 'Low'\n                     WHEN -1 THEN 'Grid congestion' ELSE 'No data yet' END AS signal\nFROM step CROSS JOIN $countries c\nLEFT JOIN $shares s ON s.iso = c.iso AND s.time = step.time AND NOT s.forecast\nORDER BY step.time, c.iso"
                       },
                       "version": "v0"
                     },
@@ -636,7 +637,7 @@
               "transformations": []
             }
           },
-          "description": "One 15-minute step at a time, the latest first; the time bar plays the range step by step, and an amber band marks the step on the charts. Arcs run from exporter to importer, comets pace with the megawatts, colour is the share of the border's thermal line rating in use (cyan under 25 %, red over 75 %). Rings: renewable share of each country's load as last measured; they stay put while the arcs play. The dot halfway along each arc holds that border over the whole range: hover it for its card, pin it to keep it; the card on Germany is the net. The cards follow the crosshair of the charts. Click an arc or a ring to pick that border.",
+          "description": "One 15-minute step at a time, the latest first; the time bar plays the range step by step, and an amber band marks the step on the charts. Arcs run from exporter to importer, comets pace with the megawatts, colour is the share of the border's thermal line rating in use (cyan under 25 %, red over 75 %). Rings: renewable share of each country's load in the same step, published from midnight today: empty for yesterday. The dot halfway along each arc holds that border over the whole range: hover it for its card, pin it to keep it; the card on Germany is the net. The cards follow the crosshair of the charts. Click an arc or a ring to pick that border.",
           "id": 3,
           "links": [],
           "title": "Flows across the borders — press play to run the day",
@@ -645,43 +646,161 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
                 "alerts": {},
                 "basemap": "dark-matter",
                 "clickArea": false,
+                "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "hoverMaxAgeSeconds": 60,
                 "hoverPublishSpike": true,
                 "hoverSync": true,
                 "mapConfig": {
                   "config": {
                     "mapState": {
-                      "bearing": 0,
+                      "bearing": 8.060548906881142,
                       "dragRotate": true,
-                      "latitude": 51.0,
-                      "longitude": 10.6,
-                      "pitch": 35,
-                      "zoom": 4.6
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 50.992375071666025,
+                      "longitude": 8.034408214061797,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 61.09928488440478,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 4.700492192806232
                     },
                     "mapStyle": {
-                      "styleType": "dark-matter"
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-fiord",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
                     },
                     "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
                       "filters": [
                         {
                           "animationWindow": "interval",
                           "dataId": [
-                            "grafana-A"
+                            "grafana-A",
+                            "grafana-B"
                           ],
                           "enabled": true,
                           "id": "step",
                           "name": [
+                            "time",
                             "time"
                           ],
                           "plotType": {
                             "aggregation": "count",
+                            "colorsByDataId": {
+                              "grafana-A": "#3EACA8",
+                              "grafana-B": "#A2D4AB"
+                            },
                             "interval": "15-minute",
                             "type": "histogram"
                           },
@@ -689,14 +808,24 @@
                           "timezone": "Europe/Berlin",
                           "type": "timeRange",
                           "value": [
-                            4102444800000,
-                            4102444800000
+                            1791452700000,
+                            1791452700000
                           ],
-                          "view": "minified",
-                          "yAxis": null
+                          "view": "minified"
                         }
                       ],
                       "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
                         "tooltip": {
                           "compareMode": false,
                           "compareType": "absolute",
@@ -739,7 +868,7 @@
                                 "name": "signal"
                               },
                               {
-                                "name": "measured"
+                                "name": "time"
                               }
                             ],
                             "grafana-C": [
@@ -791,18 +920,71 @@
                         }
                       },
                       "layerBlending": "additive",
+                      "layerOrder": [
+                        "border-trends",
+                        "renewables",
+                        "flows",
+                        "6ivzua",
+                        "18zlxod"
+                      ],
                       "layers": [
                         {
                           "config": {
+                            "color": [
+                              246,
+                              209,
+                              138
+                            ],
                             "columnMode": "points",
                             "columns": {
                               "lat": "latitude",
                               "lng": "longitude"
                             },
                             "dataId": "grafana-E",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
                             "isVisible": true,
                             "label": "Flow into Germany over the range",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
                             "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
                               "colorRange": {
                                 "category": "Custom",
                                 "colorMap": [
@@ -822,14 +1004,55 @@
                                 "name": "Import or export",
                                 "type": "custom"
                               },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.8,
+                              "outline": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "rowsAsset": "auto",
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "sparkAlertWorst": false,
                               "sparkAlerts": false,
+                              "sparkCardOpacity": 0.9,
                               "sparkCards": "hover",
+                              "sparkChangeColours": "neutral",
+                              "sparkCrossValue": true,
+                              "sparkCrosshair": true,
+                              "sparkDotRadius": 5,
+                              "sparkDots": true,
+                              "sparkFill": true,
+                              "sparkMax": "auto",
+                              "sparkMin": "auto",
+                              "sparkNoDataAfter": "auto",
+                              "sparkOverlap": "none",
                               "sparkPinned": [
                                 "10.4,52.4"
                               ],
+                              "sparkPublishCrosshair": false,
                               "sparkScale": "perSite",
                               "sparkSize": "S",
-                              "sparkUnit": " MW"
+                              "sparkTimeField": "auto",
+                              "sparkTooltip": false,
+                              "sparkUnit": " MW",
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
                             }
                           },
                           "id": "border-trends",
@@ -837,9 +1060,11 @@
                           "visualChannels": {
                             "colorField": {
                               "name": "mw",
-                              "type": "real"
+                              "type": "integer"
                             },
-                            "colorScale": "custom"
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
                           }
                         },
                         {
@@ -855,8 +1080,15 @@
                               "lng": "longitude"
                             },
                             "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
                             "isVisible": true,
-                            "label": "Renewable share of load, latest",
+                            "label": "Renewable share of load",
                             "textLabel": [
                               {
                                 "alignment": "center",
@@ -894,6 +1126,8 @@
                               }
                             ],
                             "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
                               "colorRange": {
                                 "category": "Custom",
                                 "colorMap": [
@@ -918,14 +1152,56 @@
                                 "name": "Renewable share",
                                 "type": "custom"
                               },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "gaugeBackground": true,
+                              "gaugeBackgroundColor": [
+                                24,
+                                38,
+                                77
+                              ],
+                              "gaugeBackgroundOpacity": 0.9,
                               "gaugeCentreText": true,
+                              "gaugeDistance": 30,
+                              "gaugeIcon": "square",
                               "gaugeMax": 100,
                               "gaugeMin": 0,
+                              "gaugePosition": "center",
+                              "gaugeShape": "ring",
                               "gaugeTextMode": "percent",
-                              "gaugeTextSize": 10,
+                              "gaugeTextSize": 13,
                               "gaugeThickness": 4,
+                              "gaugeUnit": "",
                               "gaugeUpright": true,
-                              "radius": 16
+                              "gaugeZoomRate": 0.5,
+                              "gaugeZoomRef": 10,
+                              "gaugeZoomScale": false,
+                              "historyField": "color",
+                              "opacity": 0.8,
+                              "outline": false,
+                              "radius": 24.8,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "rowsAsset": "auto",
+                              "rowsPerPlace": "last",
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
                             }
                           },
                           "id": "renewables",
@@ -935,11 +1211,18 @@
                               "name": "renewable_pct",
                               "type": "real"
                             },
-                            "colorScale": "custom"
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
                           }
                         },
                         {
                           "config": {
+                            "color": [
+                              231,
+                              159,
+                              213
+                            ],
                             "columnMode": "points",
                             "columns": {
                               "lat0": "srclat",
@@ -948,9 +1231,49 @@
                               "lng1": "dstlng"
                             },
                             "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
                             "isVisible": true,
                             "label": "Cross-border flow",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
                             "visConfig": {
+                              "allowHover": true,
                               "colorRange": {
                                 "category": "Custom",
                                 "colorMap": [
@@ -980,6 +1303,8 @@
                                 "name": "Line rating in use",
                                 "type": "custom"
                               },
+                              "elevationScale": 1,
+                              "historyField": "color",
                               "opacity": 0.35,
                               "sizeRange": [
                                 1,
@@ -989,13 +1314,17 @@
                               "trafficAnimate": true,
                               "trafficArcHeight": 0.5,
                               "trafficCycle": 5,
+                              "trafficDashLength": 0.5,
                               "trafficDirectionMode": "straight",
                               "trafficGlow": true,
+                              "trafficLaneBend": 0.12,
                               "trafficLapsRange": [
                                 1,
                                 6
                               ],
                               "trafficShape": "arc",
+                              "trafficSpacing": 40,
+                              "trafficStyle": "comets",
                               "trafficTrail": 0.6
                             }
                           },
@@ -1007,6 +1336,9 @@
                               "type": "real"
                             },
                             "colorScale": "custom",
+                            "reverseColorScale": "quantile",
+                            "reverseSizeScale": "linear",
+                            "reverseSpeedScale": "linear",
                             "sizeField": {
                               "name": "mw",
                               "type": "integer"
@@ -1026,13 +1358,54 @@
                               179,
                               191
                             ],
+                            "columnMode": "geojson",
                             "columns": {
                               "geojson": "_geojson"
                             },
                             "dataId": "grafana-D",
-                            "isVisible": true,
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": false,
                             "label": "Lines into Germany",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
                             "visConfig": {
+                              "allowHover": true,
                               "colorRange": {
                                 "category": "Custom",
                                 "colorMap": [
@@ -1062,8 +1435,29 @@
                                 "name": "Lines into Germany",
                                 "type": "customOrdinal"
                               },
+                              "elevationScale": 1,
+                              "enable3d": false,
                               "filled": false,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "historyField": "color",
                               "opacity": 0.95,
+                              "pipelineAltitude": 0,
+                              "pipelineLaneGap": 1,
+                              "pipelineReverse": false,
+                              "pipelineSignedSpeed": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
                               "strokeColorRange": {
                                 "category": "Custom",
                                 "colorMap": [
@@ -1095,12 +1489,31 @@
                               },
                               "strokeOpacity": 0.95,
                               "stroked": true,
-                              "thickness": 2.5
+                              "thickness": 10.3,
+                              "trafficAnimate": true,
+                              "trafficCycle": 4,
+                              "trafficDashLength": 0.5,
+                              "trafficDirectionMode": "straight",
+                              "trafficGlow": false,
+                              "trafficLapsRange": [
+                                1,
+                                6
+                              ],
+                              "trafficSpacing": 40,
+                              "trafficStyle": "comets",
+                              "trafficTrail": 0.25,
+                              "wireframe": false
                             }
                           },
-                          "id": "ties",
-                          "type": "geojson",
+                          "id": "6ivzua",
+                          "type": "pipeline",
                           "visualChannels": {
+                            "altitudeScale": "linear",
+                            "reverseColorScale": "quantile",
+                            "reverseSizeScale": "linear",
+                            "reverseSpeedScale": "linear",
+                            "sizeScale": "linear",
+                            "speedScale": "linear",
                             "strokeColorField": {
                               "name": "class",
                               "type": "string"
@@ -1115,13 +1528,54 @@
                               179,
                               191
                             ],
+                            "columnMode": "geojson",
                             "columns": {
                               "geojson": "_geojson"
                             },
                             "dataId": "grafana-C",
-                            "isVisible": true,
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": false,
                             "label": "Transmission grid",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
                             "visConfig": {
+                              "allowHover": true,
                               "colorRange": {
                                 "category": "Custom",
                                 "colorMap": [
@@ -1151,53 +1605,55 @@
                                 "name": "Transmission grid",
                                 "type": "customOrdinal"
                               },
+                              "elevationScale": 1,
+                              "enable3d": false,
                               "filled": false,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
                               "opacity": 0.35,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
                               "strokeColorRange": {
-                                "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    "220–330 kV",
-                                    "#2A6F8F"
-                                  ],
-                                  [
-                                    "380–420 kV",
-                                    "#4FB3BF"
-                                  ],
-                                  [
-                                    "500–750 kV",
-                                    "#B9E3E8"
-                                  ],
-                                  [
-                                    "HVDC",
-                                    "#B877D9"
-                                  ]
-                                ],
+                                "category": "Uber",
                                 "colors": [
-                                  "#2A6F8F",
-                                  "#4FB3BF",
-                                  "#B9E3E8",
-                                  "#B877D9"
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
                                 ],
-                                "name": "Transmission grid",
-                                "type": "customOrdinal"
+                                "name": "Global Warming",
+                                "type": "sequential"
                               },
-                              "strokeOpacity": 0.35,
+                              "strokeOpacity": 0.8,
                               "stroked": true,
-                              "thickness": 0.6
+                              "thickness": 0.4,
+                              "wireframe": false
                             }
                           },
-                          "id": "grid",
+                          "id": "18zlxod",
                           "type": "geojson",
                           "visualChannels": {
-                            "strokeColorField": {
-                              "name": "class",
-                              "type": "string"
-                            },
-                            "strokeColorScale": "customOrdinal"
+                            "colorScale": "quantile",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
                           }
                         }
                       ],
+                      "overlayBlending": "normal",
                       "splitMaps": []
                     }
                   },
@@ -1207,12 +1663,17 @@
                 "places": {},
                 "publishIntervalMs": 1000,
                 "publishWhilePlaying": true,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 4,
                 "showSidePanel": false,
                 "timeSync": "variables",
                 "timeVariables": {
                   "from": "map_from",
                   "to": "map_to"
                 },
+                "tripLayerMode": "table",
                 "variableMappings": [
                   {
                     "field": "iso",
@@ -1304,6 +1765,19 @@
                     }
                   },
                   "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "suffix: MW"
                 },
                 "overrides": [
@@ -1424,6 +1898,19 @@
                     }
                   },
                   "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "suffix: MW"
                 },
                 "overrides": [
@@ -1555,6 +2042,9 @@
                     "cellOptions": {
                       "type": "auto"
                     },
+                    "footer": {
+                      "reducers": []
+                    },
                     "inspect": false,
                     "minWidth": 90
                   },
@@ -1564,7 +2054,7 @@
                     "steps": [
                       {
                         "color": "text",
-                        "value": null
+                        "value": 0
                       }
                     ]
                   },
@@ -1608,7 +2098,7 @@
                           "steps": [
                             {
                               "color": "blue",
-                              "value": null
+                              "value": 0
                             },
                             {
                               "color": "orange",
@@ -1690,7 +2180,7 @@
                           "steps": [
                             {
                               "color": "#00E5FF",
-                              "value": null
+                              "value": 0
                             },
                             {
                               "color": "#FFC233",
@@ -1807,6 +2297,19 @@
                   },
                   "decimals": 1,
                   "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "gwatt"
                 },
                 "overrides": [
@@ -2097,7 +2600,20 @@
                       "mode": "off"
                     }
                   },
-                  "decimals": 0
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
                 },
                 "overrides": [
                   {
@@ -2268,7 +2784,7 @@
                           "kind": "ElementReference",
                           "name": "panel-2"
                         },
-                        "height": 4,
+                        "height": 5,
                         "width": 24,
                         "x": 0,
                         "y": 0
@@ -2410,7 +2926,7 @@
     "tags": [
       "chaski",
       "infinity",
-      "kepler-plus",
+      "plus",
       "energy",
       "live"
     ],
@@ -2435,8 +2951,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "dbbf9120c_grid_v1",
+            "value": "dbbf9120c_grid_v1"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -2486,8 +3002,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "dbbf9120c_flows_v8",
+            "value": "dbbf9120c_flows_v8"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -2537,8 +3053,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "dbbf9120c_mix_v9",
+            "value": "dbbf9120c_mix_v9"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -2588,8 +3104,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "dbbf9120c_price_v10",
+            "value": "dbbf9120c_price_v10"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -2639,8 +3155,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "dbbf9120c_shares_v11",
+            "value": "dbbf9120c_shares_v11"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -2690,8 +3206,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "dbbf9120c_freq_v12",
+            "value": "dbbf9120c_freq_v12"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -2741,8 +3257,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "dbbf9120c_countries_v7",
+            "value": "dbbf9120c_countries_v7"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -2778,8 +3294,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "2026-10-08T09:45:00.000Z",
+            "value": "2026-10-08T09:45:00.000Z"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -2812,8 +3328,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "2026-10-08T09:45:00.000Z",
+            "value": "2026-10-08T09:45:00.000Z"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -2846,8 +3362,8 @@
         "spec": {
           "allowCustomValue": false,
           "current": {
-            "text": "France",
-            "value": "FR"
+            "text": "Austria",
+            "value": "AT"
           },
           "hide": "dontHide",
           "includeAll": false,

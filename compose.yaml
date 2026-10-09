@@ -91,9 +91,15 @@ services:
     image: nginx:1.27-alpine
     ports:
       - '${STACK_PORT:-3000}:80'
+    environment:
+      # TriMet's AppID, from .env, written into feeds.conf at start. Unset, the
+      # gateway still starts and every other feed works; only TriMet refuses.
+      TRIMET_APP_ID: ${TRIMET_APP_ID:-}
+      NGINX_ENVSUBST_FILTER: '^TRIMET_'
     volumes:
       - ./gateway/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./gateway/feeds.conf:/etc/nginx/conf.d/feeds.conf:ro
+      # A template: see the TriMet note at the top of feeds.conf.
+      - ./gateway/feeds.conf:/etc/nginx/templates/feeds.conf.template:ro
     networks:
       default:
         # DuckDB calls http://feeds/...; see gateway/feeds.conf.
