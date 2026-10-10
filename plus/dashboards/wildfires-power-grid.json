@@ -162,7 +162,7 @@
                       "spec": {
                         "format": 1,
                         "rawQuery": true,
-                        "rawSql": "WITH r AS (\n  SELECT * FROM (VALUES\n      ('central-brazil', 'South_America', 'ESRI:102033', -25, -60, -2, -38, -13.5, -49),\n      ('southern-africa', 'Southern_Africa', 'ESRI:102022', -22, 12, -5, 42, -13.5, 27),\n      ('eastern-australia', 'Australia_NewZealand', 'EPSG:3577', -39, 138, -10, 154, -24.5, 146),\n      ('california', 'USA_contiguous_and_Hawaii', 'EPSG:3310', 32.5, -124.5, 42, -114, 37.2, -119.3)\n  ) v(region, firms, crs, s, w, n, e, lat, lng)\n  WHERE region = ${region:sqlstring}\n),\n-- The region's lines of 200 kV and more, from OpenStreetMap, measured in the\n-- region's equal-area projection.\ngrid AS (\n  SELECT id, name, operator, kv, geom,\n         ST_Transform(geom, 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM (\n    SELECT e-\u003e\u003e'id' AS id, coalesce(e-\u003e'tags'-\u003e\u003e'name', e-\u003e'tags'-\u003e\u003e'ref', 'OSM way ' || (e-\u003e\u003e'id')) AS name,\n           e-\u003e'tags'-\u003e\u003e'operator' AS operator,\n           try_cast(split_part(e-\u003e'tags'-\u003e\u003e'voltage', ';', 1) AS INTEGER) // 1000 AS kv,\n           ST_MakeLine(list_transform(json_extract(e, '$.geometry[*]')::JSON[],\n                       p -\u003e ST_Point((p-\u003e\u003e'lon')::DOUBLE, (p-\u003e\u003e'lat')::DOUBLE))) AS geom\n    FROM (SELECT unnest(elements) AS e\n          FROM read_json('http://feeds/overpass/power-lines/${region:raw}.json', columns = {elements: 'JSON[]'}))\n  ), r\n),\n-- Every VIIRS detection in the region over the range, from the three satellites.\nfires AS (\n  SELECT latitude, longitude, frp, satellite, daynight,\n         strptime(acq_date::VARCHAR || lpad(acq_time::VARCHAR, 4, '0'), '%Y-%m-%d%H%M')::TIMESTAMPTZ AS time,\n         ST_Transform(ST_Point(longitude, latitude), 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM read_csv(['http://feeds/firms/noaa-20-viirs-c2/J1_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/noaa-21-viirs-c2/J2_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/suomi-npp-viirs-c2/SUOMI_VIIRS_C2_${firms:raw}_7d.csv'], union_by_name = true), r\n  WHERE latitude BETWEEN r.s AND r.n AND longitude BETWEEN r.w AND r.e\n    AND time BETWEEN $__timeFrom() AND $__timeTo()\n),\n-- Each detection within the distance of a line, once per line.\nnear AS (\n  SELECT f.time, f.latitude, f.longitude, f.satellite, f.frp, f.xy, g.id AS line_id, ST_Distance(f.xy, g.xy) / 1000 AS km\n  FROM fires f JOIN grid g ON ST_DWithin(f.xy, g.xy, ${km:raw} * 1000)\n),\nexposed AS (\n  SELECT g.id, g.name, g.operator, g.kv, count(*) AS detections, min(n.km) AS closest_km,\n         max(n.frp) AS max_frp, max(n.time) AS last_seen,\n         -- Fires snapped to 500 m first: thousands of points by a line are a few\n         -- hundred cells, and their union is buffered in a fraction of the time.\n         ST_Intersection(any_value(g.xy),\n                         ST_Buffer(ST_Union_Agg(DISTINCT ST_Point(round(ST_X(n.xy) / 500) * 500, round(ST_Y(n.xy) / 500) * 500)),\n                                   ${km:raw} * 1000, 4)) AS part,\n         any_value(r.crs) AS crs\n  FROM near n JOIN grid g ON g.id = n.line_id, r\n  GROUP BY g.id, g.name, g.operator, g.kv\n)\n-- The stretches a fire came near, bright, with how many and how close.\nSELECT id, name, operator, kv, detections, round(closest_km, 1) AS closest_km, round(ST_Length(part) / 1000, 1) AS exposed_km,\n       ST_AsGeoJSON(ST_Transform(part, crs, 'EPSG:4326', always_xy := true))::VARCHAR AS geom\nFROM exposed"
+                        "rawSql": "WITH r AS (\n  SELECT * FROM (VALUES\n      ('central-brazil', 'South_America', 'ESRI:102033', -25, -60, -2, -38, -13.5, -49),\n      ('southern-africa', 'Southern_Africa', 'ESRI:102022', -22, 12, -5, 42, -13.5, 27),\n      ('eastern-australia', 'Australia_NewZealand', 'EPSG:3577', -39, 138, -10, 154, -24.5, 146),\n      ('california', 'USA_contiguous_and_Hawaii', 'EPSG:3310', 32.5, -124.5, 42, -114, 37.2, -119.3)\n  ) v(region, firms, crs, s, w, n, e, lat, lng)\n  WHERE region = ${region:sqlstring}\n),\n-- The region's lines of 200 kV and more, from OpenStreetMap, measured in the\n-- region's equal-area projection.\ngrid AS (\n  SELECT id, name, operator, kv, geom,\n         ST_Transform(geom, 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM (\n    SELECT e-\u003e\u003e'id' AS id, coalesce(e-\u003e'tags'-\u003e\u003e'name', e-\u003e'tags'-\u003e\u003e'ref', 'OSM way ' || (e-\u003e\u003e'id')) AS name,\n           e-\u003e'tags'-\u003e\u003e'operator' AS operator,\n           try_cast(split_part(e-\u003e'tags'-\u003e\u003e'voltage', ';', 1) AS INTEGER) // 1000 AS kv,\n           ST_MakeLine(list_transform(json_extract(e, '$.geometry[*]')::JSON[],\n                       p -\u003e ST_Point((p-\u003e\u003e'lon')::DOUBLE, (p-\u003e\u003e'lat')::DOUBLE))) AS geom\n    FROM (SELECT unnest(elements) AS e\n          FROM read_json('http://feeds/overpass/power-lines/${region:raw}.json', columns = {elements: 'JSON[]'}))\n  ), r\n),\n-- Every VIIRS detection in the region over the range, from the three satellites.\nfires AS (\n  SELECT latitude, longitude, frp, satellite, daynight,\n         strptime(acq_date::VARCHAR || lpad(acq_time::VARCHAR, 4, '0'), '%Y-%m-%d%H%M')::TIMESTAMPTZ AS time,\n         ST_Transform(ST_Point(longitude, latitude), 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM read_csv(['http://feeds/firms/noaa-20-viirs-c2/J1_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/noaa-21-viirs-c2/J2_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/suomi-npp-viirs-c2/SUOMI_VIIRS_C2_${firms:raw}_7d.csv'], union_by_name = true), r\n  WHERE latitude BETWEEN r.s AND r.n AND longitude BETWEEN r.w AND r.e\n    AND time BETWEEN $__timeFrom() AND $__timeTo()\n),\n-- Each detection within the distance of a line, once per line.\nnear AS (\n  SELECT f.time, f.latitude, f.longitude, f.satellite, f.frp, f.xy, g.id AS line_id, ST_Distance(f.xy, g.xy) / 1000 AS km\n  FROM fires f JOIN grid g ON ST_DWithin(f.xy, g.xy, ${km:raw} * 1000)\n),\n-- Fires snapped to 500 m, once per line and pass.\nmarks AS (\n  SELECT line_id, time, round(ST_X(xy) / 500) * 500 AS x, round(ST_Y(xy) / 500) * 500 AS y,\n         min(km) AS km, max(frp) AS frp\n  FROM near GROUP BY line_id, time, x, y\n)\n-- The stretch of line each fire came near, bright, at the time of its pass:\n-- under the time bar with the fires, so the red builds up as they play in.\nSELECT g.id, g.name, g.operator, g.kv, m.time, round(m.km, 1) AS fire_km, round(m.frp, 1) AS frp_mw,\n       ST_AsGeoJSON(ST_Transform(ST_Intersection(g.xy, ST_Buffer(ST_Point(m.x, m.y), ${km:raw} * 1000, 4)),\n                                 r.crs, 'EPSG:4326', always_xy := true))::VARCHAR AS geom\nFROM marks m JOIN grid g ON g.id = m.line_id, r\nORDER BY m.time"
                       },
                       "version": "v0"
                     },
@@ -174,7 +174,7 @@
               "transformations": []
             }
           },
-          "description": "Every fire detection, coloured by its radiative power (MW), and the region's lines of 200 kV and more: dim, and red along the stretches a fire came within the chosen distance of. Press ▶ on the bar to play the satellite passes in. Data: NASA FIRMS (VIIRS), OpenStreetMap contributors (ODbL).",
+          "description": "Every fire detection, coloured by its radiative power (MW), and the region's lines of 200 kV and more: dim, and red along the stretches a fire came within the chosen distance of. Press ▶ on the bar to play the satellite passes in: the fires and the red stretches build up together. Data: NASA FIRMS (VIIRS), OpenStreetMap contributors (ODbL).",
           "id": 3,
           "links": [],
           "title": "Fires near the grid",
@@ -210,15 +210,21 @@
                         {
                           "animationWindow": "incremental",
                           "dataId": [
-                            "grafana-A"
+                            "grafana-A",
+                            "grafana-C"
                           ],
                           "enabled": true,
                           "id": "passes",
                           "name": [
+                            "time",
                             "time"
                           ],
                           "plotType": {
                             "aggregation": "count",
+                            "colorsByDataId": {
+                              "grafana-A": "#FF9830",
+                              "grafana-C": "#F2495C"
+                            },
                             "defaultTimeFormat": "L  LT",
                             "interval": "1-hour",
                             "type": "histogram"
@@ -282,13 +288,13 @@
                                   "name": "kv"
                                 },
                                 {
-                                  "name": "detections"
+                                  "name": "time"
                                 },
                                 {
-                                  "name": "closest_km"
+                                  "name": "fire_km"
                                 },
                                 {
-                                  "name": "exposed_km"
+                                  "name": "frp_mw"
                                 }
                               ]
                             }
