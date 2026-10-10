@@ -26,8 +26,8 @@ needs it; the other facets change only with the stack.
 - **Visualization:** `kepler`, `business-charts`,
   `business-table`.
 - **Theme and behaviour:** `seismic`, `mobility`, `transit`, `energy`,
-  `air-quality`, `gps`, `weather`, `migration`, `live` (feeds that reload by
-  themselves).
+  `air-quality`, `gps`, `weather`, `migration`, `maritime`, `live` (feeds that
+  reload by themselves).
 
 Every Plus dashboard carries `plus`: filter what needs Plus with it.
 

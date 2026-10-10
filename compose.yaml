@@ -95,7 +95,9 @@ services:
       # TriMet's AppID, from .env, written into feeds.conf at start. Unset, the
       # gateway still starts and every other feed works; only TriMet refuses.
       TRIMET_APP_ID: ${TRIMET_APP_ID:-}
-      NGINX_ENVSUBST_FILTER: '^TRIMET_'
+      # FRED's API key, the same way; unset, only FRED refuses.
+      FRED_API_KEY: ${FRED_API_KEY:-}
+      NGINX_ENVSUBST_FILTER: '^(TRIMET|FRED)_'
     volumes:
       - ./gateway/default.conf:/etc/nginx/conf.d/default.conf:ro
       # A template: see the TriMet note at the top of feeds.conf.
