@@ -771,7 +771,7 @@
                             "textLabel": [
                               {
                                 "alignment": "center",
-                                "anchor": "middle",
+                                "anchor": "start",
                                 "background": false,
                                 "backgroundColor": [
                                   0,
@@ -781,26 +781,22 @@
                                 ],
                                 "collisionEnabled": false,
                                 "color": [
-                                  235,
-                                  240,
-                                  245
-                                ],
-                                "field": {
-                                  "name": "chokepoint",
-                                  "type": "string"
-                                },
-                                "offset": [
-                                  0,
-                                  18
-                                ],
-                                "outlineColor": [
-                                  11,
-                                  15,
-                                  24,
+                                  255,
+                                  255,
                                   255
                                 ],
-                                "outlineWidth": 1,
-                                "size": 11,
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
                                 "weight": 400
                               }
                             ],
@@ -842,12 +838,12 @@
                               },
                               "filled": true,
                               "fixedRadius": false,
-                              "opacity": 0.85,
+                              "opacity": 0.75,
                               "outline": true,
-                              "radius": 12,
+                              "radius": 120,
                               "radiusRange": [
-                                4,
-                                34
+                                18,
+                                110
                               ],
                               "thickness": 1
                             }
@@ -1400,7 +1396,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- The picked chokepoint, ships a day by type, week by week.\nSELECT $__timeGroup(time, '1w') AS time,\n       avg(tanker) AS \"Tanker\", avg(container) AS \"Container\", avg(dry_bulk) AS \"Dry bulk\",\n       avg(general_cargo) AS \"General cargo\", avg(roro) AS \"Ro-ro\"\nFROM $transits\nWHERE $__timeFilter(time) AND portid = '${chokepoint}'\nGROUP BY 1 ORDER BY 1"
+                        "rawSql": "-- The picked chokepoint, ships a day by type, week by week.\nSELECT $__timeGroup(time, '1w') AS time,\n       avg(tanker) AS \"Tanker\", avg(container) AS \"Container\", avg(dry_bulk) AS \"Dry bulk\",\n       avg(general_cargo) AS \"General cargo\", avg(roro) AS \"Ro-ro\"\nFROM $transits\nWHERE $__timeFilter(time) AND portid = $chokepoint\nGROUP BY 1 ORDER BY 1"
                       },
                       "version": "v0"
                     },
@@ -1648,7 +1644,7 @@
                     },
                     "properties": [
                       {
-                        "id": "custom.hidden",
+                        "id": "custom.hideFrom.viz",
                         "value": true
                       }
                     ]
@@ -1665,7 +1661,19 @@
                       },
                       {
                         "id": "custom.width",
-                        "value": 170
+                        "value": 160
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Ships a day"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 110
                       }
                     ]
                   },
@@ -1682,6 +1690,10 @@
                       {
                         "id": "decimals",
                         "value": 0
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 120
                       },
                       {
                         "id": "custom.cellOptions",
@@ -1734,6 +1746,10 @@
                       {
                         "id": "decimals",
                         "value": 2
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 140
                       }
                     ]
                   },
@@ -1765,6 +1781,10 @@
                           "mode": "basic",
                           "type": "gauge"
                         }
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 110
                       },
                       {
                         "id": "color",
@@ -1803,6 +1823,10 @@
                           "mode": "basic",
                           "type": "gauge"
                         }
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 140
                       },
                       {
                         "id": "color",
@@ -1903,7 +1927,7 @@
                           "kind": "ElementReference",
                           "name": "panel-2"
                         },
-                        "height": 4,
+                        "height": 5,
                         "width": 16,
                         "x": 0,
                         "y": 0
@@ -1916,7 +1940,7 @@
                           "kind": "ElementReference",
                           "name": "panel-3"
                         },
-                        "height": 4,
+                        "height": 5,
                         "width": 8,
                         "x": 16,
                         "y": 0
@@ -1932,7 +1956,7 @@
                         "height": 18,
                         "width": 15,
                         "x": 0,
-                        "y": 4
+                        "y": 5
                       }
                     },
                     {
@@ -1945,7 +1969,7 @@
                         "height": 9,
                         "width": 9,
                         "x": 15,
-                        "y": 4
+                        "y": 5
                       }
                     },
                     {
@@ -1958,7 +1982,7 @@
                         "height": 9,
                         "width": 9,
                         "x": 15,
-                        "y": 13
+                        "y": 14
                       }
                     }
                   ]

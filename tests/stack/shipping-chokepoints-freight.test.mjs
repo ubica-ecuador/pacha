@@ -45,6 +45,13 @@ test('has no apostrophe in a comment of a browser query, where Chaski would read
   }
 });
 
+test('leaves the quoting of the chokepoint to Chaski', () => {
+  // Chaski quotes a variable itself: '$chokepoint' would reach DuckDB as ''chokepoint1''.
+  for (const sql of findAll(dashboard, (n) => typeof n.rawSql === 'string').map((n) => n.rawSql)) {
+    assert.doesNotMatch(sql, /'\$\{?chokepoint/);
+  }
+});
+
 test('the transits cover all 28 chokepoints, day by day, up to the last fortnight', async () => {
   const [row] = await duckdb(
     STACK_URL,
