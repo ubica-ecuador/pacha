@@ -102,6 +102,11 @@ services:
       - ./gateway/default.conf:/etc/nginx/conf.d/default.conf:ro
       # A template: see the TriMet note at the top of feeds.conf.
       - ./gateway/feeds.conf:/etc/nginx/templates/feeds.conf.template:ro
+      # What the recorder writes, served at http://feeds/recordings/; see
+      # feeds.conf. Grafana's DuckDB cannot read local files.
+      - recordings:/srv/recordings:ro
+      # Served instead when nothing has been recorded: an empty recording.
+      - ./gateway/recordings:/srv/fallback/recordings:ro
     networks:
       default:
         # DuckDB calls http://feeds/...; see gateway/feeds.conf.
@@ -159,3 +164,4 @@ networks:
 
 volumes:
   grafana-data:
+  recordings:
