@@ -1,0 +1,1847 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2beta1",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "air-quality-amsterdam"
+  },
+  "spec": {
+    "annotations": [],
+    "cursorSync": "Crosshair",
+    "description": "Hourly NO2 at GGD Amsterdam's 17 reference stations, from Luchtmeetnet, with a surface between them; reloaded every 15 minutes.",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "id": 12,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "content": "### Where the data comes from\n\n[Luchtmeetnet](https://www.luchtmeetnet.nl/) is the Dutch national air quality network, run by RIVM with the GGDs and the provinces. Its stations are reference instruments, the kind a city's compliance is measured with, and it publishes their readings hour by hour as open data, through [its API](https://api-docs.luchtmeetnet.nl/).\n\nThis dashboard reads the 17 stations of GGD Amsterdam's network that measure nitrogen dioxide (NO2), from Zaandam in the north to Oude Meer by Schiphol in the south. Each value is the mean of one hour, published within about an hour of its end; the dashboard reloads every 15 minutes. The latest hours are provisional: the network validates its data later, and a value can still change.\n\nThe requests go through Grafana's server and a cache, one per station, and ask for whole hours, so every visitor in the same hour shares one copy. The time range picks the hours, up to its last 7 days, the most the API gives in one request.\n\n### How to read it\n\n- **NO2** is in µg/m³. It comes mostly from road traffic, so it is highest beside busy roads and in the rush hours, and it changes from one street to the next: that is why the map shows it. Particulate matter (PM10, PM2.5) travels far and varies little across one city; the selected station's panel has it.\n- The colours are 5 bands, from dim to bright: brighter is more NO2. The brightest is above 25 µg/m³, the WHO 2021 guideline for a 24-hour mean (the dashed lines); the WHO's for a year's mean is 10 µg/m³; the EU's limit for a year's mean is 40 µg/m³, and 20 µg/m³ from 2030.\n- A mean needs 75% of its hours: 18 for the last 24 hours, the EU's rule for a daily mean. A station short of them is left out of the ranking and the surface.\n- A reading a little under zero, the instruments' noise around nothing, counts as 0.\n\n### The map\n\nThe cards are the stations' hourly NO2 over the time range, all on one scale, each coloured by its latest hour; a station with no room for a card stays as a dot, and one that stops reporting turns red. Under them, a surface interpolated between the stations (inverse distance weighting, over the area they span), from what the **Surface** picker chooses: the latest hour, the last 24 hours or the time range. The surface is a guess between 17 points, not a measurement: a station by a busy road raises the guess around it, though the street behind may be cleaner.\n\n### How it works\n\nGrafana's DuckDB fetches the readings, and hands them to DuckDB running in your browser (the Chaski data source), which answers every panel and every click without another round trip. The map is the Kepler Geospatial Maps Plus panel, with its Sparkline and Surface layers; the ranking is Business Charts (Apache ECharts).",
+                "mode": "markdown"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-detail": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT time, value FROM $detail WHERE pollutant = 'NO2' ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT time, value FROM $detail WHERE pollutant = 'PM10' ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT time, value FROM $detail WHERE pollutant = 'PM2.5' ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT time, value FROM $detail WHERE pollutant = 'O3' ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Hourly NO2, PM10, PM2.5 and ozone (O3) at the station picked, those it measures, over the same hours as the map. Particulate matter varies little across the city: it travels far, and most of it comes from outside. NO2 differs from street to street, which is why the map shows it.",
+          "id": 9,
+          "links": [],
+          "title": "Selected station, every pollutant",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": 7200000,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "min": 0,
+                  "unit": "conμgm3"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byFrameRefID",
+                      "options": "A"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "NO2"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#E07A3E",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byFrameRefID",
+                      "options": "B"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "PM10"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#3987e5",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byFrameRefID",
+                      "options": "C"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "PM2.5"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#199e70",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byFrameRefID",
+                      "options": "D"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "O3"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#9085e9",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "mean",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-highest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH latest AS (SELECT max(time) AS t FROM $series)\nSELECT max(no2) AS \"NO2\" FROM $series, latest WHERE time = latest.t"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The station with the most NO2 over the latest hour; the ranking below says which.",
+          "id": 5,
+          "links": [],
+          "title": "Highest, latest hour",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#8A3413",
+                        "value": null
+                      },
+                      {
+                        "color": "#AE461C",
+                        "value": 5
+                      },
+                      {
+                        "color": "#CC5D28",
+                        "value": 10
+                      },
+                      {
+                        "color": "#E07A3E",
+                        "value": 15
+                      },
+                      {
+                        "color": "#EE9A60",
+                        "value": 25
+                      }
+                    ]
+                  },
+                  "unit": "conμgm3"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "textMode": "value"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-hint": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "id": 8,
+          "links": [],
+          "title": "How to use this map",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "content": "**Click a station** on the map, or **its bar** in the ranking, to see every pollutant it measures. **Hover** the graph above, or a card's chart, and every card follows the same hour. The **Surface** picker at the top chooses what the surface between the stations shows: the latest hour, the last 24 hours or the whole time range. The **time range** picks the hours, up to its last 7 days.",
+                "mode": "markdown"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-latest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT epoch_ms(max(time)) AS \"Latest hour\" FROM $series"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The end of the latest hour with a reading. Luchtmeetnet publishes an hour's readings within about an hour; the dashboard reloads every 15 minutes.",
+          "id": 3,
+          "links": [],
+          "title": "Latest hour",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "time:HH:mm"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "textMode": "value"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT station, name, kind, latitude, longitude, time, no2 FROM $series ORDER BY station, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH latest AS (SELECT max(time) AS t FROM $series),\nspan AS (SELECT greatest(date_diff('hour', min(time), max(time)) + 1, 1) AS hours FROM $series),\nper AS (\n  SELECT station, any_value(name) AS name, any_value(kind) AS kind,\n         any_value(latitude) AS latitude, any_value(longitude) AS longitude,\n         max(time) AS last_time,\n         arg_max(no2, time) AS last_no2,\n         avg(no2) FILTER (WHERE time \u003e latest.t - INTERVAL 24 HOUR) AS mean_24h,\n         count(*) FILTER (WHERE time \u003e latest.t - INTERVAL 24 HOUR) AS hours_24h,\n         avg(no2) AS mean_range,\n         max(no2) AS max_range,\n         count(*) AS hours_range\n  FROM $series, latest\n  GROUP BY station\n)\nSELECT name, latitude, longitude,\n       round(CASE $surface\n         WHEN 'now' THEN CASE WHEN last_time \u003e= (SELECT t FROM latest) - INTERVAL 2 HOUR THEN last_no2 END\n         WHEN 'range' THEN CASE WHEN hours_range \u003e= 0.75 * (SELECT hours FROM span) THEN mean_range END\n         ELSE CASE WHEN hours_24h \u003e= 18 THEN mean_24h END\n       END, 1) AS no2\nFROM per\nWHERE no2 IS NOT NULL"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "GGD Amsterdam's 17 NO2 stations. Each card is a station's hourly NO2 over the time range, on a scale shared by all the cards, coloured by its latest hour; the stations without room for a card stay as dots. Under them, a surface interpolated between the stations (inverse distance weighting, over the area they span): the Surface picker at the top chooses what it shows. Click a station to see everything it measures; hover the graph below, or a card's chart, and every card follows the same hour.",
+          "id": 1,
+          "links": [],
+          "title": "NO2 by station, and between them",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "basemap": "dark-matter",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": 52.366,
+                      "longitude": 4.852,
+                      "pitch": 0,
+                      "zoom": 10.6
+                    },
+                    "mapStyle": {
+                      "styleType": "dark-matter"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "currentTime": null,
+                        "speed": 1
+                      },
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {
+                              "grafana-A": [
+                                {
+                                  "format": null,
+                                  "name": "name"
+                                },
+                                {
+                                  "format": null,
+                                  "name": "kind"
+                                },
+                                {
+                                  "format": null,
+                                  "name": "station"
+                                },
+                                {
+                                  "format": null,
+                                  "name": "no2"
+                                },
+                                {
+                                  "format": null,
+                                  "name": "time"
+                                }
+                              ],
+                              "grafana-B": [
+                                {
+                                  "format": null,
+                                  "name": "name"
+                                },
+                                {
+                                  "format": null,
+                                  "name": "no2"
+                                }
+                              ]
+                            }
+                          },
+                          "enabled": true
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "stations",
+                        "surface"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "NO2, hourly (µg/m³)",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "field": {
+                                  "name": "name",
+                                  "type": "string"
+                                },
+                                "size": 18
+                              }
+                            ],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    5,
+                                    "#8A3413"
+                                  ],
+                                  [
+                                    10,
+                                    "#AE461C"
+                                  ],
+                                  [
+                                    15,
+                                    "#CC5D28"
+                                  ],
+                                  [
+                                    25,
+                                    "#E07A3E"
+                                  ],
+                                  [
+                                    null,
+                                    "#EE9A60"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#8A3413",
+                                  "#AE461C",
+                                  "#CC5D28",
+                                  "#E07A3E",
+                                  "#EE9A60"
+                                ],
+                                "name": "NO2 (µg/m³)",
+                                "type": "custom"
+                              },
+                              "sparkCards": "auto",
+                              "sparkFill": true,
+                              "sparkMin": 0,
+                              "sparkOverlap": "none",
+                              "sparkPublishCrosshair": true,
+                              "sparkScale": "common",
+                              "sparkSize": "S",
+                              "sparkUnit": " µg/m³"
+                            }
+                          },
+                          "id": "stations",
+                          "type": "sparkline",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "no2",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "isVisible": true,
+                            "label": "NO2 between the stations (µg/m³)",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    5,
+                                    "#8A3413"
+                                  ],
+                                  [
+                                    10,
+                                    "#AE461C"
+                                  ],
+                                  [
+                                    15,
+                                    "#CC5D28"
+                                  ],
+                                  [
+                                    25,
+                                    "#E07A3E"
+                                  ],
+                                  [
+                                    null,
+                                    "#EE9A60"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#8A3413",
+                                  "#AE461C",
+                                  "#CC5D28",
+                                  "#E07A3E",
+                                  "#EE9A60"
+                                ],
+                                "name": "NO2 (µg/m³)",
+                                "type": "custom"
+                              },
+                              "opacity": 0.28,
+                              "surfaceBands": true,
+                              "surfaceExtent": "hull",
+                              "surfaceIsolines": true,
+                              "surfaceLabels": true,
+                              "surfaceMargin": 1500,
+                              "surfaceMaxDistance": null,
+                              "surfaceMode": "interpolate",
+                              "surfacePower": 2,
+                              "surfaceReduce": "last",
+                              "surfaceResolution": "high"
+                            }
+                          },
+                          "id": "surface",
+                          "type": "surface",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "no2",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": [
+                  {
+                    "field": "station",
+                    "source": "click",
+                    "variable": "station"
+                  }
+                ]
+              }
+            },
+            "version": "0.1.0"
+          }
+        }
+      },
+      "panel-median": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH latest AS (SELECT max(time) AS t FROM $series)\nSELECT median(no2) AS \"NO2\" FROM $series, latest WHERE time = latest.t"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The median of the stations over the latest hour, in the map's colours.",
+          "id": 4,
+          "links": [],
+          "title": "Median, latest hour",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#8A3413",
+                        "value": null
+                      },
+                      {
+                        "color": "#AE461C",
+                        "value": 5
+                      },
+                      {
+                        "color": "#CC5D28",
+                        "value": 10
+                      },
+                      {
+                        "color": "#E07A3E",
+                        "value": 15
+                      },
+                      {
+                        "color": "#EE9A60",
+                        "value": 25
+                      }
+                    ]
+                  },
+                  "unit": "conμgm3"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "textMode": "value"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-ranking": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH latest AS (SELECT max(time) AS t FROM $series),\nspan AS (SELECT greatest(date_diff('hour', min(time), max(time)) + 1, 1) AS hours FROM $series),\nper AS (\n  SELECT station, any_value(name) AS name, any_value(kind) AS kind,\n         any_value(latitude) AS latitude, any_value(longitude) AS longitude,\n         max(time) AS last_time,\n         arg_max(no2, time) AS last_no2,\n         avg(no2) FILTER (WHERE time \u003e latest.t - INTERVAL 24 HOUR) AS mean_24h,\n         count(*) FILTER (WHERE time \u003e latest.t - INTERVAL 24 HOUR) AS hours_24h,\n         avg(no2) AS mean_range,\n         max(no2) AS max_range,\n         count(*) AS hours_range\n  FROM $series, latest\n  GROUP BY station\n)\nSELECT station, name, kind, round(mean_24h, 1) AS mean_24h, round(last_no2, 1) AS last_no2\nFROM per\nWHERE hours_24h \u003e= 18\nORDER BY mean_24h DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each station's mean NO2 over the last 24 hours of data (with at least 18 of them), in the map's colours; the tick is its latest hour. The dashed line is the WHO 2021 guideline for a 24-hour mean, 25 µg/m³. Click a bar to pick the station; click it again to clear it.",
+          "id": 6,
+          "links": [],
+          "title": "Stations, last 24 hours",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "editorMode": "code",
+                "getOption": "// Stations by their mean over the last 24 hours, in the map's colours, with\n// their latest hour as a tick. Clicking a bar picks the station, as a click on\n// the map does; clicking it again clears it.\nconst VAR = 'station';\nconst BREAKS = [5, 10, 15, 25];\nconst COLORS = [\"#8A3413\", \"#AE461C\", \"#CC5D28\", \"#E07A3E\", \"#EE9A60\"];\nconst colorOf = (v) =\u003e COLORS[BREAKS.filter((b) =\u003e v \u003e b).length];\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst muted = context.grafana.theme.colors.text.secondary;\nconst text = context.grafana.theme.colors.text.primary;\n\nconst frame = context.panel.data.series[0];\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name).values) : []);\n// ECharts draws a category axis bottom up: reversed, the highest is on top.\nconst ids = col('station').reverse();\nconst names = col('name').reverse();\nconst kinds = col('kind').reverse();\nconst means = col('mean_24h').reverse();\nconst lasts = col('last_no2').reverse();\nconst picked = context.grafana.replaceVariables('${' + VAR + '}');\n\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const id = ids[event.dataIndex];\n  const same = id === context.grafana.replaceVariables('${' + VAR + '}');\n  location.partial({ ['var-' + VAR]: same ? '' : id }, true);\n});\n\nreturn {\n  animation: false,\n  grid: { left: 8, right: 40, top: 28, bottom: 24, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e {\n      const i = items[0].dataIndex;\n      const last = lasts[i] == null ? 'no reading' : `${lasts[i]} µg/m³`;\n      return `\u003cb\u003e${names[i]}\u003c/b\u003e · ${kinds[i]}\u003cbr/\u003e24 h mean: \u003cb\u003e${means[i]} µg/m³\u003c/b\u003e\u003cbr/\u003eLatest hour: ${last}`;\n    },\n  },\n  xAxis: {\n    type: 'value',\n    name: 'µg/m³',\n    nameLocation: 'end',\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  yAxis: {\n    type: 'category',\n    data: names,\n    axisTick: { show: false },\n    axisLabel: { color: text, fontSize: 11 },\n  },\n  series: [\n    {\n      type: 'bar',\n      barWidth: '70%',\n      cursor: 'pointer',\n      data: means.map((v, i) =\u003e ({\n        value: v,\n        itemStyle: {\n          color: colorOf(v),\n          opacity: picked \u0026\u0026 picked !== ids[i] ? 0.35 : 1,\n          borderRadius: [0, 4, 4, 0],\n        },\n      })),\n      label: { show: true, position: 'right', color: muted, fontSize: 11, formatter: (p) =\u003e p.value.toFixed(0) },\n      markLine: {\n        silent: true,\n        symbol: 'none',\n        label: { formatter: 'WHO 24 h', color: muted, fontSize: 10 },\n        lineStyle: { type: 'dashed', color: muted },\n        data: [{ xAxis: 25 }],\n      },\n    },\n    {\n      type: 'scatter',\n      name: 'Latest hour',\n      symbol: 'rect',\n      symbolSize: [2, 12],\n      itemStyle: { color: text },\n      data: lasts,\n      tooltip: { show: false },\n    },\n  ],\n};\n",
+                "renderer": "canvas"
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-reporting": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH latest AS (SELECT max(time) AS t FROM $series)\nSELECT count(DISTINCT station) AS \"Stations\"\nFROM $series, latest\nWHERE time \u003e= latest.t - INTERVAL 1 HOUR"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Stations with a reading in the latest hour of the data or the one before, of the 17 that measure NO2.",
+          "id": 2,
+          "links": [],
+          "title": "Stations reporting",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "unit": "suffix: of 17"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "textMode": "value"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-station": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH latest AS (SELECT max(time) AS t FROM $series),\nspan AS (SELECT greatest(date_diff('hour', min(time), max(time)) + 1, 1) AS hours FROM $series),\nper AS (\n  SELECT station, any_value(name) AS name, any_value(kind) AS kind,\n         any_value(latitude) AS latitude, any_value(longitude) AS longitude,\n         max(time) AS last_time,\n         arg_max(no2, time) AS last_no2,\n         avg(no2) FILTER (WHERE time \u003e latest.t - INTERVAL 24 HOUR) AS mean_24h,\n         count(*) FILTER (WHERE time \u003e latest.t - INTERVAL 24 HOUR) AS hours_24h,\n         avg(no2) AS mean_range,\n         max(no2) AS max_range,\n         count(*) AS hours_range\n  FROM $series, latest\n  GROUP BY station\n),\nfacts AS (\n  SELECT [\n    ('Station', name), ('Code', station), ('Type', kind),\n    ('Latest hour', coalesce(last_no2 || ' µg/m³', 'no reading')),\n    ('24 h mean', coalesce(round(mean_24h, 1) || ' µg/m³', 'too few hours')),\n    ('Range mean', round(mean_range, 1) || ' µg/m³'),\n    ('Range max', max_range || ' µg/m³'),\n    ('Hours with a reading', hours_range::VARCHAR),\n    ('Last reading (UTC)', strftime(last_time, '%Y-%m-%d %H:%M'))\n  ] AS f\n  FROM per\n  WHERE station = $station\n)\nSELECT unnest(f, recursive := true) FROM facts"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The station picked, its NO2 in µg/m³.",
+          "id": 10,
+          "links": [],
+          "title": "Selected station",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "cellHeight": "sm",
+                "frameIndex": 0,
+                "showHeader": false
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-stations": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH latest AS (SELECT max(time) AS t FROM $series),\nspan AS (SELECT greatest(date_diff('hour', min(time), max(time)) + 1, 1) AS hours FROM $series),\nper AS (\n  SELECT station, any_value(name) AS name, any_value(kind) AS kind,\n         any_value(latitude) AS latitude, any_value(longitude) AS longitude,\n         max(time) AS last_time,\n         arg_max(no2, time) AS last_no2,\n         avg(no2) FILTER (WHERE time \u003e latest.t - INTERVAL 24 HOUR) AS mean_24h,\n         count(*) FILTER (WHERE time \u003e latest.t - INTERVAL 24 HOUR) AS hours_24h,\n         avg(no2) AS mean_range,\n         max(no2) AS max_range,\n         count(*) AS hours_range\n  FROM $series, latest\n  GROUP BY station\n)\nSELECT name AS \"Station\", kind AS \"Type\",\n       last_no2 AS \"Latest hour\", round(mean_24h, 1) AS \"24 h mean\", round(mean_range, 1) AS \"Range mean\",\n       max_range AS \"Range max\", hours_range AS \"Hours\",\n       strftime(last_time, '%Y-%m-%d %H:%M') AS \"Last reading (UTC)\"\nFROM per\nORDER BY mean_24h DESC NULLS LAST"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every station's NO2 in µg/m³, in the map's colours: its latest hour, its mean over the last 24 hours and over the time range, its highest hour, and how many hours it reported. The types are Luchtmeetnet's: Traffic stations stand by a busy road; Municipal ones, in the city away from one.",
+          "id": 11,
+          "links": [],
+          "title": "Every station",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byRegexp",
+                      "options": "/^(Latest hour|24 h mean|Range mean|Range max)$/"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "conμgm3"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "#8A3413",
+                              "value": null
+                            },
+                            {
+                              "color": "#AE461C",
+                              "value": 5
+                            },
+                            {
+                              "color": "#CC5D28",
+                              "value": 10
+                            },
+                            {
+                              "color": "#E07A3E",
+                              "value": 15
+                            },
+                            {
+                              "color": "#EE9A60",
+                              "value": 25
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "color-background"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "frameIndex": 0,
+                "showHeader": true,
+                "sortBy": [
+                  {
+                    "desc": true,
+                    "displayName": "24 h mean"
+                  }
+                ]
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-trends": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT time, name, no2 FROM $series ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT time, median(no2) AS no2 FROM $series GROUP BY time ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT time, name, no2 FROM $series WHERE station = $station ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "kind": "prepareTimeSeries",
+                  "spec": {
+                    "id": "prepareTimeSeries",
+                    "options": {
+                      "format": "multi"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "description": "Every station's hourly NO2 in grey, their median in orange and the station picked, if any, in blue. The dashed line is the WHO 2021 guideline for a 24-hour mean, 25 µg/m³: an hour above it is not a breach by itself. NO2 comes mostly from traffic, which is why it rises in the rush hours and falls at night. The crosshair is shared: hover here and the map's cards show the same hour.",
+          "id": 7,
+          "links": [],
+          "title": "NO2 by the hour",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#8e8e8e",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": true,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": 7200000,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "dashed"
+                    }
+                  },
+                  "displayName": "${__field.labels.name}",
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "transparent",
+                        "value": null
+                      },
+                      {
+                        "color": "#8e8e8e",
+                        "value": 25
+                      }
+                    ]
+                  },
+                  "unit": "conμgm3"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byFrameRefID",
+                      "options": "B"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "Median of the stations"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#E07A3E",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "custom.lineWidth",
+                        "value": 3
+                      },
+                      {
+                        "id": "custom.hideFrom",
+                        "value": {
+                          "legend": false,
+                          "tooltip": false,
+                          "viz": false
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byFrameRefID",
+                      "options": "C"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#3987e5",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "custom.lineWidth",
+                        "value": 2
+                      },
+                      {
+                        "id": "custom.hideFrom",
+                        "value": {
+                          "legend": false,
+                          "tooltip": false,
+                          "viz": false
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "TabsLayout",
+      "spec": {
+        "tabs": [
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "RowsLayout",
+                "spec": {
+                  "rows": [
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "collapse": false,
+                        "hideHeader": true,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-map"
+                                  },
+                                  "height": 20,
+                                  "width": 16,
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-reporting"
+                                  },
+                                  "height": 3,
+                                  "width": 4,
+                                  "x": 16,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-latest"
+                                  },
+                                  "height": 3,
+                                  "width": 4,
+                                  "x": 20,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-median"
+                                  },
+                                  "height": 3,
+                                  "width": 4,
+                                  "x": 16,
+                                  "y": 3
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-highest"
+                                  },
+                                  "height": 3,
+                                  "width": 4,
+                                  "x": 20,
+                                  "y": 3
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-ranking"
+                                  },
+                                  "height": 14,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 6
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "title": "Top"
+                      }
+                    },
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "collapse": false,
+                        "hideHeader": true,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-trends"
+                                  },
+                                  "height": 9,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "title": "Trends"
+                      }
+                    },
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "collapse": false,
+                        "conditionalRendering": {
+                          "kind": "ConditionalRenderingGroup",
+                          "spec": {
+                            "condition": "and",
+                            "items": [
+                              {
+                                "kind": "ConditionalRenderingVariable",
+                                "spec": {
+                                  "operator": "equals",
+                                  "value": "",
+                                  "variable": "station"
+                                }
+                              }
+                            ],
+                            "visibility": "show"
+                          }
+                        },
+                        "hideHeader": true,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-hint"
+                                  },
+                                  "height": 3,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "title": "Hint"
+                      }
+                    },
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "collapse": false,
+                        "conditionalRendering": {
+                          "kind": "ConditionalRenderingGroup",
+                          "spec": {
+                            "condition": "and",
+                            "items": [
+                              {
+                                "kind": "ConditionalRenderingVariable",
+                                "spec": {
+                                  "operator": "notEquals",
+                                  "value": "",
+                                  "variable": "station"
+                                }
+                              }
+                            ],
+                            "visibility": "show"
+                          }
+                        },
+                        "hideHeader": true,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-detail"
+                                  },
+                                  "height": 9,
+                                  "width": 16,
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-station"
+                                  },
+                                  "height": 9,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 0
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "title": "Selection"
+                      }
+                    },
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "collapse": false,
+                        "hideHeader": true,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-stations"
+                                  },
+                                  "height": 11,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "title": "Stations"
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Explore"
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-about"
+                        },
+                        "height": 16,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "About the data"
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "plus",
+      "kepler",
+      "business-charts",
+      "air-quality",
+      "live"
+    ],
+    "timeSettings": {
+      "autoRefresh": "15m",
+      "autoRefreshIntervals": [
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-2d",
+      "hideTimepicker": false,
+      "timezone": "Europe/Amsterdam",
+      "to": "now"
+    },
+    "title": "Air quality in Amsterdam — NO2, hour by hour",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "Last 24 hours",
+            "value": "24h"
+          },
+          "description": "What the surface between the stations shows: each station's latest hour, its mean over the last 24 hours, or over the time range.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Surface",
+          "multi": false,
+          "name": "surface",
+          "options": [],
+          "query": "Latest hour : now, Last 24 hours : 24h, Time range : range",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "station",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "series",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "series",
+              "refId": "series",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the hourly NO2 of GGD Amsterdam's 17 stations over the time\n-- range (at most its last 7 days), from Luchtmeetnet's open API, one request per\n-- station, through the gateway's cache (feeds). Each value is the mean of the\n-- hour that ends at its time. A reading a little under zero (the instruments'\n-- noise around nothing) counts as 0.\nWITH stations(station, name, kind, latitude, longitude) AS (VALUES\n  ('NL49002', 'Haarlemmerweg', 'Traffic', 52.38542, 4.87575),\n  ('NL49003', 'Nieuwendammerdijk', 'Municipal', 52.38931, 4.94382),\n  ('NL49007', 'Einsteinweg', 'Traffic', 52.38133, 4.84523),\n  ('NL49012', 'Van Diemenstraat', 'Traffic', 52.38998, 4.88781),\n  ('NL49014', 'Vondelpark', 'Municipal', 52.35971, 4.86621),\n  ('NL49017', 'Stadhouderskade', 'Traffic', 52.35804, 4.89970),\n  ('NL49019', 'Oude Schans', 'Municipal', 52.37206, 4.90440),\n  ('NL49020', 'Jan van Galenstraat', 'Traffic', 52.37479, 4.86032),\n  ('NL49021', 'Kantershof', 'Municipal', 52.32069, 4.98840),\n  ('NL49022', 'Ookmeer', 'Municipal', 52.36681, 4.79334),\n  ('NL49546', 'Zaanstad-Hemkade', 'Industrial', 52.42023, 4.83206),\n  ('NL49561', 'Badhoevedorp-Sloterweg', 'Other', 52.33400, 4.77401),\n  ('NL49564', 'Hoofddorp-Hoofdweg', 'Other', 52.32745, 4.71507),\n  ('NL49565', 'Oude Meer-Aalsmeerderdijk', 'Regional', 52.28013, 4.77082),\n  ('NL49701', 'Zaandam-Wagenschotpad', 'Municipal', 52.44801, 4.81671),\n  ('NL49703', 'Spaarnwoude-Machineweg', 'Regional', 52.39844, 4.72858),\n  ('NL49704', 'Zaanstad-Hoogtij', 'Industrial', 52.42800, 4.77300)\n),\nspan AS (\n  -- Whole hours, so one URL stands for an hour and the gateway's cache can\n  -- answer it; and at most 7 days, the most Luchtmeetnet gives in one request.\n  SELECT date_trunc('hour', make_timestamp(CAST(${__to} AS BIGINT) * 1000)) AS t1,\n         greatest(date_trunc('hour', make_timestamp(CAST(${__from} AS BIGINT) * 1000)), t1 - INTERVAL 7 DAY) AS t0\n),\nfetched AS (\n  SELECT s.*, http_get('http://feeds/luchtmeetnet/measurements?station_number=' || station || '\u0026formula=' || 'NO2' || '\u0026start=' || strftime(t0, '%Y-%m-%dT%H:00:00Z') || '\u0026end=' || strftime(t1, '%Y-%m-%dT%H:00:00Z')) AS r\n  FROM stations AS s, span\n),\nreadings AS (\n  SELECT station, name, kind, latitude, longitude, unnest(from_json((r-\u003e\u003e'body')::JSON-\u003e'data', '[{\"timestamp_measured\":\"VARCHAR\",\"value\":\"DOUBLE\"}]')) AS m\n  FROM fetched\n  WHERE (r-\u003e\u003e'status') = '200'\n)\nSELECT station, name, kind, latitude, longitude,\n       m.timestamp_measured::TIMESTAMPTZ AS time,\n       round(greatest(m.value, 0), 1) AS no2\nFROM readings\nWHERE m.value IS NOT NULL\nORDER BY station, time",
+                  "refId": "series"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "detail",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "detail",
+              "refId": "detail",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: every pollutant the station clicked on the map measures, hourly,\n-- over the same hours as the map. Nothing is fetched until one is clicked.\nWITH formulas(formula, pollutant) AS (VALUES ('NO2', 'NO2'), ('PM10', 'PM10'), ('PM25', 'PM2.5'), ('O3', 'O3')),\nspan AS (\n  -- Whole hours, so one URL stands for an hour and the gateway's cache can\n  -- answer it; and at most 7 days, the most Luchtmeetnet gives in one request.\n  SELECT date_trunc('hour', make_timestamp(CAST(${__to} AS BIGINT) * 1000)) AS t1,\n         greatest(date_trunc('hour', make_timestamp(CAST(${__from} AS BIGINT) * 1000)), t1 - INTERVAL 7 DAY) AS t0\n),\nfetched AS (\n  SELECT pollutant, http_get('http://feeds/luchtmeetnet/measurements?station_number=' || '${station:raw}' || '\u0026formula=' || formula || '\u0026start=' || strftime(t0, '%Y-%m-%dT%H:00:00Z') || '\u0026end=' || strftime(t1, '%Y-%m-%dT%H:00:00Z')) AS r\n  FROM formulas, span\n  WHERE regexp_full_match('${station:raw}', 'NL[0-9]{5}')\n),\nreadings AS (\n  SELECT pollutant, unnest(from_json((r-\u003e\u003e'body')::JSON-\u003e'data', '[{\"timestamp_measured\":\"VARCHAR\",\"value\":\"DOUBLE\"}]')) AS m\n  FROM fetched\n  WHERE (r-\u003e\u003e'status') = '200'\n)\nSELECT pollutant, m.timestamp_measured::TIMESTAMPTZ AS time, round(greatest(m.value, 0), 1) AS value\nFROM readings\nWHERE m.value IS NOT NULL\nORDER BY pollutant, time",
+                  "refId": "detail"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
