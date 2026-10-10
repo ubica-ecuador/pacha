@@ -34,6 +34,7 @@ const fill = (sql, { files, ...vars }) =>
   sql
     .replaceAll('${files:singlequote}', files.map(quote).join(','))
     .replace(/\$\{(\w+):sqlstring\}/g, (_, name) => quote(vars[name] ?? ''))
+    .replaceAll('${zscale}', "'20'")
     .replaceAll('$__interval_ms', '60000');
 
 test('follows the dashboards conventions', () => {
