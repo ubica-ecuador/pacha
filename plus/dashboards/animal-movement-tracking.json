@@ -319,7 +319,7 @@
           "links": [],
           "title": "",
           "vizConfig": {
-            "group": "ubica-keplergl-panel",
+            "group": "ubica-keplerplus-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
@@ -327,9 +327,11 @@
                 "overrides": []
               },
               "options": {
+                "alerts": {},
                 "basemap": "openfreemap-dark",
                 "clickConfirm": false,
                 "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
                 "hoverSync": false,
                 "mapConfig": {
                   "config": {
@@ -514,13 +516,14 @@
                   "version": "v1"
                 },
                 "peerTimeSync": false,
+                "places": {},
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table",
                 "variableMappings": []
               }
             },
-            "version": "1.0.0"
+            "version": "0.1.0"
           }
         }
       },
@@ -589,7 +592,7 @@
                 "showPercentChange": false,
                 "text": {
                   "titleSize": 12,
-                  "valueSize": 26
+                  "valueSize": 21
                 },
                 "textMode": "value_and_name",
                 "wideLayout": true
@@ -874,7 +877,7 @@
           "links": [],
           "title": "",
           "vizConfig": {
-            "group": "ubica-keplergl-panel",
+            "group": "ubica-keplerplus-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
@@ -882,9 +885,11 @@
                 "overrides": []
               },
               "options": {
-                "basemap": "openfreemap-dark",
+                "alerts": {},
+                "basemap": "grafana-satellite",
                 "clickConfirm": false,
                 "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
                 "hoverSync": false,
                 "mapConfig": {
                   "config": {
@@ -897,7 +902,7 @@
                       "zoom": 6.2
                     },
                     "mapStyle": {
-                      "styleType": "openfreemap-dark"
+                      "styleType": "grafana-satellite"
                     },
                     "uiState": {
                       "mapControls": {
@@ -1072,6 +1077,7 @@
                   "version": "v1"
                 },
                 "peerTimeSync": false,
+                "places": {},
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table",
@@ -1086,7 +1092,7 @@
                 ]
               }
             },
-            "version": "1.0.0"
+            "version": "0.1.0"
           }
         }
       },
@@ -1155,7 +1161,7 @@
                 "showPercentChange": false,
                 "text": {
                   "titleSize": 12,
-                  "valueSize": 26
+                  "valueSize": 21
                 },
                 "textMode": "value_and_name",
                 "wideLayout": true
@@ -1428,7 +1434,7 @@
           "links": [],
           "title": "",
           "vizConfig": {
-            "group": "ubica-keplergl-panel",
+            "group": "ubica-keplerplus-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
@@ -1436,9 +1442,11 @@
                 "overrides": []
               },
               "options": {
+                "alerts": {},
                 "basemap": "openfreemap-dark",
                 "clickConfirm": false,
                 "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
                 "hoverSync": false,
                 "mapConfig": {
                   "config": {
@@ -1626,13 +1634,14 @@
                   "version": "v1"
                 },
                 "peerTimeSync": false,
+                "places": {},
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table",
                 "variableMappings": []
               }
             },
-            "version": "1.0.0"
+            "version": "0.1.0"
           }
         }
       },
@@ -1772,7 +1781,7 @@
                 "showPercentChange": false,
                 "text": {
                   "titleSize": 12,
-                  "valueSize": 26
+                  "valueSize": 21
                 },
                 "textMode": "value_and_name",
                 "wideLayout": true
@@ -2240,6 +2249,7 @@
       "chaski",
       "duckdb",
       "kepler",
+      "plus",
       "business-charts",
       "migration",
       "wildlife"

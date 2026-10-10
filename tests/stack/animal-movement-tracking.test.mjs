@@ -1,7 +1,10 @@
 // The animal-movement-tracking dashboard: three open datasets of animal tracks,
 // each read by DuckDB on the server through the gateway's month-long cache and
 // handed to the browser as a Chaski dataset. The datasets' SQL runs here as
-// Grafana runs it, with the dashboard's variables filled in.
+// Grafana runs it, with the dashboard's variables filled in. The maps need
+// Kepler Plus (compose.plus.yaml): on a stack without it the dashboard is not
+// provisioned and the browser tests are skipped; the data and gateway tests
+// run either way.
 import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { compose } from '../lib/docker.mjs';
@@ -10,7 +13,7 @@ import { findAll, loadDashboard } from '../lib/dashboards.mjs';
 import { STACK_URL } from '../lib/stack.mjs';
 import { openDashboard } from '../lib/browser.mjs';
 
-const dashboard = loadDashboard('dashboards/gallery/animal-movement-tracking.json');
+const dashboard = loadDashboard('plus/dashboards/animal-movement-tracking.json');
 const DATASETS = ['gulls', 'jaguars', 'ocean_species', 'ocean'];
 
 const datasetSql = (name) => {
@@ -24,7 +27,7 @@ const fill = (sql, { year = '2023', species = ['Northern Elephant Seal', 'White 
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, 'animal-movement-tracking');
   assert.ok(dashboard.spec.description);
-  assert.deepEqual(dashboard.spec.tags, ['chaski', 'duckdb', 'kepler', 'business-charts', 'migration', 'wildlife']);
+  assert.deepEqual(dashboard.spec.tags, ['chaski', 'duckdb', 'kepler', 'plus', 'business-charts', 'migration', 'wildlife']);
 });
 
 test('every dataset reads its data through the gateway, and nothing else does', () => {
@@ -91,10 +94,15 @@ test('the gateway keeps the tracks: a second read is served from the cache', () 
 let view;
 after(async () => view && view.browser.close());
 
-test('loads for an anonymous visitor within 45 s, every tab with no panel in error', async () => {
-  const provisioned = await api(STACK_URL, '/api/dashboards/uid/animal-movement-tracking', { anonymous: true });
+const provisioned = await api(STACK_URL, '/api/dashboards/uid/animal-movement-tracking', { anonymous: true });
+const skip = provisioned.status === 404 && 'Kepler Plus is not mounted';
+
+test('is provisioned in Plus', { skip }, () => {
   assert.equal(provisioned.status, 200);
-  assert.equal(provisioned.json.meta.folderUid, 'gallery');
+  assert.equal(provisioned.json.meta.folderUid, 'plus');
+});
+
+test('loads for an anonymous visitor within 45 s, every tab with no panel in error', { skip }, async () => {
   view = await openDashboard('/d/animal-movement-tracking', { datasets: DATASETS });
   assert.ok(view.loadMs <= 45_000, `took ${view.loadMs} ms`);
   for (const tab of ['Gulls', 'Jaguars', 'Ocean predators']) {
