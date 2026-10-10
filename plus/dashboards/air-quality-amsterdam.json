@@ -33,7 +33,7 @@
                 "overrides": []
               },
               "options": {
-                "content": "### Where the data comes from\n\n[Luchtmeetnet](https://www.luchtmeetnet.nl/) is the Dutch national air quality network, run by RIVM with the GGDs and the provinces. Its stations are reference instruments, the kind a city's compliance is measured with, and it publishes their readings hour by hour as open data, through [its API](https://api-docs.luchtmeetnet.nl/).\n\nThis dashboard reads the 17 stations of GGD Amsterdam's network that measure nitrogen dioxide (NO2), from Zaandam in the north to Oude Meer by Schiphol in the south. Each value is the mean of one hour, published within about an hour of its end; the dashboard reloads every 15 minutes. The latest hours are provisional: the network validates its data later, and a value can still change.\n\nThe requests go through Grafana's server and a cache, one per station, and ask for whole hours, so every visitor in the same hour shares one copy. The time range picks the hours, up to its last 7 days, the most the API gives in one request.\n\n### How to read it\n\n- **NO2** is in µg/m³. It comes mostly from road traffic, so it is highest beside busy roads and in the rush hours, and it changes from one street to the next: that is why the map shows it. Particulate matter (PM10, PM2.5) travels far and varies little across one city; the selected station's panel has it.\n- The colours are 5 bands, from dim to bright: brighter is more NO2. The brightest is above 25 µg/m³, the WHO 2021 guideline for a 24-hour mean (the dashed lines); the WHO's for a year's mean is 10 µg/m³; the EU's limit for a year's mean is 40 µg/m³, and 20 µg/m³ from 2030.\n- A mean needs 75% of its hours: 18 for the last 24 hours, the EU's rule for a daily mean. A station short of them is left out of the ranking and the surface.\n- A reading a little under zero, the instruments' noise around nothing, counts as 0.\n\n### The map\n\nThe cards are the stations' hourly NO2 over the time range, all on one scale, each coloured by its latest hour; a station with no room for a card stays as a dot, and one that stops reporting turns red. Under them, a surface interpolated between the stations (inverse distance weighting, over the area they span), from what the **Surface** picker chooses: the latest hour, the last 24 hours or the time range. The surface is a guess between 17 points, not a measurement: a station by a busy road raises the guess around it, though the street behind may be cleaner.\n\n### How it works\n\nGrafana's DuckDB fetches the readings, and hands them to DuckDB running in your browser (the Chaski data source), which answers every panel and every click without another round trip. The map is the Kepler Geospatial Maps Plus panel, with its Sparkline and Surface layers; the ranking is Business Charts (Apache ECharts).",
+                "content": "### Where the data comes from\n\n[Luchtmeetnet](https://www.luchtmeetnet.nl/) is the Dutch national air quality network, run by RIVM with the GGDs and the provinces. Its stations are reference instruments, the kind a city's compliance is measured with, and it publishes their readings hour by hour as open data, through [its API](https://api-docs.luchtmeetnet.nl/).\n\nThis dashboard reads the 17 stations of GGD Amsterdam's network that measure nitrogen dioxide (NO2), from Zaandam in the north to Oude Meer by Schiphol in the south. Each value is the mean of one hour, published within about an hour of its end; the dashboard reloads every 15 minutes. The latest hours are provisional: the network validates its data later, and a value can still change.\n\nThe requests go through Grafana's server and a cache, one per station, and ask for whole hours, so every visitor in the same hour shares one copy. The time range picks the hours, up to its last 7 days, the most the API gives in one request.\n\n### How to read it\n\n- **NO2** is in µg/m³. It comes mostly from road traffic, so it is highest beside busy roads and in the rush hours, and it changes from one street to the next: that is why the map shows it. Particulate matter (PM10, PM2.5) travels far and varies little across one city; the selected station's panel has it.\n- The colours are 5 bands, from dim to bright: brighter is more NO2. The brightest is above 25 µg/m³, the WHO 2021 guideline for a 24-hour mean (the dashed lines); the WHO's for a year's mean is 10 µg/m³; the EU's limit for a year's mean is 40 µg/m³, and 20 µg/m³ from 2030.\n- A mean needs 75% of its hours: 18 for the last 24 hours, the EU's rule for a daily mean. A station short of them is left out of the ranking and the surface.\n- A reading a little under zero, the instruments' noise around nothing, counts as 0.\n\n### The map\n\nThe cards are the stations' hourly NO2 over the time range, all on one scale; a station with no room for a card stays as a dot, and one that stops reporting turns red. Under them, a surface interpolated between the stations (inverse distance weighting, over the area they span) of each station's mean in the window of the **time filter** at the foot of the map. The window opens on the whole range; narrowed to an hour and played, the surface redraws hour by hour, and each card's cursor and value follow it. The surface is a guess between 17 points, not a measurement: a station by a busy road raises the guess around it, though the street behind may be cleaner.\n\n### How it works\n\nGrafana's DuckDB fetches the readings, and hands them to DuckDB running in your browser (the Chaski data source), which answers every panel and every click without another round trip. The map is the Kepler Geospatial Maps Plus panel, with its Sparkline and Surface layers; the ranking is Business Charts (Apache ECharts).",
                 "mode": "markdown"
               }
             },
@@ -387,7 +387,7 @@
                 "overrides": []
               },
               "options": {
-                "content": "**Click a station** on the map, or **its bar** in the ranking, to see every pollutant it measures. **Hover** the graph above, or a card's chart, and every card follows the same hour. The **Surface** picker at the top chooses what the surface between the stations shows: the latest hour, the last 24 hours or the whole time range. The **time range** picks the hours, up to its last 7 days.",
+                "content": "**Click a station** on the map, or **its bar** in the ranking, to see every pollutant it measures. **Hover** the graph above, or a card's chart, and every card follows the same hour. The **time filter** at the foot of the map picks the hours the surface averages: it opens on the whole range; drag its handles to one hour and press **play** to watch the surface and the cards move hour by hour. The **time range** picks the hours, up to its last 7 days.",
                 "mode": "markdown"
               }
             },
@@ -494,7 +494,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH latest AS (SELECT max(time) AS t FROM $series),\nspan AS (SELECT greatest(date_diff('hour', min(time), max(time)) + 1, 1) AS hours FROM $series),\nper AS (\n  SELECT station, any_value(name) AS name, any_value(kind) AS kind,\n         any_value(latitude) AS latitude, any_value(longitude) AS longitude,\n         max(time) AS last_time,\n         arg_max(no2, time) AS last_no2,\n         avg(no2) FILTER (WHERE time \u003e latest.t - INTERVAL 24 HOUR) AS mean_24h,\n         count(*) FILTER (WHERE time \u003e latest.t - INTERVAL 24 HOUR) AS hours_24h,\n         avg(no2) AS mean_range,\n         max(no2) AS max_range,\n         count(*) AS hours_range\n  FROM $series, latest\n  GROUP BY station\n)\nSELECT name, latitude, longitude,\n       round(CASE $surface\n         WHEN 'now' THEN CASE WHEN last_time \u003e= (SELECT t FROM latest) - INTERVAL 2 HOUR THEN last_no2 END\n         WHEN 'range' THEN CASE WHEN hours_range \u003e= 0.75 * (SELECT hours FROM span) THEN mean_range END\n         ELSE CASE WHEN hours_24h \u003e= 18 THEN mean_24h END\n       END, 1) AS no2\nFROM per\nWHERE no2 IS NOT NULL"
+                        "rawSql": "SELECT station, name, latitude, longitude, time, no2 FROM $series ORDER BY station, time"
                       },
                       "version": "v0"
                     },
@@ -506,7 +506,7 @@
               "transformations": []
             }
           },
-          "description": "GGD Amsterdam's 17 NO2 stations. Each card is a station's hourly NO2 over the time range, on a scale shared by all the cards, coloured by its latest hour; the stations without room for a card stay as dots. Under them, a surface interpolated between the stations (inverse distance weighting, over the area they span): the Surface picker at the top chooses what it shows. Click a station to see everything it measures; hover the graph below, or a card's chart, and every card follows the same hour.",
+          "description": "GGD Amsterdam's 17 NO2 stations. Each card is a station's hourly NO2 over the time range, on a scale shared by all the cards; the stations without room for a card stay as dots. Under them, a surface interpolated between the stations (inverse distance weighting, over the area they span) of each station's mean NO2 in the time filter's window. The window opens on the whole range: drag its handles to an hour and press play, and the surface and the cards' cursors move hour by hour. Click a station to see everything it measures; hover the graph below, or a card's chart, and every card follows the same hour.",
           "id": 1,
           "links": [],
           "title": "NO2 by station, and between them",
@@ -542,7 +542,33 @@
                         "currentTime": null,
                         "speed": 1
                       },
-                      "filters": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A",
+                            "grafana-B"
+                          ],
+                          "enabled": true,
+                          "id": "time",
+                          "name": [
+                            "time",
+                            "time"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "timezone": "Europe/Amsterdam",
+                          "type": "timeRange",
+                          "value": [
+                            0,
+                            4102444800000
+                          ],
+                          "view": "minified",
+                          "yAxis": null
+                        }
+                      ],
                       "interactionConfig": {
                         "brush": {
                           "enabled": false,
@@ -589,6 +615,10 @@
                                 {
                                   "format": null,
                                   "name": "no2"
+                                },
+                                {
+                                  "format": null,
+                                  "name": "time"
                                 }
                               ]
                             }
@@ -732,7 +762,7 @@
                               "surfaceMaxDistance": null,
                               "surfaceMode": "interpolate",
                               "surfacePower": 2,
-                              "surfaceReduce": "last",
+                              "surfaceReduce": "mean",
                               "surfaceResolution": "high"
                             }
                           },
@@ -1708,25 +1738,6 @@
     },
     "title": "Air quality in Amsterdam — NO2, hour by hour",
     "variables": [
-      {
-        "kind": "CustomVariable",
-        "spec": {
-          "allowCustomValue": false,
-          "current": {
-            "text": "Last 24 hours",
-            "value": "24h"
-          },
-          "description": "What the surface between the stations shows: each station's latest hour, its mean over the last 24 hours, or over the time range.",
-          "hide": "dontHide",
-          "includeAll": false,
-          "label": "Surface",
-          "multi": false,
-          "name": "surface",
-          "options": [],
-          "query": "Latest hour : now, Last 24 hours : 24h, Time range : range",
-          "skipUrlSync": false
-        }
-      },
       {
         "kind": "TextVariable",
         "spec": {
