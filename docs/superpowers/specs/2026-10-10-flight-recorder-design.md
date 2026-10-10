@@ -131,6 +131,7 @@ poll in four, then as a fatal error that stopped the process. Only
 | `alt_geom`, `baro_rate` | INTEGER |                                    |
 | `gs`, `track`| DOUBLE      |                                             |
 | `squawk`, `emergency` | VARCHAR |                                      |
+| `db_flags`   | INTEGER     | `dbFlags`: 1 military, 2 interesting, 4 PIA, 8 LADD; added later, null in older files |
 
 Rows without a position are dropped.
 

@@ -56,7 +56,7 @@ def test_a_poll_writes_one_minute_file_with_the_feed_columns(env):
         ('type', 'VARCHAR'), ('category', 'VARCHAR'), ('source', 'VARCHAR'), ('lat', 'DOUBLE'),
         ('lon', 'DOUBLE'), ('cell', 'UBIGINT'), ('alt_baro', 'INTEGER'), ('on_ground', 'BOOLEAN'),
         ('alt_geom', 'INTEGER'), ('baro_rate', 'INTEGER'), ('gs', 'DOUBLE'), ('track', 'DOUBLE'),
-        ('squawk', 'VARCHAR'), ('emergency', 'VARCHAR')]
+        ('squawk', 'VARCHAR'), ('emergency', 'VARCHAR'), ('db_flags', 'INTEGER')]
     assert len(rows(data / 'flights/2026-10-10/h14-m0300.parquet')) == 2
     assert health.exists()
 
@@ -218,3 +218,21 @@ def test_a_url_source_is_downloaded_whole_each_poll(tmp_path):
         assert polls == [('ok', 50), ('ok', 1)]
     finally:
         server.shutdown()
+
+
+def test_an_hour_merges_files_from_before_a_column_was_added(env):
+    source, data, _, make = env
+    feed = make()
+    snapshot(source, T0, [aircraft('aaa001', 40.0, -3.0)])
+    feed.poll(T0)
+    old = data / 'flights/2026-10-10/h14-m0300.parquet'
+    duckdb.sql(f"COPY (SELECT * EXCLUDE (db_flags) FROM '{old}') TO '{old}.x' (FORMAT parquet)")
+    os.replace(f'{old}.x', old)
+    t = T0.replace(minute=4)
+    snapshot(source, t, [aircraft('aaa001', 40.1, -3.0, dbFlags=1)])
+    feed.poll(t)
+    t = T0.replace(hour=15)
+    snapshot(source, t, [aircraft('aaa001', 41.0, -3.0)])
+    feed.poll(t)
+    flags = duckdb.sql(f"SELECT db_flags FROM '{data}/flights/2026-10-10/h14.parquet' ORDER BY ts").fetchall()
+    assert flags == [(None,), (1,)]

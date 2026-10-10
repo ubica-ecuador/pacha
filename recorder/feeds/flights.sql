@@ -30,6 +30,8 @@ SELECT
   (a->>'gs')::DOUBLE AS gs,
   (a->>'track')::DOUBLE AS track,
   a->>'squawk' AS squawk,
-  a->>'emergency' AS emergency
+  a->>'emergency' AS emergency,
+  -- adsb.lol's database flags: 1 military, 2 interesting, 4 PIA, 8 LADD.
+  try_cast(a->>'dbFlags' AS INTEGER) AS db_flags
 FROM snap
 WHERE a->>'lat' IS NOT NULL

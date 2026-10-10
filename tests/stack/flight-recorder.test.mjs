@@ -23,12 +23,12 @@ const columns = async (from) =>
 
 test('the manifest names files DuckDB can read', async () => {
   const list = (await manifest()).map((e) => `'${e.url}'`).join(', ');
-  await duckdb(STACK_URL, `SELECT count(*) AS n FROM read_parquet([${list ? `${list}, ` : ''}'${EMPTY}'])`);
+  await duckdb(STACK_URL, `SELECT count(*) AS n FROM read_parquet([${list ? `${list}, ` : ''}'${EMPTY}'], union_by_name = true)`);
 });
 
 test('the empty recording has the feed columns', async () => {
   const empty = await columns(`'${EMPTY}'`);
-  assert.equal(empty.length, 18);
+  assert.equal(empty.length, 19);
   assert.deepEqual(empty.slice(0, 2), ['ts TIMESTAMP WITH TIME ZONE', 'hex VARCHAR']);
   assert.ok(empty.includes('cell UBIGINT'));
 });
@@ -49,9 +49,10 @@ test('the recorder writes a poll a minute that DuckDB reads', { skip: off, timeo
     return entries.length > 0 && entries.map((e) => e.url);
   }, { timeoutMs: 150_000, intervalMs: 5_000, what: 'a recorded file in the manifest' });
   const list = urls.map((u) => `'${u}'`).join(', ');
-  const [row] = await duckdb(STACK_URL, `SELECT count(*)::INTEGER AS n, count(DISTINCT hex)::INTEGER AS aircraft FROM read_parquet([${list}])`);
+  const [row] = await duckdb(STACK_URL, `SELECT count(*)::INTEGER AS n, count(DISTINCT hex)::INTEGER AS aircraft FROM read_parquet([${list}], union_by_name = true)`);
   assert.ok(row.aircraft > 1000, `only ${row.aircraft} aircraft`);
-  assert.deepEqual(await columns(`read_parquet(['${urls[0]}'])`), await columns(`'${EMPTY}'`));
+  // The newest file: older ones may predate a column.
+  assert.deepEqual(await columns(`read_parquet(['${urls.at(-1)}'])`), await columns(`'${EMPTY}'`));
 });
 
 test('the recorder logs its polls', { skip: off }, async () => {

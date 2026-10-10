@@ -153,6 +153,7 @@ class Feed:
                 match = MINUTE_FILE.match(path.name)
                 if match and path not in self.doomed:
                     hours.setdefault(match.group(1), []).append(path)
+            # union_by_name: an hour may hold files from before and after a column was added.
             for hour, minutes in sorted(hours.items()):
                 if (day.name, hour) == current:
                     continue
@@ -160,7 +161,7 @@ class Feed:
                 inputs = sorted(minutes) + ([merged] if merged.exists() else [])
                 listed = ', '.join(f"'{p}'" for p in inputs)
                 write_atomic(merged, lambda tmp: self.db.execute(
-                    f"COPY (SELECT * FROM read_parquet([{listed}]) ORDER BY cell, hex, ts) TO '{tmp}' "
+                    f"COPY (SELECT * FROM read_parquet([{listed}], union_by_name = true) ORDER BY cell, hex, ts) TO '{tmp}' "
                     '(FORMAT parquet, COMPRESSION zstd, ROW_GROUP_SIZE 122880)'))
                 self.doomed.update(minutes)
                 log.info('%s: merged %s/%s from %d files', self.name, day.name, hour, len(minutes))
