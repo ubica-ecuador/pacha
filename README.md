@@ -7,7 +7,7 @@ Spatiotemporal visualization in Grafana, in one command. The stack bakes in:
 - the [Kepler map panel](https://github.com/ubica-ecuador/keplergl-grafana-panel);
 - [Chaski](https://github.com/ubica-ecuador/chaski), DuckDB in the browser;
 - DuckDB and Infinity on the server;
-- Business Charts, Business Table and Business Variable.
+- Business Charts, Business Table, Business Text and Business Variable.
 
 A TiTiler serves the imagery.
 

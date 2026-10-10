@@ -195,3 +195,27 @@ test('adsb.lol is asked once a minute at most', () => {
   headers();
   assert.match(headers(), /X-Cache-Status: HIT/i);
 });
+
+// Caltrans District 7, behind caltrans-la-cameras: the camera list and the
+// message signs kept a minute, the 14 MB of lane closures five.
+const CALTRANS = '/caltrans/d7';
+
+test('DuckDB reads the Caltrans cameras through feeds', async () => {
+  const [row] = await duckdb(
+    STACK_URL,
+    `SELECT len(data)::INTEGER AS n FROM read_json('http://feeds${CALTRANS}/cctv/cctvStatusD07.json', columns = {data: 'JSON[]'})`,
+  );
+  assert.ok(row.n > 400, `only ${row.n} cameras`);
+});
+
+test('the Caltrans lane closures are fetched once and then served from the cache', () => {
+  const headers = () =>
+    compose(['exec', '-T', 'grafana', 'curl', '-s', '-o', '/dev/null', '-D', '-', `http://feeds${CALTRANS}/lcs/lcsStatusD07.json`]);
+  headers();
+  assert.match(headers(), /X-Cache-Status: HIT/i);
+});
+
+test('feeds passes on Caltrans status files only', () => {
+  const status = compose(['exec', '-T', 'grafana', 'curl', '-s', '-o', '/dev/null', '-w', '%{http_code}', `http://feeds${CALTRANS}/cctv/image/x/x.jpg`]);
+  assert.equal(status, '404');
+});

@@ -12,6 +12,7 @@ const EXPECTED = {
   'yesoreyeram-infinity-datasource': { version: '4.0.0', signature: 'valid' },
   'volkovlabs-echarts-panel': { version: '7.2.5', signature: 'valid' },
   'volkovlabs-table-panel': { version: '3.6.8', signature: 'valid' },
+  'marcusolsson-dynamictext-panel': { version: '6.3.0', signature: 'valid' },
   'volkovlabs-variable-panel': { version: '5.2.0', signature: 'valid' },
 };
 

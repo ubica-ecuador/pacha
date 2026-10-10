@@ -1,0 +1,1911 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "caltrans-la-cameras"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      },
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "enable": true,
+          "filter": {
+            "ids": [
+              4,
+              5,
+              8,
+              9
+            ]
+          },
+          "hide": false,
+          "iconColor": "rgba(255, 179, 0, 0.25)",
+          "name": "Map step",
+          "query": {
+            "datasource": {
+              "name": "infinity"
+            },
+            "group": "yesoreyeram-infinity-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "columns": [
+                {
+                  "selector": "time",
+                  "text": "time",
+                  "type": "timestamp"
+                },
+                {
+                  "selector": "timeEnd",
+                  "text": "timeEnd",
+                  "type": "timestamp"
+                },
+                {
+                  "selector": "text",
+                  "text": "text",
+                  "type": "string"
+                }
+              ],
+              "data": "[{\"time\":\"${map_from}\",\"timeEnd\":\"${map_to}\",\"text\":\"On the map\"}]",
+              "format": "table",
+              "parser": "backend",
+              "refId": "MapStep",
+              "source": "inline",
+              "type": "json"
+            },
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "Every Caltrans traffic camera in Los Angeles and Ventura counties as a wedge looking the way it points, with its live video beside the map, over the lane closures in force and the message signs, all from Caltrans' public feeds and reloaded every minute.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Los Angeles freeways, live: Caltrans cameras, lane closures and message signs\n\nEvery traffic camera **Caltrans** runs in **District 7** (Los Angeles and Ventura counties), drawn where it stands and looking the way Caltrans says it looks, over the **lane closures in force right now** and the **message signs** above the freeways. Everything is read live from Caltrans' public feeds: no key, no account.\n\n- **Cameras**: blue wedges stream **live video**, amber ones a **still image** every two minutes, grey ones are out of service. Caltrans gives each view as north, east, south or west only, so a wedge is a sketch of where the camera looks, not a survey of its field of view.\n- **Click a camera** to watch it beside the map, or pick one from **Camera** above. The video plays muted, about half a minute behind real time.\n- **Lane closures**: red where a road or a ramp is shut, amber where lanes are. **Signs**: bright when showing a message, hover to read it.\n\nThe map, the closures and the signs reload every minute; the video never stops.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Cameras by what they show, the closures in force and the signs in use.\nSELECT (SELECT count(*) FROM $cameras WHERE status = 'Live video')         AS \"Live video\",\n       (SELECT count(*) FROM $cameras WHERE status = 'Still image')        AS \"Still image only\",\n       (SELECT count(*) FROM $cameras WHERE status = 'Out of service')     AS \"Out of service\",\n       (SELECT count(*) FROM $closures WHERE closure = 'Full')             AS \"Roads and ramps shut\",\n       (SELECT count(*) FROM $closures WHERE closure \u003c\u003e 'Full')            AS \"Lane closures\",\n       (SELECT count(*) FROM $signs WHERE showing = 'Showing a message')   AS \"Signs with a message\""
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Cameras by what they show, the lane closures in force and the message signs showing a message.",
+          "id": 2,
+          "links": [],
+          "title": "Right now in District 7",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#9AA5B1",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#9AA5B1",
+                        "value": null
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Live video"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#3D8FE0",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Still image only"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#F2A65A",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Out of service"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#6B7280",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Roads and ramps shut"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#E0524C",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Lane closures"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#F2A65A",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Signs with a message"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#F5D547",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every camera as a wedge, coloured by what it streams. Click one to watch it.\nSELECT camera, route, looking, status, place, azimuth, beamwidth, range_m, latitude, longitude\nFROM $cameras"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The lane closures in force, as lines from where each begins to where it ends.\nSELECT closure, route, direction, from_place, to_place, lanes_closed, lanes, work, state, ends, geom\nFROM $closures"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The message signs, bright when showing a message.\nSELECT sign, showing, message, latitude, longitude FROM $signs"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each camera as a wedge pointing the way Caltrans says it looks (north, east, south or west), coloured by what it streams. Lane closures in force, from where they begin to where they end. Message signs, bright when showing a message.",
+          "id": 3,
+          "links": [],
+          "title": "Cameras, closures and signs \u2014 click a camera to watch it",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": true,
+                "hoverSync": true,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 34.045,
+                      "longitude": -118.26,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 11
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-fiord",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "camera"
+                              },
+                              {
+                                "name": "status"
+                              },
+                              {
+                                "name": "looking"
+                              },
+                              {
+                                "name": "place"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "route"
+                              },
+                              {
+                                "name": "direction"
+                              },
+                              {
+                                "name": "closure"
+                              },
+                              {
+                                "name": "from_place"
+                              },
+                              {
+                                "name": "to_place"
+                              },
+                              {
+                                "name": "lanes_closed"
+                              },
+                              {
+                                "name": "work"
+                              },
+                              {
+                                "name": "state"
+                              },
+                              {
+                                "name": "ends"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "sign"
+                              },
+                              {
+                                "name": "message"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "signs",
+                        "cameras",
+                        "closures"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              115,
+                              191,
+                              105
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Message signs",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Showing a message",
+                                    "#F5D547"
+                                  ],
+                                  [
+                                    "Blank",
+                                    "#4B5563"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#F5D547",
+                                  "#4B5563"
+                                ],
+                                "name": "Sign",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.95,
+                              "outline": true,
+                              "radius": 5,
+                              "radiusRange": [
+                                18,
+                                110
+                              ],
+                              "thickness": 1
+                            }
+                          },
+                          "id": "signs",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "showing",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeField": null,
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              61,
+                              143,
+                              224
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Cameras, by what they stream",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Live video",
+                                    "#3D8FE0"
+                                  ],
+                                  [
+                                    "Still image",
+                                    "#F2A65A"
+                                  ],
+                                  [
+                                    "Out of service",
+                                    "#6B7280"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#3D8FE0",
+                                  "#F2A65A",
+                                  "#6B7280"
+                                ],
+                                "name": "Camera status",
+                                "type": "customOrdinal"
+                              },
+                              "coverage3d": false,
+                              "coverageAzimuth": 0,
+                              "coverageBeamwidth": 65,
+                              "coverageDetail": "high",
+                              "coverageGradient": true,
+                              "coverageHeight": 30,
+                              "coverageHeightMetres": 14,
+                              "coverageHeightUnit": "metres",
+                              "coverageInner": 0,
+                              "coverageOutline": true,
+                              "coverageOutlineWidth": 1,
+                              "coverageProfile": "cone",
+                              "coverageRange": 1000,
+                              "coverageRangeMode": "raw",
+                              "coverageRangeMultiplier": 1,
+                              "coverageRangeRange": [
+                                100,
+                                5000
+                              ],
+                              "coverageSite": true,
+                              "coverageSiteRadius": 3,
+                              "filled": true,
+                              "fixedRadius": false,
+                              "historyField": "color",
+                              "opacity": 0.55,
+                              "outline": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "rowsAsset": "auto",
+                              "rowsPerPlace": "last",
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "cameras",
+                          "type": "coverage",
+                          "visualChannels": {
+                            "azimuthField": {
+                              "name": "azimuth",
+                              "type": "integer"
+                            },
+                            "azimuthScale": "linear",
+                            "beamwidthField": {
+                              "name": "beamwidth",
+                              "type": "integer"
+                            },
+                            "beamwidthScale": "linear",
+                            "colorField": {
+                              "name": "status",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "reachField": {
+                              "name": "range_m",
+                              "type": "integer"
+                            },
+                            "reachScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              79,
+                              179,
+                              191
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Lane closures in force",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Full",
+                                    "#E0524C"
+                                  ],
+                                  [
+                                    "Lane",
+                                    "#F2A65A"
+                                  ],
+                                  [
+                                    "One-Way Traffic",
+                                    "#B877D9"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#E0524C",
+                                  "#F2A65A",
+                                  "#B877D9"
+                                ],
+                                "name": "Closure",
+                                "type": "customOrdinal"
+                              },
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.9,
+                              "radius": 6,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Full",
+                                    "#E0524C"
+                                  ],
+                                  [
+                                    "Lane",
+                                    "#F2A65A"
+                                  ],
+                                  [
+                                    "One-Way Traffic",
+                                    "#B877D9"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#E0524C",
+                                  "#F2A65A",
+                                  "#B877D9"
+                                ],
+                                "name": "Closure",
+                                "type": "customOrdinal"
+                              },
+                              "strokeOpacity": 0.9,
+                              "stroked": true,
+                              "thickness": 2.5,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "closures",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "closure",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorField": {
+                              "name": "closure",
+                              "type": "string"
+                            },
+                            "strokeColorScale": "customOrdinal"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1000,
+                "publishWhilePlaying": true,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 4,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "camera",
+                    "source": "click",
+                    "variable": "camera"
+                  },
+                  {
+                    "field": "",
+                    "source": "center",
+                    "variable": "lat",
+                    "variableTo": "lng",
+                    "zoom": 14
+                  }
+                ]
+              }
+            },
+            "version": "0.1.0"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The camera picked on the map, from Camera above or from a row of the table.\nSELECT camera, route, looking, status, stream_url, image_url FROM $cameras WHERE camera = $camera"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The camera picked on the map, from Camera above or from the table. Live video plays muted, about half a minute behind real time; a camera with a still image only shows Caltrans' latest, every two minutes.",
+          "id": 4,
+          "links": [],
+          "title": "${camera}",
+          "vizConfig": {
+            "group": "marcusolsson-dynamictext-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "afterRender": "// Plays the camera picked in $camera: its HLS stream when it has one,\n// otherwise its still image, reloaded every minute. The player is kept on\n// `this` across renders, so a dashboard refresh does not restart the video:\n// only another camera, or a re-rendered row, does.\nconst row = context.data || {};\n// The row is as tall as its content by default: the player fills the panel.\ncontext.element.style.height = '100%';\nconst box = context.element.querySelector('.cam-view');\nconst self = this;\nconst cleanup = () =\u003e setTimeout(() =\u003e {\n  if (self.box \u0026\u0026 !self.box.isConnected \u0026\u0026 self.stop) {\n    self.stop();\n    self.stop = null;\n    self.key = null;\n  }\n}, 0);\nif (!box) {\n  return cleanup;\n}\nconst stream = row.stream_url;\nconst image = row.image_url;\nconst key = stream || image || '';\nif (self.key === key \u0026\u0026 self.box === box \u0026\u0026 box.isConnected) {\n  return cleanup;\n}\nif (self.stop) {\n  self.stop();\n}\nself.key = key;\nself.box = box;\nself.stop = null;\nbox.replaceChildren();\nconst fill = 'width:100%;height:100%;object-fit:contain;background:#000;display:block';\nlet stopped = false;\nlet hls = null;\nlet video = null;\nlet timer = null;\nconst stopVideo = () =\u003e {\n  const v = video;\n  video = null;\n  if (hls) {\n    hls.destroy();\n    hls = null;\n  }\n  if (v) {\n    v.removeAttribute('src');\n    v.load();\n  }\n};\nself.stop = () =\u003e {\n  stopped = true;\n  stopVideo();\n  clearInterval(timer);\n};\n// Caltrans' latest still, reloaded every minute: for a camera without video,\n// and for one whose stream is down, which Caltrans goes on listing.\nconst still = (note) =\u003e {\n  stopVideo();\n  if (stopped) {\n    return;\n  }\n  const status = context.element.querySelector('.cam-status');\n  if (note \u0026\u0026 status) {\n    status.textContent = note;\n  }\n  if (!image) {\n    box.textContent = 'Caltrans publishes no image for this camera.';\n    return;\n  }\n  const img = document.createElement('img');\n  img.style.cssText = fill;\n  box.replaceChildren(img);\n  const load = () =\u003e {\n    img.src = image + '?t=' + Date.now();\n  };\n  load();\n  timer = setInterval(load, 60000);\n};\nif (!stream) {\n  still();\n  return cleanup;\n}\nconst down = 'Stream down: the latest still image';\nconst el = document.createElement('video');\nvideo = el;\nel.muted = true;\nel.autoplay = true;\nel.playsInline = true;\nel.controls = true;\nel.style.cssText = fill;\nif (image) {\n  el.poster = image;\n}\nel.addEventListener('error', () =\u003e video === el \u0026\u0026 still(down));\nbox.append(el);\nconst play = () =\u003e el.play().catch(() =\u003e {});\nif (el.canPlayType('application/vnd.apple.mpegurl')) {\n  el.src = stream;\n  play();\n} else {\n  import('https://cdn.jsdelivr.net/npm/hls.js@1.5.20/dist/hls.mjs')\n    .then(({ default: Hls }) =\u003e {\n      if (video !== el) {\n        return;\n      }\n      if (!Hls.isSupported()) {\n        still('This browser cannot play the stream: the latest still image');\n        return;\n      }\n      hls = new Hls({ liveSyncDurationCount: 2 });\n      hls.on(Hls.Events.ERROR, (_, data) =\u003e data.fatal \u0026\u0026 video === el \u0026\u0026 still(down));\n      hls.loadSource(stream);\n      hls.attachMedia(el);\n      play();\n    })\n    .catch(() =\u003e video === el \u0026\u0026 still('The player did not load: the latest still image'));\n}\nreturn cleanup;",
+                "content": "\u003cdiv class=\"cam\"\u003e\u003cdiv class=\"cam-view\"\u003e\u003c/div\u003e\u003cdiv class=\"cam-caption\"\u003e\u003cstrong\u003e{{camera}}\u003c/strong\u003e \u00b7 {{route}}{{#if looking}}, looking {{looking}}{{/if}} \u00b7 \u003cspan class=\"cam-status\"\u003e{{status}}\u003c/span\u003e\u003c/div\u003e\u003c/div\u003e",
+                "contentPartials": [],
+                "defaultContent": "Click a camera on the map, or pick one from Camera above.",
+                "editor": {
+                  "format": "auto",
+                  "language": "html"
+                },
+                "editors": [
+                  "styles",
+                  "afterRender"
+                ],
+                "externalStyles": [],
+                "helpers": "",
+                "renderMode": "everyRow",
+                "status": "",
+                "styles": ".cam { display: flex; flex-direction: column; height: 100%; gap: 6px; }\n.cam-view { flex: 1; min-height: 0; background: #000; border-radius: 2px; overflow: hidden; display: flex; align-items: center; justify-content: center; color: #9AA5B1; }\n.cam-caption { font-size: 12px; line-height: 1.4; color: #9AA5B1; }\n.cam-caption strong { color: inherit; }",
+                "wrap": false
+              }
+            },
+            "version": "6.3.0"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every camera, live video first. A row picks it and flies the map to it.\nSELECT camera AS \"Camera\", route AS \"Route\", looking AS \"Looking\", status AS \"Status\",\n       place AS \"Near\", latitude, longitude\nFROM $cameras\nORDER BY status = 'Live video' DESC, status, route, camera"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every camera in District 7. A row picks the camera and flies the map to it.",
+          "id": 5,
+          "links": [],
+          "title": "Every camera \u2014 click a row to watch it",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false,
+                    "minWidth": 90
+                  },
+                  "links": [
+                    {
+                      "title": "Watch ${__data.fields.Camera}",
+                      "url": "/d/caltrans-la-cameras${__url.params:exclude:var-camera,var-lat,var-lng}\u0026var-camera=${__data.fields.Camera:percentencode}\u0026var-lat=${__data.fields.latitude}\u0026var-lng=${__data.fields.longitude}"
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "text",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "string"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "latitude"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "longitude"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Camera"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 300
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Route"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Looking"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Status"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 120
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Status"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "Live video": {
+                                "color": "#3D8FE0",
+                                "index": 0
+                              },
+                              "Out of service": {
+                                "color": "#6B7280",
+                                "index": 2
+                              },
+                              "Still image": {
+                                "color": "#F2A65A",
+                                "index": 1
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "countRows": false,
+                  "fields": "",
+                  "reducer": [
+                    "sum"
+                  ],
+                  "show": false
+                },
+                "showHeader": true,
+                "sortBy": []
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The closures in force, those shutting a road or a ramp first.\nSELECT route AS \"Route\", direction AS \"Direction\", closure AS \"Closure\", facility AS \"Where\",\n       from_place AS \"From\", to_place AS \"To\", lanes_closed AS \"Lanes shut\", lanes AS \"Of\",\n       work AS \"Work\", state AS \"State\", ends AS \"Ends\", latitude, longitude\nFROM $closures\nORDER BY closure = 'Full' DESC, route, from_place"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The lane closures in force right now, as Caltrans lists them. A row flies the map to the closure.",
+          "id": 6,
+          "links": [],
+          "title": "Lane closures in force \u2014 click a row to fly there",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false,
+                    "minWidth": 90
+                  },
+                  "links": [
+                    {
+                      "title": "Fly to the closure",
+                      "url": "/d/caltrans-la-cameras${__url.params:exclude:var-lat,var-lng}\u0026var-lat=${__data.fields.latitude}\u0026var-lng=${__data.fields.longitude}"
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "text",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "string"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "latitude"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "longitude"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Route"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 70
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Direction"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Closure"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 90
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Lanes shut"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 90
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Of"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 50
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "State"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Closure"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "Full": {
+                                "color": "#E0524C",
+                                "index": 0
+                              },
+                              "Lane": {
+                                "color": "#F2A65A",
+                                "index": 1
+                              },
+                              "One-Way Traffic": {
+                                "color": "#B877D9",
+                                "index": 2
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Ends"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "dateTimeAsLocal"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 150
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Of"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "none"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "countRows": false,
+                  "fields": "",
+                  "reducer": [
+                    "sum"
+                  ],
+                  "show": false
+                },
+                "showHeader": true,
+                "sortBy": []
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "RowsLayout",
+      "spec": {
+        "rows": [
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-1"
+                        },
+                        "height": 7,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Intro"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-2"
+                        },
+                        "height": 4,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-3"
+                        },
+                        "height": 20,
+                        "width": 14,
+                        "x": 0,
+                        "y": 4
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-4"
+                        },
+                        "height": 9,
+                        "width": 10,
+                        "x": 14,
+                        "y": 4
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-5"
+                        },
+                        "height": 11,
+                        "width": 10,
+                        "x": 14,
+                        "y": 13
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Live"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-6"
+                        },
+                        "height": 10,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Lane closures"
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "business-text",
+      "chaski",
+      "duckdb",
+      "kepler",
+      "live",
+      "mobility",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "1m",
+      "autoRefreshIntervals": [
+        "30s",
+        "1m",
+        "5m",
+        "15m"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-1h",
+      "hideTimepicker": false,
+      "timezone": "America/Los_Angeles",
+      "to": "now"
+    },
+    "title": "Los Angeles freeways, live: Caltrans cameras, lane closures and message signs",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Cameras (one row each)",
+          "multi": false,
+          "name": "cameras",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "cameras",
+              "refId": "cameras",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: every camera Caltrans runs in District 7 (Los Angeles and\n-- Ventura), read through the gateway, which keeps the list a minute (see\n-- gateway/feeds.conf). The images and the video are not read here: the\n-- browser takes them straight from Caltrans.\n-- Caltrans gives the view as North, East, South or West, never in degrees,\n-- so each wedge is a sketch: that way, 60 degrees wide and 250 m long. A\n-- camera with no direction is a small circle.\nWITH feed AS (\n  SELECT unnest(from_json((SELECT content FROM read_text('http://feeds/caltrans/d7/cctv/cctvStatusD07.json')),\n                          '{\"data\": [{\"cctv\": {\"location\": {\"locationName\": \"VARCHAR\", \"nearbyPlace\": \"VARCHAR\", \"longitude\": \"DOUBLE\", \"latitude\": \"DOUBLE\", \"direction\": \"VARCHAR\", \"route\": \"VARCHAR\"}, \"inService\": \"VARCHAR\", \"imageData\": {\"streamingVideoURL\": \"VARCHAR\", \"static\": {\"currentImageURL\": \"VARCHAR\"}}}}]}').data).cctv AS c\n)\nSELECT c.location.locationName                          AS camera,\n       c.location.route                                 AS route,\n       c.location.nearbyPlace                           AS place,\n       nullif(c.location.direction, '')                 AS looking,\n       CASE c.location.direction WHEN 'North' THEN 0 WHEN 'East' THEN 90\n                                 WHEN 'South' THEN 180 WHEN 'West' THEN 270 ELSE 0 END AS azimuth,\n       CASE WHEN c.location.direction IN ('North', 'East', 'South', 'West') THEN 60 ELSE 360 END AS beamwidth,\n       CASE WHEN c.location.direction IN ('North', 'East', 'South', 'West') THEN 250 ELSE 60 END AS range_m,\n       CASE WHEN c.inService \u003c\u003e 'true' THEN 'Out of service'\n            WHEN nullif(c.imageData.streamingVideoURL, '') IS NOT NULL THEN 'Live video'\n            ELSE 'Still image' END                      AS status,\n       nullif(c.imageData.streamingVideoURL, '')        AS stream_url,\n       nullif(c.imageData.static.currentImageURL, '')   AS image_url,\n       c.location.latitude                              AS latitude,\n       c.location.longitude                             AS longitude\nFROM feed\nWHERE c.location.latitude IS NOT NULL",
+                  "refId": "cameras"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Lane closures in force",
+          "multi": false,
+          "name": "closures",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "closures",
+              "refId": "closures",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the lane closures in force in District 7 right now, out of the\n-- 4,000 or so Caltrans lists for the coming weeks. In force: due to have\n-- started and not yet over, and neither cancelled (code 1022) nor picked up\n-- (1098). In place once the crew reports it set up (1097); until then, due.\n-- One 14 MB file, kept five minutes by the gateway. A closure is drawn from\n-- where it begins to where it ends, straight, up to 3 km: further, a straight\n-- line would cut across the city instead of following the road, so only its\n-- two ends are drawn.\nWITH feed AS (\n  SELECT unnest(from_json((SELECT content FROM read_text('http://feeds/caltrans/d7/lcs/lcsStatusD07.json')),\n                          '{\"data\": [{\"lcs\": {\"location\": {\"travelFlowDirection\": \"VARCHAR\", \"begin\": {\"beginLocationName\": \"VARCHAR\", \"beginLongitude\": \"DOUBLE\", \"beginLatitude\": \"DOUBLE\", \"beginRoute\": \"VARCHAR\"}, \"end\": {\"endLocationName\": \"VARCHAR\", \"endLongitude\": \"DOUBLE\", \"endLatitude\": \"DOUBLE\"}}, \"closure\": {\"closureID\": \"VARCHAR\", \"logNumber\": \"VARCHAR\", \"closureTimestamp\": {\"closureStartEpoch\": \"BIGINT\", \"closureEndEpoch\": \"BIGINT\", \"isClosureEndIndefinite\": \"VARCHAR\"}, \"facility\": \"VARCHAR\", \"typeOfClosure\": \"VARCHAR\", \"typeOfWork\": \"VARCHAR\", \"lanesClosed\": \"VARCHAR\", \"totalExistingLanes\": \"VARCHAR\", \"code1097\": {\"isCode1097\": \"VARCHAR\"}, \"code1098\": {\"isCode1098\": \"VARCHAR\"}, \"code1022\": {\"isCode1022\": \"VARCHAR\"}}}}]}').data).lcs AS l\n),\nc AS (\n  SELECT l.closure AS k, l.location AS w, l.location.begin AS b, l.location.\"end\" AS e,\n         l.closure.closureTimestamp AS t\n  FROM feed\n)\nSELECT k.closureID || '-' || k.logNumber                AS closure_id,\n       b.beginRoute                                     AS route,\n       w.travelFlowDirection                            AS direction,\n       b.beginLocationName                              AS from_place,\n       e.endLocationName                                AS to_place,\n       k.facility                                       AS facility,\n       k.typeOfClosure                                  AS closure,\n       nullif(k.lanesClosed, '')                        AS lanes_closed,\n       nullif(k.totalExistingLanes, '')::INTEGER        AS lanes,\n       k.typeOfWork                                     AS work,\n       CASE WHEN k.code1097.isCode1097 = 'true' THEN 'In place' ELSE 'Due' END AS state,\n       to_timestamp(t.closureStartEpoch)                AS starts,\n       CASE WHEN t.isClosureEndIndefinite \u003c\u003e 'true' THEN to_timestamp(t.closureEndEpoch) END AS ends,\n       (b.beginLatitude + e.endLatitude) / 2            AS latitude,\n       (b.beginLongitude + e.endLongitude) / 2          AS longitude,\n       CASE WHEN b.beginLatitude = e.endLatitude AND b.beginLongitude = e.endLongitude\n            THEN '{\"type\":\"Point\",\"coordinates\":[' || b.beginLongitude || ',' || b.beginLatitude || ']}'\n            WHEN ST_Distance_Sphere(ST_Point(b.beginLatitude, b.beginLongitude), ST_Point(e.endLatitude, e.endLongitude)) \u003e 3000\n            THEN '{\"type\":\"MultiPoint\",\"coordinates\":[[' || b.beginLongitude || ',' || b.beginLatitude || '],['\n                 || e.endLongitude || ',' || e.endLatitude || ']]}'\n            ELSE '{\"type\":\"LineString\",\"coordinates\":[[' || b.beginLongitude || ',' || b.beginLatitude || '],['\n                 || e.endLongitude || ',' || e.endLatitude || ']]}' END AS geom\nFROM c\nWHERE t.closureStartEpoch \u003c= epoch(now())\n  AND (t.isClosureEndIndefinite = 'true' OR t.closureEndEpoch \u003e epoch(now()))\n  AND k.code1022.isCode1022 \u003c\u003e 'true'\n  AND k.code1098.isCode1098 \u003c\u003e 'true'\n  AND b.beginLatitude IS NOT NULL AND e.endLatitude IS NOT NULL",
+                  "refId": "closures"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Message signs",
+          "multi": false,
+          "name": "signs",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "signs",
+              "refId": "signs",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the changeable message signs over the freeways of District 7,\n-- and what each one shows. Kept a minute by the gateway. Most are blank;\n-- the lines of a message are joined with a slash.\nWITH feed AS (\n  SELECT unnest(from_json((SELECT content FROM read_text('http://feeds/caltrans/d7/cms/cmsStatusD07.json')),\n                          '{\"data\": [{\"cms\": {\"location\": {\"locationName\": \"VARCHAR\", \"longitude\": \"DOUBLE\", \"latitude\": \"DOUBLE\", \"direction\": \"VARCHAR\", \"route\": \"VARCHAR\"}, \"inService\": \"VARCHAR\", \"message\": {\"display\": \"VARCHAR\", \"phase1\": {\"phase1Line1\": \"VARCHAR\", \"phase1Line2\": \"VARCHAR\", \"phase1Line3\": \"VARCHAR\"}, \"phase2\": {\"phase2Line1\": \"VARCHAR\", \"phase2Line2\": \"VARCHAR\", \"phase2Line3\": \"VARCHAR\"}}}}]}').data).cms AS s\n),\nm AS (\n  SELECT s, concat_ws(' / ', nullif(s.message.phase1.phase1Line1, ''), nullif(s.message.phase1.phase1Line2, ''),\n                             nullif(s.message.phase1.phase1Line3, ''), nullif(s.message.phase2.phase2Line1, ''),\n                             nullif(s.message.phase2.phase2Line2, ''), nullif(s.message.phase2.phase2Line3, '')) AS text\n  FROM feed\n  WHERE s.inService = 'true'\n)\nSELECT s.location.route || ' ' || s.location.direction || ' \u00b7 ' || s.location.locationName AS sign,\n       s.location.route                                 AS route,\n       s.location.direction                             AS direction,\n       CASE WHEN s.message.display = 'Blank' OR text = '' THEN 'Blank' ELSE 'Showing a message' END AS showing,\n       CASE WHEN s.message.display \u003c\u003e 'Blank' THEN nullif(text, '') END AS message,\n       s.location.latitude                              AS latitude,\n       s.location.longitude                             AS longitude\nFROM m\nWHERE s.location.latitude IS NOT NULL",
+                  "refId": "signs"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "I-110 : (196) Avenue 26 Off Ramp",
+            "value": "I-110 : (196) Avenue 26 Off Ramp"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Camera",
+          "multi": false,
+          "name": "camera",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "camera",
+              "sql": "-- Every camera with live video, by name. A click on the map picks any camera,\n-- those with a still image only too.\nSELECT camera FROM $cameras WHERE status = 'Live video' ORDER BY camera"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Latitude (table row)",
+          "name": "lat",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Longitude (table row)",
+          "name": "lng",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}

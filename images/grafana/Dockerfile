@@ -33,6 +33,7 @@ ARG DUCKDB_CLI_SHA256_arm64=377f03fb9f17ab5a78f28f829cbfcb5333da8ab3c2d0788f2769
 ARG INFINITY_VERSION=4.0.0
 ARG BUSINESS_CHARTS_VERSION=7.2.5
 ARG BUSINESS_TABLE_VERSION=3.6.8
+ARG BUSINESS_TEXT_VERSION=6.3.0
 ARG BUSINESS_VARIABLE_VERSION=5.2.0
 
 # --- The Kepler panel, from the channel KEPLER_PANEL_CHANNEL names. ---
@@ -115,6 +116,7 @@ ARG DUCKDB_ENGINE_VERSION
 ARG INFINITY_VERSION
 ARG BUSINESS_CHARTS_VERSION
 ARG BUSINESS_TABLE_VERSION
+ARG BUSINESS_TEXT_VERSION
 ARG BUSINESS_VARIABLE_VERSION
 
 USER root
@@ -125,6 +127,7 @@ RUN for plugin in \
       "yesoreyeram-infinity-datasource ${INFINITY_VERSION}" \
       "volkovlabs-echarts-panel ${BUSINESS_CHARTS_VERSION}" \
       "volkovlabs-table-panel ${BUSINESS_TABLE_VERSION}" \
+      "marcusolsson-dynamictext-panel ${BUSINESS_TEXT_VERSION}" \
       "volkovlabs-variable-panel ${BUSINESS_VARIABLE_VERSION}"; do \
       grafana cli --pluginsDir /opt/pacha/plugins plugins install ${plugin} || exit 1; \
     done \
@@ -174,4 +177,5 @@ LABEL org.opencontainers.image.title="pacha-grafana" \
       io.pacha.infinity.version="${INFINITY_VERSION}" \
       io.pacha.business-charts.version="${BUSINESS_CHARTS_VERSION}" \
       io.pacha.business-table.version="${BUSINESS_TABLE_VERSION}" \
+      io.pacha.business-text.version="${BUSINESS_TEXT_VERSION}" \
       io.pacha.business-variable.version="${BUSINESS_VARIABLE_VERSION}"
