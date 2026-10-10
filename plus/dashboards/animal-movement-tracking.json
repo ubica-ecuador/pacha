@@ -26,7 +26,7 @@
         }
       }
     ],
-    "cursorSync": "Off",
+    "cursorSync": "Crosshair",
     "description": "Animals on the move, from three open datasets: lesser black-backed gulls from Zeebrugge (INBO), jaguars across the Neotropics (Jaguar Movement Database) and sharks, tunas, whales, seals and turtles of the Pacific (TOPP, Animal Telemetry Network). Animated trails, distances and who went farthest.",
     "editable": true,
     "elements": {
@@ -42,7 +42,7 @@
             }
           },
           "description": "",
-          "id": 18,
+          "id": 20,
           "links": [],
           "title": "",
           "transparent": true,
@@ -86,7 +86,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- One row per bird of the year, the farthest travellers first, under a row\n-- for all of them, whose click lets the picked bird go.\nWITH b AS (\n  SELECT bird, max(colony_km) AS far, min(latitude) AS south, sum(km) AS km,\n         sum(fixes) AS fixes, min(time) AS t0, max(time) AS t1\n  FROM $gulls\n  GROUP BY bird\n),\nrows AS (\n  SELECT 0 AS o, 'All birds' AS label, '' AS bird, max(far) AS far, min(south) AS south,\n         sum(km) AS km, sum(fixes) AS fixes, min(t0) AS t0, max(t1) AS t1\n  FROM b\n  UNION ALL\n  SELECT 1, bird, bird, far, south, km, fixes, t0, t1 FROM b\n)\nSELECT label                           AS \"Bird\",\n       round(far)                      AS \"Farthest, km\",\n       round(south, 1)                 AS \"Southernmost, °N\",\n       round(km)                       AS \"Km flown\",\n       fixes                           AS \"GPS fixes\",\n       strftime(t0, '%Y-%m-%d')        AS \"First fix\",\n       strftime(t1, '%Y-%m-%d')        AS \"Last fix\",\n       bird\nFROM rows\nORDER BY o, far DESC"
+                        "rawSql": "-- One row per bird within the window, time of day and month picked, the\n-- farthest travellers first, under a row for all of them, whose click lets the\n-- bird followed go.\nWITH w AS (\n  SELECT coalesce(nullif($g_lo, ''), '01-01') AS lo, coalesce(nullif($g_hi, ''), '12-31') AS hi,\n         try_cast($g_hour AS INTEGER) AS hr, try_cast($g_month AS INTEGER) AS mo\n),\nb AS (\n  SELECT bird, max(colony_km) AS far, min(latitude) AS south, sum(km) AS km,\n         sum(fixes) AS fixes, min(time) AS t0, max(time) AS t1\n  FROM $gulls, w\n  WHERE strftime(time, '%m-%d') BETWEEN w.lo AND w.hi\n  AND (w.hr IS NULL OR hour(time) // 2 * 2 = w.hr)\n  AND (w.mo IS NULL OR month(time) = w.mo)\n  GROUP BY bird\n),\nrows AS (\n  SELECT 0 AS o, 'All birds' AS label, '' AS bird, max(far) AS far, min(south) AS south,\n         sum(km) AS km, sum(fixes) AS fixes, min(t0) AS t0, max(t1) AS t1\n  FROM b\n  UNION ALL\n  SELECT 1, bird, bird, far, south, km, fixes, t0, t1 FROM b\n)\nSELECT label                           AS \"Bird\",\n       round(far)                      AS \"Farthest, km\",\n       round(south, 1)                 AS \"Southernmost, °N\",\n       round(km)                       AS \"Km flown\",\n       fixes                           AS \"GPS fixes\",\n       strftime(t0, '%Y-%m-%d')        AS \"First fix\",\n       strftime(t1, '%Y-%m-%d')        AS \"Last fix\",\n       bird                            AS bird_id\nFROM rows\nORDER BY o, far DESC"
                       },
                       "version": "v0"
                     },
@@ -98,8 +98,8 @@
               "transformations": []
             }
           },
-          "description": "Click a bird to follow it alone on the map and in the chart; All birds brings the others back.",
-          "id": 5,
+          "description": "Within the window, time of day and month picked. Click a bird to follow it alone; All birds brings the others back.",
+          "id": 6,
           "links": [],
           "title": "Birds",
           "vizConfig": {
@@ -140,7 +140,7 @@
                         "value": [
                           {
                             "title": "Follow this bird",
-                            "url": "/d/animal-movement-tracking${__url.params:exclude:var-bird}\u0026var-bird=${__data.fields.bird}"
+                            "url": "/d/animal-movement-tracking${__url.params:exclude:var-bird}\u0026var-bird=${__data.fields.bird_id}"
                           }
                         ]
                       }
@@ -149,7 +149,7 @@
                   {
                     "matcher": {
                       "id": "byName",
-                      "options": "bird"
+                      "options": "bird_id"
                     },
                     "properties": [
                       {
@@ -187,7 +187,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- How far each bird got from the colony, day by day: its farthest position\n-- that day. The colony is the median of every position in June.\nSELECT time_bucket(INTERVAL 1 DAY, time) AS time, bird AS name, max(colony_km) AS value\nFROM $gulls\nWHERE $bird = '' OR bird = $bird\nGROUP BY ALL\nORDER BY name, time"
+                        "rawSql": "-- How far each bird got from the colony, day by day: its farthest position\n-- that day. The colony is the median of every position in June. The whole\n-- year, whatever the window: the window is picked here.\nSELECT time_bucket(INTERVAL 1 DAY, time) AS time, bird AS name, max(colony_km) AS value\nFROM $gulls\nWHERE ($bird = '' OR bird = $bird)\nGROUP BY ALL\nORDER BY name, time"
                       },
                       "version": "v0"
                     },
@@ -199,7 +199,7 @@
               "transformations": []
             }
           },
-          "description": "Each bird's farthest position from the colony, day by day. The colony is the median of all the birds' positions in June, mid-breeding season. Hover a line to name its bird.",
+          "description": "Each bird's farthest position from the colony, day by day; the colony is the median of all the birds' positions in June. Click a line to follow that bird, and again to let it go. The brush at the top right picks a window of days for the map, the figures and the table. The bar is the map's clock.",
           "id": 4,
           "links": [],
           "title": "Distance from the colony",
@@ -224,7 +224,84 @@
                   "key": "",
                   "plugin": "AMap.Scale,AMap.ToolBar"
                 },
-                "getOption": "// One line per `name`, from a long frame (time, name, value), on a time axis\n// of its own: each tab of this dashboard covers different years, so its charts\n// do not follow the dashboard's time range. The colours are the map's: kepler\n// hands its palette out over the names in sorted order, and so does this.\n// @constants begin\nconst UNIT = 'km';\nconst PALETTE = ['#4cc9f0',  '#f72585',  '#ffb703',  '#80ed99',  '#b388eb',  '#ff7f51',  '#2ec4b6',  '#e9ff70',  '#ff99c8',  '#90e0ef',  '#f4a261',  '#a3b18a'];\n// @constants end\n\nconst theme = context.grafana.theme;\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst times = column('time');\nconst names = column('name');\nconst values = column('value');\n\nconst lines = new Map();\nnames.forEach((name, i) =\u003e {\n  if (!lines.has(name)) {\n    lines.set(name, []);\n  }\n  lines.get(name).push([times[i], values[i]]);\n});\nconst sorted = [...lines.keys()].sort();\n// Past eight lines a legend and a shared tooltip are noise: hover a line instead.\nconst few = sorted.length \u003c= 8;\nconst muted = theme.colors.text.secondary;\n\nreturn {\n  backgroundColor: 'transparent',\n  color: PALETTE,\n  tooltip: {\n    trigger: few ? 'axis' : 'item',\n    valueFormatter: (v) =\u003e (v == null ? '–' : `${Number(v).toLocaleString()} ${UNIT}`),\n  },\n  legend: { show: few, type: 'scroll', bottom: 0, textStyle: { color: muted } },\n  grid: { left: 8, right: 16, top: 28, bottom: few ? 32 : 8, containLabel: true },\n  xAxis: { type: 'time', axisLabel: { color: muted, hideOverlap: true } },\n  yAxis: {\n    type: 'value',\n    name: UNIT,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  series: sorted.map((name) =\u003e ({\n    name,\n    type: 'line',\n    data: lines.get(name),\n    showSymbol: false,\n    lineStyle: { width: 1.2 },\n    emphasis: { focus: 'series' },\n  })),\n};\n",
+                "getOption": "// One line per `name`, from a long frame (time, name, value), on a time axis\n// of its own: each tab of this dashboard covers different years, so its charts\n// do not follow the dashboard's time range. The colours are the map's: kepler\n// hands its palette out over the names in sorted order, and so does this.\n//\n// It also drives the dashboard through variables, each one switched off by\n// an empty name in the constants:\n// - PICK: a click on a line follows that animal; a click on the line of the\n//   animal followed lets it go.\n// - LO, HI: dragging across the chart picks a window of days, written as\n//   month-day so that it holds for any year; the toolbox clears it. The chart\n//   does not filter itself: it keeps the whole year the window is cut from.\n// - OFF: a click in the legend hides a line and writes the names hidden,\n//   comma separated, for the other panels to leave out.\n// - NOW: the map's playhead, drawn as a bar. It is read from the URL and only\n//   the bar moves, so playback never runs a query.\n// - TAG: hovering publishes the moment under the pointer on Grafana's shared\n//   cursor, and the map marks where each animal was then.\n// @constants begin\nconst UNIT = 'km';\nconst PALETTE = ['#4cc9f0',  '#f72585',  '#ffb703',  '#80ed99',  '#b388eb',  '#ff7f51',  '#2ec4b6',  '#e9ff70',  '#ff99c8',  '#90e0ef',  '#f4a261',  '#a3b18a'];\nconst PICK = 'bird';\nconst LO = 'g_lo';\nconst HI = 'g_hi';\nconst OFF = '';\nconst NOW = 'g_now';\nconst TAG = 'animal-movement-gulls';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst read = (name) =\u003e (name ? context.grafana.replaceVariables('${' + name + '}') : '');\n\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst times = column('time').map(Number);\nconst names = column('name');\nconst values = column('value');\n\nconst lines = new Map();\nnames.forEach((name, i) =\u003e {\n  if (!lines.has(name)) {\n    lines.set(name, []);\n  }\n  lines.get(name).push([times[i], values[i]]);\n});\nconst sorted = [...lines.keys()].sort();\n// Past eight lines a legend and a shared tooltip are noise: hover a line instead.\nconst few = sorted.length \u003c= 8;\n\nchart.off('click');\nif (PICK) {\n  chart.on('click', (event) =\u003e {\n    if (event.componentType !== 'series' || event.seriesId === 'now') {\n      return;\n    }\n    const next = read(PICK) === event.seriesName ? '' : event.seriesName;\n    location.partial({ ['var-' + PICK]: next }, true);\n  });\n}\n\n// The legend comes back from the variable on every redraw.\nconst hidden = OFF ? read(OFF).split(',').filter(Boolean) : [];\nchart.off('legendselectchanged');\nif (OFF) {\n  chart.on('legendselectchanged', (event) =\u003e {\n    const off = sorted.filter((name) =\u003e event.selected[name] === false);\n    location.partial({ ['var-' + OFF]: off.join(',') }, true);\n  });\n}\n\n// The window: whole days, never empty, never across New Year.\nconst DAY = 86400000;\nlet first = Infinity;\nfor (const t of times) {\n  first = Math.min(first, t);\n}\nconst year = Number.isFinite(first) ? new Date(first).getUTCFullYear() : 2000;\nconst monthDay = (ms) =\u003e new Date(ms).toISOString().slice(5, 10);\nconst dayOf = (md) =\u003e Date.parse(`${year}-${md}T00:00:00Z`);\nconst drawBrush = (range) =\u003e\n  chart.dispatchAction({\n    type: 'brush',\n    areas: range ? [{ brushType: 'lineX', xAxisIndex: 0, coordRange: range }] : [],\n  });\nconst publish = (range) =\u003e\n  location.partial(\n    { ['var-' + LO]: range ? monthDay(range[0]) : '', ['var-' + HI]: range ? monthDay(range[1] - DAY) : '' },\n    true\n  );\nchart.off('brushEnd');\nchart.off('brush');\nif (LO) {\n  chart.on('brushEnd', (event) =\u003e {\n    const area = event.areas[0];\n    if (!area || !area.coordRange) {\n      publish(undefined);\n      return;\n    }\n    const lo = Math.max(Math.floor(area.coordRange[0] / DAY) * DAY, Date.UTC(year, 0, 1));\n    const hi = Math.min(Math.max(Math.ceil(area.coordRange[1] / DAY) * DAY, lo + DAY), Date.UTC(year + 1, 0, 1));\n    publish([lo, hi]);\n    setTimeout(() =\u003e drawBrush([lo, hi]), 0);\n  });\n  chart.on('brush', (event) =\u003e {\n    if (event.command === 'clear') {\n      publish(undefined);\n    }\n  });\n  // Every redraw wipes the brush: draw it back from the variables, which is\n  // also how a shared link arrives with its window.\n  const current = [dayOf(read(LO)), dayOf(read(HI)) + DAY];\n  setTimeout(() =\u003e {\n    if (current.every(Number.isFinite)) {\n      drawBrush(current);\n    }\n  }, 0);\n}\n\n// The bar at the instant the map is playing.\nconst nowMs = () =\u003e {\n  const raw = NOW ? new URLSearchParams(location.getLocation().search).get('var-' + NOW) : null;\n  const ms = raw ? Date.parse(raw) : NaN;\n  return Number.isFinite(ms) ? ms : null;\n};\nconst nowLine = (at) =\u003e\n  at === null\n    ? { data: [] }\n    : {\n        symbol: 'none',\n        silent: true,\n        animation: false,\n        label: { show: false },\n        lineStyle: { color: theme.colors.text.primary, width: 1.5, type: 'solid' },\n        data: [{ xAxis: at }],\n      };\nlet drawnAt = nowMs();\nconst stopNow = NOW\n  ? location.getHistory().listen(() =\u003e {\n      const at = nowMs();\n      if (at !== drawnAt \u0026\u0026 !chart.isDisposed()) {\n        drawnAt = at;\n        chart.setOption({ series: [{ id: 'now', markLine: nowLine(at) }] }, { lazyUpdate: true });\n      }\n    })\n  : () =\u003e {};\n\n// The shared cursor, by hand: Business Charts takes no part in it. Whole\n// hours, so the map is asked again only when the hour changes; tagged, so the\n// chart never answers its own.\nconst bus = context.grafana.eventBus;\nconst zr = chart.getZr();\nlet published = null;\nconst hoverAt = (ms) =\u003e {\n  if (ms === published) {\n    return;\n  }\n  published = ms;\n  bus.publish(\n    ms === null\n      ? { type: 'data-hover-clear', payload: {}, tags: new Set([TAG]) }\n      : { type: 'data-hover', payload: { point: { time: ms } }, tags: new Set([TAG]) }\n  );\n};\nconst onMove = (event) =\u003e {\n  const at = [event.offsetX, event.offsetY];\n  // Dragging draws the brush: the pointer is not asking about a moment.\n  if (event.event?.buttons || !chart.containPixel({ gridIndex: 0 }, at)) {\n    hoverAt(null);\n    return;\n  }\n  const ms = Math.round(chart.convertFromPixel({ gridIndex: 0 }, at)[0] / 3600000) * 3600000;\n  hoverAt(Number.isFinite(ms) ? ms : null);\n};\nconst onLeave = () =\u003e hoverAt(null);\nif (TAG) {\n  zr.on('mousemove', onMove);\n  zr.on('globalout', onLeave);\n}\nconst stopHover = () =\u003e {\n  if (TAG) {\n    zr.off('mousemove', onMove);\n    zr.off('globalout', onLeave);\n    hoverAt(null);\n  }\n};\n\nconst option = {\n  animation: false,\n  backgroundColor: 'transparent',\n  color: PALETTE,\n  tooltip: {\n    trigger: few ? 'axis' : 'item',\n    valueFormatter: (v) =\u003e (v == null ? '–' : `${Number(v).toLocaleString()} ${UNIT}`),\n  },\n  legend: {\n    show: few,\n    type: 'scroll',\n    bottom: 0,\n    textStyle: { color: muted },\n    data: sorted,\n    selected: Object.fromEntries(sorted.map((name) =\u003e [name, !hidden.includes(name)])),\n  },\n  grid: { left: 8, right: 16, top: 30, bottom: few ? 32 : 8, containLabel: true },\n  xAxis: { type: 'time', axisLabel: { color: muted, hideOverlap: true } },\n  yAxis: {\n    type: 'value',\n    name: UNIT,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  series: [\n    ...sorted.map((name) =\u003e ({\n      name,\n      type: 'line',\n      data: lines.get(name),\n      showSymbol: false,\n      triggerLineEvent: Boolean(PICK),\n      lineStyle: { width: 1.2 },\n      emphasis: { focus: 'series' },\n    })),\n    // No data of its own: only the bar.\n    { id: 'now', type: 'line', data: [], silent: true, tooltip: { show: false }, markLine: nowLine(drawnAt) },\n  ],\n};\nif (LO) {\n  option.toolbox = {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: { brush: { type: ['lineX', 'clear'], title: { lineX: 'Pick a window of days', clear: 'Clear the window' } } },\n  };\n  option.brush = {\n    xAxisIndex: 0,\n    brushType: 'lineX',\n    brushMode: 'single',\n    transformable: true,\n    removeOnClick: false,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.14)', borderColor: muted, borderWidth: 1 },\n  };\n}\n\nreturn {\n  version: 2,\n  option,\n  unsubscribe: () =\u003e {\n    stopNow();\n    stopHover();\n  },\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "gulls-hours": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Kilometres flown by two-hour block (UTC) and month, within the window and\n-- for the bird followed; not narrowed by the cell picked here.\nWITH w AS (\n  SELECT coalesce(nullif($g_lo, ''), '01-01') AS lo, coalesce(nullif($g_hi, ''), '12-31') AS hi,\n         try_cast($g_hour AS INTEGER) AS hr, try_cast($g_month AS INTEGER) AS mo\n)\nSELECT month(time) AS month, hour(time) // 2 * 2 AS hour, round(sum(km)) AS value\nFROM $gulls, w\nWHERE ($bird = '' OR bird = $bird)\n  AND strftime(time, '%m-%d') BETWEEN w.lo AND w.hi\nGROUP BY ALL\nORDER BY month, hour"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Kilometres flown in each two-hour block of the day (UTC; Belgium is one or two hours ahead) and each month. Click a cell to keep that block of that month on the map, the figures and the table; click an hour or a month on the axes to keep it alone; click again to let go.",
+          "id": 5,
+          "links": [],
+          "title": "When they fly",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Kilometres by two-hour block of the day and by month, from a frame (month,\n// hour, value), the hour the block's start in UTC. A click on a cell keeps\n// that block of that month on the other panels; a click on an hour's label\n// keeps the block in every month, a click on a month's label the whole month;\n// the same click again lets it go. The cell or the row picked is outlined.\n// @constants begin\nconst UNIT = 'km';\nconst HOUR = 'g_hour';\nconst MONTH = 'g_month';\nconst COLOR = '#4cc9f0';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst read = (name) =\u003e context.grafana.replaceVariables('${' + name + '}');\nconst MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];\nconst HOURS = Array.from({ length: 12 }, (_, i) =\u003e String(i * 2).padStart(2, '0'));\n\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst months = column('month').map(Number);\nconst hours = column('hour').map(Number);\nconst values = column('value').map(Number);\n\nconst pickedHour = parseInt(read(HOUR), 10);\nconst pickedMonth = parseInt(read(MONTH), 10);\nconst isPicked = (h, m) =\u003e\n  (Number.isFinite(pickedHour) || Number.isFinite(pickedMonth)) \u0026\u0026\n  (!Number.isFinite(pickedHour) || pickedHour === h) \u0026\u0026\n  (!Number.isFinite(pickedMonth) || pickedMonth === m);\n\nlet top = 0;\nconst data = months.map((m, i) =\u003e {\n  top = Math.max(top, values[i]);\n  const picked = isPicked(hours[i], m);\n  return {\n    value: [hours[i] / 2, m - 1, values[i]],\n    itemStyle: picked ? { borderColor: theme.colors.text.primary, borderWidth: 2 } : undefined,\n  };\n});\n\nconst set = (hour, month) =\u003e {\n  const same = hour === (Number.isFinite(pickedHour) ? pickedHour : null) \u0026\u0026 month === (Number.isFinite(pickedMonth) ? pickedMonth : null);\n  location.partial(\n    {\n      ['var-' + HOUR]: same || hour === null ? '' : String(hour),\n      ['var-' + MONTH]: same || month === null ? '' : String(month),\n    },\n    true\n  );\n};\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  if (event.componentType === 'series') {\n    set(event.value[0] * 2, event.value[1] + 1);\n  } else if (event.componentType === 'xAxis') {\n    set(Number(event.value), null);\n  } else if (event.componentType === 'yAxis') {\n    set(null, MONTHS.indexOf(event.value) + 1);\n  }\n});\n\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: {\n    formatter: (p) =\u003e\n      `${MONTHS[p.value[1]]}, ${HOURS[p.value[0]]}:00–${String(p.value[0] * 2 + 2).padStart(2, '0')}:00 UTC\u003cbr/\u003e\u003cb\u003e${Number(p.value[2]).toLocaleString()} ${UNIT}\u003c/b\u003e`,\n  },\n  grid: { left: 8, right: 16, top: 8, bottom: 36, containLabel: true },\n  xAxis: {\n    type: 'category',\n    data: HOURS,\n    triggerEvent: true,\n    name: 'UTC',\n    nameLocation: 'end',\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitArea: { show: false },\n  },\n  yAxis: { type: 'category', data: MONTHS, inverse: true, triggerEvent: true, axisLabel: { color: muted } },\n  visualMap: {\n    min: 0,\n    max: Math.max(top, 1),\n    calculable: false,\n    orient: 'horizontal',\n    left: 'center',\n    bottom: 0,\n    itemHeight: 120,\n    itemWidth: 10,\n    textStyle: { color: muted },\n    text: [`${Math.round(top).toLocaleString()} ${UNIT}`, '0'],\n    inRange: { color: [theme.colors.background.secondary, COLOR] },\n  },\n  series: [{ type: 'heatmap', data, emphasis: { itemStyle: { borderColor: theme.colors.text.primary, borderWidth: 1 } } }],\n};\n",
                 "google": {
                   "callback": "gmapReady",
                   "key": ""
@@ -276,7 +353,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### Lesser black-backed gulls from Zeebrugge\nGulls GPS-tagged by [INBO](https://www.inbo.be/en) at their colony in the port of Zeebrugge, Belgium: up to 33 birds a year, a fix every few minutes, some wintering at home and some flying on to Iberia, Morocco or Mauritania. **Press play on the map's clock** to watch a year go by, each trail three days long; **click a bird in the table** to follow it alone; *All birds*, above the table, brings the others back. *Gull year* picks the year.",
+                "content": "### Lesser black-backed gulls from Zeebrugge\nGulls GPS-tagged by [INBO](https://www.inbo.be/en) at their colony in the port of Zeebrugge, Belgium: up to 33 birds a year, a fix every few minutes, some wintering at home and some flying on to Iberia, Morocco or Mauritania. **Press play** on the map's clock to watch the year go by; the bar on *Distance from the colony* follows it, and hovering the chart shows on the map where every bird was then. **Click a line** (or a bird in the table) to follow one bird; **pick a window of days** with the brush at the chart's top right, say the autumn migration; **click a cell** of *When they fly* for one time of day in one month. *Gull year* picks the year.",
                 "mode": "markdown"
               }
             },
@@ -302,7 +379,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Every bird, or the one picked in the table; trip_id groups a bird's\n-- positions, one every two hours, into one trail.\nSELECT bird AS trip_id, time, latitude, longitude, colony_km, km\nFROM $gulls\nWHERE $bird = '' OR bird = $bird\nORDER BY bird, time"
+                        "rawSql": "-- Every bird, or the one followed, within the window, time of day and month\n-- picked; trip_id groups a bird's positions, one every two hours, into a trail.\nWITH w AS (\n  SELECT coalesce(nullif($g_lo, ''), '01-01') AS lo, coalesce(nullif($g_hi, ''), '12-31') AS hi,\n         try_cast($g_hour AS INTEGER) AS hr, try_cast($g_month AS INTEGER) AS mo\n)\nSELECT bird AS trip_id, time, latitude, longitude, colony_km, km\nFROM $gulls, w\nWHERE ($bird = '' OR bird = $bird)\n  AND strftime(time, '%m-%d') BETWEEN w.lo AND w.hi\n  AND (w.hr IS NULL OR hour(time) // 2 * 2 = w.hr)\n  AND (w.mo IS NULL OR month(time) = w.mo)\nORDER BY bird, time"
                       },
                       "version": "v0"
                     },
@@ -331,8 +408,8 @@
                 "basemap": "openfreemap-dark",
                 "clickConfirm": false,
                 "followGrafanaTheme": false,
-                "hoverMaxAgeSeconds": 60,
-                "hoverSync": false,
+                "hoverMaxAgeSeconds": 21600,
+                "hoverSync": true,
                 "mapConfig": {
                   "config": {
                     "mapState": {
@@ -517,6 +594,8 @@
                 },
                 "peerTimeSync": false,
                 "places": {},
+                "playheadVariable": "g_now",
+                "publishIntervalMs": 500,
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table",
@@ -545,7 +624,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT count(DISTINCT bird)          AS \"Birds\",\n       sum(fixes)                     AS \"GPS fixes\",\n       round(sum(km))                 AS \"Km flown\",\n       round(max(colony_km))          AS \"Farthest, km\"\nFROM $gulls\nWHERE $bird = '' OR bird = $bird"
+                        "rawSql": "WITH w AS (\n  SELECT coalesce(nullif($g_lo, ''), '01-01') AS lo, coalesce(nullif($g_hi, ''), '12-31') AS hi,\n         try_cast($g_hour AS INTEGER) AS hr, try_cast($g_month AS INTEGER) AS mo\n)\nSELECT count(DISTINCT bird)          AS \"Birds\",\n       sum(fixes)                    AS \"GPS fixes\",\n       round(sum(km))                AS \"Km flown\",\n       round(max(colony_km))         AS \"Farthest, km\"\nFROM $gulls, w\nWHERE ($bird = '' OR bird = $bird)\n  AND strftime(time, '%m-%d') BETWEEN w.lo AND w.hi\n  AND (w.hr IS NULL OR hour(time) // 2 * 2 = w.hr)\n  AND (w.mo IS NULL OR month(time) = w.mo)"
                       },
                       "version": "v0"
                     },
@@ -557,7 +636,7 @@
               "transformations": []
             }
           },
-          "description": "Km flown adds up every fix to the next, before the map's thinning to one position every two hours. Farthest is from the colony.",
+          "description": "Within the window, time of day and month picked. Km flown adds up every fix to the next, before the map's thinning to one position every two hours. Farthest is from the colony.",
           "id": 3,
           "links": [],
           "title": "",
@@ -620,7 +699,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- With a jaguar picked: the kilometres between its fixes, day by day.\n-- Without: each country's median day, month by month.\nWITH d AS (\n  SELECT jaguar, country, time_bucket(INTERVAL 1 DAY, time) AS day, sum(km) AS km\n  FROM $jaguars\n  GROUP BY ALL\n)\nSELECT day AS time, jaguar AS name, round(km, 2) AS value\nFROM d WHERE $jaguar \u003c\u003e '' AND jaguar = $jaguar\nUNION ALL\nSELECT time_bucket(INTERVAL 1 MONTH, day) AS time, country AS name, round(median(km), 2) AS value\nFROM d WHERE $jaguar = ''\nGROUP BY ALL\nORDER BY name, time"
+                        "rawSql": "-- With a jaguar followed: the kilometres between its fixes, day by day.\n-- Without: each country's median day, month by month. Every country, whatever\n-- the legend says: the legend is where they are left out.\nWITH d AS (\n  SELECT jaguar, country, time_bucket(INTERVAL 1 DAY, time) AS day, any_value(day_km) AS km\n  FROM $jaguars\n  GROUP BY ALL\n)\nSELECT day AS time, jaguar AS name, round(km, 2) AS value\nFROM d WHERE $jaguar \u003c\u003e '' AND jaguar = $jaguar\nUNION ALL\nSELECT time_bucket(INTERVAL 1 MONTH, day) AS time, country AS name, round(median(km), 2) AS value\nFROM d WHERE $jaguar = ''\nGROUP BY ALL\nORDER BY name, time"
                       },
                       "version": "v0"
                     },
@@ -632,8 +711,8 @@
               "transformations": []
             }
           },
-          "description": "Kilometres between a jaguar's fixes, day by day, once a jaguar is picked; until then, each country's median day, month by month. Straight lines between fixes, so a floor on the real distance, and lower where collars fixed less often.",
-          "id": 9,
+          "description": "Each country's median day, month by month, or the jaguar followed day by day. Click a country in the legend to leave it out of the map, the figures and the tables; click the line of the jaguar followed to let it go. The bar is the map's clock.",
+          "id": 10,
           "links": [],
           "title": "Distance walked per day",
           "vizConfig": {
@@ -657,7 +736,84 @@
                   "key": "",
                   "plugin": "AMap.Scale,AMap.ToolBar"
                 },
-                "getOption": "// One line per `name`, from a long frame (time, name, value), on a time axis\n// of its own: each tab of this dashboard covers different years, so its charts\n// do not follow the dashboard's time range. The colours are the map's: kepler\n// hands its palette out over the names in sorted order, and so does this.\n// @constants begin\nconst UNIT = 'km';\nconst PALETTE = ['#4cc9f0',  '#f72585',  '#ffb703',  '#80ed99',  '#b388eb',  '#ff7f51',  '#2ec4b6',  '#e9ff70',  '#ff99c8',  '#90e0ef',  '#f4a261',  '#a3b18a'];\n// @constants end\n\nconst theme = context.grafana.theme;\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst times = column('time');\nconst names = column('name');\nconst values = column('value');\n\nconst lines = new Map();\nnames.forEach((name, i) =\u003e {\n  if (!lines.has(name)) {\n    lines.set(name, []);\n  }\n  lines.get(name).push([times[i], values[i]]);\n});\nconst sorted = [...lines.keys()].sort();\n// Past eight lines a legend and a shared tooltip are noise: hover a line instead.\nconst few = sorted.length \u003c= 8;\nconst muted = theme.colors.text.secondary;\n\nreturn {\n  backgroundColor: 'transparent',\n  color: PALETTE,\n  tooltip: {\n    trigger: few ? 'axis' : 'item',\n    valueFormatter: (v) =\u003e (v == null ? '–' : `${Number(v).toLocaleString()} ${UNIT}`),\n  },\n  legend: { show: few, type: 'scroll', bottom: 0, textStyle: { color: muted } },\n  grid: { left: 8, right: 16, top: 28, bottom: few ? 32 : 8, containLabel: true },\n  xAxis: { type: 'time', axisLabel: { color: muted, hideOverlap: true } },\n  yAxis: {\n    type: 'value',\n    name: UNIT,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  series: sorted.map((name) =\u003e ({\n    name,\n    type: 'line',\n    data: lines.get(name),\n    showSymbol: false,\n    lineStyle: { width: 1.2 },\n    emphasis: { focus: 'series' },\n  })),\n};\n",
+                "getOption": "// One line per `name`, from a long frame (time, name, value), on a time axis\n// of its own: each tab of this dashboard covers different years, so its charts\n// do not follow the dashboard's time range. The colours are the map's: kepler\n// hands its palette out over the names in sorted order, and so does this.\n//\n// It also drives the dashboard through variables, each one switched off by\n// an empty name in the constants:\n// - PICK: a click on a line follows that animal; a click on the line of the\n//   animal followed lets it go.\n// - LO, HI: dragging across the chart picks a window of days, written as\n//   month-day so that it holds for any year; the toolbox clears it. The chart\n//   does not filter itself: it keeps the whole year the window is cut from.\n// - OFF: a click in the legend hides a line and writes the names hidden,\n//   comma separated, for the other panels to leave out.\n// - NOW: the map's playhead, drawn as a bar. It is read from the URL and only\n//   the bar moves, so playback never runs a query.\n// - TAG: hovering publishes the moment under the pointer on Grafana's shared\n//   cursor, and the map marks where each animal was then.\n// @constants begin\nconst UNIT = 'km';\nconst PALETTE = ['#4cc9f0',  '#f72585',  '#ffb703',  '#80ed99',  '#b388eb',  '#ff7f51',  '#2ec4b6',  '#e9ff70',  '#ff99c8',  '#90e0ef',  '#f4a261',  '#a3b18a'];\nconst PICK = 'jaguar';\nconst LO = '';\nconst HI = '';\nconst OFF = 'j_off';\nconst NOW = 'j_now';\nconst TAG = 'animal-movement-jaguars';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst read = (name) =\u003e (name ? context.grafana.replaceVariables('${' + name + '}') : '');\n\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst times = column('time').map(Number);\nconst names = column('name');\nconst values = column('value');\n\nconst lines = new Map();\nnames.forEach((name, i) =\u003e {\n  if (!lines.has(name)) {\n    lines.set(name, []);\n  }\n  lines.get(name).push([times[i], values[i]]);\n});\nconst sorted = [...lines.keys()].sort();\n// Past eight lines a legend and a shared tooltip are noise: hover a line instead.\nconst few = sorted.length \u003c= 8;\n\nchart.off('click');\nif (PICK) {\n  chart.on('click', (event) =\u003e {\n    if (event.componentType !== 'series' || event.seriesId === 'now') {\n      return;\n    }\n    const next = read(PICK) === event.seriesName ? '' : event.seriesName;\n    location.partial({ ['var-' + PICK]: next }, true);\n  });\n}\n\n// The legend comes back from the variable on every redraw.\nconst hidden = OFF ? read(OFF).split(',').filter(Boolean) : [];\nchart.off('legendselectchanged');\nif (OFF) {\n  chart.on('legendselectchanged', (event) =\u003e {\n    const off = sorted.filter((name) =\u003e event.selected[name] === false);\n    location.partial({ ['var-' + OFF]: off.join(',') }, true);\n  });\n}\n\n// The window: whole days, never empty, never across New Year.\nconst DAY = 86400000;\nlet first = Infinity;\nfor (const t of times) {\n  first = Math.min(first, t);\n}\nconst year = Number.isFinite(first) ? new Date(first).getUTCFullYear() : 2000;\nconst monthDay = (ms) =\u003e new Date(ms).toISOString().slice(5, 10);\nconst dayOf = (md) =\u003e Date.parse(`${year}-${md}T00:00:00Z`);\nconst drawBrush = (range) =\u003e\n  chart.dispatchAction({\n    type: 'brush',\n    areas: range ? [{ brushType: 'lineX', xAxisIndex: 0, coordRange: range }] : [],\n  });\nconst publish = (range) =\u003e\n  location.partial(\n    { ['var-' + LO]: range ? monthDay(range[0]) : '', ['var-' + HI]: range ? monthDay(range[1] - DAY) : '' },\n    true\n  );\nchart.off('brushEnd');\nchart.off('brush');\nif (LO) {\n  chart.on('brushEnd', (event) =\u003e {\n    const area = event.areas[0];\n    if (!area || !area.coordRange) {\n      publish(undefined);\n      return;\n    }\n    const lo = Math.max(Math.floor(area.coordRange[0] / DAY) * DAY, Date.UTC(year, 0, 1));\n    const hi = Math.min(Math.max(Math.ceil(area.coordRange[1] / DAY) * DAY, lo + DAY), Date.UTC(year + 1, 0, 1));\n    publish([lo, hi]);\n    setTimeout(() =\u003e drawBrush([lo, hi]), 0);\n  });\n  chart.on('brush', (event) =\u003e {\n    if (event.command === 'clear') {\n      publish(undefined);\n    }\n  });\n  // Every redraw wipes the brush: draw it back from the variables, which is\n  // also how a shared link arrives with its window.\n  const current = [dayOf(read(LO)), dayOf(read(HI)) + DAY];\n  setTimeout(() =\u003e {\n    if (current.every(Number.isFinite)) {\n      drawBrush(current);\n    }\n  }, 0);\n}\n\n// The bar at the instant the map is playing.\nconst nowMs = () =\u003e {\n  const raw = NOW ? new URLSearchParams(location.getLocation().search).get('var-' + NOW) : null;\n  const ms = raw ? Date.parse(raw) : NaN;\n  return Number.isFinite(ms) ? ms : null;\n};\nconst nowLine = (at) =\u003e\n  at === null\n    ? { data: [] }\n    : {\n        symbol: 'none',\n        silent: true,\n        animation: false,\n        label: { show: false },\n        lineStyle: { color: theme.colors.text.primary, width: 1.5, type: 'solid' },\n        data: [{ xAxis: at }],\n      };\nlet drawnAt = nowMs();\nconst stopNow = NOW\n  ? location.getHistory().listen(() =\u003e {\n      const at = nowMs();\n      if (at !== drawnAt \u0026\u0026 !chart.isDisposed()) {\n        drawnAt = at;\n        chart.setOption({ series: [{ id: 'now', markLine: nowLine(at) }] }, { lazyUpdate: true });\n      }\n    })\n  : () =\u003e {};\n\n// The shared cursor, by hand: Business Charts takes no part in it. Whole\n// hours, so the map is asked again only when the hour changes; tagged, so the\n// chart never answers its own.\nconst bus = context.grafana.eventBus;\nconst zr = chart.getZr();\nlet published = null;\nconst hoverAt = (ms) =\u003e {\n  if (ms === published) {\n    return;\n  }\n  published = ms;\n  bus.publish(\n    ms === null\n      ? { type: 'data-hover-clear', payload: {}, tags: new Set([TAG]) }\n      : { type: 'data-hover', payload: { point: { time: ms } }, tags: new Set([TAG]) }\n  );\n};\nconst onMove = (event) =\u003e {\n  const at = [event.offsetX, event.offsetY];\n  // Dragging draws the brush: the pointer is not asking about a moment.\n  if (event.event?.buttons || !chart.containPixel({ gridIndex: 0 }, at)) {\n    hoverAt(null);\n    return;\n  }\n  const ms = Math.round(chart.convertFromPixel({ gridIndex: 0 }, at)[0] / 3600000) * 3600000;\n  hoverAt(Number.isFinite(ms) ? ms : null);\n};\nconst onLeave = () =\u003e hoverAt(null);\nif (TAG) {\n  zr.on('mousemove', onMove);\n  zr.on('globalout', onLeave);\n}\nconst stopHover = () =\u003e {\n  if (TAG) {\n    zr.off('mousemove', onMove);\n    zr.off('globalout', onLeave);\n    hoverAt(null);\n  }\n};\n\nconst option = {\n  animation: false,\n  backgroundColor: 'transparent',\n  color: PALETTE,\n  tooltip: {\n    trigger: few ? 'axis' : 'item',\n    valueFormatter: (v) =\u003e (v == null ? '–' : `${Number(v).toLocaleString()} ${UNIT}`),\n  },\n  legend: {\n    show: few,\n    type: 'scroll',\n    bottom: 0,\n    textStyle: { color: muted },\n    data: sorted,\n    selected: Object.fromEntries(sorted.map((name) =\u003e [name, !hidden.includes(name)])),\n  },\n  grid: { left: 8, right: 16, top: 30, bottom: few ? 32 : 8, containLabel: true },\n  xAxis: { type: 'time', axisLabel: { color: muted, hideOverlap: true } },\n  yAxis: {\n    type: 'value',\n    name: UNIT,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  series: [\n    ...sorted.map((name) =\u003e ({\n      name,\n      type: 'line',\n      data: lines.get(name),\n      showSymbol: false,\n      triggerLineEvent: Boolean(PICK),\n      lineStyle: { width: 1.2 },\n      emphasis: { focus: 'series' },\n    })),\n    // No data of its own: only the bar.\n    { id: 'now', type: 'line', data: [], silent: true, tooltip: { show: false }, markLine: nowLine(drawnAt) },\n  ],\n};\nif (LO) {\n  option.toolbox = {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: { brush: { type: ['lineX', 'clear'], title: { lineX: 'Pick a window of days', clear: 'Clear the window' } } },\n  };\n  option.brush = {\n    xAxisIndex: 0,\n    brushType: 'lineX',\n    brushMode: 'single',\n    transformable: true,\n    removeOnClick: false,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.14)', borderColor: muted, borderWidth: 1 },\n  };\n}\n\nreturn {\n  version: 2,\n  option,\n  unsubscribe: () =\u003e {\n    stopNow();\n    stopHover();\n  },\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "jaguars-hist": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Jaguar-days by kilometres walked between fixes, in 1 km bars, the last one\n-- 30 km and over; for the jaguar followed and the countries left, not\n-- narrowed by the range picked here.\nWITH w AS (SELECT string_split($j_off, ',') AS off),\nd AS (\n  SELECT DISTINCT jaguar, time::DATE AS day, day_km\n  FROM $jaguars, w\n  WHERE ($jaguar = '' OR jaguar = $jaguar) AND NOT list_contains(w.off, country)\n)\nSELECT b.bin, count(d.day) AS n\nFROM range(0, 31) AS b(bin)\nLEFT JOIN d ON least(floor(d.day_km), 30) = b.bin\nGROUP BY b.bin\nORDER BY b.bin"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "How many jaguar-days walked each distance, in kilometres between fixes. Drag across it to keep only those days on the map, the figures and the tables; the toolbox clears it.",
+          "id": 11,
+          "links": [],
+          "title": "Kilometres a day",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// A histogram from a frame (bin, n), `bin` each bar's lower edge, the last bar\n// open-ended. Dragging across it writes the range picked to two variables\n// (LO and HI, HI empty when the range runs off the end); the other panels\n// keep only what falls inside it, and this one keeps showing everything, so\n// the range can be moved. The toolbox clears it.\n// @constants begin\nconst UNIT = 'km a day';\nconst COUNTED = 'jaguar-days';\nconst LO = 'j_lo';\nconst HI = 'j_hi';\nconst STEP = 1;\nconst COLOR = '#f72585';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst read = (name) =\u003e context.grafana.replaceVariables('${' + name + '}');\n\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst bins = column('bin').map(Number);\nconst counts = column('n').map(Number);\nconst last = bins.length - 1;\nconst label = (i) =\u003e (i === last ? `${bins[i]}+` : `${bins[i]}–${bins[i] + STEP}`);\n\n// Bars are slots on a category axis; ranges come and go as slots.\nconst slotOf = (value) =\u003e Math.max(0, Math.min(last, Math.round(value / STEP)));\nconst drawBrush = (slots) =\u003e\n  chart.dispatchAction({\n    type: 'brush',\n    areas: slots ? [{ brushType: 'lineX', xAxisIndex: 0, coordRange: slots }] : [],\n  });\nconst publish = (slots) =\u003e\n  location.partial(\n    {\n      ['var-' + LO]: slots ? String(bins[slots[0]]) : '',\n      ['var-' + HI]: slots \u0026\u0026 slots[1] \u003c last ? String(bins[slots[1]] + STEP) : '',\n    },\n    true\n  );\n\nchart.off('brushEnd');\nchart.off('brush');\nchart.on('brushEnd', (event) =\u003e {\n  const area = event.areas[0];\n  if (!area || !area.coordRange) {\n    publish(undefined);\n    return;\n  }\n  const slots = [Math.max(0, Math.round(area.coordRange[0])), Math.min(last, Math.round(area.coordRange[1]))];\n  publish(slots);\n  setTimeout(() =\u003e drawBrush(slots), 0);\n});\nchart.on('brush', (event) =\u003e {\n  if (event.command === 'clear') {\n    publish(undefined);\n  }\n});\n\nconst lo = parseFloat(read(LO));\nconst hi = parseFloat(read(HI));\nsetTimeout(() =\u003e {\n  chart.dispatchAction({ type: 'takeGlobalCursor', key: 'brush', brushOption: { brushType: 'lineX', brushMode: 'single' } });\n  if (Number.isFinite(lo)) {\n    drawBrush([slotOf(lo), Number.isFinite(hi) ? slotOf(hi - STEP) : last]);\n  }\n}, 0);\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  tooltip: { trigger: 'axis', formatter: (items) =\u003e `${label(items[0].dataIndex)} ${UNIT}\u003cbr/\u003e\u003cb\u003e${items[0].value.toLocaleString()}\u003c/b\u003e ${COUNTED}` },\n  toolbox: {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: { brush: { type: ['lineX', 'clear'], title: { lineX: 'Pick a range', clear: 'Clear the range' } } },\n  },\n  brush: {\n    xAxisIndex: 0,\n    brushType: 'lineX',\n    brushMode: 'single',\n    transformable: true,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.14)', borderColor: muted, borderWidth: 1 },\n    outOfBrush: { colorAlpha: 0.3 },\n  },\n  grid: { left: 8, right: 16, top: 30, bottom: 8, containLabel: true },\n  xAxis: {\n    type: 'category',\n    data: bins.map((b, i) =\u003e (i === last ? `${b}+` : String(b))),\n    name: UNIT,\n    nameLocation: 'end',\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted, interval: 4 },\n    axisTick: { show: false },\n  },\n  yAxis: {\n    type: 'value',\n    name: COUNTED,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  series: [{ type: 'bar', data: counts, barCategoryGap: '8%', itemStyle: { color: COLOR } }],\n};\n",
                 "google": {
                   "callback": "gmapReady",
                   "key": ""
@@ -691,7 +847,7 @@
             }
           },
           "description": "",
-          "id": 6,
+          "id": 7,
           "links": [],
           "title": "",
           "transparent": true,
@@ -709,7 +865,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### Jaguars of the Neotropics\nThe [Jaguar Movement Database](https://doi.org/10.1002/ecy.2379): 117 jaguars GPS-collared by 20 projects from Sonora to Argentina between 1999 and 2016, most of them in Brazil's and Paraguay's Pantanal, where the map opens. Each trail is a week long; **press play** to run the clock, and **zoom out** for the other study areas, or **click one in the table** to fly there. **Click a jaguar** in its table to follow it alone and see how far it walked each day; *All jaguars* brings the others back.",
+                "content": "### Jaguars of the Neotropics\nThe [Jaguar Movement Database](https://doi.org/10.1002/ecy.2379): 117 jaguars GPS-collared by 20 projects from Sonora to Argentina between 1999 and 2016, most of them in Brazil's and Paraguay's Pantanal, where the map opens. Each trail is a week long; **press play** and the bar on *Distance walked per day* follows the clock. **Drag across** *Kilometres a day* to keep only the days of long walks, or the quiet ones; **click a country** in the chart's legend to leave it out; **click a study area** to fly there, or **a jaguar** (or its line) to follow it alone.",
                 "mode": "markdown"
               }
             },
@@ -735,7 +891,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- One row per jaguar, the longest walkers first, under a row for all of\n-- them, whose click lets the picked jaguar go.\nWITH j AS (\n  SELECT jaguar, any_value(study) AS study, any_value(country) AS country,\n         min(time) AS t0, max(time) AS t1, sum(fixes) AS fixes, sum(km) AS km,\n         median(latitude) AS lat, median(longitude) AS lng\n  FROM $jaguars\n  GROUP BY jaguar\n),\nrows AS (\n  SELECT 0 AS o, 'All jaguars' AS label, '' AS jaguar, '' AS study, '' AS country,\n         min(t0) AS t0, max(t1) AS t1, sum(fixes) AS fixes, sum(km) AS km,\n         NULL::DOUBLE AS lat, NULL::DOUBLE AS lng, NULL::DOUBLE AS per_day\n  FROM j\n  UNION ALL\n  SELECT 1, jaguar, jaguar, study, country, t0, t1, fixes, km, lat, lng,\n         km / greatest(date_diff('day', t0, t1), 1)\n  FROM j\n)\nSELECT label                              AS \"Jaguar\",\n       study                              AS \"Study area\",\n       country                            AS \"Country\",\n       strftime(t0, '%Y-%m-%d')           AS \"First fix\",\n       strftime(t1, '%Y-%m-%d')           AS \"Last fix\",\n       fixes                              AS \"GPS fixes\",\n       round(km)                          AS \"Km walked\",\n       round(per_day, 1)                  AS \"Km per day\",\n       jaguar,\n       round(lat, 4)                      AS lat,\n       round(lng, 4)                      AS lng\nFROM rows\nORDER BY o, km DESC"
+                        "rawSql": "-- One row per jaguar, the longest walkers first, under a row for all of\n-- them, whose click lets the jaguar followed go.\nWITH w AS (\n  SELECT string_split($j_off, ',') AS off,\n         coalesce(try_cast($j_lo AS DOUBLE), 0) AS lo,\n         coalesce(try_cast($j_hi AS DOUBLE), 'infinity'::DOUBLE) AS hi\n),\nj AS (\n  SELECT jaguar, any_value(study) AS study, any_value(country) AS country,\n         min(time) AS t0, max(time) AS t1, count(DISTINCT time::DATE) AS jdays,\n         sum(fixes) AS fixes, sum(km) AS km, median(latitude) AS lat, median(longitude) AS lng\n  FROM $jaguars, w\n  WHERE NOT list_contains(w.off, country)\n  AND day_km \u003e= w.lo AND day_km \u003c w.hi\n  GROUP BY jaguar\n),\nrows AS (\n  SELECT 0 AS o, 'All jaguars' AS label, '' AS jaguar, '' AS study, '' AS country,\n         min(t0) AS t0, max(t1) AS t1, sum(jdays) AS jdays, sum(fixes) AS fixes, sum(km) AS km,\n         NULL::DOUBLE AS lat, NULL::DOUBLE AS lng\n  FROM j\n  UNION ALL\n  SELECT 1, jaguar, jaguar, study, country, t0, t1, jdays, fixes, km, lat, lng FROM j\n)\nSELECT label                              AS \"Jaguar\",\n       study                              AS \"Study area\",\n       country                            AS \"Country\",\n       strftime(t0, '%Y-%m-%d')           AS \"First fix\",\n       strftime(t1, '%Y-%m-%d')           AS \"Last fix\",\n       jdays                              AS \"Days\",\n       fixes                              AS \"GPS fixes\",\n       round(km)                          AS \"Km walked\",\n       round(km / greatest(jdays, 1), 1)  AS \"Km a day\",\n       jaguar                             AS jaguar_id,\n       round(lat, 4)                      AS lat,\n       round(lng, 4)                      AS lng\nFROM rows\nORDER BY o, km DESC"
                       },
                       "version": "v0"
                     },
@@ -747,8 +903,8 @@
               "transformations": []
             }
           },
-          "description": "Click a jaguar to follow it alone, and the map flies to it; All jaguars brings the others back. Km walked adds up the straight lines between fixes, a floor on the real distance.",
-          "id": 11,
+          "description": "In the countries left and within the range of kilometres a day picked. Click a jaguar to follow it alone, and the map flies to it; All jaguars brings the others back.",
+          "id": 13,
           "links": [],
           "title": "Jaguars",
           "vizConfig": {
@@ -789,7 +945,7 @@
                         "value": [
                           {
                             "title": "Follow this jaguar",
-                            "url": "/d/animal-movement-tracking${__url.params:exclude:var-jaguar,var-jlat,var-jlng}\u0026var-jaguar=${__data.fields.jaguar}\u0026var-jlat=${__data.fields.lat}\u0026var-jlng=${__data.fields.lng}"
+                            "url": "/d/animal-movement-tracking${__url.params:exclude:var-jaguar,var-jlat,var-jlng}\u0026var-jaguar=${__data.fields.jaguar_id}\u0026var-jlat=${__data.fields.lat}\u0026var-jlng=${__data.fields.lng}"
                           }
                         ]
                       }
@@ -798,7 +954,7 @@
                   {
                     "matcher": {
                       "id": "byName",
-                      "options": "jaguar"
+                      "options": "jaguar_id"
                     },
                     "properties": [
                       {
@@ -860,7 +1016,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Every jaguar, or the one picked in a table; one position every two hours\n-- at most, as often as its collar fixed one. Coloured by country.\nSELECT jaguar AS trip_id, study, country, time, latitude, longitude\nFROM $jaguars\nWHERE $jaguar = '' OR jaguar = $jaguar\nORDER BY jaguar, time"
+                        "rawSql": "-- Every jaguar, or the one followed, in the countries left and on the days\n-- within the range of kilometres picked; one position every two hours at most.\n-- With a range picked, each day is a trail of its own, so the days left out\n-- are not drawn as jumps. Coloured by country.\nWITH w AS (\n  SELECT string_split($j_off, ',') AS off,\n         coalesce(try_cast($j_lo AS DOUBLE), 0) AS lo,\n         coalesce(try_cast($j_hi AS DOUBLE), 'infinity'::DOUBLE) AS hi\n)\nSELECT CASE WHEN w.lo = 0 AND w.hi = 'infinity'::DOUBLE THEN jaguar\n            ELSE jaguar || ' ' || strftime(time, '%Y-%m-%d') END AS trip_id,\n       jaguar, study, country, time, latitude, longitude, day_km\nFROM $jaguars, w\nWHERE ($jaguar = '' OR jaguar = $jaguar)\n  AND NOT list_contains(w.off, country)\n  AND day_km \u003e= w.lo AND day_km \u003c w.hi\nORDER BY trip_id, time"
                       },
                       "version": "v0"
                     },
@@ -873,7 +1029,7 @@
             }
           },
           "description": "",
-          "id": 7,
+          "id": 8,
           "links": [],
           "title": "",
           "vizConfig": {
@@ -889,8 +1045,8 @@
                 "basemap": "grafana-satellite",
                 "clickConfirm": false,
                 "followGrafanaTheme": false,
-                "hoverMaxAgeSeconds": 60,
-                "hoverSync": false,
+                "hoverMaxAgeSeconds": 86400,
+                "hoverSync": true,
                 "mapConfig": {
                   "config": {
                     "mapState": {
@@ -935,13 +1091,16 @@
                           "fieldsToShow": {
                             "grafana-A": [
                               {
-                                "name": "trip_id"
+                                "name": "jaguar"
                               },
                               {
                                 "name": "study"
                               },
                               {
                                 "name": "country"
+                              },
+                              {
+                                "name": "day_km"
                               }
                             ]
                           }
@@ -1078,6 +1237,8 @@
                 },
                 "peerTimeSync": false,
                 "places": {},
+                "playheadVariable": "j_now",
+                "publishIntervalMs": 500,
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table",
@@ -1114,7 +1275,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT count(DISTINCT jaguar)   AS \"Jaguars\",\n       sum(fixes)               AS \"GPS fixes\",\n       round(sum(km))           AS \"Km walked\",\n       count(DISTINCT study)    AS \"Study areas\"\nFROM $jaguars\nWHERE $jaguar = '' OR jaguar = $jaguar"
+                        "rawSql": "WITH w AS (\n  SELECT string_split($j_off, ',') AS off,\n         coalesce(try_cast($j_lo AS DOUBLE), 0) AS lo,\n         coalesce(try_cast($j_hi AS DOUBLE), 'infinity'::DOUBLE) AS hi\n)\nSELECT count(DISTINCT jaguar)                      AS \"Jaguars\",\n       count(DISTINCT (jaguar, time::DATE))        AS \"Jaguar-days\",\n       round(sum(km))                              AS \"Km walked\",\n       count(DISTINCT study)                       AS \"Study areas\"\nFROM $jaguars, w\nWHERE ($jaguar = '' OR jaguar = $jaguar)\n  AND NOT list_contains(w.off, country)\n  AND day_km \u003e= w.lo AND day_km \u003c w.hi"
                       },
                       "version": "v0"
                     },
@@ -1126,8 +1287,8 @@
               "transformations": []
             }
           },
-          "description": "Km walked adds up the straight lines between fixes, so it is a floor: a jaguar walks more than the straight lines between its fixes, which some collars took hours apart.",
-          "id": 8,
+          "description": "In the countries left and within the range of kilometres a day picked. Km walked adds up the straight lines between fixes, so it is a floor: a jaguar walks more than that, and some collars fixed hours apart.",
+          "id": 9,
           "links": [],
           "title": "",
           "vizConfig": {
@@ -1189,7 +1350,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- One row per project, the largest first; a click flies the map to it.\nSELECT study                                  AS \"Study area\",\n       any_value(country)                     AS \"Country\",\n       count(DISTINCT jaguar)                 AS \"Jaguars\",\n       sum(fixes)                             AS \"GPS fixes\",\n       min(year(time)) || '–' || max(year(time)) AS \"Years\",\n       round(median(latitude), 4)             AS lat,\n       round(median(longitude), 4)            AS lng\nFROM $jaguars\nGROUP BY study\nORDER BY \"GPS fixes\" DESC"
+                        "rawSql": "-- One row per project, the largest first; a click flies the map to it.\nWITH w AS (\n  SELECT string_split($j_off, ',') AS off,\n         coalesce(try_cast($j_lo AS DOUBLE), 0) AS lo,\n         coalesce(try_cast($j_hi AS DOUBLE), 'infinity'::DOUBLE) AS hi\n)\nSELECT study                                  AS \"Study area\",\n       any_value(country)                     AS \"Country\",\n       count(DISTINCT jaguar)                 AS \"Jaguars\",\n       sum(fixes)                             AS \"GPS fixes\",\n       min(year(time)) || '–' || max(year(time)) AS \"Years\",\n       round(median(latitude), 4)             AS lat,\n       round(median(longitude), 4)            AS lng\nFROM $jaguars, w\nWHERE NOT list_contains(w.off, country)\n  AND day_km \u003e= w.lo AND day_km \u003c w.hi\nGROUP BY study\nORDER BY \"GPS fixes\" DESC"
                       },
                       "version": "v0"
                     },
@@ -1201,8 +1362,8 @@
               "transformations": []
             }
           },
-          "description": "Click a study area to fly the map to it.",
-          "id": 10,
+          "description": "In the countries left and within the range of kilometres a day picked. Click a study area to fly the map to it.",
+          "id": 12,
           "links": [],
           "title": "Study areas",
           "vizConfig": {
@@ -1296,7 +1457,7 @@
             }
           },
           "description": "",
-          "id": 12,
+          "id": 14,
           "links": [],
           "title": "",
           "transparent": true,
@@ -1314,7 +1475,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### Ocean predators of the Pacific\n[Tagging of Pacific Predators](https://gtopp.org/) (TOPP): 1,243 sharks, tunas, whales, seals, turtles and seabirds of 30 species tagged by the Stanford Block Lab from 2002 to 2018, one position a day, from the [Animal Telemetry Network](https://ioos.noaa.gov/project/atn/). Pick species in *Ocean species*; each trail is a month long. **Press play** on the map's clock, and **click a tag** in the table to follow one animal alone; *All tags* brings the others back.",
+                "content": "### Ocean predators of the Pacific\n[Tagging of Pacific Predators](https://gtopp.org/) (TOPP): 1,243 sharks, tunas, whales, seals, turtles and seabirds of 30 species tagged by the Stanford Block Lab from 2002 to 2018, one position a day, from the [Animal Telemetry Network](https://ioos.noaa.gov/project/atn/). Pick species in *Ocean species*; each trail is a month long, and **press play** to see the bar on *Latitude through the year* follow the season. **Click a month** on that chart to keep it alone, every year of it: blue whales north in summer, south in winter. **Click a species** in its legend to leave it out, and **a tag** in the table to follow one animal.",
                 "mode": "markdown"
               }
             },
@@ -1340,7 +1501,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Where each species spends the year: the median latitude of its daily\n-- positions, month by month, every year together.\nSELECT month(time) AS month, species AS name, round(median(latitude), 1) AS value\nFROM $ocean\nWHERE $tag = '' OR tag = $tag\nGROUP BY ALL\nORDER BY name, month"
+                        "rawSql": "-- Where each species spends the year: the median latitude of its daily\n-- positions, month by month, every year together. Every species and month,\n-- whatever is picked: both are picked here.\nSELECT month(time) AS month, species AS name, round(median(latitude), 1) AS value\nFROM $ocean\nWHERE ($tag = '' OR tag = $tag)\nGROUP BY ALL\nORDER BY name, month"
                       },
                       "version": "v0"
                     },
@@ -1352,8 +1513,8 @@
               "transformations": []
             }
           },
-          "description": "The median latitude of each species' daily positions, month by month, every year together: the seasons of a migration.",
-          "id": 15,
+          "description": "The median latitude of each species' daily positions, month by month, every year together: the seasons of a migration. Click a month to keep it alone on the map, the figures and the table, and again to let it go; click a species in the legend to leave it out. The solid bar is the month the map is playing.",
+          "id": 17,
           "links": [],
           "title": "Latitude through the year",
           "vizConfig": {
@@ -1377,7 +1538,7 @@
                   "key": "",
                   "plugin": "AMap.Scale,AMap.ToolBar"
                 },
-                "getOption": "// One line per `name` across the twelve months, from a long frame (month,\n// name, value). The colours are the map's: kepler hands its palette out over\n// the names in sorted order, and so does this.\n// @constants begin\nconst UNIT = '°N';\nconst PALETTE = ['#4cc9f0',  '#f72585',  '#ffb703',  '#80ed99',  '#b388eb',  '#ff7f51',  '#2ec4b6',  '#e9ff70',  '#ff99c8',  '#90e0ef',  '#f4a261',  '#a3b18a'];\n// @constants end\n\nconst theme = context.grafana.theme;\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst months = column('month');\nconst names = column('name');\nconst values = column('value');\nconst LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];\n\nconst lines = new Map();\nnames.forEach((name, i) =\u003e {\n  if (!lines.has(name)) {\n    lines.set(name, new Array(12).fill(null));\n  }\n  lines.get(name)[Number(months[i]) - 1] = values[i];\n});\nconst sorted = [...lines.keys()].sort();\nconst muted = theme.colors.text.secondary;\n\nreturn {\n  backgroundColor: 'transparent',\n  color: PALETTE,\n  tooltip: {\n    trigger: 'axis',\n    valueFormatter: (v) =\u003e (v == null ? '–' : `${Number(v).toLocaleString()}${UNIT}`),\n  },\n  legend: { type: 'scroll', bottom: 0, textStyle: { color: muted } },\n  grid: { left: 8, right: 16, top: 28, bottom: 32, containLabel: true },\n  xAxis: { type: 'category', data: LABELS, boundaryGap: false, axisLabel: { color: muted } },\n  yAxis: {\n    type: 'value',\n    name: UNIT,\n    scale: true,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  series: sorted.map((name) =\u003e ({\n    name,\n    type: 'line',\n    data: lines.get(name),\n    connectNulls: true,\n    symbolSize: 4,\n    emphasis: { focus: 'series' },\n  })),\n};\n",
+                "getOption": "// One line per `name` across the twelve months, from a long frame (month,\n// name, value). The colours are the map's: kepler hands its palette out over\n// the names in sorted order, and so does this.\n//\n// It drives the dashboard through variables:\n// - MONTH: a click anywhere in a month's column keeps that month on the other\n//   panels, every year of it; a click on the same month lets it go.\n// - OFF: a click in the legend hides a line and writes the names hidden,\n//   comma separated, for the other panels to leave out.\n// - NOW: the month the map is playing, as a bar, read from the URL; only the\n//   bar moves, so playback never runs a query.\n// @constants begin\nconst UNIT = '°N';\nconst PALETTE = ['#4cc9f0',  '#f72585',  '#ffb703',  '#80ed99',  '#b388eb',  '#ff7f51',  '#2ec4b6',  '#e9ff70',  '#ff99c8',  '#90e0ef',  '#f4a261',  '#a3b18a'];\nconst MONTH = 'o_month';\nconst OFF = 'o_off';\nconst NOW = 'o_now';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst read = (name) =\u003e context.grafana.replaceVariables('${' + name + '}');\nconst LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];\n\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst months = column('month');\nconst names = column('name');\nconst values = column('value');\n\nconst lines = new Map();\nnames.forEach((name, i) =\u003e {\n  if (!lines.has(name)) {\n    lines.set(name, new Array(12).fill(null));\n  }\n  lines.get(name)[Number(months[i]) - 1] = values[i];\n});\nconst sorted = [...lines.keys()].sort();\n\nconst hidden = read(OFF).split(',').filter(Boolean);\nchart.off('legendselectchanged');\nchart.on('legendselectchanged', (event) =\u003e {\n  const off = sorted.filter((name) =\u003e event.selected[name] === false);\n  location.partial({ ['var-' + OFF]: off.join(',') }, true);\n});\n\n// A month, by its whole column rather than by its points, which are small.\nconst picked = parseInt(read(MONTH), 10);\nconst zr = chart.getZr();\nconst onClick = (event) =\u003e {\n  const at = [event.offsetX, event.offsetY];\n  if (!chart.containPixel({ gridIndex: 0 }, at)) {\n    return;\n  }\n  const index = Math.round(chart.convertFromPixel({ gridIndex: 0 }, at)[0]);\n  if (index \u003e= 0 \u0026\u0026 index \u003c 12) {\n    location.partial({ ['var-' + MONTH]: picked === index + 1 ? '' : String(index + 1) }, true);\n  }\n};\nzr.on('click', onClick);\n\nconst nowMonth = () =\u003e {\n  const raw = new URLSearchParams(location.getLocation().search).get('var-' + NOW);\n  const ms = raw ? Date.parse(raw) : NaN;\n  return Number.isFinite(ms) ? new Date(ms).getUTCMonth() : null;\n};\nconst bars = (now) =\u003e ({\n  symbol: 'none',\n  silent: true,\n  animation: false,\n  data: [\n    ...(Number.isFinite(picked)\n      ? [{ xAxis: picked - 1, lineStyle: { color: theme.colors.primary.text, width: 2, type: 'dashed' }, label: { show: true, formatter: 'picked', color: muted } }]\n      : []),\n    ...(now === null ? [] : [{ xAxis: now, lineStyle: { color: theme.colors.text.primary, width: 1.5, type: 'solid' }, label: { show: false } }]),\n  ],\n});\nlet drawnAt = nowMonth();\nconst stopNow = location.getHistory().listen(() =\u003e {\n  const at = nowMonth();\n  if (at !== drawnAt \u0026\u0026 !chart.isDisposed()) {\n    drawnAt = at;\n    chart.setOption({ series: [{ id: 'marks', markLine: bars(at) }] }, { lazyUpdate: true });\n  }\n});\n\nconst option = {\n  animation: false,\n  backgroundColor: 'transparent',\n  color: PALETTE,\n  tooltip: {\n    trigger: 'axis',\n    valueFormatter: (v) =\u003e (v == null ? '–' : `${Number(v).toLocaleString()}${UNIT}`),\n  },\n  legend: {\n    type: 'scroll',\n    bottom: 0,\n    textStyle: { color: muted },\n    data: sorted,\n    selected: Object.fromEntries(sorted.map((name) =\u003e [name, !hidden.includes(name)])),\n  },\n  grid: { left: 8, right: 16, top: 30, bottom: 32, containLabel: true },\n  xAxis: { type: 'category', data: LABELS, boundaryGap: false, axisLabel: { color: muted } },\n  yAxis: {\n    type: 'value',\n    name: UNIT,\n    scale: true,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  series: [\n    ...sorted.map((name) =\u003e ({\n      name,\n      type: 'line',\n      data: lines.get(name),\n      connectNulls: true,\n      symbolSize: 4,\n      emphasis: { focus: 'series' },\n    })),\n    { id: 'marks', type: 'line', data: [], silent: true, tooltip: { show: false }, markLine: bars(drawnAt) },\n  ],\n};\n\nreturn {\n  version: 2,\n  option,\n  unsubscribe: () =\u003e {\n    stopNow();\n    zr.off('click', onClick);\n  },\n};\n",
                 "google": {
                   "callback": "gmapReady",
                   "key": ""
@@ -1417,7 +1578,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- The species picked, or the one animal picked in the table; one position a\n-- day, longitudes past 100°E moved 360° west so the Pacific stays in one piece.\nSELECT tag AS trip_id, species, time, latitude, longitude, km\nFROM $ocean\nWHERE $tag = '' OR tag = $tag\nORDER BY tag, time"
+                        "rawSql": "-- The species picked and left in the legend, or the one animal followed, in\n-- the month picked; one position a day, longitudes past 100°E moved 360° west\n-- so the Pacific stays in one piece. With a month picked, each year's is a\n-- trail of its own, so the rest of the year is not drawn as one jump.\nWITH w AS (\n  SELECT string_split($o_off, ',') AS off, try_cast($o_month AS INTEGER) AS mo\n)\nSELECT CASE WHEN w.mo IS NULL THEN tag ELSE tag || ' ' || year(time) END AS trip_id,\n       tag, species, time, latitude, longitude, km\nFROM $ocean, w\nWHERE ($tag = '' OR tag = $tag)\n  AND NOT list_contains(w.off, species)\n  AND (w.mo IS NULL OR month(time) = w.mo)\nORDER BY trip_id, time"
                       },
                       "version": "v0"
                     },
@@ -1430,7 +1591,7 @@
             }
           },
           "description": "",
-          "id": 13,
+          "id": 15,
           "links": [],
           "title": "",
           "vizConfig": {
@@ -1492,7 +1653,7 @@
                           "fieldsToShow": {
                             "grafana-A": [
                               {
-                                "name": "trip_id"
+                                "name": "tag"
                               },
                               {
                                 "name": "species"
@@ -1635,6 +1796,8 @@
                 },
                 "peerTimeSync": false,
                 "places": {},
+                "playheadVariable": "o_now",
+                "publishIntervalMs": 500,
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table",
@@ -1676,7 +1839,7 @@
             }
           },
           "description": "Every species in TOPP, picked or not: what there is to pick in Ocean species.",
-          "id": 16,
+          "id": 18,
           "links": [],
           "title": "What TOPP tagged",
           "vizConfig": {
@@ -1734,7 +1897,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT count(DISTINCT tag)      AS \"Animals\",\n       count(*)                 AS \"Positions\",\n       round(sum(km))           AS \"Km travelled\",\n       count(DISTINCT species)  AS \"Species\"\nFROM $ocean\nWHERE $tag = '' OR tag = $tag"
+                        "rawSql": "WITH w AS (\n  SELECT string_split($o_off, ',') AS off, try_cast($o_month AS INTEGER) AS mo\n)\nSELECT count(DISTINCT tag)      AS \"Animals\",\n       count(*)                 AS \"Positions\",\n       round(sum(km))           AS \"Km travelled\",\n       count(DISTINCT species)  AS \"Species\"\nFROM $ocean, w\nWHERE ($tag = '' OR tag = $tag)\n  AND NOT list_contains(w.off, species)\n  AND (w.mo IS NULL OR month(time) = w.mo)"
                       },
                       "version": "v0"
                     },
@@ -1746,8 +1909,8 @@
               "transformations": []
             }
           },
-          "description": "One position per animal and day. Km travelled adds up the straight lines between them.",
-          "id": 14,
+          "description": "The species left in the legend, in the month picked. One position per animal and day; Km travelled adds up the straight lines between them.",
+          "id": 16,
           "links": [],
           "title": "",
           "vizConfig": {
@@ -1809,7 +1972,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- One row per animal of the species picked, the longest journeys first, under\n-- a row for all of them, whose click lets the picked animal go.\nWITH t AS (\n  SELECT tag, any_value(species) AS species, min(time) AS t0, max(time) AS t1,\n         count(*) AS positions, sum(km) AS km, max(latitude) AS north, min(latitude) AS south\n  FROM $ocean\n  GROUP BY tag\n),\nrows AS (\n  SELECT 0 AS o, 'All tags' AS label, '' AS tag, '' AS species, min(t0) AS t0, max(t1) AS t1,\n         sum(positions) AS positions, sum(km) AS km, max(north) AS north, min(south) AS south\n  FROM t\n  UNION ALL\n  SELECT 1, tag, tag, species, t0, t1, positions, km, north, south FROM t\n)\nSELECT label                              AS \"Tag\",\n       species                            AS \"Species\",\n       strftime(t0, '%Y-%m-%d')           AS \"First position\",\n       strftime(t1, '%Y-%m-%d')           AS \"Last position\",\n       positions                          AS \"Positions\",\n       round(km)                          AS \"Km travelled\",\n       round(north, 1) + 0.0              AS \"Northernmost, °N\",\n       round(south, 1) + 0.0              AS \"Southernmost, °N\",\n       tag                                AS tag_id\nFROM rows\nORDER BY o, km DESC"
+                        "rawSql": "-- One row per animal of the species left, in the month picked, the longest\n-- journeys first, under a row for all of them, whose click lets the animal\n-- followed go.\nWITH w AS (\n  SELECT string_split($o_off, ',') AS off, try_cast($o_month AS INTEGER) AS mo\n),\nt AS (\n  SELECT tag, any_value(species) AS species, min(time) AS t0, max(time) AS t1,\n         count(*) AS positions, sum(km) AS km, max(latitude) AS north, min(latitude) AS south\n  FROM $ocean, w\n  WHERE NOT list_contains(w.off, species)\n  AND (w.mo IS NULL OR month(time) = w.mo)\n  GROUP BY tag\n),\nrows AS (\n  SELECT 0 AS o, 'All tags' AS label, '' AS tag, '' AS species, min(t0) AS t0, max(t1) AS t1,\n         sum(positions) AS positions, sum(km) AS km, max(north) AS north, min(south) AS south\n  FROM t\n  UNION ALL\n  SELECT 1, tag, tag, species, t0, t1, positions, km, north, south FROM t\n)\nSELECT label                              AS \"Tag\",\n       species                            AS \"Species\",\n       strftime(t0, '%Y-%m-%d')           AS \"First position\",\n       strftime(t1, '%Y-%m-%d')           AS \"Last position\",\n       positions                          AS \"Positions\",\n       round(km)                          AS \"Km travelled\",\n       round(north, 1) + 0.0              AS \"Northernmost, °N\",\n       round(south, 1) + 0.0              AS \"Southernmost, °N\",\n       tag                                AS tag_id\nFROM rows\nORDER BY o, km DESC"
                       },
                       "version": "v0"
                     },
@@ -1821,8 +1984,8 @@
               "transformations": []
             }
           },
-          "description": "Click a tag to follow that animal alone on the map; All tags brings the others back.",
-          "id": 17,
+          "description": "The species left, in the month picked. Click a tag to follow that animal alone on the map; All tags brings the others back.",
+          "id": 19,
           "links": [],
           "title": "Tags",
           "vizConfig": {
@@ -1959,7 +2122,7 @@
                                     "kind": "ElementReference",
                                     "name": "gulls-distance"
                                   },
-                                  "height": 7,
+                                  "height": 14,
                                   "width": 8,
                                   "x": 16,
                                   "y": 8
@@ -1970,12 +2133,25 @@
                                 "spec": {
                                   "element": {
                                     "kind": "ElementReference",
+                                    "name": "gulls-hours"
+                                  },
+                                  "height": 10,
+                                  "width": 10,
+                                  "x": 0,
+                                  "y": 22
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
                                     "name": "gulls-birds"
                                   },
-                                  "height": 7,
-                                  "width": 8,
-                                  "x": 16,
-                                  "y": 15
+                                  "height": 10,
+                                  "width": 14,
+                                  "x": 10,
+                                  "y": 22
                                 }
                               }
                             ]
@@ -2062,7 +2238,7 @@
                                 "spec": {
                                   "element": {
                                     "kind": "ElementReference",
-                                    "name": "jaguars-studies"
+                                    "name": "jaguars-hist"
                                   },
                                   "height": 7,
                                   "width": 8,
@@ -2075,11 +2251,24 @@
                                 "spec": {
                                   "element": {
                                     "kind": "ElementReference",
+                                    "name": "jaguars-studies"
+                                  },
+                                  "height": 9,
+                                  "width": 9,
+                                  "x": 0,
+                                  "y": 22
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
                                     "name": "jaguars-list"
                                   },
-                                  "height": 8,
-                                  "width": 24,
-                                  "x": 0,
+                                  "height": 9,
+                                  "width": 15,
+                                  "x": 9,
                                   "y": 22
                                 }
                               }
@@ -2382,7 +2571,7 @@
                   "editorMode": "code",
                   "format": 1,
                   "rawQuery": true,
-                  "rawSql": "-- Server side, once per visit: the Jaguar Movement Database (Morato et al.\n-- 2018, Ecology; CC0), 117 jaguars GPS-collared by 20 projects from Mexico to\n-- Argentina, 1999 to 2016. Zenodo has it as a ZIP: GDAL reads the CSV inside\n-- it by ranges of the gateway's month-long cached copy. Timestamps are local\n-- and month/day/two-digit year. One position per jaguar every two hours, with\n-- the fixes and the kilometres between fixes in those two hours.\nWITH raw AS (\n  SELECT \"individual.local.identifier (ID)\" AS jaguar,\n         trim(regexp_replace(\"study.name\", '^[Jj]aguar_', '')) AS study,\n         country,\n         strptime(timestamp, '%m/%d/%y %H:%M') AS t,\n         \"location.lat\"::DOUBLE AS lat, \"location.long\"::DOUBLE AS lon\n  FROM ST_Read('/vsizip//vsicurl/http://feeds/zenodo/records/5001568/files/DataS1.zip/DataS1/jaguar_movement_data.csv')\n),\nleg AS (\n  SELECT *, 2 * 6371.0088 * asin(sqrt(\n           pow(sin(radians(lat - lag(lat) OVER w) / 2), 2)\n           + cos(radians(lat)) * cos(radians(lag(lat) OVER w)) * pow(sin(radians(lon - lag(lon) OVER w) / 2), 2))) AS km\n  FROM raw WINDOW w AS (PARTITION BY jaguar ORDER BY t)\n)\nSELECT 'J' || lpad(jaguar, 3, '0') AS jaguar, any_value(study) AS study, any_value(country) AS country,\n       min(t) AS time, round(arg_min(lat, t), 5) AS latitude, round(arg_min(lon, t), 5) AS longitude,\n       count(*) AS fixes, round(coalesce(sum(km), 0), 3) AS km\nFROM leg\nGROUP BY jaguar, time_bucket(INTERVAL 2 HOUR, t)\nORDER BY jaguar, time",
+                  "rawSql": "-- Server side, once per visit: the Jaguar Movement Database (Morato et al.\n-- 2018, Ecology; CC0), 117 jaguars GPS-collared by 20 projects from Mexico to\n-- Argentina, 1999 to 2016. Zenodo has it as a ZIP: GDAL reads the CSV inside\n-- it by ranges of the gateway's month-long cached copy. Timestamps are local\n-- and month/day/two-digit year. One position per jaguar every two hours, with\n-- the fixes and the kilometres between fixes in those two hours, and the\n-- kilometres of the whole day (day_km), which the dashboard filters days on.\nWITH raw AS (\n  SELECT \"individual.local.identifier (ID)\" AS jaguar,\n         trim(regexp_replace(\"study.name\", '^[Jj]aguar_', '')) AS study,\n         country,\n         strptime(timestamp, '%m/%d/%y %H:%M') AS t,\n         \"location.lat\"::DOUBLE AS lat, \"location.long\"::DOUBLE AS lon\n  FROM ST_Read('/vsizip//vsicurl/http://feeds/zenodo/records/5001568/files/DataS1.zip/DataS1/jaguar_movement_data.csv')\n),\nleg AS (\n  SELECT *, 2 * 6371.0088 * asin(sqrt(\n           pow(sin(radians(lat - lag(lat) OVER w) / 2), 2)\n           + cos(radians(lat)) * cos(radians(lag(lat) OVER w)) * pow(sin(radians(lon - lag(lon) OVER w) / 2), 2))) AS km\n  FROM raw WINDOW w AS (PARTITION BY jaguar ORDER BY t)\n),\nslot AS (\n  SELECT 'J' || lpad(jaguar, 3, '0') AS jaguar, any_value(study) AS study, any_value(country) AS country,\n         min(t) AS time, round(arg_min(lat, t), 5) AS latitude, round(arg_min(lon, t), 5) AS longitude,\n         count(*) AS fixes, coalesce(sum(km), 0) AS km\n  FROM leg\n  GROUP BY jaguar, time_bucket(INTERVAL 2 HOUR, t)\n)\nSELECT jaguar, study, country, time, latitude, longitude, fixes, round(km, 3) AS km,\n       round(sum(km) OVER (PARTITION BY jaguar, time::DATE), 2) AS day_km\nFROM slot\nORDER BY jaguar, time",
                   "refId": "jaguars"
                 },
                 "type": "datasource"
@@ -2552,7 +2741,7 @@
             "value": ""
           },
           "hide": "hideVariable",
-          "label": "Bird (map click or table row)",
+          "label": "Gulls: bird followed",
           "name": "bird",
           "query": "",
           "skipUrlSync": false
@@ -2566,7 +2755,7 @@
             "value": ""
           },
           "hide": "hideVariable",
-          "label": "Jaguar (map click or table row)",
+          "label": "Jaguars: jaguar followed",
           "name": "jaguar",
           "query": "",
           "skipUrlSync": false
@@ -2608,8 +2797,176 @@
             "value": ""
           },
           "hide": "hideVariable",
-          "label": "Ocean tag (map click or table row)",
+          "label": "Ocean: animal followed",
           "name": "tag",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Gulls: first day of the window, month-day",
+          "name": "g_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Gulls: last day of the window, month-day",
+          "name": "g_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Gulls: two-hour block picked, its first hour UTC",
+          "name": "g_hour",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Gulls: month picked",
+          "name": "g_month",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Gulls: the map's clock",
+          "name": "g_now",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Jaguars: countries left out",
+          "name": "j_off",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Jaguars: fewest km a day",
+          "name": "j_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Jaguars: most km a day",
+          "name": "j_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Jaguars: the map's clock",
+          "name": "j_now",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Ocean: species left out",
+          "name": "o_off",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Ocean: month picked",
+          "name": "o_month",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Ocean: the map's clock",
+          "name": "o_now",
           "query": "",
           "skipUrlSync": false
         }
