@@ -1,4 +1,4 @@
-# The stack's two images, tagged the way compose.yaml runs them.
+# The stack's images, tagged the way compose.yaml runs them.
 # Platforms and push are added by the release workflow (P3).
 # Note: bake also loads compose.yaml from this directory; keep its targets parseable.
 
@@ -11,7 +11,7 @@ variable "REGISTRY" {
 }
 
 group "default" {
-  targets = ["grafana", "titiler"]
+  targets = ["grafana", "titiler", "recorder"]
 }
 
 target "grafana" {
@@ -27,4 +27,12 @@ target "titiler" {
   context = "images/titiler"
   tags    = ["${REGISTRY}/pacha-titiler:${STACK_VERSION}"]
   labels  = { "org.opencontainers.image.version" = STACK_VERSION }
+}
+
+target "recorder" {
+  context  = "images/recorder"
+  # The feeds it records, baked in: recorder/feeds/.
+  contexts = { feeds = "recorder/feeds" }
+  tags     = ["${REGISTRY}/pacha-recorder:${STACK_VERSION}"]
+  labels   = { "org.opencontainers.image.version" = STACK_VERSION }
 }

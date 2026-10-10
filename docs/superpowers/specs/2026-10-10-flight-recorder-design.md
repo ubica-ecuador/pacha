@@ -61,7 +61,7 @@ datasource's own init settings (`allow_persistent_secrets = false`,
 ## Design
 
 ```
-api.adsb.lol ──► gateway  /adsblol/world   (cache 60 s, lock on)
+api.adsb.lol ──► gateway  /adsblol/world   (cache 55 s, lock on)
                     │
           ┌─────────┴──────────┐
           ▼                    ▼
@@ -90,7 +90,10 @@ DuckDB cannot touch local files.
 
 - `proxy_pass` to `/v2/lat/0/lon/0/dist/20000`, asked for gzip and stored
   that way, `gunzip on` for clients that do not ask (as TriMet).
-- `proxy_cache_valid 200 60s`, `proxy_cache_lock on`, key `$uri`.
+- `proxy_cache_valid 200 55s`, `proxy_cache_lock on`, key `$uri`. Not 60 s:
+  the recorder polls on the minute, and the copy its previous poll fetched,
+  stored a second or so after that minute, would still be fresh. At 60 s every
+  other poll got the same snapshot again (seen on the running stack).
 - A `User-Agent` naming Pacha and its repo URL.
 - Room for a key through envsubst, like FRED, should adsb.lol start asking
   for one. Not set today.
@@ -106,7 +109,11 @@ unless someone turns it on. Without it the live panels work and the history
 panels say there is no recording.
 
 **Feeds as SQL.** Each feed is `recorder/feeds/<name>.sql`, a `SELECT` over
-`read_json('http://feeds/…')`, with its interval in a header comment. Only
+`read_json(getvariable('source'))`, with its source URL and interval in header
+comments. The recorder downloads the source itself, whole, in one GET, and
+hands DuckDB the local file: DuckDB's own HTTP reads cache a file by its URL,
+and a feed that changed size under that cache came back as malformed JSON a
+poll in four, then as a fatal error that stopped the process. Only
 `flights.sql` exists. Its columns:
 
 | column       | type        | from                                        |
@@ -132,12 +139,15 @@ row whose position has not changed since the previous poll. After a restart
 the first poll may repeat one row per aircraft; harmless.
 
 **Writing.** Two levels, every write to a `.tmp` name and then renamed, so a
-reader never sees half a file and the `*.parquet` glob never matches one:
+reader never sees half a file. Days are plain dates, not `day=…`: DuckDB reads
+`day=` in a path as a hive partition and adds a `day` column, which made a
+merged hour one column wider than its minutes.
 
-- Every minute: `flights/day=2026-10-10/h14-m0315.parquet`.
+- Every minute: `flights/2026-10-10/h14-m0315.parquet`.
 - When the hour closes: the minute files merge into
-  `flights/day=2026-10-10/h14.parquet`, zstd, sorted by `cell, hex, ts`, then
-  deleted. Sorted by cell, the row-group statistics let DuckDB skip what is
+  `flights/2026-10-10/h14.parquet`, zstd, sorted by `cell, hex, ts`. The
+  manifest stops naming the minute files at once; they are deleted on the
+  next poll, so a reader holding the previous manifest still finds them. Sorted by cell, the row-group statistics let DuckDB skip what is
   outside a drawn area; by `ts` within, what is outside the time range.
 - On start, any closed hour still in minute files is merged first.
 
@@ -146,15 +156,16 @@ reader never sees half a file and the `*.parquet` glob never matches one:
 `{"url", "from", "to"}`, the URL as Grafana reaches it
 (`http://feeds/recordings/flights/…`) and the time span its rows cover.
 
-**Polls log.** `flights_polls/day=…/…parquet`: `ts`, HTTP status, rows
-received, rows written. It tells "no traffic" from "no recording", and backs
+**Polls log.** `flights/polls.parquet`, rewritten every poll: `ts`, status,
+rows received, rows written, error. It tells "no traffic" from "no recording", and backs
 the healthcheck.
 
-**Retention.** `RECORDER_RETENTION_DAYS=7`: older `day=` directories are
-deleted after each merge.
+**Retention.** `RECORDER_RETENTION_DAYS=7`: older day directories leave the
+manifest, then are deleted on the next poll.
 
 **Health.** Healthy when the last successful poll is under three intervals
-old.
+old. A fatal DuckDB error ends the process, and compose restarts it
+(`restart: unless-stopped`).
 
 **Configuration** (`.env.example`): `COMPOSE_PROFILES=recorder` to turn it
 on, `RECORDER_INTERVAL=60`, `RECORDER_RETENTION_DAYS=7`.
@@ -191,12 +202,15 @@ WHERE ts BETWEEN $__timeFrom() AND $__timeTo()
 `All` selected, refreshed on time range change:
 
 ```sql
-SELECT url FROM read_json('http://feeds/recordings/flights/manifest.json')
+SELECT url FROM read_json('http://feeds/recordings/flights/manifest.json',
+  columns = {url: 'VARCHAR', "from": 'TIMESTAMPTZ', "to": 'TIMESTAMPTZ'})
 WHERE "to" >= $__timeFrom() AND "from" <= $__timeTo()
 UNION ALL SELECT 'http://feeds/recordings/flights-empty.parquet'
 ```
 
-The empty file is always in the list, so a range with no recording returns no
+The columns are explicit because a recorder that has just started writes
+`[]`, from which DuckDB detects no columns at all. The empty file is always in
+the list, so a range with no recording returns no
 rows instead of failing. A week is at most 168 hourly files and 60 minute
 files: a query of about 20 KB.
 

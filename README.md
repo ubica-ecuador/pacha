@@ -46,9 +46,16 @@ each save to it. Folders, tags and conventions: [dashboards/README.md](dashboard
 | `grafana` | Grafana 13.2.1 with the plugins baked in         | `/`                               |
 | `titiler` | Tiles for COG, Zarr and Icechunk                 | `/titiler/`                       |
 | `mcp`     | [mcp-grafana](https://github.com/grafana/mcp-grafana) for AI agents | `http://127.0.0.1:8000/mcp`, `Authorization: Bearer $PACHA_MCP_TOKEN` |
+| `recorder` | Keeps live feeds as Parquet for history panels; off unless `COMPOSE_PROFILES=recorder` | `http://feeds/recordings/` (inside the stack) |
 
 Plugins and DuckDB's extensions are part of the image, so nothing is downloaded when the stack
 starts. The dashboards read their data where it is published.
+
+The recorder is what gives air-traffic-world its history: every minute it keeps what adsb.lol
+said, about 9,000 aircraft, and keeps a week of it, by default. That is one request a minute to
+adsb.lol around the clock and up to a few GB of disk in the `recordings` volume, which is why it
+runs only when `COMPOSE_PROFILES=recorder` is set (see `.env.example`). Without it the live
+panels work and the history panels are empty.
 
 ## Working on the Kepler panel
 

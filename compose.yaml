@@ -87,6 +87,32 @@ services:
       retries: 60
       start_period: 30s
 
+  # Keeps what a live feed said, as Parquet, for the history panels: today
+  # adsb.lol's aircraft, behind air-traffic-world. One request a minute, around
+  # the clock, so it runs only when asked for: COMPOSE_PROFILES=recorder. It
+  # reads the feed through the gateway, sharing its cache with the live panels,
+  # and Grafana reads the recordings back through the gateway too.
+  recorder:
+    profiles: [recorder]
+    build:
+      context: images/recorder
+      additional_contexts:
+        feeds: recorder/feeds
+    image: ghcr.io/ubica-ecuador/pacha-recorder:${STACK_VERSION:-dev}
+    # It stops on a fatal DuckDB error rather than go on recording nothing.
+    restart: unless-stopped
+    environment:
+      RECORDER_INTERVAL: ${RECORDER_INTERVAL:-60}
+      RECORDER_RETENTION_DAYS: ${RECORDER_RETENTION_DAYS:-7}
+    volumes:
+      - recordings:/var/lib/recorder
+    networks:
+      default:
+        aliases: [pacha-recorder]
+    depends_on:
+      gateway:
+        condition: service_healthy
+
   gateway:
     image: nginx:1.27-alpine
     ports:
