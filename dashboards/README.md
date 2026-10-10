@@ -27,7 +27,8 @@ needs it; the other facets change only with the stack.
   `business-table`, `business-text`.
 - **Theme and behaviour:** `seismic`, `mobility`, `transit`, `energy`,
   `air-quality`, `gps`, `weather`, `migration`, `maritime`, `aviation`,
-  `network`, `space`, `live` (feeds that reload by themselves).
+  `network`, `space`, `wildlife`, `live` (feeds that reload by
+  themselves).
 
 Every Plus dashboard carries `plus`: filter what needs Plus with it.
 

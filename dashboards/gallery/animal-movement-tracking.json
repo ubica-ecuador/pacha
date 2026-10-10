@@ -1,0 +1,2609 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "animal-movement-tracking"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Animals on the move, from three open datasets: lesser black-backed gulls from Zeebrugge (INBO), jaguars across the Neotropics (Jaguar Movement Database) and sharks, tunas, whales, seals and turtles of the Pacific (TOPP, Animal Telemetry Network). Animated trails, distances and who went farthest.",
+    "editable": true,
+    "elements": {
+      "about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 18,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### About the data\nThree open datasets of animals tracked by GPS or satellite, each read where it is published, through the stack's gateway, which keeps a copy for a month: none of them changes. DuckDB on the server reads each one once per visit and hands the browser a thinned copy; [Chaski](https://github.com/ubica-ecuador/chaski) runs every query on the page there.\n\n| Tab | Dataset | Publisher | Licence | Here |\n|---|---|---|---|---|\n| Gulls | [LBBG_ADULT – Lesser black-backed gulls breeding in Belgium](https://zenodo.org/records/22083084) (2022–2025) | INBO, Research Institute for Nature and Forest; Movebank study, Zenodo | CC0 1.0 | One position per bird every two hours; kilometres from every fix |\n| Jaguars | [Jaguar Movement Database](https://doi.org/10.5061/dryad.2dh0223), Morato et al. 2018, *Ecology* 99: 1691 | 20 research projects; Dryad, Zenodo copy | CC0 1.0 | One position per jaguar every two hours |\n| Ocean | [IOOS ATN Trackline Database, Stanford Block Lab](https://atn.ioos.us/erddap/tabledap/stanford_import_ssm_public.html) (TOPP, 2002–2018) | Animal Telemetry Network, NOAA IOOS, on ERDDAP | Free use and redistribution, not for legal use | Tracks smoothed by a state-space model; one position per animal and day |\n\n**Distances** are straight lines between fixes on a sphere, so they are a floor on what an animal travelled; fewer fixes, a lower floor. **The gulls' colony** is the median of all their positions in June. **Ocean longitudes** past 100°E are moved 360° west, so tracks across the date line draw as one line on a Pacific map.\n\n**Not here:** the jaguars' sex, age and weight ship in the same archive as a spreadsheet misnamed `.csv`, which the reader cannot open from inside the ZIP. Movebank, the largest store of animal tracks, needs an account to download, so only studies also published on Zenodo or Dryad can join.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "gulls-birds": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- One row per bird of the year, the farthest travellers first, under a row\n-- for all of them, whose click lets the picked bird go.\nWITH b AS (\n  SELECT bird, max(colony_km) AS far, min(latitude) AS south, sum(km) AS km,\n         sum(fixes) AS fixes, min(time) AS t0, max(time) AS t1\n  FROM $gulls\n  GROUP BY bird\n),\nrows AS (\n  SELECT 0 AS o, 'All birds' AS label, '' AS bird, max(far) AS far, min(south) AS south,\n         sum(km) AS km, sum(fixes) AS fixes, min(t0) AS t0, max(t1) AS t1\n  FROM b\n  UNION ALL\n  SELECT 1, bird, bird, far, south, km, fixes, t0, t1 FROM b\n)\nSELECT label                           AS \"Bird\",\n       round(far)                      AS \"Farthest, km\",\n       round(south, 1)                 AS \"Southernmost, °N\",\n       round(km)                       AS \"Km flown\",\n       fixes                           AS \"GPS fixes\",\n       strftime(t0, '%Y-%m-%d')        AS \"First fix\",\n       strftime(t1, '%Y-%m-%d')        AS \"Last fix\",\n       bird\nFROM rows\nORDER BY o, far DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Click a bird to follow it alone on the map and in the chart; All birds brings the others back.",
+          "id": 5,
+          "links": [],
+          "title": "Birds",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Bird"
+                    },
+                    "properties": [
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Follow this bird",
+                            "url": "/d/animal-movement-tracking${__url.params:exclude:var-bird}\u0026var-bird=${__data.fields.bird}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "bird"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "gulls-distance": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- How far each bird got from the colony, day by day: its farthest position\n-- that day. The colony is the median of every position in June.\nSELECT time_bucket(INTERVAL 1 DAY, time) AS time, bird AS name, max(colony_km) AS value\nFROM $gulls\nWHERE $bird = '' OR bird = $bird\nGROUP BY ALL\nORDER BY name, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each bird's farthest position from the colony, day by day. The colony is the median of all the birds' positions in June, mid-breeding season. Hover a line to name its bird.",
+          "id": 4,
+          "links": [],
+          "title": "Distance from the colony",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// One line per `name`, from a long frame (time, name, value), on a time axis\n// of its own: each tab of this dashboard covers different years, so its charts\n// do not follow the dashboard's time range. The colours are the map's: kepler\n// hands its palette out over the names in sorted order, and so does this.\n// @constants begin\nconst UNIT = 'km';\nconst PALETTE = ['#4cc9f0',  '#f72585',  '#ffb703',  '#80ed99',  '#b388eb',  '#ff7f51',  '#2ec4b6',  '#e9ff70',  '#ff99c8',  '#90e0ef',  '#f4a261',  '#a3b18a'];\n// @constants end\n\nconst theme = context.grafana.theme;\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst times = column('time');\nconst names = column('name');\nconst values = column('value');\n\nconst lines = new Map();\nnames.forEach((name, i) =\u003e {\n  if (!lines.has(name)) {\n    lines.set(name, []);\n  }\n  lines.get(name).push([times[i], values[i]]);\n});\nconst sorted = [...lines.keys()].sort();\n// Past eight lines a legend and a shared tooltip are noise: hover a line instead.\nconst few = sorted.length \u003c= 8;\nconst muted = theme.colors.text.secondary;\n\nreturn {\n  backgroundColor: 'transparent',\n  color: PALETTE,\n  tooltip: {\n    trigger: few ? 'axis' : 'item',\n    valueFormatter: (v) =\u003e (v == null ? '–' : `${Number(v).toLocaleString()} ${UNIT}`),\n  },\n  legend: { show: few, type: 'scroll', bottom: 0, textStyle: { color: muted } },\n  grid: { left: 8, right: 16, top: 28, bottom: few ? 32 : 8, containLabel: true },\n  xAxis: { type: 'time', axisLabel: { color: muted, hideOverlap: true } },\n  yAxis: {\n    type: 'value',\n    name: UNIT,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  series: sorted.map((name) =\u003e ({\n    name,\n    type: 'line',\n    data: lines.get(name),\n    showSymbol: false,\n    lineStyle: { width: 1.2 },\n    emphasis: { focus: 'series' },\n  })),\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "gulls-intro": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Lesser black-backed gulls from Zeebrugge\nGulls GPS-tagged by [INBO](https://www.inbo.be/en) at their colony in the port of Zeebrugge, Belgium: up to 33 birds a year, a fix every few minutes, some wintering at home and some flying on to Iberia, Morocco or Mauritania. **Press play on the map's clock** to watch a year go by, each trail three days long; **click a bird in the table** to follow it alone; *All birds*, above the table, brings the others back. *Gull year* picks the year.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "gulls-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every bird, or the one picked in the table; trip_id groups a bird's\n-- positions, one every two hours, into one trail.\nSELECT bird AS trip_id, time, latitude, longitude, colony_km, km\nFROM $gulls\nWHERE $bird = '' OR bird = $bird\nORDER BY bird, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 2,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "openfreemap-dark",
+                "clickConfirm": false,
+                "followGrafanaTheme": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": 41.5,
+                      "longitude": -3.0,
+                      "pitch": 0,
+                      "zoom": 3.7
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": false
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "currentTime": 1695600000000,
+                        "speed": 0.25
+                      },
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "trip_id"
+                              },
+                              {
+                                "name": "colony_km"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerOrder": [
+                        "trails",
+                        "positions"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              76,
+                              201,
+                              240
+                            ],
+                            "columnMode": "table",
+                            "columns": {
+                              "id": "trip_id",
+                              "lat": "latitude",
+                              "lng": "longitude",
+                              "timestamp": "time"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Gulls",
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#4cc9f0",
+                                  "#f72585",
+                                  "#ffb703",
+                                  "#80ed99",
+                                  "#b388eb",
+                                  "#ff7f51",
+                                  "#2ec4b6",
+                                  "#e9ff70",
+                                  "#ff99c8",
+                                  "#90e0ef",
+                                  "#f4a261",
+                                  "#a3b18a"
+                                ],
+                                "name": "Animals",
+                                "type": "custom"
+                              },
+                              "fadeTrail": true,
+                              "opacity": 0.95,
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "thickness": 2.5,
+                              "trailLength": 259200
+                            }
+                          },
+                          "id": "trails",
+                          "type": "trip",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "trip_id",
+                              "type": "string"
+                            },
+                            "colorScale": "ordinal",
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              76,
+                              201,
+                              240
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Every position",
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#4cc9f0",
+                                  "#f72585",
+                                  "#ffb703",
+                                  "#80ed99",
+                                  "#b388eb",
+                                  "#ff7f51",
+                                  "#2ec4b6",
+                                  "#e9ff70",
+                                  "#ff99c8",
+                                  "#90e0ef",
+                                  "#f4a261",
+                                  "#a3b18a"
+                                ],
+                                "name": "Animals",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "opacity": 0.18,
+                              "outline": false,
+                              "radius": 1.2,
+                              "radiusRange": [
+                                0,
+                                50
+                              ]
+                            }
+                          },
+                          "id": "positions",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "trip_id",
+                              "type": "string"
+                            },
+                            "colorScale": "ordinal",
+                            "sizeField": null,
+                            "sizeScale": "linear"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.0.0"
+          }
+        }
+      },
+      "gulls-stats": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(DISTINCT bird)          AS \"Birds\",\n       sum(fixes)                     AS \"GPS fixes\",\n       round(sum(km))                 AS \"Km flown\",\n       round(max(colony_km))          AS \"Farthest, km\"\nFROM $gulls\nWHERE $bird = '' OR bird = $bird"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Km flown adds up every fix to the next, before the map's thinning to one position every two hours. Farthest is from the colony.",
+          "id": 3,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "noValue": "–",
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "vertical",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {
+                  "titleSize": 12,
+                  "valueSize": 26
+                },
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "jaguars-daily": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- With a jaguar picked: the kilometres between its fixes, day by day.\n-- Without: each country's median day, month by month.\nWITH d AS (\n  SELECT jaguar, country, time_bucket(INTERVAL 1 DAY, time) AS day, sum(km) AS km\n  FROM $jaguars\n  GROUP BY ALL\n)\nSELECT day AS time, jaguar AS name, round(km, 2) AS value\nFROM d WHERE $jaguar \u003c\u003e '' AND jaguar = $jaguar\nUNION ALL\nSELECT time_bucket(INTERVAL 1 MONTH, day) AS time, country AS name, round(median(km), 2) AS value\nFROM d WHERE $jaguar = ''\nGROUP BY ALL\nORDER BY name, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Kilometres between a jaguar's fixes, day by day, once a jaguar is picked; until then, each country's median day, month by month. Straight lines between fixes, so a floor on the real distance, and lower where collars fixed less often.",
+          "id": 9,
+          "links": [],
+          "title": "Distance walked per day",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// One line per `name`, from a long frame (time, name, value), on a time axis\n// of its own: each tab of this dashboard covers different years, so its charts\n// do not follow the dashboard's time range. The colours are the map's: kepler\n// hands its palette out over the names in sorted order, and so does this.\n// @constants begin\nconst UNIT = 'km';\nconst PALETTE = ['#4cc9f0',  '#f72585',  '#ffb703',  '#80ed99',  '#b388eb',  '#ff7f51',  '#2ec4b6',  '#e9ff70',  '#ff99c8',  '#90e0ef',  '#f4a261',  '#a3b18a'];\n// @constants end\n\nconst theme = context.grafana.theme;\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst times = column('time');\nconst names = column('name');\nconst values = column('value');\n\nconst lines = new Map();\nnames.forEach((name, i) =\u003e {\n  if (!lines.has(name)) {\n    lines.set(name, []);\n  }\n  lines.get(name).push([times[i], values[i]]);\n});\nconst sorted = [...lines.keys()].sort();\n// Past eight lines a legend and a shared tooltip are noise: hover a line instead.\nconst few = sorted.length \u003c= 8;\nconst muted = theme.colors.text.secondary;\n\nreturn {\n  backgroundColor: 'transparent',\n  color: PALETTE,\n  tooltip: {\n    trigger: few ? 'axis' : 'item',\n    valueFormatter: (v) =\u003e (v == null ? '–' : `${Number(v).toLocaleString()} ${UNIT}`),\n  },\n  legend: { show: few, type: 'scroll', bottom: 0, textStyle: { color: muted } },\n  grid: { left: 8, right: 16, top: 28, bottom: few ? 32 : 8, containLabel: true },\n  xAxis: { type: 'time', axisLabel: { color: muted, hideOverlap: true } },\n  yAxis: {\n    type: 'value',\n    name: UNIT,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  series: sorted.map((name) =\u003e ({\n    name,\n    type: 'line',\n    data: lines.get(name),\n    showSymbol: false,\n    lineStyle: { width: 1.2 },\n    emphasis: { focus: 'series' },\n  })),\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "jaguars-intro": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 6,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Jaguars of the Neotropics\nThe [Jaguar Movement Database](https://doi.org/10.1002/ecy.2379): 117 jaguars GPS-collared by 20 projects from Sonora to Argentina between 1999 and 2016, most of them in Brazil's and Paraguay's Pantanal, where the map opens. Each trail is a week long; **press play** to run the clock, and **zoom out** for the other study areas, or **click one in the table** to fly there. **Click a jaguar** in its table to follow it alone and see how far it walked each day; *All jaguars* brings the others back.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "jaguars-list": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- One row per jaguar, the longest walkers first, under a row for all of\n-- them, whose click lets the picked jaguar go.\nWITH j AS (\n  SELECT jaguar, any_value(study) AS study, any_value(country) AS country,\n         min(time) AS t0, max(time) AS t1, sum(fixes) AS fixes, sum(km) AS km,\n         median(latitude) AS lat, median(longitude) AS lng\n  FROM $jaguars\n  GROUP BY jaguar\n),\nrows AS (\n  SELECT 0 AS o, 'All jaguars' AS label, '' AS jaguar, '' AS study, '' AS country,\n         min(t0) AS t0, max(t1) AS t1, sum(fixes) AS fixes, sum(km) AS km,\n         NULL::DOUBLE AS lat, NULL::DOUBLE AS lng, NULL::DOUBLE AS per_day\n  FROM j\n  UNION ALL\n  SELECT 1, jaguar, jaguar, study, country, t0, t1, fixes, km, lat, lng,\n         km / greatest(date_diff('day', t0, t1), 1)\n  FROM j\n)\nSELECT label                              AS \"Jaguar\",\n       study                              AS \"Study area\",\n       country                            AS \"Country\",\n       strftime(t0, '%Y-%m-%d')           AS \"First fix\",\n       strftime(t1, '%Y-%m-%d')           AS \"Last fix\",\n       fixes                              AS \"GPS fixes\",\n       round(km)                          AS \"Km walked\",\n       round(per_day, 1)                  AS \"Km per day\",\n       jaguar,\n       round(lat, 4)                      AS lat,\n       round(lng, 4)                      AS lng\nFROM rows\nORDER BY o, km DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Click a jaguar to follow it alone, and the map flies to it; All jaguars brings the others back. Km walked adds up the straight lines between fixes, a floor on the real distance.",
+          "id": 11,
+          "links": [],
+          "title": "Jaguars",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Jaguar"
+                    },
+                    "properties": [
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Follow this jaguar",
+                            "url": "/d/animal-movement-tracking${__url.params:exclude:var-jaguar,var-jlat,var-jlng}\u0026var-jaguar=${__data.fields.jaguar}\u0026var-jlat=${__data.fields.lat}\u0026var-jlng=${__data.fields.lng}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "jaguar"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "lat"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "lng"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "jaguars-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every jaguar, or the one picked in a table; one position every two hours\n-- at most, as often as its collar fixed one. Coloured by country.\nSELECT jaguar AS trip_id, study, country, time, latitude, longitude\nFROM $jaguars\nWHERE $jaguar = '' OR jaguar = $jaguar\nORDER BY jaguar, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 7,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "openfreemap-dark",
+                "clickConfirm": false,
+                "followGrafanaTheme": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": -18.5,
+                      "longitude": -57.0,
+                      "pitch": 0,
+                      "zoom": 6.2
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": false
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "currentTime": 1370044800000,
+                        "speed": 0.1
+                      },
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "trip_id"
+                              },
+                              {
+                                "name": "study"
+                              },
+                              {
+                                "name": "country"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerOrder": [
+                        "trails",
+                        "positions"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              76,
+                              201,
+                              240
+                            ],
+                            "columnMode": "table",
+                            "columns": {
+                              "id": "trip_id",
+                              "lat": "latitude",
+                              "lng": "longitude",
+                              "timestamp": "time"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Jaguars",
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#4cc9f0",
+                                  "#f72585",
+                                  "#ffb703",
+                                  "#80ed99",
+                                  "#b388eb",
+                                  "#ff7f51",
+                                  "#2ec4b6",
+                                  "#e9ff70",
+                                  "#ff99c8",
+                                  "#90e0ef",
+                                  "#f4a261",
+                                  "#a3b18a"
+                                ],
+                                "name": "Animals",
+                                "type": "custom"
+                              },
+                              "fadeTrail": true,
+                              "opacity": 0.95,
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "thickness": 2.5,
+                              "trailLength": 604800
+                            }
+                          },
+                          "id": "trails",
+                          "type": "trip",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "country",
+                              "type": "string"
+                            },
+                            "colorScale": "ordinal",
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              76,
+                              201,
+                              240
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Every position",
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#4cc9f0",
+                                  "#f72585",
+                                  "#ffb703",
+                                  "#80ed99",
+                                  "#b388eb",
+                                  "#ff7f51",
+                                  "#2ec4b6",
+                                  "#e9ff70",
+                                  "#ff99c8",
+                                  "#90e0ef",
+                                  "#f4a261",
+                                  "#a3b18a"
+                                ],
+                                "name": "Animals",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "opacity": 0.18,
+                              "outline": false,
+                              "radius": 1.2,
+                              "radiusRange": [
+                                0,
+                                50
+                              ]
+                            }
+                          },
+                          "id": "positions",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "country",
+                              "type": "string"
+                            },
+                            "colorScale": "ordinal",
+                            "sizeField": null,
+                            "sizeScale": "linear"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "",
+                    "source": "center",
+                    "variable": "jlat",
+                    "variableTo": "jlng",
+                    "zoom": 9
+                  }
+                ]
+              }
+            },
+            "version": "1.0.0"
+          }
+        }
+      },
+      "jaguars-stats": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(DISTINCT jaguar)   AS \"Jaguars\",\n       sum(fixes)               AS \"GPS fixes\",\n       round(sum(km))           AS \"Km walked\",\n       count(DISTINCT study)    AS \"Study areas\"\nFROM $jaguars\nWHERE $jaguar = '' OR jaguar = $jaguar"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Km walked adds up the straight lines between fixes, so it is a floor: a jaguar walks more than the straight lines between its fixes, which some collars took hours apart.",
+          "id": 8,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "noValue": "–",
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "vertical",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {
+                  "titleSize": 12,
+                  "valueSize": 26
+                },
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "jaguars-studies": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- One row per project, the largest first; a click flies the map to it.\nSELECT study                                  AS \"Study area\",\n       any_value(country)                     AS \"Country\",\n       count(DISTINCT jaguar)                 AS \"Jaguars\",\n       sum(fixes)                             AS \"GPS fixes\",\n       min(year(time)) || '–' || max(year(time)) AS \"Years\",\n       round(median(latitude), 4)             AS lat,\n       round(median(longitude), 4)            AS lng\nFROM $jaguars\nGROUP BY study\nORDER BY \"GPS fixes\" DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Click a study area to fly the map to it.",
+          "id": 10,
+          "links": [],
+          "title": "Study areas",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Study area"
+                    },
+                    "properties": [
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Fly the map there",
+                            "url": "/d/animal-movement-tracking${__url.params:exclude:var-jaguar,var-jlat,var-jlng}\u0026var-jaguar=\u0026var-jlat=${__data.fields.lat}\u0026var-jlng=${__data.fields.lng}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "lat"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "lng"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "ocean-intro": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 12,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Ocean predators of the Pacific\n[Tagging of Pacific Predators](https://gtopp.org/) (TOPP): 1,243 sharks, tunas, whales, seals, turtles and seabirds of 30 species tagged by the Stanford Block Lab from 2002 to 2018, one position a day, from the [Animal Telemetry Network](https://ioos.noaa.gov/project/atn/). Pick species in *Ocean species*; each trail is a month long. **Press play** on the map's clock, and **click a tag** in the table to follow one animal alone; *All tags* brings the others back.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "ocean-latitude": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Where each species spends the year: the median latitude of its daily\n-- positions, month by month, every year together.\nSELECT month(time) AS month, species AS name, round(median(latitude), 1) AS value\nFROM $ocean\nWHERE $tag = '' OR tag = $tag\nGROUP BY ALL\nORDER BY name, month"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The median latitude of each species' daily positions, month by month, every year together: the seasons of a migration.",
+          "id": 15,
+          "links": [],
+          "title": "Latitude through the year",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// One line per `name` across the twelve months, from a long frame (month,\n// name, value). The colours are the map's: kepler hands its palette out over\n// the names in sorted order, and so does this.\n// @constants begin\nconst UNIT = '°N';\nconst PALETTE = ['#4cc9f0',  '#f72585',  '#ffb703',  '#80ed99',  '#b388eb',  '#ff7f51',  '#2ec4b6',  '#e9ff70',  '#ff99c8',  '#90e0ef',  '#f4a261',  '#a3b18a'];\n// @constants end\n\nconst theme = context.grafana.theme;\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst months = column('month');\nconst names = column('name');\nconst values = column('value');\nconst LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];\n\nconst lines = new Map();\nnames.forEach((name, i) =\u003e {\n  if (!lines.has(name)) {\n    lines.set(name, new Array(12).fill(null));\n  }\n  lines.get(name)[Number(months[i]) - 1] = values[i];\n});\nconst sorted = [...lines.keys()].sort();\nconst muted = theme.colors.text.secondary;\n\nreturn {\n  backgroundColor: 'transparent',\n  color: PALETTE,\n  tooltip: {\n    trigger: 'axis',\n    valueFormatter: (v) =\u003e (v == null ? '–' : `${Number(v).toLocaleString()}${UNIT}`),\n  },\n  legend: { type: 'scroll', bottom: 0, textStyle: { color: muted } },\n  grid: { left: 8, right: 16, top: 28, bottom: 32, containLabel: true },\n  xAxis: { type: 'category', data: LABELS, boundaryGap: false, axisLabel: { color: muted } },\n  yAxis: {\n    type: 'value',\n    name: UNIT,\n    scale: true,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  series: sorted.map((name) =\u003e ({\n    name,\n    type: 'line',\n    data: lines.get(name),\n    connectNulls: true,\n    symbolSize: 4,\n    emphasis: { focus: 'series' },\n  })),\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "ocean-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The species picked, or the one animal picked in the table; one position a\n-- day, longitudes past 100°E moved 360° west so the Pacific stays in one piece.\nSELECT tag AS trip_id, species, time, latitude, longitude, km\nFROM $ocean\nWHERE $tag = '' OR tag = $tag\nORDER BY tag, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 13,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "openfreemap-dark",
+                "clickConfirm": false,
+                "followGrafanaTheme": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": 22.0,
+                      "longitude": -150.0,
+                      "pitch": 0,
+                      "zoom": 2.1
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": false
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "currentTime": 1157068800000,
+                        "speed": 0.15
+                      },
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "trip_id"
+                              },
+                              {
+                                "name": "species"
+                              },
+                              {
+                                "name": "km"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerOrder": [
+                        "trails",
+                        "positions"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              76,
+                              201,
+                              240
+                            ],
+                            "columnMode": "table",
+                            "columns": {
+                              "id": "trip_id",
+                              "lat": "latitude",
+                              "lng": "longitude",
+                              "timestamp": "time"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Tracks",
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#4cc9f0",
+                                  "#f72585",
+                                  "#ffb703",
+                                  "#80ed99",
+                                  "#b388eb",
+                                  "#ff7f51",
+                                  "#2ec4b6",
+                                  "#e9ff70",
+                                  "#ff99c8",
+                                  "#90e0ef",
+                                  "#f4a261",
+                                  "#a3b18a"
+                                ],
+                                "name": "Animals",
+                                "type": "custom"
+                              },
+                              "fadeTrail": true,
+                              "opacity": 0.95,
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "thickness": 2.5,
+                              "trailLength": 2592000
+                            }
+                          },
+                          "id": "trails",
+                          "type": "trip",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "species",
+                              "type": "string"
+                            },
+                            "colorScale": "ordinal",
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              76,
+                              201,
+                              240
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Every position",
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#4cc9f0",
+                                  "#f72585",
+                                  "#ffb703",
+                                  "#80ed99",
+                                  "#b388eb",
+                                  "#ff7f51",
+                                  "#2ec4b6",
+                                  "#e9ff70",
+                                  "#ff99c8",
+                                  "#90e0ef",
+                                  "#f4a261",
+                                  "#a3b18a"
+                                ],
+                                "name": "Animals",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "opacity": 0.18,
+                              "outline": false,
+                              "radius": 1.2,
+                              "radiusRange": [
+                                0,
+                                50
+                              ]
+                            }
+                          },
+                          "id": "positions",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "species",
+                              "type": "string"
+                            },
+                            "colorScale": "ordinal",
+                            "sizeField": null,
+                            "sizeScale": "linear"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.0.0"
+          }
+        }
+      },
+      "ocean-species": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every species TOPP tagged, the most tagged first: what there is to pick.\nSELECT species                                  AS \"Species\",\n       taxon                                    AS \"Group\",\n       tags                                     AS \"Animals\",\n       positions                                AS \"Positions\",\n       first_year || '–' || last_year           AS \"Years\"\nFROM $ocean_species\nORDER BY tags DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every species in TOPP, picked or not: what there is to pick in Ocean species.",
+          "id": 16,
+          "links": [],
+          "title": "What TOPP tagged",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "ocean-stats": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(DISTINCT tag)      AS \"Animals\",\n       count(*)                 AS \"Positions\",\n       round(sum(km))           AS \"Km travelled\",\n       count(DISTINCT species)  AS \"Species\"\nFROM $ocean\nWHERE $tag = '' OR tag = $tag"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "One position per animal and day. Km travelled adds up the straight lines between them.",
+          "id": 14,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "noValue": "–",
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "vertical",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {
+                  "titleSize": 12,
+                  "valueSize": 26
+                },
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "ocean-tags": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- One row per animal of the species picked, the longest journeys first, under\n-- a row for all of them, whose click lets the picked animal go.\nWITH t AS (\n  SELECT tag, any_value(species) AS species, min(time) AS t0, max(time) AS t1,\n         count(*) AS positions, sum(km) AS km, max(latitude) AS north, min(latitude) AS south\n  FROM $ocean\n  GROUP BY tag\n),\nrows AS (\n  SELECT 0 AS o, 'All tags' AS label, '' AS tag, '' AS species, min(t0) AS t0, max(t1) AS t1,\n         sum(positions) AS positions, sum(km) AS km, max(north) AS north, min(south) AS south\n  FROM t\n  UNION ALL\n  SELECT 1, tag, tag, species, t0, t1, positions, km, north, south FROM t\n)\nSELECT label                              AS \"Tag\",\n       species                            AS \"Species\",\n       strftime(t0, '%Y-%m-%d')           AS \"First position\",\n       strftime(t1, '%Y-%m-%d')           AS \"Last position\",\n       positions                          AS \"Positions\",\n       round(km)                          AS \"Km travelled\",\n       round(north, 1) + 0.0              AS \"Northernmost, °N\",\n       round(south, 1) + 0.0              AS \"Southernmost, °N\",\n       tag                                AS tag_id\nFROM rows\nORDER BY o, km DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Click a tag to follow that animal alone on the map; All tags brings the others back.",
+          "id": 17,
+          "links": [],
+          "title": "Tags",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Tag"
+                    },
+                    "properties": [
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Follow this animal",
+                            "url": "/d/animal-movement-tracking${__url.params:exclude:var-tag}\u0026var-tag=${__data.fields.tag_id}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "tag_id"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "TabsLayout",
+      "spec": {
+        "tabs": [
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "RowsLayout",
+                "spec": {
+                  "rows": [
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "collapse": false,
+                        "hideHeader": true,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "gulls-intro"
+                                  },
+                                  "height": 4,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "gulls-map"
+                                  },
+                                  "height": 18,
+                                  "width": 16,
+                                  "x": 0,
+                                  "y": 4
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "gulls-stats"
+                                  },
+                                  "height": 4,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 4
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "gulls-distance"
+                                  },
+                                  "height": 7,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 8
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "gulls-birds"
+                                  },
+                                  "height": 7,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 15
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Gulls"
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "RowsLayout",
+                "spec": {
+                  "rows": [
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "collapse": false,
+                        "hideHeader": true,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "jaguars-intro"
+                                  },
+                                  "height": 4,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "jaguars-map"
+                                  },
+                                  "height": 18,
+                                  "width": 16,
+                                  "x": 0,
+                                  "y": 4
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "jaguars-stats"
+                                  },
+                                  "height": 4,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 4
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "jaguars-daily"
+                                  },
+                                  "height": 7,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 8
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "jaguars-studies"
+                                  },
+                                  "height": 7,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 15
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "jaguars-list"
+                                  },
+                                  "height": 8,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 22
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Jaguars"
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "RowsLayout",
+                "spec": {
+                  "rows": [
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "collapse": false,
+                        "hideHeader": true,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "ocean-intro"
+                                  },
+                                  "height": 4,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "ocean-map"
+                                  },
+                                  "height": 18,
+                                  "width": 16,
+                                  "x": 0,
+                                  "y": 4
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "ocean-stats"
+                                  },
+                                  "height": 4,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 4
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "ocean-latitude"
+                                  },
+                                  "height": 7,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 8
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "ocean-species"
+                                  },
+                                  "height": 7,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 15
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "ocean-tags"
+                                  },
+                                  "height": 8,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 22
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Ocean predators"
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "RowsLayout",
+                "spec": {
+                  "rows": [
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "collapse": false,
+                        "hideHeader": true,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "about"
+                                  },
+                                  "height": 14,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "About the data"
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "kepler",
+      "business-charts",
+      "migration",
+      "wildlife"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "1999-01-01T00:00:00.000Z",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "2026-01-01T00:00:00.000Z"
+    },
+    "title": "Animals on the move",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "2023",
+            "value": "2023"
+          },
+          "description": "The year of the gulls on the first tab; INBO publishes one file a year.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Gull year",
+          "multi": false,
+          "name": "year",
+          "options": [],
+          "query": "2022,2023,2024,2025",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "gulls",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "gulls",
+              "refId": "gulls",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit and per year picked: the lesser black-backed\n-- gulls INBO tags at their colony in the port of Zeebrugge (Belgium), from\n-- the Zenodo copy of the Movebank study LBBG_ADULT (CC0), read through the\n-- gateway's month-long cache. A year is up to 2 million GPS fixes, minutes\n-- apart; the browser gets one position per bird every two hours, with the\n-- fixes and the kilometres flown in those two hours, measured fix to fix.\nWITH raw AS (\n  SELECT \"individual-local-identifier\" AS bird, timestamp AS t,\n         \"location-lat\" AS lat, \"location-long\" AS lon\n  FROM read_csv('http://feeds/zenodo/records/22083084/files/LBBG_ADULT-gps-${year:raw}.csv.gz')\n  WHERE visible AND \"location-lat\" IS NOT NULL AND \"location-long\" IS NOT NULL\n),\nleg AS (\n  SELECT *, 2 * 6371.0088 * asin(sqrt(\n           pow(sin(radians(lat - lag(lat) OVER w) / 2), 2)\n           + cos(radians(lat)) * cos(radians(lag(lat) OVER w)) * pow(sin(radians(lon - lag(lon) OVER w) / 2), 2))) AS km\n  FROM raw WINDOW w AS (PARTITION BY bird ORDER BY t)\n),\nslot AS (\n  SELECT bird, min(t) AS time, arg_min(lat, t) AS lat, arg_min(lon, t) AS lon,\n         count(*) AS fixes, coalesce(sum(km), 0) AS km\n  FROM leg GROUP BY bird, time_bucket(INTERVAL 2 HOUR, t)\n),\n-- The colony: the median of every bird's positions in June, mid-breeding.\ncolony AS (SELECT median(lat) AS clat, median(lon) AS clon FROM slot WHERE month(time) = 6)\nSELECT bird, time,\n       round(lat, 5) AS latitude, round(lon, 5) AS longitude,\n       fixes, round(km, 3) AS km,\n       round(2 * 6371.0088 * asin(sqrt(\n         pow(sin(radians(lat - clat) / 2), 2)\n         + cos(radians(lat)) * cos(radians(clat)) * pow(sin(radians(lon - clon) / 2), 2))), 1) AS colony_km\nFROM slot CROSS JOIN colony\nORDER BY bird, time",
+                  "refId": "gulls"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "jaguars",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "jaguars",
+              "refId": "jaguars",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the Jaguar Movement Database (Morato et al.\n-- 2018, Ecology; CC0), 117 jaguars GPS-collared by 20 projects from Mexico to\n-- Argentina, 1999 to 2016. Zenodo has it as a ZIP: GDAL reads the CSV inside\n-- it by ranges of the gateway's month-long cached copy. Timestamps are local\n-- and month/day/two-digit year. One position per jaguar every two hours, with\n-- the fixes and the kilometres between fixes in those two hours.\nWITH raw AS (\n  SELECT \"individual.local.identifier (ID)\" AS jaguar,\n         trim(regexp_replace(\"study.name\", '^[Jj]aguar_', '')) AS study,\n         country,\n         strptime(timestamp, '%m/%d/%y %H:%M') AS t,\n         \"location.lat\"::DOUBLE AS lat, \"location.long\"::DOUBLE AS lon\n  FROM ST_Read('/vsizip//vsicurl/http://feeds/zenodo/records/5001568/files/DataS1.zip/DataS1/jaguar_movement_data.csv')\n),\nleg AS (\n  SELECT *, 2 * 6371.0088 * asin(sqrt(\n           pow(sin(radians(lat - lag(lat) OVER w) / 2), 2)\n           + cos(radians(lat)) * cos(radians(lag(lat) OVER w)) * pow(sin(radians(lon - lag(lon) OVER w) / 2), 2))) AS km\n  FROM raw WINDOW w AS (PARTITION BY jaguar ORDER BY t)\n)\nSELECT 'J' || lpad(jaguar, 3, '0') AS jaguar, any_value(study) AS study, any_value(country) AS country,\n       min(t) AS time, round(arg_min(lat, t), 5) AS latitude, round(arg_min(lon, t), 5) AS longitude,\n       count(*) AS fixes, round(coalesce(sum(km), 0), 3) AS km\nFROM leg\nGROUP BY jaguar, time_bucket(INTERVAL 2 HOUR, t)\nORDER BY jaguar, time",
+                  "refId": "jaguars"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "ocean_species",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "ocean_species",
+              "refId": "ocean_species",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: what TOPP tagged, species by species, from the\n-- same cached table as the tracks below.\nSELECT species, taxon, count(DISTINCT tag) AS tags, count(*) AS positions,\n       min(year(time)) AS first_year, max(year(time)) AS last_year\nFROM read_csv('http://feeds/atn/topp.csv', header = false,\n              columns = {'time': 'TIMESTAMPTZ', 'latitude': 'DOUBLE', 'longitude': 'DOUBLE',\n                         'species': 'VARCHAR', 'tag': 'BIGINT', 'taxon': 'VARCHAR'})\nGROUP BY species, taxon\nORDER BY tags DESC",
+                  "refId": "ocean_species"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": [
+              "Northern Elephant Seal",
+              "White Shark",
+              "Leatherback Sea Turtle",
+              "Blue Whale"
+            ],
+            "value": [
+              "Northern Elephant Seal",
+              "White Shark",
+              "Leatherback Sea Turtle",
+              "Blue Whale"
+            ]
+          },
+          "description": "The species on the Ocean predators tab, the most tagged first.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Ocean species",
+          "multi": true,
+          "name": "species",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "species",
+              "sql": "-- Every species TOPP tagged, the most tagged first.\nSELECT species FROM $ocean_species ORDER BY tags DESC"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "ocean",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "ocean",
+              "refId": "ocean",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit and per choice of species: Tagging of Pacific\n-- Predators (TOPP), the Stanford Block Lab's satellite and archival tags,\n-- 2002 to 2018, as the Animal Telemetry Network publishes it on ERDDAP: tracks\n-- already smoothed by a state-space model, about one position a day. Read\n-- through the gateway's month-long cache. One position per animal and day,\n-- with the kilometres covered since the previous one. West of 100°E a\n-- longitude moves 360° west, so a crossing of the date line stays one line on\n-- a Pacific-centred map instead of a stroke across the whole world.\nWITH raw AS (\n  SELECT tag, species, taxon, timezone('UTC', time) AS t, latitude AS lat, longitude AS lon\n  FROM read_csv('http://feeds/atn/topp.csv', header = false,\n                columns = {'time': 'TIMESTAMPTZ', 'latitude': 'DOUBLE', 'longitude': 'DOUBLE',\n                           'species': 'VARCHAR', 'tag': 'BIGINT', 'taxon': 'VARCHAR'})\n  WHERE species IN (${species:sqlstring}) AND lat IS NOT NULL AND lon IS NOT NULL\n),\nday AS (\n  SELECT tag, any_value(species) AS species, any_value(taxon) AS taxon,\n         min(t) AS time, arg_min(lat, t) AS lat, arg_min(lon, t) AS lon\n  FROM raw GROUP BY tag, t::DATE\n)\nSELECT tag::VARCHAR AS tag, species, taxon, time,\n       round(lat, 4) AS latitude,\n       round(CASE WHEN lon \u003e 100 THEN lon - 360 ELSE lon END, 4) AS longitude,\n       round(coalesce(2 * 6371.0088 * asin(sqrt(\n         pow(sin(radians(lat - lag(lat) OVER w) / 2), 2)\n         + cos(radians(lat)) * cos(radians(lag(lat) OVER w)) * pow(sin(radians(lon - lag(lon) OVER w) / 2), 2))), 0), 2) AS km\nFROM day\nWINDOW w AS (PARTITION BY tag ORDER BY time)\nORDER BY tag, time",
+                  "refId": "ocean"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Bird (map click or table row)",
+          "name": "bird",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Jaguar (map click or table row)",
+          "name": "jaguar",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Latitude to fly the jaguar map to",
+          "name": "jlat",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Longitude to fly the jaguar map to",
+          "name": "jlng",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Ocean tag (map click or table row)",
+          "name": "tag",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
