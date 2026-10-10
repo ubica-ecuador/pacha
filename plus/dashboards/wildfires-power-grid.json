@@ -1,0 +1,1161 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "wildfires-power-grid"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "NASA FIRMS's satellite fire detections (VIIRS, the last week) against the high-voltage grid from OpenStreetMap, in one of four regions: which lines a fire came near, how close and how often, played in pass by pass. Distances are measured in the region's equal-area projection. Data: NASA FIRMS, OpenStreetMap contributors (ODbL).",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH r AS (\n  SELECT * FROM (VALUES\n      ('central-brazil', 'South_America', 'ESRI:102033', -25, -60, -2, -38, -13.5, -49),\n      ('southern-africa', 'Southern_Africa', 'ESRI:102022', -22, 12, -5, 42, -13.5, 27),\n      ('eastern-australia', 'Australia_NewZealand', 'EPSG:3577', -39, 138, -10, 154, -24.5, 146),\n      ('california', 'USA_contiguous_and_Hawaii', 'EPSG:3310', 32.5, -124.5, 42, -114, 37.2, -119.3)\n  ) v(region, firms, crs, s, w, n, e, lat, lng)\n  WHERE region = ${region:sqlstring}\n),\n-- The region's lines of 200 kV and more, from OpenStreetMap, measured in the\n-- region's equal-area projection.\ngrid AS (\n  SELECT id, name, operator, kv, geom,\n         ST_Transform(geom, 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM (\n    SELECT e-\u003e\u003e'id' AS id, coalesce(e-\u003e'tags'-\u003e\u003e'name', e-\u003e'tags'-\u003e\u003e'ref', 'OSM way ' || (e-\u003e\u003e'id')) AS name,\n           e-\u003e'tags'-\u003e\u003e'operator' AS operator,\n           try_cast(split_part(e-\u003e'tags'-\u003e\u003e'voltage', ';', 1) AS INTEGER) // 1000 AS kv,\n           ST_MakeLine(list_transform(json_extract(e, '$.geometry[*]')::JSON[],\n                       p -\u003e ST_Point((p-\u003e\u003e'lon')::DOUBLE, (p-\u003e\u003e'lat')::DOUBLE))) AS geom\n    FROM (SELECT unnest(elements) AS e\n          FROM read_json('http://feeds/overpass/power-lines/${region:raw}.json', columns = {elements: 'JSON[]'}))\n  ), r\n),\n-- Every VIIRS detection in the region over the range, from the three satellites.\nfires AS (\n  SELECT latitude, longitude, frp, satellite, daynight,\n         strptime(acq_date::VARCHAR || lpad(acq_time::VARCHAR, 4, '0'), '%Y-%m-%d%H%M')::TIMESTAMPTZ AS time,\n         ST_Transform(ST_Point(longitude, latitude), 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM read_csv(['http://feeds/firms/noaa-20-viirs-c2/J1_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/noaa-21-viirs-c2/J2_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/suomi-npp-viirs-c2/SUOMI_VIIRS_C2_${firms:raw}_7d.csv'], union_by_name = true), r\n  WHERE latitude BETWEEN r.s AND r.n AND longitude BETWEEN r.w AND r.e\n    AND time BETWEEN $__timeFrom() AND $__timeTo()\n),\n-- Each detection within the distance of a line, once per line.\nnear AS (\n  SELECT f.time, f.latitude, f.longitude, f.satellite, f.frp, f.xy, g.id AS line_id, ST_Distance(f.xy, g.xy) / 1000 AS km\n  FROM fires f JOIN grid g ON ST_DWithin(f.xy, g.xy, ${km:raw} * 1000)\n),\nexposed AS (\n  SELECT g.id, g.name, g.operator, g.kv, count(*) AS detections, min(n.km) AS closest_km,\n         max(n.frp) AS max_frp, max(n.time) AS last_seen,\n         -- Fires snapped to 500 m first: thousands of points by a line are a few\n         -- hundred cells, and their union is buffered in a fraction of the time.\n         ST_Intersection(any_value(g.xy),\n                         ST_Buffer(ST_Union_Agg(DISTINCT ST_Point(round(ST_X(n.xy) / 500) * 500, round(ST_Y(n.xy) / 500) * 500)),\n                                   ${km:raw} * 1000, 4)) AS part,\n         any_value(r.crs) AS crs\n  FROM near n JOIN grid g ON g.id = n.line_id, r\n  GROUP BY g.id, g.name, g.operator, g.kv\n)\nSELECT (SELECT count(*) FROM fires) AS \"Fire detections\",\n       (SELECT count(DISTINCT (time, latitude, longitude, satellite)) FROM near) AS \"Near a line\",\n       (SELECT count(DISTINCT line_id) FROM near) AS \"Line sections exposed\",\n       (SELECT round(sum(ST_Length(part)) / 1000) FROM exposed) AS \"Km of line exposed\",\n       (SELECT round(sum(ST_Length(xy)) / 1000) FROM grid) AS \"Km of line mapped\""
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "VIIRS fire detections in the region over the time range, those within the chosen distance of a line of 200 kV or more, and the lines and length of line they reach.",
+          "id": 1,
+          "links": [],
+          "title": "Fires and the grid",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH r AS (\n  SELECT * FROM (VALUES\n      ('central-brazil', 'South_America', 'ESRI:102033', -25, -60, -2, -38, -13.5, -49),\n      ('southern-africa', 'Southern_Africa', 'ESRI:102022', -22, 12, -5, 42, -13.5, 27),\n      ('eastern-australia', 'Australia_NewZealand', 'EPSG:3577', -39, 138, -10, 154, -24.5, 146),\n      ('california', 'USA_contiguous_and_Hawaii', 'EPSG:3310', 32.5, -124.5, 42, -114, 37.2, -119.3)\n  ) v(region, firms, crs, s, w, n, e, lat, lng)\n  WHERE region = ${region:sqlstring}\n),\n-- The region's lines of 200 kV and more, from OpenStreetMap, measured in the\n-- region's equal-area projection.\ngrid AS (\n  SELECT id, name, operator, kv, geom,\n         ST_Transform(geom, 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM (\n    SELECT e-\u003e\u003e'id' AS id, coalesce(e-\u003e'tags'-\u003e\u003e'name', e-\u003e'tags'-\u003e\u003e'ref', 'OSM way ' || (e-\u003e\u003e'id')) AS name,\n           e-\u003e'tags'-\u003e\u003e'operator' AS operator,\n           try_cast(split_part(e-\u003e'tags'-\u003e\u003e'voltage', ';', 1) AS INTEGER) // 1000 AS kv,\n           ST_MakeLine(list_transform(json_extract(e, '$.geometry[*]')::JSON[],\n                       p -\u003e ST_Point((p-\u003e\u003e'lon')::DOUBLE, (p-\u003e\u003e'lat')::DOUBLE))) AS geom\n    FROM (SELECT unnest(elements) AS e\n          FROM read_json('http://feeds/overpass/power-lines/${region:raw}.json', columns = {elements: 'JSON[]'}))\n  ), r\n),\n-- Every VIIRS detection in the region over the range, from the three satellites.\nfires AS (\n  SELECT latitude, longitude, frp, satellite, daynight,\n         strptime(acq_date::VARCHAR || lpad(acq_time::VARCHAR, 4, '0'), '%Y-%m-%d%H%M')::TIMESTAMPTZ AS time,\n         ST_Transform(ST_Point(longitude, latitude), 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM read_csv(['http://feeds/firms/noaa-20-viirs-c2/J1_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/noaa-21-viirs-c2/J2_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/suomi-npp-viirs-c2/SUOMI_VIIRS_C2_${firms:raw}_7d.csv'], union_by_name = true), r\n  WHERE latitude BETWEEN r.s AND r.n AND longitude BETWEEN r.w AND r.e\n    AND time BETWEEN $__timeFrom() AND $__timeTo()\n),\n-- Each detection within the distance of a line, once per line.\nnear AS (\n  SELECT f.time, f.latitude, f.longitude, f.satellite, f.frp, f.xy, g.id AS line_id, ST_Distance(f.xy, g.xy) / 1000 AS km\n  FROM fires f JOIN grid g ON ST_DWithin(f.xy, g.xy, ${km:raw} * 1000)\n),\nclosest AS (SELECT time, latitude, longitude, satellite, min(km) AS km FROM near GROUP BY ALL)\n-- One row per detection, at the time of its satellite pass: the bar at the\n-- bottom of the map plays them in. `line_km` is the distance to the nearest\n-- line, empty when none is within reach.\nSELECT f.time, f.latitude, f.longitude, round(f.frp, 1) AS frp_mw, f.satellite, f.daynight,\n       round(c.km, 1) AS line_km\nFROM fires f LEFT JOIN closest c USING (time, latitude, longitude, satellite)\nORDER BY f.time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH r AS (\n  SELECT * FROM (VALUES\n      ('central-brazil', 'South_America', 'ESRI:102033', -25, -60, -2, -38, -13.5, -49),\n      ('southern-africa', 'Southern_Africa', 'ESRI:102022', -22, 12, -5, 42, -13.5, 27),\n      ('eastern-australia', 'Australia_NewZealand', 'EPSG:3577', -39, 138, -10, 154, -24.5, 146),\n      ('california', 'USA_contiguous_and_Hawaii', 'EPSG:3310', 32.5, -124.5, 42, -114, 37.2, -119.3)\n  ) v(region, firms, crs, s, w, n, e, lat, lng)\n  WHERE region = ${region:sqlstring}\n),\n-- The region's lines of 200 kV and more, from OpenStreetMap, measured in the\n-- region's equal-area projection.\ngrid AS (\n  SELECT id, name, operator, kv, geom,\n         ST_Transform(geom, 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM (\n    SELECT e-\u003e\u003e'id' AS id, coalesce(e-\u003e'tags'-\u003e\u003e'name', e-\u003e'tags'-\u003e\u003e'ref', 'OSM way ' || (e-\u003e\u003e'id')) AS name,\n           e-\u003e'tags'-\u003e\u003e'operator' AS operator,\n           try_cast(split_part(e-\u003e'tags'-\u003e\u003e'voltage', ';', 1) AS INTEGER) // 1000 AS kv,\n           ST_MakeLine(list_transform(json_extract(e, '$.geometry[*]')::JSON[],\n                       p -\u003e ST_Point((p-\u003e\u003e'lon')::DOUBLE, (p-\u003e\u003e'lat')::DOUBLE))) AS geom\n    FROM (SELECT unnest(elements) AS e\n          FROM read_json('http://feeds/overpass/power-lines/${region:raw}.json', columns = {elements: 'JSON[]'}))\n  ), r\n)\n-- Every line, dim, simplified to about 200 m.\nSELECT id, name, operator, kv, ST_AsGeoJSON(ST_SimplifyPreserveTopology(geom, 0.002))::VARCHAR AS geom FROM grid"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH r AS (\n  SELECT * FROM (VALUES\n      ('central-brazil', 'South_America', 'ESRI:102033', -25, -60, -2, -38, -13.5, -49),\n      ('southern-africa', 'Southern_Africa', 'ESRI:102022', -22, 12, -5, 42, -13.5, 27),\n      ('eastern-australia', 'Australia_NewZealand', 'EPSG:3577', -39, 138, -10, 154, -24.5, 146),\n      ('california', 'USA_contiguous_and_Hawaii', 'EPSG:3310', 32.5, -124.5, 42, -114, 37.2, -119.3)\n  ) v(region, firms, crs, s, w, n, e, lat, lng)\n  WHERE region = ${region:sqlstring}\n),\n-- The region's lines of 200 kV and more, from OpenStreetMap, measured in the\n-- region's equal-area projection.\ngrid AS (\n  SELECT id, name, operator, kv, geom,\n         ST_Transform(geom, 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM (\n    SELECT e-\u003e\u003e'id' AS id, coalesce(e-\u003e'tags'-\u003e\u003e'name', e-\u003e'tags'-\u003e\u003e'ref', 'OSM way ' || (e-\u003e\u003e'id')) AS name,\n           e-\u003e'tags'-\u003e\u003e'operator' AS operator,\n           try_cast(split_part(e-\u003e'tags'-\u003e\u003e'voltage', ';', 1) AS INTEGER) // 1000 AS kv,\n           ST_MakeLine(list_transform(json_extract(e, '$.geometry[*]')::JSON[],\n                       p -\u003e ST_Point((p-\u003e\u003e'lon')::DOUBLE, (p-\u003e\u003e'lat')::DOUBLE))) AS geom\n    FROM (SELECT unnest(elements) AS e\n          FROM read_json('http://feeds/overpass/power-lines/${region:raw}.json', columns = {elements: 'JSON[]'}))\n  ), r\n),\n-- Every VIIRS detection in the region over the range, from the three satellites.\nfires AS (\n  SELECT latitude, longitude, frp, satellite, daynight,\n         strptime(acq_date::VARCHAR || lpad(acq_time::VARCHAR, 4, '0'), '%Y-%m-%d%H%M')::TIMESTAMPTZ AS time,\n         ST_Transform(ST_Point(longitude, latitude), 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM read_csv(['http://feeds/firms/noaa-20-viirs-c2/J1_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/noaa-21-viirs-c2/J2_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/suomi-npp-viirs-c2/SUOMI_VIIRS_C2_${firms:raw}_7d.csv'], union_by_name = true), r\n  WHERE latitude BETWEEN r.s AND r.n AND longitude BETWEEN r.w AND r.e\n    AND time BETWEEN $__timeFrom() AND $__timeTo()\n),\n-- Each detection within the distance of a line, once per line.\nnear AS (\n  SELECT f.time, f.latitude, f.longitude, f.satellite, f.frp, f.xy, g.id AS line_id, ST_Distance(f.xy, g.xy) / 1000 AS km\n  FROM fires f JOIN grid g ON ST_DWithin(f.xy, g.xy, ${km:raw} * 1000)\n),\nexposed AS (\n  SELECT g.id, g.name, g.operator, g.kv, count(*) AS detections, min(n.km) AS closest_km,\n         max(n.frp) AS max_frp, max(n.time) AS last_seen,\n         -- Fires snapped to 500 m first: thousands of points by a line are a few\n         -- hundred cells, and their union is buffered in a fraction of the time.\n         ST_Intersection(any_value(g.xy),\n                         ST_Buffer(ST_Union_Agg(DISTINCT ST_Point(round(ST_X(n.xy) / 500) * 500, round(ST_Y(n.xy) / 500) * 500)),\n                                   ${km:raw} * 1000, 4)) AS part,\n         any_value(r.crs) AS crs\n  FROM near n JOIN grid g ON g.id = n.line_id, r\n  GROUP BY g.id, g.name, g.operator, g.kv\n)\n-- The stretches a fire came near, bright, with how many and how close.\nSELECT id, name, operator, kv, detections, round(closest_km, 1) AS closest_km, round(ST_Length(part) / 1000, 1) AS exposed_km,\n       ST_AsGeoJSON(ST_Transform(part, crs, 'EPSG:4326', always_xy := true))::VARCHAR AS geom\nFROM exposed"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every fire detection, coloured by its radiative power (MW), and the region's lines of 200 kV and more: dim, and red along the stretches a fire came within the chosen distance of. Press ▶ on the bar to play the satellite passes in. Data: NASA FIRMS (VIIRS), OpenStreetMap contributors (ODbL).",
+          "id": 3,
+          "links": [],
+          "title": "Fires near the grid",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapStyle": {
+                      "styleType": "dark-matter"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "filters": [
+                        {
+                          "animationWindow": "incremental",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "passes",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "count",
+                            "defaultTimeFormat": "L  LT",
+                            "interval": "1-hour",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "syncTimelineMode": 1,
+                          "timezone": "UTC",
+                          "type": "timeRange",
+                          "view": "minified"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {
+                              "grafana-A": [
+                                {
+                                  "name": "frp_mw"
+                                },
+                                {
+                                  "name": "line_km"
+                                },
+                                {
+                                  "name": "satellite"
+                                },
+                                {
+                                  "name": "time"
+                                }
+                              ],
+                              "grafana-B": [
+                                {
+                                  "name": "name"
+                                },
+                                {
+                                  "name": "operator"
+                                },
+                                {
+                                  "name": "kv"
+                                }
+                              ],
+                              "grafana-C": [
+                                {
+                                  "name": "name"
+                                },
+                                {
+                                  "name": "operator"
+                                },
+                                {
+                                  "name": "kv"
+                                },
+                                {
+                                  "name": "detections"
+                                },
+                                {
+                                  "name": "closest_km"
+                                },
+                                {
+                                  "name": "exposed_km"
+                                }
+                              ]
+                            }
+                          },
+                          "enabled": true
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "fires",
+                        "exposed",
+                        "grid"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              152,
+                              48
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Fire detections",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    5,
+                                    "#FADE2A"
+                                  ],
+                                  [
+                                    15,
+                                    "#FFB357"
+                                  ],
+                                  [
+                                    40,
+                                    "#FF9830"
+                                  ],
+                                  [
+                                    100,
+                                    "#FF7383"
+                                  ],
+                                  [
+                                    null,
+                                    "#F2495C"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#FADE2A",
+                                  "#FFB357",
+                                  "#FF9830",
+                                  "#FF7383",
+                                  "#F2495C"
+                                ],
+                                "name": "Fire power, MW",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.85,
+                              "outline": false,
+                              "radius": 3,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "thickness": 1
+                            }
+                          },
+                          "id": "fires",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "frp_mw",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeField": null,
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              242,
+                              73,
+                              92
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Lines with a fire near",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.95,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColor": [
+                                242,
+                                73,
+                                92
+                              ],
+                              "strokeOpacity": 0.95,
+                              "stroked": true,
+                              "thickness": 2.5,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "exposed",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              110,
+                              159,
+                              255
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Lines of 200 kV and more",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.45,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColor": [
+                                110,
+                                159,
+                                255
+                              ],
+                              "strokeOpacity": 0.45,
+                              "stroked": true,
+                              "thickness": 0.8,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "grid",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "toMap",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "",
+                    "source": "center",
+                    "variable": "lat",
+                    "variableTo": "lng",
+                    "zoom": 4.6
+                  }
+                ]
+              }
+            },
+            "version": "0.1.0"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH r AS (\n  SELECT * FROM (VALUES\n      ('central-brazil', 'South_America', 'ESRI:102033', -25, -60, -2, -38, -13.5, -49),\n      ('southern-africa', 'Southern_Africa', 'ESRI:102022', -22, 12, -5, 42, -13.5, 27),\n      ('eastern-australia', 'Australia_NewZealand', 'EPSG:3577', -39, 138, -10, 154, -24.5, 146),\n      ('california', 'USA_contiguous_and_Hawaii', 'EPSG:3310', 32.5, -124.5, 42, -114, 37.2, -119.3)\n  ) v(region, firms, crs, s, w, n, e, lat, lng)\n  WHERE region = ${region:sqlstring}\n),\n-- The region's lines of 200 kV and more, from OpenStreetMap, measured in the\n-- region's equal-area projection.\ngrid AS (\n  SELECT id, name, operator, kv, geom,\n         ST_Transform(geom, 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM (\n    SELECT e-\u003e\u003e'id' AS id, coalesce(e-\u003e'tags'-\u003e\u003e'name', e-\u003e'tags'-\u003e\u003e'ref', 'OSM way ' || (e-\u003e\u003e'id')) AS name,\n           e-\u003e'tags'-\u003e\u003e'operator' AS operator,\n           try_cast(split_part(e-\u003e'tags'-\u003e\u003e'voltage', ';', 1) AS INTEGER) // 1000 AS kv,\n           ST_MakeLine(list_transform(json_extract(e, '$.geometry[*]')::JSON[],\n                       p -\u003e ST_Point((p-\u003e\u003e'lon')::DOUBLE, (p-\u003e\u003e'lat')::DOUBLE))) AS geom\n    FROM (SELECT unnest(elements) AS e\n          FROM read_json('http://feeds/overpass/power-lines/${region:raw}.json', columns = {elements: 'JSON[]'}))\n  ), r\n),\n-- Every VIIRS detection in the region over the range, from the three satellites.\nfires AS (\n  SELECT latitude, longitude, frp, satellite, daynight,\n         strptime(acq_date::VARCHAR || lpad(acq_time::VARCHAR, 4, '0'), '%Y-%m-%d%H%M')::TIMESTAMPTZ AS time,\n         ST_Transform(ST_Point(longitude, latitude), 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM read_csv(['http://feeds/firms/noaa-20-viirs-c2/J1_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/noaa-21-viirs-c2/J2_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/suomi-npp-viirs-c2/SUOMI_VIIRS_C2_${firms:raw}_7d.csv'], union_by_name = true), r\n  WHERE latitude BETWEEN r.s AND r.n AND longitude BETWEEN r.w AND r.e\n    AND time BETWEEN $__timeFrom() AND $__timeTo()\n),\n-- Each detection within the distance of a line, once per line.\nnear AS (\n  SELECT f.time, f.latitude, f.longitude, f.satellite, f.frp, f.xy, g.id AS line_id, ST_Distance(f.xy, g.xy) / 1000 AS km\n  FROM fires f JOIN grid g ON ST_DWithin(f.xy, g.xy, ${km:raw} * 1000)\n)\nSELECT time_bucket(INTERVAL 1 HOUR, f.time) AS time, count(*) AS \"All detections\",\n       count(*) FILTER (WHERE (f.time, f.latitude, f.longitude, f.satellite) IN (SELECT (time, latitude, longitude, satellite) FROM near)) AS \"Near a line\"\nFROM fires f GROUP BY 1 ORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Detections per hour: VIIRS sees a place about twice a day per satellite, so they come in bursts at the passes.",
+          "id": 4,
+          "links": [],
+          "title": "Detections per hour",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "barAlignment": 0,
+                    "drawStyle": "bars",
+                    "fillOpacity": 80,
+                    "lineWidth": 1,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    }
+                  },
+                  "decimals": 0,
+                  "unit": "short"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "All detections"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#FF9830",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Near a line"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#F2495C",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH r AS (\n  SELECT * FROM (VALUES\n      ('central-brazil', 'South_America', 'ESRI:102033', -25, -60, -2, -38, -13.5, -49),\n      ('southern-africa', 'Southern_Africa', 'ESRI:102022', -22, 12, -5, 42, -13.5, 27),\n      ('eastern-australia', 'Australia_NewZealand', 'EPSG:3577', -39, 138, -10, 154, -24.5, 146),\n      ('california', 'USA_contiguous_and_Hawaii', 'EPSG:3310', 32.5, -124.5, 42, -114, 37.2, -119.3)\n  ) v(region, firms, crs, s, w, n, e, lat, lng)\n  WHERE region = ${region:sqlstring}\n),\n-- The region's lines of 200 kV and more, from OpenStreetMap, measured in the\n-- region's equal-area projection.\ngrid AS (\n  SELECT id, name, operator, kv, geom,\n         ST_Transform(geom, 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM (\n    SELECT e-\u003e\u003e'id' AS id, coalesce(e-\u003e'tags'-\u003e\u003e'name', e-\u003e'tags'-\u003e\u003e'ref', 'OSM way ' || (e-\u003e\u003e'id')) AS name,\n           e-\u003e'tags'-\u003e\u003e'operator' AS operator,\n           try_cast(split_part(e-\u003e'tags'-\u003e\u003e'voltage', ';', 1) AS INTEGER) // 1000 AS kv,\n           ST_MakeLine(list_transform(json_extract(e, '$.geometry[*]')::JSON[],\n                       p -\u003e ST_Point((p-\u003e\u003e'lon')::DOUBLE, (p-\u003e\u003e'lat')::DOUBLE))) AS geom\n    FROM (SELECT unnest(elements) AS e\n          FROM read_json('http://feeds/overpass/power-lines/${region:raw}.json', columns = {elements: 'JSON[]'}))\n  ), r\n),\n-- Every VIIRS detection in the region over the range, from the three satellites.\nfires AS (\n  SELECT latitude, longitude, frp, satellite, daynight,\n         strptime(acq_date::VARCHAR || lpad(acq_time::VARCHAR, 4, '0'), '%Y-%m-%d%H%M')::TIMESTAMPTZ AS time,\n         ST_Transform(ST_Point(longitude, latitude), 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM read_csv(['http://feeds/firms/noaa-20-viirs-c2/J1_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/noaa-21-viirs-c2/J2_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/suomi-npp-viirs-c2/SUOMI_VIIRS_C2_${firms:raw}_7d.csv'], union_by_name = true), r\n  WHERE latitude BETWEEN r.s AND r.n AND longitude BETWEEN r.w AND r.e\n    AND time BETWEEN $__timeFrom() AND $__timeTo()\n),\n-- Each detection within the distance of a line, once per line.\nnear AS (\n  SELECT f.time, f.latitude, f.longitude, f.satellite, f.frp, f.xy, g.id AS line_id, ST_Distance(f.xy, g.xy) / 1000 AS km\n  FROM fires f JOIN grid g ON ST_DWithin(f.xy, g.xy, ${km:raw} * 1000)\n),\nexposed AS (\n  SELECT g.id, g.name, g.operator, g.kv, count(*) AS detections, min(n.km) AS closest_km,\n         max(n.frp) AS max_frp, max(n.time) AS last_seen,\n         -- Fires snapped to 500 m first: thousands of points by a line are a few\n         -- hundred cells, and their union is buffered in a fraction of the time.\n         ST_Intersection(any_value(g.xy),\n                         ST_Buffer(ST_Union_Agg(DISTINCT ST_Point(round(ST_X(n.xy) / 500) * 500, round(ST_Y(n.xy) / 500) * 500)),\n                                   ${km:raw} * 1000, 4)) AS part,\n         any_value(r.crs) AS crs\n  FROM near n JOIN grid g ON g.id = n.line_id, r\n  GROUP BY g.id, g.name, g.operator, g.kv\n)\nSELECT name AS \"Line\", operator AS \"Operator\", kv AS \"kV\", detections AS \"Detections near\",\n       round(ST_Length(part) / 1000, 1) AS \"Km exposed\", round(closest_km, 1) AS \"Closest, km\",\n       round(max_frp) AS \"Strongest, MW\", last_seen AS \"Last seen\"\nFROM exposed\nORDER BY \"Detections near\" DESC, \"Closest, km\"\nLIMIT 50"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The lines with the most fire detections within the chosen distance over the range, and how much of each lies within that distance of a fire.",
+          "id": 5,
+          "links": [],
+          "title": "Most exposed lines",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Detections near"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "gauge"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#F2495C",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Last seen"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "dateTimeFromNow"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Line"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 160
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Operator"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 160
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "kV"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 50
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "fields": "",
+                  "reducer": [
+                    "sum"
+                  ],
+                  "show": false
+                },
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 4,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 20,
+              "width": 24,
+              "x": 0,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 12,
+              "width": 9,
+              "x": 0,
+              "y": 24
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 12,
+              "width": 15,
+              "x": 9,
+              "y": 24
+            }
+          }
+        ]
+      }
+    },
+    "links": [
+      {
+        "asDropdown": false,
+        "icon": "info",
+        "includeVars": false,
+        "keepTime": true,
+        "tags": [],
+        "targetBlank": false,
+        "title": "Clear filters",
+        "tooltip": "Clear every filter the charts and maps have set",
+        "type": "link",
+        "url": "?var-kind=\u0026var-airline=\u0026var-model=\u0026var-altband=\u0026var-country=\u0026var-hex=\u0026var-area="
+      }
+    ],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "duckdb",
+      "kepler",
+      "plus",
+      "energy",
+      "live"
+    ],
+    "timeSettings": {
+      "autoRefresh": "15m",
+      "autoRefreshIntervals": [
+        "15m",
+        "30m",
+        "1h"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-48h",
+      "hideTimepicker": false,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Wildfires near the power grid",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "Central Brazil",
+            "value": "central-brazil"
+          },
+          "description": "The region whose fires and grid are shown.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Region",
+          "multi": false,
+          "name": "region",
+          "options": [
+            {
+              "selected": true,
+              "text": "Central Brazil",
+              "value": "central-brazil"
+            },
+            {
+              "selected": false,
+              "text": "Southern Africa",
+              "value": "southern-africa"
+            },
+            {
+              "selected": false,
+              "text": "Eastern Australia",
+              "value": "eastern-australia"
+            },
+            {
+              "selected": false,
+              "text": "California",
+              "value": "california"
+            }
+          ],
+          "query": "Central Brazil : central-brazil, Southern Africa : southern-africa, Eastern Australia : eastern-australia, California : california",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "5",
+            "value": "5"
+          },
+          "description": "How close a fire has to be to a line to count as near it.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Distance to a line (km)",
+          "multi": false,
+          "name": "km",
+          "options": [
+            {
+              "selected": false,
+              "text": "1",
+              "value": "1"
+            },
+            {
+              "selected": false,
+              "text": "2",
+              "value": "2"
+            },
+            {
+              "selected": true,
+              "text": "5",
+              "value": "5"
+            },
+            {
+              "selected": false,
+              "text": "10",
+              "value": "10"
+            },
+            {
+              "selected": false,
+              "text": "20",
+              "value": "20"
+            }
+          ],
+          "query": "1 : 1, 2 : 2, 5 : 5, 10 : 10, 20 : 20",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "definition": "",
+          "description": "FIRMS's name for the file that covers the region.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "FIRMS region",
+          "multi": false,
+          "name": "firms",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "SELECT firms FROM (SELECT * FROM (VALUES\n    ('central-brazil', 'South_America', 'ESRI:102033', -25, -60, -2, -38, -13.5, -49),\n    ('southern-africa', 'Southern_Africa', 'ESRI:102022', -22, 12, -5, 42, -13.5, 27),\n    ('eastern-australia', 'Australia_NewZealand', 'EPSG:3577', -39, 138, -10, 154, -24.5, 146),\n    ('california', 'USA_contiguous_and_Hawaii', 'EPSG:3310', 32.5, -124.5, 42, -114, 37.2, -119.3)\n) v(region, firms, crs, s, w, n, e, lat, lng)) WHERE region = ${region:sqlstring}"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "definition": "",
+          "description": "Where the map goes when the region changes.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Centre latitude",
+          "multi": false,
+          "name": "lat",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "SELECT lat FROM (SELECT * FROM (VALUES\n    ('central-brazil', 'South_America', 'ESRI:102033', -25, -60, -2, -38, -13.5, -49),\n    ('southern-africa', 'Southern_Africa', 'ESRI:102022', -22, 12, -5, 42, -13.5, 27),\n    ('eastern-australia', 'Australia_NewZealand', 'EPSG:3577', -39, 138, -10, 154, -24.5, 146),\n    ('california', 'USA_contiguous_and_Hawaii', 'EPSG:3310', 32.5, -124.5, 42, -114, 37.2, -119.3)\n) v(region, firms, crs, s, w, n, e, lat, lng)) WHERE region = ${region:sqlstring}"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "definition": "",
+          "description": "Where the map goes when the region changes.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Centre longitude",
+          "multi": false,
+          "name": "lng",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "SELECT lng FROM (SELECT * FROM (VALUES\n    ('central-brazil', 'South_America', 'ESRI:102033', -25, -60, -2, -38, -13.5, -49),\n    ('southern-africa', 'Southern_Africa', 'ESRI:102022', -22, 12, -5, 42, -13.5, 27),\n    ('eastern-australia', 'Australia_NewZealand', 'EPSG:3577', -39, 138, -10, 154, -24.5, 146),\n    ('california', 'USA_contiguous_and_Hawaii', 'EPSG:3310', 32.5, -124.5, 42, -114, 37.2, -119.3)\n) v(region, firms, crs, s, w, n, e, lat, lng)) WHERE region = ${region:sqlstring}"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
