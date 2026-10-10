@@ -178,3 +178,20 @@ test('the FRED key never leaves the gateway', { skip: noFredKey }, () => {
   const answer = compose(['exec', '-T', 'grafana', 'curl', '-s', '-D', '-', `http://feeds${FRED}`]);
   assert.ok(!answer.includes(fredKey));
 });
+
+// adsb.lol's whole world, behind air-traffic-world and the recorder.
+const WORLD = '/adsblol/world';
+
+test('DuckDB reads every aircraft in the world through feeds', async () => {
+  const [row] = await duckdb(
+    STACK_URL,
+    `SELECT len(ac)::INTEGER AS n FROM read_json('http://feeds${WORLD}', columns = {ac: 'JSON[]'})`,
+  );
+  assert.ok(row.n > 1000, `only ${row.n} aircraft`);
+});
+
+test('adsb.lol is asked once a minute at most', () => {
+  const headers = () => compose(['exec', '-T', 'grafana', 'curl', '-s', '-o', '/dev/null', '-D', '-', `http://feeds${WORLD}`]);
+  headers();
+  assert.match(headers(), /X-Cache-Status: HIT/i);
+});
