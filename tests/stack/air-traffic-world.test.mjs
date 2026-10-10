@@ -9,7 +9,7 @@ import { api, rowsOf } from '../lib/grafana.mjs';
 import { findAll, loadDashboard } from '../lib/dashboards.mjs';
 import { STACK_URL } from '../lib/stack.mjs';
 
-const dashboard = loadDashboard('dashboards/gallery/air-traffic-world.json');
+const dashboard = loadDashboard('plus/dashboards/air-traffic-world.json');
 const EMPTY = 'http://feeds/recordings/flights-empty.parquet';
 
 const panelSql = findAll(dashboard, (n) => n.kind === 'Panel').flatMap((p) =>
@@ -29,17 +29,17 @@ async function run(sql, { from = 'now-1h', to = 'now' } = {}) {
 }
 
 const quote = (s) => `'${s.replaceAll("'", "''")}'`;
-const fill = (sql, { files, hex = '', area = '' }) =>
+// Every filter variable empty unless given, as on a fresh load.
+const fill = (sql, { files, ...vars }) =>
   sql
     .replaceAll('${files:singlequote}', files.map(quote).join(','))
-    .replaceAll('${hex:sqlstring}', quote(hex))
-    .replaceAll('${area:sqlstring}', quote(area))
+    .replace(/\$\{(\w+):sqlstring\}/g, (_, name) => quote(vars[name] ?? ''))
     .replaceAll('$__interval_ms', '60000');
 
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, 'air-traffic-world');
   assert.ok(dashboard.spec.description);
-  assert.deepEqual(dashboard.spec.tags, ['duckdb', 'kepler', 'live', 'aviation']);
+  assert.deepEqual(dashboard.spec.tags, ['duckdb', 'kepler', 'plus', 'business-charts', 'aviation', 'live']);
 });
 
 test('the files variable always lists the empty recording', async () => {
@@ -71,16 +71,29 @@ test('the drawn area replays the aircraft inside it', async () => {
 });
 
 test('with nothing recorded, history panels return no rows and no errors', async () => {
-  for (const { title, sql } of panelSql.filter((p) => p.sql.includes('${files:singlequote}'))) {
+  // The main map also draws the live feed on top of the recording: not a history-only panel.
+  for (const { title, sql } of panelSql.filter((p) => p.sql.includes('${files:singlequote}') && !p.sql.includes('adsblol'))) {
     const rows = await run(fill(sql, { files: [EMPTY] }));
     const empty = rows.length === 0 || rows.every((r) => Object.values(r).every((v) => v === 0 || v === null));
     assert.ok(empty, `${title}: ${JSON.stringify(rows).slice(0, 200)}`);
   }
 });
 
-test('the live panels read every aircraft in the world', async () => {
-  const live = panelSql.find((p) => p.title.startsWith('Live'));
-  const rows = await run(live.sql);
-  assert.ok(rows.length > 1000, `only ${rows.length} aircraft`);
-  assert.ok(rows.every((r) => r.latitude !== null && r.longitude !== null));
+test('the main map draws every aircraft in the world, even with nothing recorded', async () => {
+  const map = panelSql.find((p) => p.title.startsWith('Every aircraft'));
+  const rows = await run(fill(map.sql, { files: [EMPTY] }));
+  assert.ok(new Set(rows.map((r) => r.icao24)).size > 1000, `only ${rows.length} rows`);
+  assert.ok(rows.every((r) => r.latitude !== null && r.longitude !== null && r.time !== null));
+});
+
+test('a filter set by a chart narrows every panel', async () => {
+  const files = (await run(filesSql)).map((r) => r.url);
+  const kinds = panelSql.find((p) => p.title === 'Kind of flight');
+  const all = await run(fill(kinds.sql, { files }));
+  if (files.length < 2) return; // nothing recorded yet
+  const airline = await run(fill(kinds.sql, { files, model: 'A320' }));
+  assert.ok(airline.length > 0 && airline.length <= all.length);
+  const map = panelSql.find((p) => p.title.startsWith('Every aircraft'));
+  const military = await run(fill(map.sql, { files, kind: 'Military' }));
+  assert.ok(military.every((r) => r.kind === 'Military'));
 });
