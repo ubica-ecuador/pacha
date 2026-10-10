@@ -1,0 +1,2191 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2beta1",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "datacenter-interconnection"
+  },
+  "spec": {
+    "annotations": [],
+    "cursorSync": "Off",
+    "description": "How the Internet's data centres are joined: some 4,200 data centres from PeeringDB, sized by the networks in them, the world's submarine cables, and the latest round trip from about 1,000 RIPE Atlas anchors to the one picked; reloaded every 5 minutes.",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "id": 11,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "content": "### Where the data comes from\n\nThree open registers of how the Internet's data centres are joined, read with no key:\n\n- **[PeeringDB](https://www.peeringdb.com/)**: the register networks keep of where they interconnect. Each data centre (a *facility*) with its operator, its place, and how many networks (ASNs), exchanges and carriers say they are in it. Only those with a place and at least one network show. Kept by the networks themselves, so a building is as complete as its tenants made it.\n- **[Submarine Cable Map](https://www.submarinecablemap.com/)** by TeleGeography: the routes of the cables under the sea, and where they come ashore. The routes are drawn to show where a cable runs, not its exact track.\n- **[RIPE Atlas](https://atlas.ripe.net/)**: some 1,100 *anchors*, measuring servers hosted in data centres and networks around the world. Each anchor is pinged by all the others every four minutes (the *anchoring mesh*); the map shows the latest round of that mesh for the anchor picked in **Ping to**.\n\n### How to read it\n\n- A dot is an anchor, and an arc one of the nearest anchors pinging the target (**Arcs from** sets how many): the colour is the mean round trip of three packets, green under 30 ms, then yellow-green to 80, yellow to 150, orange to 250 and red beyond. Its comets run faster the shorter the trip. An anchor whose packets were all lost does not show, and counts in **Lost**.\n- A round trip is there and back, so a one-way delay is about half of it. Light in fibre covers some 100 km per millisecond of round trip, so a trip well above what the distance asks for means a long route, not a slow link: between two neighbours in Latin America, traffic can still go by way of Miami.\n- The data centres, in violet, are sized by the networks in them: the big dots are where networks meet, and where traffic between them stays local. **Region** picks the data centres the table lists; the map shows all of them.\n\n### How it works\n\nGrafana's DuckDB reads the registers through the stack's gateway, which keeps PeeringDB, the cables and the list of anchors a day, and the latest pings four minutes, the mesh's own interval: each source is asked once whoever is looking, and PeeringDB, which lets an anonymous reader have its whole list once an hour, is never asked twice. DuckDB running in your browser (the Chaski data source) then answers every panel. The map is the Kepler Geospatial Maps Plus panel, with its Traffic layer for the pings and its Pipeline layer for the cables. The dashboard reloads every five minutes.",
+                "mode": "markdown"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-answering": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*) FILTER (WHERE rtt_ms IS NOT NULL) AS \"Answering\" FROM $latency"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Anchors whose latest ping to the target had at least one packet back.",
+          "id": 4,
+          "links": [],
+          "title": "Answering",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#8AB8FF",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "textMode": "value"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-cables-count": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*) AS \"Cables\" FROM $cables"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Cables on the Submarine Cable Map, in service or planned.",
+          "id": 8,
+          "links": [],
+          "title": "Cables",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#3D8FE0",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "textMode": "value"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-countries": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT country AS \"Country\", median(rtt_ms) AS \"Round trip\"\nFROM $latency WHERE rtt_ms IS NOT NULL\nGROUP BY country\nQUALIFY row_number() OVER (ORDER BY count(*) DESC) \u003c= 30\nORDER BY \"Round trip\""
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The median of the latest round trips from the anchors of each country, the nearest first: the 30 countries with the most anchors answering.",
+          "id": 10,
+          "links": [],
+          "title": "Median round trip to ${target:text}, by country",
+          "vizConfig": {
+            "group": "bargauge",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "decimals": 0,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#73BF69",
+                        "value": null
+                      },
+                      {
+                        "color": "#C8D96F",
+                        "value": 30
+                      },
+                      {
+                        "color": "#FADE2A",
+                        "value": 80
+                      },
+                      {
+                        "color": "#FF9830",
+                        "value": 150
+                      },
+                      {
+                        "color": "#F2495C",
+                        "value": 250
+                      }
+                    ]
+                  },
+                  "unit": "ms"
+                },
+                "overrides": []
+              },
+              "options": {
+                "displayMode": "basic",
+                "maxVizHeight": 300,
+                "minVizHeight": 10,
+                "minVizWidth": 0,
+                "namePlacement": "left",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [],
+                  "fields": "/^Round trip$/",
+                  "values": true
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "color"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-facilities": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT name AS \"Data centre\", city || ', ' || country AS \"City\",\n       networks AS \"Networks\", exchanges AS \"IXPs\"\nFROM $facilities WHERE ('${region:raw}' = 'World' OR region = '${region:raw}')\nORDER BY networks DESC LIMIT 200"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Where networks meet: the data centres of the region picked, by how many networks (ASNs) say they are in them, and how many Internet exchanges (IXPs) are there.",
+          "id": 9,
+          "links": [],
+          "title": "Data centres in ${region:raw}, most networks first",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Data centre"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 195
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "City"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 115
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "IXPs"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 50
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Networks"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#B877D9",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "gauge",
+                          "valueDisplayMode": "text"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "frameIndex": 0,
+                "showHeader": true,
+                "sortBy": [
+                  {
+                    "desc": true,
+                    "displayName": "Networks"
+                  }
+                ]
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-facilities-count": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*) AS \"Data centres\" FROM $facilities WHERE ('${region:raw}' = 'World' OR region = '${region:raw}')"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Data centres in PeeringDB, in the region picked, with a place and at least one network.",
+          "id": 7,
+          "links": [],
+          "title": "Data centres",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#B877D9",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "textMode": "value"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-fastest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT source AS \"From\", company || ' (AS' || asn || ')' AS \"Hosted by\", rtt_ms AS \"Round trip\"\nFROM $latency WHERE rtt_ms IS NOT NULL ORDER BY rtt_ms LIMIT 50"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The anchors with the shortest latest round trip to the target: their place, who hosts them and in which network (ASN), and the mean round trip of three packets.",
+          "id": 6,
+          "links": [],
+          "title": "Nearest anchors to ${target:text}",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "From"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 125
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Round trip"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 100
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Round trip"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "ms"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "#73BF69",
+                              "value": null
+                            },
+                            {
+                              "color": "#C8D96F",
+                              "value": 30
+                            },
+                            {
+                              "color": "#FADE2A",
+                              "value": 80
+                            },
+                            {
+                              "color": "#FF9830",
+                              "value": 150
+                            },
+                            {
+                              "color": "#F2495C",
+                              "value": 250
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "frameIndex": 0,
+                "showHeader": true,
+                "sortBy": [
+                  {
+                    "desc": false,
+                    "displayName": "Round trip"
+                  }
+                ]
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-lost": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT avg(loss_pct) AS \"Lost\" FROM $latency"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The share of all the packets of the latest round that never came back.",
+          "id": 5,
+          "links": [],
+          "title": "Lost",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#F2495C",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "textMode": "value"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every submarine cable, along its route.\nSELECT cable, name, geometry AS geom FROM $cables"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Where the cables come ashore.\nSELECT name, latitude, longitude FROM $landings"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every data centre with a network in it, the busiest drawn last, on top.\nSELECT name, operator, city, country, networks, exchanges, carriers, latitude, longitude\nFROM $facilities ORDER BY networks"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- A dot for every anchor that answered, the slowest drawn first.\nSELECT source, company, asn, rtt_ms, loss_pct, time, srclat, srclng\nFROM $latency WHERE rtt_ms IS NOT NULL ORDER BY rtt_ms DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The arcs: from the nearest anchors only.\nSELECT source, company, asn, rtt_ms, loss_pct, pace, time, srclat, srclng, dstlat, dstlng\nFROM $latency WHERE rtt_ms IS NOT NULL ORDER BY rtt_ms LIMIT ${arcs:raw}"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "F"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The target itself.\nSELECT DISTINCT target, target_company, dstlat AS latitude, dstlng AS longitude FROM $latency"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "E"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every data centre in PeeringDB with a network in it, sized by how many (violet); the submarine cables and where they come ashore (blue); and every RIPE Atlas anchor, coloured by its latest round trip to the one picked in Ping to, green under 30 ms to red over 250, with an arc from the nearest (Arcs from). Hover a dot or an arc for its details.",
+          "id": 1,
+          "links": [],
+          "title": "Data centres, submarine cables and round trips to ${target:text}",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "basemap": "dark-matter",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": 8,
+                      "longitude": -40,
+                      "pitch": 0,
+                      "zoom": 1.9
+                    },
+                    "mapStyle": {
+                      "styleType": "dark-matter"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "currentTime": null,
+                        "speed": 1
+                      },
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "operator"
+                              },
+                              {
+                                "format": null,
+                                "name": "city"
+                              },
+                              {
+                                "format": null,
+                                "name": "networks"
+                              },
+                              {
+                                "format": null,
+                                "name": "exchanges"
+                              },
+                              {
+                                "format": null,
+                                "name": "carriers"
+                              }
+                            ],
+                            "grafana-D": [
+                              {
+                                "format": null,
+                                "name": "source"
+                              },
+                              {
+                                "format": null,
+                                "name": "company"
+                              },
+                              {
+                                "format": null,
+                                "name": "asn"
+                              },
+                              {
+                                "format": null,
+                                "name": "rtt_ms"
+                              },
+                              {
+                                "format": null,
+                                "name": "loss_pct"
+                              },
+                              {
+                                "format": null,
+                                "name": "time"
+                              }
+                            ],
+                            "grafana-E": [
+                              {
+                                "format": null,
+                                "name": "target"
+                              },
+                              {
+                                "format": null,
+                                "name": "target_company"
+                              }
+                            ],
+                            "grafana-F": [
+                              {
+                                "format": null,
+                                "name": "source"
+                              },
+                              {
+                                "format": null,
+                                "name": "company"
+                              },
+                              {
+                                "format": null,
+                                "name": "asn"
+                              },
+                              {
+                                "format": null,
+                                "name": "rtt_ms"
+                              },
+                              {
+                                "format": null,
+                                "name": "loss_pct"
+                              },
+                              {
+                                "format": null,
+                                "name": "time"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "target",
+                        "facilities",
+                        "anchors",
+                        "pings",
+                        "landings",
+                        "cables"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              115,
+                              191,
+                              105
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat0": "srclat",
+                              "lat1": "dstlat",
+                              "lng0": "srclng",
+                              "lng1": "dstlng"
+                            },
+                            "dataId": "grafana-F",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Pings from the nearest anchors",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    30,
+                                    "#73BF69"
+                                  ],
+                                  [
+                                    80,
+                                    "#C8D96F"
+                                  ],
+                                  [
+                                    150,
+                                    "#FADE2A"
+                                  ],
+                                  [
+                                    250,
+                                    "#FF9830"
+                                  ],
+                                  [
+                                    null,
+                                    "#F2495C"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#73BF69",
+                                  "#C8D96F",
+                                  "#FADE2A",
+                                  "#FF9830",
+                                  "#F2495C"
+                                ],
+                                "name": "Round trip, ms",
+                                "type": "custom"
+                              },
+                              "elevationScale": 1,
+                              "opacity": 0.25,
+                              "sizeRange": [
+                                1,
+                                6
+                              ],
+                              "thickness": 0.8,
+                              "trafficAnimate": true,
+                              "trafficArcHeight": 0.4,
+                              "trafficCycle": 6,
+                              "trafficDashLength": 0.5,
+                              "trafficDirectionMode": "straight",
+                              "trafficGlow": false,
+                              "trafficLaneBend": 0.12,
+                              "trafficLapsRange": [
+                                1,
+                                2
+                              ],
+                              "trafficShape": "arc",
+                              "trafficSpacing": 40,
+                              "trafficStyle": "comets",
+                              "trafficTrail": 0.5
+                            }
+                          },
+                          "id": "pings",
+                          "type": "traffic",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "rtt_ms",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "reverseColorScale": "quantile",
+                            "reverseSizeScale": "linear",
+                            "reverseSpeedScale": "linear",
+                            "sizeField": null,
+                            "sizeScale": "linear",
+                            "speedField": {
+                              "name": "pace",
+                              "type": "real"
+                            },
+                            "speedScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              115,
+                              191,
+                              105
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "srclat",
+                              "lng": "srclng"
+                            },
+                            "dataId": "grafana-D",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Anchors, by round trip",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    30,
+                                    "#73BF69"
+                                  ],
+                                  [
+                                    80,
+                                    "#C8D96F"
+                                  ],
+                                  [
+                                    150,
+                                    "#FADE2A"
+                                  ],
+                                  [
+                                    250,
+                                    "#FF9830"
+                                  ],
+                                  [
+                                    null,
+                                    "#F2495C"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#73BF69",
+                                  "#C8D96F",
+                                  "#FADE2A",
+                                  "#FF9830",
+                                  "#F2495C"
+                                ],
+                                "name": "Round trip, ms",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 1,
+                              "outline": false,
+                              "radius": 4,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "thickness": 1
+                            }
+                          },
+                          "id": "anchors",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "rtt_ms",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeField": null,
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-E",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Target anchor",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "target",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  12,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  24,
+                                  27,
+                                  31,
+                                  255
+                                ],
+                                "outlineWidth": 1,
+                                "size": 16,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 1,
+                              "outline": true,
+                              "radius": 9,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "thickness": 3
+                            }
+                          },
+                          "id": "target",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "sizeField": null,
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              184,
+                              119,
+                              217
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Data centres, by networks present",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.75,
+                              "outline": false,
+                              "radius": 6,
+                              "radiusRange": [
+                                2,
+                                22
+                              ],
+                              "thickness": 1
+                            }
+                          },
+                          "id": "facilities",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "sizeField": {
+                              "name": "networks",
+                              "type": "integer"
+                            },
+                            "sizeScale": "sqrt"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              143,
+                              217,
+                              232
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Cable landing points",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.9,
+                              "outline": false,
+                              "radius": 2,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "thickness": 1
+                            }
+                          },
+                          "id": "landings",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "sizeField": null,
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              61,
+                              143,
+                              224
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Submarine cables",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.6,
+                              "pipelineAltitude": 0,
+                              "pipelineLaneGap": 1,
+                              "pipelineReverse": false,
+                              "pipelineSignedSpeed": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeOpacity": 0.6,
+                              "stroked": true,
+                              "thickness": 1.5,
+                              "trafficAnimate": true,
+                              "trafficCycle": 12,
+                              "trafficDashLength": 0.5,
+                              "trafficDirectionMode": "straight",
+                              "trafficGlow": false,
+                              "trafficLapsRange": [
+                                1,
+                                2
+                              ],
+                              "trafficSpacing": 60,
+                              "trafficStyle": "dots",
+                              "trafficTrail": 0.25,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "cables",
+                          "type": "pipeline",
+                          "visualChannels": {
+                            "altitudeScale": "linear",
+                            "reverseColorScale": "quantile",
+                            "reverseSizeScale": "linear",
+                            "reverseSpeedScale": "linear",
+                            "sizeScale": "linear",
+                            "speedScale": "linear",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "showSidePanel": false,
+                "timeSync": "off"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-median": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT median(rtt_ms) AS \"Median\" FROM $latency"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The median round trip time (RTT): the median of the latest mean round trips from every anchor that answered to the target.",
+          "id": 2,
+          "links": [],
+          "title": "Median RTT",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FADE2A",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "unit": "ms"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "textMode": "value"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-nearest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT min(rtt_ms) AS \"Fastest\" FROM $latency"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The shortest of the latest round trips to the target, from another anchor.",
+          "id": 3,
+          "links": [],
+          "title": "Fastest",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#73BF69",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "unit": "ms"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "textMode": "value"
+              }
+            },
+            "version": ""
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "RowsLayout",
+      "spec": {
+        "rows": [
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-map"
+                        },
+                        "height": 22,
+                        "width": 16,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-median"
+                        },
+                        "height": 4,
+                        "width": 4,
+                        "x": 16,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-nearest"
+                        },
+                        "height": 4,
+                        "width": 4,
+                        "x": 20,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-answering"
+                        },
+                        "height": 4,
+                        "width": 4,
+                        "x": 16,
+                        "y": 4
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-lost"
+                        },
+                        "height": 4,
+                        "width": 4,
+                        "x": 20,
+                        "y": 4
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-fastest"
+                        },
+                        "height": 14,
+                        "width": 8,
+                        "x": 16,
+                        "y": 8
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-facilities-count"
+                        },
+                        "height": 6,
+                        "width": 4,
+                        "x": 0,
+                        "y": 22
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-cables-count"
+                        },
+                        "height": 6,
+                        "width": 4,
+                        "x": 0,
+                        "y": 28
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-facilities"
+                        },
+                        "height": 12,
+                        "width": 11,
+                        "x": 4,
+                        "y": 22
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-countries"
+                        },
+                        "height": 12,
+                        "width": 9,
+                        "x": 15,
+                        "y": 22
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-about"
+                        },
+                        "height": 11,
+                        "width": 24,
+                        "x": 0,
+                        "y": 34
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Top"
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "plus",
+      "kepler",
+      "network",
+      "live"
+    ],
+    "timeSettings": {
+      "autoRefresh": "5m",
+      "autoRefreshIntervals": [
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-1h",
+      "hideTimepicker": true,
+      "timezone": "browser",
+      "to": "now"
+    },
+    "title": "Data centres, submarine cables and the Internet's round trips",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "Quito, EC \u00b7 CEDIA",
+            "value": "19206681"
+          },
+          "definition": "",
+          "description": "The RIPE Atlas anchor that the other anchors ping: an always-on measuring server hosted in a data centre or a network.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Ping to",
+          "multi": false,
+          "name": "target",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- Every RIPE Atlas anchor that others ping (its mesh measurement), by place\n-- and host; the anchors in Ecuador first. Lists cached a day by the gateway.\nWITH anchors AS (\n  SELECT a.fqdn, a.city, a.country, a.company\n  FROM (SELECT unnest(results) AS a FROM read_json(['http://feeds/atlas/anchors/1.json', 'http://feeds/atlas/anchors/2.json', 'http://feeds/atlas/anchors/3.json'], maximum_object_size = 100000000))\n),\nmesh AS (\n  SELECT m.id, m.target FROM (SELECT unnest(results) AS m FROM read_json(['http://feeds/atlas/mesh/1.json', 'http://feeds/atlas/mesh/2.json', 'http://feeds/atlas/mesh/3.json'], maximum_object_size = 100000000))\n)\nSELECT a.city || ', ' || a.country || ' \u00b7 ' || a.company AS __text, CAST(m.id AS VARCHAR) AS __value\nFROM mesh m JOIN anchors a ON a.fqdn = m.target\nORDER BY a.country = 'EC' DESC, __text\n"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "nearest 100",
+            "value": "100"
+          },
+          "description": "How many anchors draw an arc to the target, the nearest first. Every anchor that answered is a dot.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Arcs from",
+          "multi": false,
+          "name": "arcs",
+          "options": [],
+          "query": "nearest 100 : 100, nearest 300 : 300, every anchor : 5000",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "South America",
+            "value": "South America"
+          },
+          "description": "The region of the data centres the tables list.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Region",
+          "multi": false,
+          "name": "region",
+          "options": [],
+          "query": "World : World, South America : South America, North America : North America, Europe : Europe, Asia Pacific : Asia Pacific, Africa : Africa, Middle East : Middle East, Australia : Australia",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Data centres (one row each)",
+          "multi": false,
+          "name": "facilities",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "facilities",
+              "refId": "facilities",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: every data centre in PeeringDB with a place and at least one\n-- network in it, through the gateway, which asks PeeringDB once a day (see\n-- gateway/feeds.conf). net_count is the networks (ASNs) present in the\n-- building, ix_count the exchanges, carrier_count the carriers.\nSELECT f.id, f.name, f.org_name AS operator, f.city, f.country,\n       coalesce(f.region_continent, 'Unknown') AS region,\n       f.latitude, f.longitude, f.net_count AS networks, f.ix_count AS exchanges,\n       f.carrier_count AS carriers\nFROM (SELECT unnest(data) AS f FROM read_json('http://feeds/peeringdb/fac', maximum_object_size = 100000000))\nWHERE f.latitude IS NOT NULL AND f.longitude IS NOT NULL AND f.net_count \u003e 0\n",
+                  "refId": "facilities"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Submarine cables (one row each)",
+          "multi": false,
+          "name": "cables",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "cables",
+              "refId": "cables",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: every submarine cable on TeleGeography's map, its route as\n-- GeoJSON, through the gateway, which keeps it a day.\nSELECT f.properties.id AS cable, f.properties.name AS name,\n       to_json(f.geometry)::VARCHAR AS geometry\nFROM (SELECT unnest(features) AS f FROM read_json('http://feeds/cables/cable.json', maximum_object_size = 100000000))\n",
+                  "refId": "cables"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Cable landing points (one row each)",
+          "multi": false,
+          "name": "landings",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "landings",
+              "refId": "landings",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: where the submarine cables come ashore.\nSELECT f.properties.id AS id, f.properties.name AS name,\n       f.geometry.coordinates[2] AS latitude, f.geometry.coordinates[1] AS longitude\nFROM (SELECT unnest(features) AS f FROM read_json('http://feeds/cables/landing-point.json', maximum_object_size = 100000000))\n",
+                  "refId": "landings"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Pings to the target anchor (one row per anchor)",
+          "multi": false,
+          "name": "latency",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "latency",
+              "refId": "latency",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the latest ping from every RIPE Atlas anchor to the one picked\n-- ($target, its mesh measurement), three packets every four minutes, through\n-- the gateway, which keeps the results four minutes. Each row is a link from\n-- the anchor that pinged to the target: rtt_ms is the mean round trip, null\n-- when no packet came back.\nWITH anchors AS (\n  SELECT a.probe, a.fqdn, a.city, a.country, a.company, a.as_v4::BIGINT AS asn,\n         a.geometry.coordinates[2] AS latitude, a.geometry.coordinates[1] AS longitude\n  FROM (SELECT unnest(results) AS a FROM read_json(['http://feeds/atlas/anchors/1.json', 'http://feeds/atlas/anchors/2.json', 'http://feeds/atlas/anchors/3.json'], maximum_object_size = 100000000))\n),\nmesh AS (\n  SELECT m.id, m.target FROM (SELECT unnest(results) AS m FROM read_json(['http://feeds/atlas/mesh/1.json', 'http://feeds/atlas/mesh/2.json', 'http://feeds/atlas/mesh/3.json'], maximum_object_size = 100000000))\n),\ntarget AS (SELECT a.* FROM mesh m JOIN anchors a ON a.fqdn = m.target WHERE m.id = ${target:raw}),\nlatest AS (\n  SELECT prb_id, avg, min, sent, rcvd, to_timestamp(timestamp) AS time\n  FROM read_json('http://feeds/atlas/latest/${target:raw}.json', maximum_object_size = 100000000,\n                 columns = {prb_id: 'BIGINT', avg: 'DOUBLE', min: 'DOUBLE', sent: 'INTEGER', rcvd: 'INTEGER', timestamp: 'BIGINT'})\n)\nSELECT s.fqdn AS anchor, s.city || ', ' || s.country AS source, s.country, s.company, s.asn,\n       s.latitude AS srclat, s.longitude AS srclng,\n       t.city || ', ' || t.country AS target, t.company AS target_company,\n       t.latitude AS dstlat, t.longitude AS dstlng,\n       CASE WHEN l.avg \u003e 0 THEN round(l.avg, 1) END AS rtt_ms,\n       CASE WHEN l.min \u003e 0 THEN round(l.min, 1) END AS rtt_min_ms,\n       round(100.0 * (l.sent - l.rcvd) / nullif(l.sent, 0))::INTEGER AS loss_pct,\n       -- Comets run faster on a shorter round trip.\n       CASE WHEN l.avg \u003e 0 THEN round(least(20, 400 / l.avg), 2) END AS pace,\n       l.time\nFROM latest l JOIN anchors s ON s.probe = l.prb_id CROSS JOIN target t\nWHERE s.latitude IS NOT NULL AND s.fqdn \u003c\u003e t.fqdn\n",
+                  "refId": "latency"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
