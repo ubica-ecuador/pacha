@@ -1,0 +1,778 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "starlink-constellation"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "Every Starlink satellite where it is now, computed in DuckDB from its orbital elements: a Kepler orbit with the Earth's J2 drift, within tens of kilometres of SGP4. How many are overhead a chosen point, by shell and by launch year. Data: CelesTrak, updated every two hours.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- CelesTrak's mean elements, moved along a Kepler orbit with J2's secular drift\n-- of the node, perigee and mean anomaly: within tens of km of SGP4 near epoch.\nWITH el AS (\n  SELECT OBJECT_NAME AS name, NORAD_CAT_ID AS norad, OBJECT_ID AS cospar,\n         EPOCH::TIMESTAMPTZ AS epoch, MEAN_MOTION AS mm, ECCENTRICITY AS e,\n         radians(INCLINATION) AS i, radians(RA_OF_ASC_NODE) AS raan0,\n         radians(ARG_OF_PERICENTER) AS w0, radians(MEAN_ANOMALY) AS m0, MEAN_MOTION_DOT AS ndot,\n         pow(398600.4418 / pow(MEAN_MOTION * 2 * pi() / 86400, 2), 1 / 3) AS a\n  FROM read_csv('http://feeds/celestrak/starlink.csv')\n),\nt AS (SELECT now() AS time),\np AS (\n  SELECT name, norad, cospar, time, a, e, i,\n         mm * 2 * pi() / 86400 AS n,\n         1.5 * 0.00108263 * pow(6378.137 / (a * (1 - e * e)), 2) * (mm * 2 * pi() / 86400) AS f,\n         epoch(time) - epoch(epoch) AS dt, raan0, w0, m0, ndot\n  FROM el, t\n),\nq AS (\n  SELECT *, raan0 - f * cos(i) * dt AS raan,\n            w0 + f * (2 - 2.5 * pow(sin(i), 2)) * dt AS w,\n            m0 + (n + f * sqrt(1 - e * e) * (1 - 1.5 * pow(sin(i), 2))) * dt\n               + 2 * pi() * ndot * pow(dt / 86400, 2) AS m,\n            radians(280.46061837 + 360.98564736629 * (epoch(time) - 946728000) / 86400) AS gmst\n  FROM p\n),\no AS (SELECT *, m + e * sin(m) + 0.5 * e * e * sin(2 * m) AS ea FROM q),\nx AS (\n  SELECT *, a * (1 - e * cos(ea)) AS r,\n            w + 2 * atan2(sqrt(1 + e) * sin(ea / 2), sqrt(1 - e) * cos(ea / 2)) AS u\n  FROM o\n),\nc AS (\n  SELECT *, r * (cos(raan) * cos(u) - sin(raan) * sin(u) * cos(i)) AS cx,\n            r * (sin(raan) * cos(u) + cos(raan) * sin(u) * cos(i)) AS cy,\n            r * sin(u) * sin(i) AS cz\n  FROM x\n),\npos AS (\n  SELECT name, norad, cospar, time,\n         degrees(atan2(cz, sqrt(cx * cx + cy * cy))) AS latitude,\n         ((degrees(atan2(cy, cx) - gmst) % 360 + 540) % 360) - 180 AS longitude,\n         round(r - 6378.137)::INTEGER AS altitude_km, round(degrees(i), 1) AS inclination,\n         CASE WHEN degrees(i) \u003e 90 THEN 'Polar (97°)' WHEN degrees(i) \u003e 60 THEN '70°'\n              WHEN degrees(i) \u003e 50 THEN '53°' WHEN degrees(i) \u003e 40 THEN '43°' ELSE '33°' END AS shell\n  FROM c\n)\nSELECT count(*) FILTER (WHERE altitude_km \u003e 150) AS \"In orbit\",\n       count(*) FILTER (WHERE altitude_km BETWEEN 340 AND 600) AS \"At operational height\",\n       count(*) FILTER (WHERE altitude_km BETWEEN 150 AND 340) AS \"Raising or reentering\"\nFROM pos"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Satellites in CelesTrak's Starlink group, propagated to now. Operational shells sit between about 340 and 600 km; lower ones are climbing after launch or coming down.",
+          "id": 1,
+          "links": [],
+          "title": "Starlink now",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- CelesTrak's mean elements, moved along a Kepler orbit with J2's secular drift\n-- of the node, perigee and mean anomaly: within tens of km of SGP4 near epoch.\nWITH el AS (\n  SELECT OBJECT_NAME AS name, NORAD_CAT_ID AS norad, OBJECT_ID AS cospar,\n         EPOCH::TIMESTAMPTZ AS epoch, MEAN_MOTION AS mm, ECCENTRICITY AS e,\n         radians(INCLINATION) AS i, radians(RA_OF_ASC_NODE) AS raan0,\n         radians(ARG_OF_PERICENTER) AS w0, radians(MEAN_ANOMALY) AS m0, MEAN_MOTION_DOT AS ndot,\n         pow(398600.4418 / pow(MEAN_MOTION * 2 * pi() / 86400, 2), 1 / 3) AS a\n  FROM read_csv('http://feeds/celestrak/starlink.csv')\n),\nt AS (SELECT now() AS time),\np AS (\n  SELECT name, norad, cospar, time, a, e, i,\n         mm * 2 * pi() / 86400 AS n,\n         1.5 * 0.00108263 * pow(6378.137 / (a * (1 - e * e)), 2) * (mm * 2 * pi() / 86400) AS f,\n         epoch(time) - epoch(epoch) AS dt, raan0, w0, m0, ndot\n  FROM el, t\n),\nq AS (\n  SELECT *, raan0 - f * cos(i) * dt AS raan,\n            w0 + f * (2 - 2.5 * pow(sin(i), 2)) * dt AS w,\n            m0 + (n + f * sqrt(1 - e * e) * (1 - 1.5 * pow(sin(i), 2))) * dt\n               + 2 * pi() * ndot * pow(dt / 86400, 2) AS m,\n            radians(280.46061837 + 360.98564736629 * (epoch(time) - 946728000) / 86400) AS gmst\n  FROM p\n),\no AS (SELECT *, m + e * sin(m) + 0.5 * e * e * sin(2 * m) AS ea FROM q),\nx AS (\n  SELECT *, a * (1 - e * cos(ea)) AS r,\n            w + 2 * atan2(sqrt(1 + e) * sin(ea / 2), sqrt(1 - e) * cos(ea / 2)) AS u\n  FROM o\n),\nc AS (\n  SELECT *, r * (cos(raan) * cos(u) - sin(raan) * sin(u) * cos(i)) AS cx,\n            r * (sin(raan) * cos(u) + cos(raan) * sin(u) * cos(i)) AS cy,\n            r * sin(u) * sin(i) AS cz\n  FROM x\n),\npos AS (\n  SELECT name, norad, cospar, time,\n         degrees(atan2(cz, sqrt(cx * cx + cy * cy))) AS latitude,\n         ((degrees(atan2(cy, cx) - gmst) % 360 + 540) % 360) - 180 AS longitude,\n         round(r - 6378.137)::INTEGER AS altitude_km, round(degrees(i), 1) AS inclination,\n         CASE WHEN degrees(i) \u003e 90 THEN 'Polar (97°)' WHEN degrees(i) \u003e 60 THEN '70°'\n              WHEN degrees(i) \u003e 50 THEN '53°' WHEN degrees(i) \u003e 40 THEN '43°' ELSE '33°' END AS shell\n  FROM c\n),\nobs AS (SELECT ${lat}::DOUBLE AS olat, ${lon}::DOUBLE AS olon)\n-- Above 25° of elevation from the point: for Starlink heights, within about 900 km on the ground.\nSELECT count(*) AS \"Overhead now\"\nFROM pos, obs\nWHERE altitude_km \u003e 150\n  AND 6371 * acos(least(1, sin(radians(olat)) * sin(radians(latitude))\n      + cos(radians(olat)) * cos(radians(latitude)) * cos(radians(longitude - olon)))) \u003c 900"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Satellites within about 900 km of the latitude and longitude above: roughly those higher than 25° in that sky.",
+          "id": 2,
+          "links": [],
+          "title": "Overhead the chosen point",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- CelesTrak's mean elements, moved along a Kepler orbit with J2's secular drift\n-- of the node, perigee and mean anomaly: within tens of km of SGP4 near epoch.\nWITH el AS (\n  SELECT OBJECT_NAME AS name, NORAD_CAT_ID AS norad, OBJECT_ID AS cospar,\n         EPOCH::TIMESTAMPTZ AS epoch, MEAN_MOTION AS mm, ECCENTRICITY AS e,\n         radians(INCLINATION) AS i, radians(RA_OF_ASC_NODE) AS raan0,\n         radians(ARG_OF_PERICENTER) AS w0, radians(MEAN_ANOMALY) AS m0, MEAN_MOTION_DOT AS ndot,\n         pow(398600.4418 / pow(MEAN_MOTION * 2 * pi() / 86400, 2), 1 / 3) AS a\n  FROM read_csv('http://feeds/celestrak/starlink.csv')\n),\nt AS (SELECT unnest(generate_series(date_trunc('minute', $__timeFrom()::TIMESTAMPTZ), $__timeTo()::TIMESTAMPTZ,\n         greatest(INTERVAL 1 MINUTE, date_trunc('minute', ($__timeTo()::TIMESTAMPTZ - $__timeFrom()::TIMESTAMPTZ) / 8)))) AS time),\np AS (\n  SELECT name, norad, cospar, time, a, e, i,\n         mm * 2 * pi() / 86400 AS n,\n         1.5 * 0.00108263 * pow(6378.137 / (a * (1 - e * e)), 2) * (mm * 2 * pi() / 86400) AS f,\n         epoch(time) - epoch(epoch) AS dt, raan0, w0, m0, ndot\n  FROM el, t\n),\nq AS (\n  SELECT *, raan0 - f * cos(i) * dt AS raan,\n            w0 + f * (2 - 2.5 * pow(sin(i), 2)) * dt AS w,\n            m0 + (n + f * sqrt(1 - e * e) * (1 - 1.5 * pow(sin(i), 2))) * dt\n               + 2 * pi() * ndot * pow(dt / 86400, 2) AS m,\n            radians(280.46061837 + 360.98564736629 * (epoch(time) - 946728000) / 86400) AS gmst\n  FROM p\n),\no AS (SELECT *, m + e * sin(m) + 0.5 * e * e * sin(2 * m) AS ea FROM q),\nx AS (\n  SELECT *, a * (1 - e * cos(ea)) AS r,\n            w + 2 * atan2(sqrt(1 + e) * sin(ea / 2), sqrt(1 - e) * cos(ea / 2)) AS u\n  FROM o\n),\nc AS (\n  SELECT *, r * (cos(raan) * cos(u) - sin(raan) * sin(u) * cos(i)) AS cx,\n            r * (sin(raan) * cos(u) + cos(raan) * sin(u) * cos(i)) AS cy,\n            r * sin(u) * sin(i) AS cz\n  FROM x\n),\npos AS (\n  SELECT name, norad, cospar, time,\n         degrees(atan2(cz, sqrt(cx * cx + cy * cy))) AS latitude,\n         ((degrees(atan2(cy, cx) - gmst) % 360 + 540) % 360) - 180 AS longitude,\n         round(r - 6378.137)::INTEGER AS altitude_km, round(degrees(i), 1) AS inclination,\n         CASE WHEN degrees(i) \u003e 90 THEN 'Polar (97°)' WHEN degrees(i) \u003e 60 THEN '70°'\n              WHEN degrees(i) \u003e 50 THEN '53°' WHEN degrees(i) \u003e 40 THEN '43°' ELSE '33°' END AS shell\n  FROM c\n)\n,\n-- Longitudes made continuous along each track, so a trail across the antimeridian\n-- does not span the map, then shifted by whole turns so the newest point is in [-180, 180].\nun AS (\n  SELECT *, longitude + 360 * sum(CASE WHEN jump \u003e 180 THEN -1 WHEN jump \u003c -180 THEN 1 ELSE 0 END)\n                               OVER (PARTITION BY norad ORDER BY time) AS lon_c\n  FROM (SELECT *, longitude - lag(longitude, 1, longitude) OVER (PARTITION BY norad ORDER BY time) AS jump\n        FROM pos WHERE altitude_km \u003e 150)\n)\nSELECT norad::VARCHAR AS norad, name, shell, time, latitude,\n       lon_c - 360 * round(last(lon_c) OVER (PARTITION BY norad ORDER BY time\n                           ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) / 360) AS longitude,\n       altitude_km\nFROM un\nORDER BY norad, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each satellite where it is over the time range, computed from its orbital elements: the range can reach into the future. Coloured by height. Press ▶ on the bar to play it. Data: CelesTrak.",
+          "id": 3,
+          "links": [],
+          "title": "Every Starlink satellite",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": 35,
+                      "longitude": 0,
+                      "pitch": 0,
+                      "zoom": 1.7
+                    },
+                    "mapStyle": {
+                      "styleType": "dark-matter"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "filters": [
+                        {
+                          "animationWindow": "incremental",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "clock",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "count",
+                            "defaultTimeFormat": "L  LT",
+                            "interval": "1-minute",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "syncTimelineMode": 1,
+                          "timezone": "UTC",
+                          "type": "timeRange",
+                          "view": "minified"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {
+                              "grafana-A": [
+                                {
+                                  "name": "name"
+                                },
+                                {
+                                  "name": "shell"
+                                },
+                                {
+                                  "name": "altitude_km"
+                                }
+                              ]
+                            }
+                          },
+                          "enabled": true
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "sats"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              0,
+                              204,
+                              188
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Satellites",
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#2C7BB6",
+                                  "#00A6CA",
+                                  "#00CCBC",
+                                  "#90EB9D",
+                                  "#FFFF8C",
+                                  "#F9D057",
+                                  "#F29E2E",
+                                  "#E76818"
+                                ],
+                                "name": "Altitude",
+                                "type": "sequential"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "fleetAltitudeField": "none",
+                              "fleetAssetField": "norad",
+                              "fleetCard": false,
+                              "fleetCardMinutes": 60,
+                              "fleetCardOpacity": 0.9,
+                              "fleetCardSize": "M",
+                              "fleetCardWindow": "auto",
+                              "fleetChangeColours": "neutral",
+                              "fleetCrossValue": true,
+                              "fleetCrosshair": true,
+                              "fleetDisplay": "flat",
+                              "fleetFollow": "",
+                              "fleetFollowMode": "follow",
+                              "fleetGhost": false,
+                              "fleetHeadingField": "track",
+                              "fleetHeadingFrom": "auto",
+                              "fleetIcons": "{}",
+                              "fleetLabel": "none",
+                              "fleetLabelColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "fleetLabelOffset": -1,
+                              "fleetLabelOutline": true,
+                              "fleetLabelSize": 12,
+                              "fleetMarker": "arrow",
+                              "fleetModelColours": "original",
+                              "fleetOrbitSecs": 60,
+                              "fleetPinned": [],
+                              "fleetPublishCrosshair": false,
+                              "fleetPulseBy": "auto",
+                              "fleetPulseCycle": 3,
+                              "fleetPulseLength": 0.3,
+                              "fleetPulseRange": [
+                                1,
+                                4
+                              ],
+                              "fleetRemember": "auto",
+                              "fleetRememberMin": 30,
+                              "fleetShadow": false,
+                              "fleetSize": 10,
+                              "fleetSmooth": false,
+                              "fleetSmoothMs": 1000,
+                              "fleetSpeedField": "ground_speed",
+                              "fleetSpeedUnit": "kt",
+                              "fleetStaleAfter": 60,
+                              "fleetStatusFrom": "column",
+                              "fleetStem": false,
+                              "fleetStopSpeed": 30,
+                              "fleetTimeField": "time",
+                              "fleetTimeRef": "live",
+                              "fleetTrail": 4,
+                              "fleetTrailAnimate": false,
+                              "fleetTrailDashLength": 0.5,
+                              "fleetTrailFade": true,
+                              "fleetTrailOpacity": 0.6,
+                              "fleetTrailShow": true,
+                              "fleetTrailSpacing": 18,
+                              "fleetTrailStyle": "comets",
+                              "fleetTrailWidth": 1,
+                              "fleetTypeField": "none",
+                              "fleetZoomRate": 0.35,
+                              "fleetZoomRef": 6,
+                              "fleetZoomScale": true,
+                              "opacity": 0.9,
+                              "outline": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#2C7BB6",
+                                  "#00A6CA",
+                                  "#00CCBC",
+                                  "#90EB9D",
+                                  "#FFFF8C",
+                                  "#F9D057",
+                                  "#F29E2E",
+                                  "#E76818"
+                                ],
+                                "name": "Altitude",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "sats",
+                          "type": "fleet",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "altitude_km",
+                              "type": "integer"
+                            },
+                            "colorScale": "quantile",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "toMap",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "0.1.0"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- CelesTrak's mean elements, moved along a Kepler orbit with J2's secular drift\n-- of the node, perigee and mean anomaly: within tens of km of SGP4 near epoch.\nWITH el AS (\n  SELECT OBJECT_NAME AS name, NORAD_CAT_ID AS norad, OBJECT_ID AS cospar,\n         EPOCH::TIMESTAMPTZ AS epoch, MEAN_MOTION AS mm, ECCENTRICITY AS e,\n         radians(INCLINATION) AS i, radians(RA_OF_ASC_NODE) AS raan0,\n         radians(ARG_OF_PERICENTER) AS w0, radians(MEAN_ANOMALY) AS m0, MEAN_MOTION_DOT AS ndot,\n         pow(398600.4418 / pow(MEAN_MOTION * 2 * pi() / 86400, 2), 1 / 3) AS a\n  FROM read_csv('http://feeds/celestrak/starlink.csv')\n),\nt AS (SELECT now() AS time),\np AS (\n  SELECT name, norad, cospar, time, a, e, i,\n         mm * 2 * pi() / 86400 AS n,\n         1.5 * 0.00108263 * pow(6378.137 / (a * (1 - e * e)), 2) * (mm * 2 * pi() / 86400) AS f,\n         epoch(time) - epoch(epoch) AS dt, raan0, w0, m0, ndot\n  FROM el, t\n),\nq AS (\n  SELECT *, raan0 - f * cos(i) * dt AS raan,\n            w0 + f * (2 - 2.5 * pow(sin(i), 2)) * dt AS w,\n            m0 + (n + f * sqrt(1 - e * e) * (1 - 1.5 * pow(sin(i), 2))) * dt\n               + 2 * pi() * ndot * pow(dt / 86400, 2) AS m,\n            radians(280.46061837 + 360.98564736629 * (epoch(time) - 946728000) / 86400) AS gmst\n  FROM p\n),\no AS (SELECT *, m + e * sin(m) + 0.5 * e * e * sin(2 * m) AS ea FROM q),\nx AS (\n  SELECT *, a * (1 - e * cos(ea)) AS r,\n            w + 2 * atan2(sqrt(1 + e) * sin(ea / 2), sqrt(1 - e) * cos(ea / 2)) AS u\n  FROM o\n),\nc AS (\n  SELECT *, r * (cos(raan) * cos(u) - sin(raan) * sin(u) * cos(i)) AS cx,\n            r * (sin(raan) * cos(u) + cos(raan) * sin(u) * cos(i)) AS cy,\n            r * sin(u) * sin(i) AS cz\n  FROM x\n),\npos AS (\n  SELECT name, norad, cospar, time,\n         degrees(atan2(cz, sqrt(cx * cx + cy * cy))) AS latitude,\n         ((degrees(atan2(cy, cx) - gmst) % 360 + 540) % 360) - 180 AS longitude,\n         round(r - 6378.137)::INTEGER AS altitude_km, round(degrees(i), 1) AS inclination,\n         CASE WHEN degrees(i) \u003e 90 THEN 'Polar (97°)' WHEN degrees(i) \u003e 60 THEN '70°'\n              WHEN degrees(i) \u003e 50 THEN '53°' WHEN degrees(i) \u003e 40 THEN '43°' ELSE '33°' END AS shell\n  FROM c\n)\nSELECT shell, count(*) AS satellites FROM pos WHERE altitude_km \u003e 150 GROUP BY shell ORDER BY satellites DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Satellites in orbit now, by inclination.",
+          "id": 4,
+          "links": [],
+          "title": "Satellites by shell",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst frame = context.panel.data.series[0];\nconst col = (name) =\u003e {\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\n// Distinct aircraft by altitude band.\n// A click on a bar filters the whole dashboard by it ($$altband); a click on the\n// picked bar clears the filter.\nconst VAR = 'altband';\nconst COLORS = {};\nconst values = col('value').reverse();\nconst labels = col('label').reverse();\nconst counts = col('satellites').reverse();\nconst picked = context.grafana.replaceVariables('${' + VAR + '}');\nconst location = context.grafana.locationService;\n\nconst chart = context.panel.chart;\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const value = values[event.dataIndex];\n  const current = context.grafana.replaceVariables('${' + VAR + '}');\n  location.partial({ ['var-' + VAR]: value === current ? '' : value }, true);\n});\n\nreturn {\n  animation: false,\n  grid: { left: 8, right: 56, top: 8, bottom: 8, containLabel: true },\n  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' },\n             formatter: (items) =\u003e `\u003cb\u003e${labels[items[0].dataIndex]}\u003c/b\u003e\u003cbr/\u003e${counts[items[0].dataIndex].toLocaleString()} aircraft\u003cbr/\u003e\u003ci\u003eclick to ${values[items[0].dataIndex] === picked ? 'clear the filter' : 'filter by it'}\u003c/i\u003e` },\n  xAxis: { type: 'value', axisLabel: { show: false }, splitLine: { show: false } },\n  yAxis: { type: 'category', data: labels, axisLabel: { color: text, width: 150, overflow: 'truncate' },\n           axisLine: { lineStyle: { color: lines } } },\n  series: [{\n    name: 'Satellites', type: 'bar', barMaxWidth: 16, cursor: 'pointer',\n    data: counts.map((v, i) =\u003e ({\n      value: v,\n      itemStyle: { color: COLORS[values[i]] || '#00A6CA', opacity: !picked || values[i] === picked ? 1 : 0.3 },\n    })),\n    label: { show: true, position: 'right', color: muted, formatter: (p) =\u003e p.value.toLocaleString() },\n  }],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- CelesTrak's mean elements, moved along a Kepler orbit with J2's secular drift\n-- of the node, perigee and mean anomaly: within tens of km of SGP4 near epoch.\nWITH el AS (\n  SELECT OBJECT_NAME AS name, NORAD_CAT_ID AS norad, OBJECT_ID AS cospar,\n         EPOCH::TIMESTAMPTZ AS epoch, MEAN_MOTION AS mm, ECCENTRICITY AS e,\n         radians(INCLINATION) AS i, radians(RA_OF_ASC_NODE) AS raan0,\n         radians(ARG_OF_PERICENTER) AS w0, radians(MEAN_ANOMALY) AS m0, MEAN_MOTION_DOT AS ndot,\n         pow(398600.4418 / pow(MEAN_MOTION * 2 * pi() / 86400, 2), 1 / 3) AS a\n  FROM read_csv('http://feeds/celestrak/starlink.csv')\n),\nt AS (SELECT now() AS time),\np AS (\n  SELECT name, norad, cospar, time, a, e, i,\n         mm * 2 * pi() / 86400 AS n,\n         1.5 * 0.00108263 * pow(6378.137 / (a * (1 - e * e)), 2) * (mm * 2 * pi() / 86400) AS f,\n         epoch(time) - epoch(epoch) AS dt, raan0, w0, m0, ndot\n  FROM el, t\n),\nq AS (\n  SELECT *, raan0 - f * cos(i) * dt AS raan,\n            w0 + f * (2 - 2.5 * pow(sin(i), 2)) * dt AS w,\n            m0 + (n + f * sqrt(1 - e * e) * (1 - 1.5 * pow(sin(i), 2))) * dt\n               + 2 * pi() * ndot * pow(dt / 86400, 2) AS m,\n            radians(280.46061837 + 360.98564736629 * (epoch(time) - 946728000) / 86400) AS gmst\n  FROM p\n),\no AS (SELECT *, m + e * sin(m) + 0.5 * e * e * sin(2 * m) AS ea FROM q),\nx AS (\n  SELECT *, a * (1 - e * cos(ea)) AS r,\n            w + 2 * atan2(sqrt(1 + e) * sin(ea / 2), sqrt(1 - e) * cos(ea / 2)) AS u\n  FROM o\n),\nc AS (\n  SELECT *, r * (cos(raan) * cos(u) - sin(raan) * sin(u) * cos(i)) AS cx,\n            r * (sin(raan) * cos(u) + cos(raan) * sin(u) * cos(i)) AS cy,\n            r * sin(u) * sin(i) AS cz\n  FROM x\n),\npos AS (\n  SELECT name, norad, cospar, time,\n         degrees(atan2(cz, sqrt(cx * cx + cy * cy))) AS latitude,\n         ((degrees(atan2(cy, cx) - gmst) % 360 + 540) % 360) - 180 AS longitude,\n         round(r - 6378.137)::INTEGER AS altitude_km, round(degrees(i), 1) AS inclination,\n         CASE WHEN degrees(i) \u003e 90 THEN 'Polar (97°)' WHEN degrees(i) \u003e 60 THEN '70°'\n              WHEN degrees(i) \u003e 50 THEN '53°' WHEN degrees(i) \u003e 40 THEN '43°' ELSE '33°' END AS shell\n  FROM c\n)\nSELECT left(cospar, 4) AS year, count(*) AS satellites FROM pos WHERE altitude_km \u003e 150 GROUP BY year ORDER BY year DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Satellites still in orbit, by the year of their launch (from the COSPAR id).",
+          "id": 5,
+          "links": [],
+          "title": "Satellites by launch year",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst frame = context.panel.data.series[0];\nconst col = (name) =\u003e {\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\n// Distinct aircraft by altitude band.\n// A click on a bar filters the whole dashboard by it ($$altband); a click on the\n// picked bar clears the filter.\nconst VAR = 'altband';\nconst COLORS = {};\nconst values = col('value').reverse();\nconst labels = col('label').reverse();\nconst counts = col('satellites').reverse();\nconst picked = context.grafana.replaceVariables('${' + VAR + '}');\nconst location = context.grafana.locationService;\n\nconst chart = context.panel.chart;\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const value = values[event.dataIndex];\n  const current = context.grafana.replaceVariables('${' + VAR + '}');\n  location.partial({ ['var-' + VAR]: value === current ? '' : value }, true);\n});\n\nreturn {\n  animation: false,\n  grid: { left: 8, right: 56, top: 8, bottom: 8, containLabel: true },\n  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' },\n             formatter: (items) =\u003e `\u003cb\u003e${labels[items[0].dataIndex]}\u003c/b\u003e\u003cbr/\u003e${counts[items[0].dataIndex].toLocaleString()} aircraft\u003cbr/\u003e\u003ci\u003eclick to ${values[items[0].dataIndex] === picked ? 'clear the filter' : 'filter by it'}\u003c/i\u003e` },\n  xAxis: { type: 'value', axisLabel: { show: false }, splitLine: { show: false } },\n  yAxis: { type: 'category', data: labels, axisLabel: { color: text, width: 150, overflow: 'truncate' },\n           axisLine: { lineStyle: { color: lines } } },\n  series: [{\n    name: 'Satellites', type: 'bar', barMaxWidth: 16, cursor: 'pointer',\n    data: counts.map((v, i) =\u003e ({\n      value: v,\n      itemStyle: { color: COLORS[values[i]] || '#00A6CA', opacity: !picked || values[i] === picked ? 1 : 0.3 },\n    })),\n    label: { show: true, position: 'right', color: muted, formatter: (p) =\u003e p.value.toLocaleString() },\n  }],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 4,
+              "width": 16,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              },
+              "height": 4,
+              "width": 8,
+              "x": 16,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 20,
+              "width": 24,
+              "x": 0,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 10,
+              "width": 12,
+              "x": 0,
+              "y": 24
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 10,
+              "width": 12,
+              "x": 12,
+              "y": 24
+            }
+          }
+        ]
+      }
+    },
+    "links": [
+      {
+        "asDropdown": false,
+        "icon": "info",
+        "includeVars": false,
+        "keepTime": true,
+        "tags": [],
+        "targetBlank": false,
+        "title": "Clear filters",
+        "tooltip": "Clear every filter the charts and maps have set",
+        "type": "link",
+        "url": "?var-kind=\u0026var-airline=\u0026var-model=\u0026var-altband=\u0026var-country=\u0026var-hex=\u0026var-area="
+      }
+    ],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "duckdb",
+      "kepler",
+      "plus",
+      "business-charts",
+      "space",
+      "live"
+    ],
+    "timeSettings": {
+      "autoRefresh": "1m",
+      "autoRefreshIntervals": [
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-15m",
+      "hideTimepicker": false,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Starlink constellation, live",
+    "variables": [
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "-2.9",
+            "value": "-2.9"
+          },
+          "description": "The point whose sky is counted. Cuenca by default.",
+          "hide": "dontHide",
+          "label": "Latitude",
+          "name": "lat",
+          "query": "-2.9",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "-79.0",
+            "value": "-79.0"
+          },
+          "description": "The point whose sky is counted.",
+          "hide": "dontHide",
+          "label": "Longitude",
+          "name": "lon",
+          "query": "-79.0",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
