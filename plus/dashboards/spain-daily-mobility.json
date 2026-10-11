@@ -1,0 +1,2165 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "spain-daily-mobility"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Every trip between Spain's municipalities on a day, counted from mobile phones by Spain's Ministry of Transport (MITMA): the busiest links hour by hour on the map, and where a municipality's trips go, when, why, how far and who makes them. Daily from 2022, read live from the ministry's open data.",
+    "editable": true,
+    "elements": {
+      "about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 11,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### About the data\n**Basado en datos abiertos MITMA** ([Ministerio de Transportes y Movilidad Sostenible](https://www.transportes.gob.es/ministerio/proyectos-singulares/estudios-de-movilidad-con-big-data/opendata-movilidad), [open data licence](https://mitma-movilidad-v2.s3.eu-west-1.amazonaws.com/LICENCIA%20de%20datos%20abiertos%20del%20MITMA%2020201203.pdf)): the *estudio básico* of trips between municipalities, read from the ministry's public bucket, one file a day, as published. The figures here are sums and shares of it, nothing else.\n\n**How it is counted.** Nommon builds it from Orange España's network records (calls, data, and from 2022 the network's passive probes), and expands its customers to the whole population of each place by INE's census. A *trip* is a move of more than 500 m between two places where the phone stays a while; its *hour* is when it starts, in local time (the Canaries an hour behind); its *purpose* is what each end is to that person: *home*, *work or study*, a *regular* place or another one. Age and sex are left out (NA) where the counts are too small; income is that of the census tract where the traveller lives, in euros a year per person. Small municipalities are counted together, under the name of one of them (*and neighbours*). Trips to and from France and Portugal end at their NUTS 3 regions.\n\n**What is missing.** Thirteen days between 2022 and June 2025, lost to incidents at the operator, among them 28 and 29 April 2025, the blackout. From 1 July 2025 the ministry changed its method (static IoT devices filtered out, so slightly more trips) and publishes sample weeks only: compare their patterns with earlier days, not their totals. The map draws the 2,000 busiest links of each hour; the charts and the table count every trip.\n\n**How it gets here.** DuckDB on the server reads the day's 80 MB file through the stack's gateway, which keeps each day a month, and sums it twice: once into the links of each hour, once into everything about the municipality picked. Both are handed to the browser, where every chart is a query of its own.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "age": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The travellers' age, where the study gives it, as a share of the trips of\n-- the municipality picked and of all Spain whose age is known.\nWITH s AS (\n  SELECT age,\n         100 * sum(trips) FILTER (WHERE scope \u003c\u003e 'spain') / sum(sum(trips) FILTER (WHERE scope \u003c\u003e 'spain')) OVER () AS \"Selected\",\n         100 * sum(trips) FILTER (WHERE scope = 'spain') / sum(sum(trips) FILTER (WHERE scope = 'spain')) OVER () AS \"All Spain\"\n  FROM $focus WHERE kind = 'people' AND age \u003c\u003e 'NA'\n  GROUP BY age\n)\nSELECT CASE age WHEN '0-25' THEN 'Under 25' WHEN '25-45' THEN '25–44' WHEN '45-65' THEN '45–64'\n                ELSE '65 and over' END AS \"Age\",\n       \"Selected\", \"All Spain\"\nFROM s\nORDER BY s.age"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Age of the traveller, as a share of the trips whose age the study gives: it leaves it out (NA) where the counts are too small.",
+          "id": 8,
+          "links": [],
+          "title": "Who travels: age · ${zone:text}",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Shares side by side: the municipality picked against all Spain, one pair\n// of bars per category, from a frame whose first column is the category and\n// whose 'Selected' and 'All Spain' columns are percentages.\n// @constants begin\nconst SERIES = [\n  { field: 'Selected', color: '#FF9830' },\n  { field: 'All Spain', color: '#8E8E8E' },\n];\n// @constants end\n\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst fields = frame?.fields ?? [];\nconst categories = Array.from(fields[0]?.values ?? []);\nconst column = (name) =\u003e Array.from(fields.find((f) =\u003e f.name === name)?.values ?? []).map((v) =\u003e (v === null ? null : Number(v)));\nconst zone = context.grafana.replaceVariables('${zone:text}') || 'Selected';\nconst series = SERIES.map((s) =\u003e ({ ...s, name: s.field === 'Selected' ? zone : s.field, values: column(s.field) }));\n\nreturn {\n  backgroundColor: 'transparent',\n  color: series.map((s) =\u003e s.color),\n  legend: { top: 0, right: 0, textStyle: { color: muted }, itemWidth: 14 },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    valueFormatter: (v) =\u003e (v === null || v === undefined ? '–' : `${Number(v).toFixed(1)} %`),\n  },\n  grid: { left: 8, right: 24, top: 28, bottom: 4, containLabel: true },\n  xAxis: {\n    type: 'value',\n    axisLabel: { color: muted, formatter: '{value} %' },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  yAxis: { type: 'category', data: categories, inverse: true, axisLabel: { color: muted } },\n  series: series.map((s) =\u003e ({ name: s.name, type: 'bar', barGap: '10%', data: s.values })),\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "distance": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- How far the trips of the municipality picked go, against all Spain.\nWITH s AS (\n  SELECT distance,\n         100 * sum(trips) FILTER (WHERE scope \u003c\u003e 'spain') / sum(sum(trips) FILTER (WHERE scope \u003c\u003e 'spain')) OVER () AS \"Selected\",\n         100 * sum(trips) FILTER (WHERE scope = 'spain') / sum(sum(trips) FILTER (WHERE scope = 'spain')) OVER () AS \"All Spain\"\n  FROM $focus WHERE kind = 'profile'\n  GROUP BY distance\n)\nSELECT CASE distance WHEN '0.5-2' THEN '0.5–2 km' WHEN '2-10' THEN '2–10 km'\n                     WHEN '10-50' THEN '10–50 km' WHEN '\u003e50' THEN 'Over 50 km' ELSE 'Unknown' END AS \"Distance\",\n       \"Selected\", \"All Spain\"\nFROM s\nORDER BY CASE s.distance WHEN '0.5-2' THEN 0 WHEN '2-10' THEN 1 WHEN '10-50' THEN 2 WHEN '\u003e50' THEN 3 ELSE 4 END"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Length of the trip, as a share of the trips of the municipality picked and of all Spain.",
+          "id": 7,
+          "links": [],
+          "title": "How far · ${zone:text}",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Shares side by side: the municipality picked against all Spain, one pair\n// of bars per category, from a frame whose first column is the category and\n// whose 'Selected' and 'All Spain' columns are percentages.\n// @constants begin\nconst SERIES = [\n  { field: 'Selected', color: '#FF9830' },\n  { field: 'All Spain', color: '#8E8E8E' },\n];\n// @constants end\n\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst fields = frame?.fields ?? [];\nconst categories = Array.from(fields[0]?.values ?? []);\nconst column = (name) =\u003e Array.from(fields.find((f) =\u003e f.name === name)?.values ?? []).map((v) =\u003e (v === null ? null : Number(v)));\nconst zone = context.grafana.replaceVariables('${zone:text}') || 'Selected';\nconst series = SERIES.map((s) =\u003e ({ ...s, name: s.field === 'Selected' ? zone : s.field, values: column(s.field) }));\n\nreturn {\n  backgroundColor: 'transparent',\n  color: series.map((s) =\u003e s.color),\n  legend: { top: 0, right: 0, textStyle: { color: muted }, itemWidth: 14 },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    valueFormatter: (v) =\u003e (v === null || v === undefined ? '–' : `${Number(v).toFixed(1)} %`),\n  },\n  grid: { left: 8, right: 24, top: 28, bottom: 4, containLabel: true },\n  xAxis: {\n    type: 'value',\n    axisLabel: { color: muted, formatter: '{value} %' },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  yAxis: { type: 'category', data: categories, inverse: true, axisLabel: { color: muted } },\n  series: series.map((s) =\u003e ({ name: s.name, type: 'bar', barGap: '10%', data: s.values })),\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "hourly": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Trips by hour: the municipality picked, each way, and all Spain.\nSELECT scope, hour, sum(trips) AS trips\nFROM $focus\nWHERE kind = 'profile'\nGROUP BY ALL\nORDER BY scope, hour"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each line is a share of its own day, by the hour the trip starts, local time. The line across is the hour on the map; click an hour to move the map there.",
+          "id": 4,
+          "links": [],
+          "title": "Trips by hour · ${zone:text}",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Trips by hour of the day picked, each line as a share of its own day, so a\n// village and all Spain read on one scale: leaving the municipality picked,\n// arriving in it, staying within it, and all Spain, dashed. The line across\n// is the hour on the map's clock; a click on an hour moves the clock there.\n// @constants begin\nconst FROM = 'map_from';\nconst TO = 'map_to';\nconst DAY = 'day';\nconst SERIES = [\n  { scope: 'out', name: 'Leaving', color: '#FF9830' },\n  { scope: 'in', name: 'Arriving', color: '#5794F2' },\n  { scope: 'within', name: 'Within', color: '#73BF69' },\n  { scope: 'spain', name: 'All Spain', color: '#8E8E8E', dashed: true },\n];\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst read = (name) =\u003e context.grafana.replaceVariables('${' + name + '}');\nconst HOURS = Array.from({ length: 24 }, (_, h) =\u003e String(h).padStart(2, '0'));\n\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst scopes = column('scope');\nconst hours = column('hour').map(Number);\nconst trips = column('trips').map(Number);\n\nconst lines = SERIES.map((s) =\u003e {\n  const raw = new Array(24).fill(0);\n  scopes.forEach((scope, i) =\u003e {\n    if (scope === s.scope) raw[hours[i]] += trips[i];\n  });\n  const total = raw.reduce((a, b) =\u003e a + b, 0);\n  return { ...s, raw, total };\n}).filter((s) =\u003e s.total \u003e 0);\n\nconst clock = new Date(read(FROM));\nconst hour = Number.isNaN(clock.getTime()) ? null : clock.getUTCHours();\nconst day = read(DAY);\n\nconst pick = (h) =\u003e {\n  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(day)) return;\n  const hh = String(h).padStart(2, '0');\n  location.partial({ ['var-' + FROM]: `${day}T${hh}:00:00.000Z`, ['var-' + TO]: `${day}T${hh}:59:59.999Z` }, true);\n};\nconst zr = chart.getZr();\nzr.off('click');\nzr.on('click', (event) =\u003e {\n  const at = [event.offsetX, event.offsetY];\n  if (!chart.containPixel('grid', at)) return;\n  const h = Math.round(chart.convertFromPixel({ xAxisIndex: 0 }, at));\n  if (h \u003e= 0 \u0026\u0026 h \u003c 24) pick(h);\n});\n\nreturn {\n  backgroundColor: 'transparent',\n  color: lines.map((s) =\u003e s.color),\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 14 },\n  tooltip: {\n    trigger: 'axis',\n    formatter: (items) =\u003e\n      `${items[0].axisValue}:00–${items[0].axisValue}:59\u003cbr/\u003e` +\n      items\n        .map((p) =\u003e {\n          const s = lines[p.seriesIndex];\n          return `${p.marker}${s.name}: \u003cb\u003e${Math.round(s.raw[p.dataIndex]).toLocaleString()}\u003c/b\u003e trips, ${p.value.toFixed(1)} % of its day`;\n        })\n        .join('\u003cbr/\u003e'),\n  },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: {\n    type: 'category',\n    data: HOURS,\n    boundaryGap: false,\n    axisLabel: { color: muted },\n    axisLine: { lineStyle: { color: theme.colors.border.medium } },\n  },\n  yAxis: {\n    type: 'value',\n    axisLabel: { color: muted, formatter: '{value} %' },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  series: lines.map((s, i) =\u003e ({\n    name: s.name,\n    type: 'line',\n    smooth: true,\n    showSymbol: false,\n    lineStyle: { width: s.dashed ? 1.5 : 2, type: s.dashed ? 'dashed' : 'solid' },\n    data: s.raw.map((v) =\u003e (100 * v) / s.total),\n    markLine:\n      i === 0 \u0026\u0026 hour !== null\n        ? {\n            silent: true,\n            symbol: 'none',\n            label: { show: false },\n            lineStyle: { color: theme.colors.text.primary, type: 'solid', width: 1 },\n            data: [{ xAxis: HOURS[hour] }],\n          }\n        : undefined,\n  })),\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "income": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The income of the census tract where the traveller lives, euros a year per\n-- person, as a share of the trips of the municipality picked and of all Spain.\nWITH s AS (\n  SELECT income,\n         100 * sum(trips) FILTER (WHERE scope \u003c\u003e 'spain') / sum(sum(trips) FILTER (WHERE scope \u003c\u003e 'spain')) OVER () AS \"Selected\",\n         100 * sum(trips) FILTER (WHERE scope = 'spain') / sum(sum(trips) FILTER (WHERE scope = 'spain')) OVER () AS \"All Spain\"\n  FROM $focus WHERE kind = 'people' AND income \u003c\u003e 'NA'\n  GROUP BY income\n)\nSELECT CASE income WHEN '\u003c10' THEN 'Under €10,000' WHEN '10-15' THEN '€10,000–15,000'\n                   ELSE 'Over €15,000' END AS \"Income where they live\",\n       \"Selected\", \"All Spain\"\nFROM s\nORDER BY CASE s.income WHEN '\u003c10' THEN 0 WHEN '10-15' THEN 1 ELSE 2 END"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Average income, euros a year per person, of the census tract where the traveller lives, as a share of the trips of the municipality picked and of all Spain.",
+          "id": 9,
+          "links": [],
+          "title": "Who travels: income · ${zone:text}",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Shares side by side: the municipality picked against all Spain, one pair\n// of bars per category, from a frame whose first column is the category and\n// whose 'Selected' and 'All Spain' columns are percentages.\n// @constants begin\nconst SERIES = [\n  { field: 'Selected', color: '#FF9830' },\n  { field: 'All Spain', color: '#8E8E8E' },\n];\n// @constants end\n\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst fields = frame?.fields ?? [];\nconst categories = Array.from(fields[0]?.values ?? []);\nconst column = (name) =\u003e Array.from(fields.find((f) =\u003e f.name === name)?.values ?? []).map((v) =\u003e (v === null ? null : Number(v)));\nconst zone = context.grafana.replaceVariables('${zone:text}') || 'Selected';\nconst series = SERIES.map((s) =\u003e ({ ...s, name: s.field === 'Selected' ? zone : s.field, values: column(s.field) }));\n\nreturn {\n  backgroundColor: 'transparent',\n  color: series.map((s) =\u003e s.color),\n  legend: { top: 0, right: 0, textStyle: { color: muted }, itemWidth: 14 },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    valueFormatter: (v) =\u003e (v === null || v === undefined ? '–' : `${Number(v).toFixed(1)} %`),\n  },\n  grid: { left: 8, right: 24, top: 28, bottom: 4, containLabel: true },\n  xAxis: {\n    type: 'value',\n    axisLabel: { color: muted, formatter: '{value} %' },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  yAxis: { type: 'category', data: categories, inverse: true, axisLabel: { color: muted } },\n  series: series.map((s) =\u003e ({ name: s.name, type: 'bar', barGap: '10%', data: s.values })),\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "intro": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Spain on the move, from mobile phones\nEvery trip between Spain's municipalities on one day, as Spain's Ministry of Transport counts them from mobile phones: about 150 million trips on a weekday, 14 million rows a day, by hour, distance, purpose, age, sex and income. **Press play** on the map's clock to watch the day go by, hour by hour; the arcs are the busiest links of each hour, coloured by how far they go. **Click a municipality** (or pick one in *Municipality*) to draw all its trips bright, leaving in orange and arriving in blue, and to read its day in the charts. **Click an hour** of *Trips by hour* to move the clock there. *Day* picks the day, from 2022 on.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The 2,000 busiest links between municipalities in each hour of the day,\n-- one arc each: the clock shows one hour at a time. Coloured by the length of\n-- the average trip; thickness and pace by the trips.\nSELECT f.time, o.name AS \"from\", d.name AS \"to\", f.trips, f.km_per_trip,\n       o.lat AS lat0, o.lng AS lng0, d.lat AS lat1, d.lng AS lng1\nFROM $flows f\nJOIN $zones o ON o.zone = f.origin\nJOIN $zones d ON d.zone = f.destination\nORDER BY f.trips"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every trip into and out of the municipality picked, hour by hour, bright:\n-- leaving in orange, arriving in blue; links of fewer than 10 trips in the\n-- hour are left out. A click on an arc picks the other end.\nSELECT f.time, CASE f.scope WHEN 'out' THEN 'Leaving' ELSE 'Arriving' END AS direction,\n       o.name AS place, o.zone, round(f.trips) AS trips, round(f.km / f.trips, 1) AS km_per_trip,\n       CASE f.scope WHEN 'out' THEN z.lat ELSE o.lat END AS lat0,\n       CASE f.scope WHEN 'out' THEN z.lng ELSE o.lng END AS lng0,\n       CASE f.scope WHEN 'out' THEN o.lat ELSE z.lat END AS lat1,\n       CASE f.scope WHEN 'out' THEN o.lng ELSE z.lng END AS lng1\nFROM $focus f\nJOIN $zones z ON z.zone = $zone\nJOIN $zones o ON o.zone = f.other\nWHERE f.kind = 'partner' AND f.scope IN ('out', 'in') AND f.trips \u003e= 10\nORDER BY f.trips"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every zone of the study, sized by its population: Spain's municipalities,\n-- and the regions of France and Portugal trips cross into. Click one to pick it.\nSELECT zone, name, country, population, coalesce(population, 2000) AS size, lat, lng\nFROM $zones\nORDER BY size DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The municipality picked, labelled.\nSELECT zone, name, population, lat, lng FROM $zones WHERE zone = $zone"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The busiest links of each hour of the day, coloured by trip length, and every trip of the municipality picked, leaving in orange and arriving in blue. Press play to run the day; click a municipality to pick it.",
+          "id": 2,
+          "links": [],
+          "title": "Trips between municipalities · ${day:text}",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "openfreemap-dark",
+                "clickConfirm": false,
+                "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": 39.6,
+                      "longitude": -3.7,
+                      "pitch": 0,
+                      "zoom": 5.0
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": true
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "currentTime": null,
+                        "speed": 1
+                      },
+                      "filters": [
+                        {
+                          "animationWindow": "interval",
+                          "dataId": [
+                            "grafana-A",
+                            "grafana-B"
+                          ],
+                          "enabled": true,
+                          "id": "hour",
+                          "name": [
+                            "time",
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "sum",
+                            "colorsByDataId": {
+                              "grafana-A": "#73BF69",
+                              "grafana-B": "#FF9830"
+                            },
+                            "interval": "1-hour",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "timezone": "UTC",
+                          "type": "timeRange",
+                          "value": [
+                            1741766400000,
+                            1741766400000
+                          ],
+                          "view": "minified"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "format": null,
+                                "name": "from"
+                              },
+                              {
+                                "format": null,
+                                "name": "to"
+                              },
+                              {
+                                "format": null,
+                                "name": "trips"
+                              },
+                              {
+                                "format": null,
+                                "name": "km_per_trip"
+                              },
+                              {
+                                "format": null,
+                                "name": "time"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "format": null,
+                                "name": "direction"
+                              },
+                              {
+                                "format": null,
+                                "name": "place"
+                              },
+                              {
+                                "format": null,
+                                "name": "trips"
+                              },
+                              {
+                                "format": null,
+                                "name": "km_per_trip"
+                              },
+                              {
+                                "format": null,
+                                "name": "time"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "zone"
+                              },
+                              {
+                                "format": null,
+                                "name": "population"
+                              }
+                            ],
+                            "grafana-D": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "zone"
+                              },
+                              {
+                                "format": null,
+                                "name": "population"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "picked",
+                        "picked-trips",
+                        "links",
+                        "zones"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "lat",
+                              "lng": "lng"
+                            },
+                            "dataId": "grafana-D",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Municipality picked",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": true,
+                                "backgroundColor": [
+                                  17,
+                                  18,
+                                  23,
+                                  220
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "name",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  -22
+                                ],
+                                "outlineColor": [
+                                  0,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 14,
+                                "weight": 600
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 1,
+                              "outline": true,
+                              "radius": 9,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "thickness": 2
+                            }
+                          },
+                          "id": "picked",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "sizeField": null,
+                            "sizeScale": "sqrt"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              152,
+                              48
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat0": "lat0",
+                              "lat1": "lat1",
+                              "lng0": "lng0",
+                              "lng1": "lng1"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Trips of the municipality picked",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Leaving",
+                                    "#FF9830"
+                                  ],
+                                  [
+                                    "Arriving",
+                                    "#5794F2"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#FF9830",
+                                  "#5794F2"
+                                ],
+                                "name": "Direction",
+                                "type": "customOrdinal"
+                              },
+                              "elevationScale": 1,
+                              "opacity": 0.5,
+                              "sizeRange": [
+                                0.3,
+                                4
+                              ],
+                              "thickness": 1,
+                              "trafficAnimate": true,
+                              "trafficArcHeight": 0.3,
+                              "trafficCycle": 6,
+                              "trafficDashLength": 0.5,
+                              "trafficDirectionMode": "straight",
+                              "trafficGlow": false,
+                              "trafficLaneBend": 0.12,
+                              "trafficLapsRange": [
+                                1,
+                                5
+                              ],
+                              "trafficShape": "arc",
+                              "trafficSpacing": 40,
+                              "trafficStyle": "comets",
+                              "trafficTrail": 0.5
+                            }
+                          },
+                          "id": "picked-trips",
+                          "type": "traffic",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "direction",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "reverseColorScale": "quantile",
+                            "reverseSizeScale": "linear",
+                            "reverseSpeedScale": "linear",
+                            "sizeField": {
+                              "name": "trips",
+                              "type": "integer"
+                            },
+                            "sizeScale": "sqrt",
+                            "speedField": {
+                              "name": "trips",
+                              "type": "integer"
+                            },
+                            "speedScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              152,
+                              48
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat0": "lat0",
+                              "lat1": "lat1",
+                              "lng0": "lng0",
+                              "lng1": "lng1"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Busiest links of the hour",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    5,
+                                    "#4CC9F0"
+                                  ],
+                                  [
+                                    15,
+                                    "#73BF69"
+                                  ],
+                                  [
+                                    50,
+                                    "#FADE2A"
+                                  ],
+                                  [
+                                    null,
+                                    "#F2495C"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4CC9F0",
+                                  "#73BF69",
+                                  "#FADE2A",
+                                  "#F2495C"
+                                ],
+                                "name": "Km per trip",
+                                "type": "custom"
+                              },
+                              "elevationScale": 1,
+                              "opacity": 0.45,
+                              "sizeRange": [
+                                0.3,
+                                5
+                              ],
+                              "thickness": 1,
+                              "trafficAnimate": true,
+                              "trafficArcHeight": 0.3,
+                              "trafficCycle": 6,
+                              "trafficDashLength": 0.5,
+                              "trafficDirectionMode": "straight",
+                              "trafficGlow": false,
+                              "trafficLaneBend": 0.12,
+                              "trafficLapsRange": [
+                                1,
+                                5
+                              ],
+                              "trafficShape": "arc",
+                              "trafficSpacing": 40,
+                              "trafficStyle": "comets",
+                              "trafficTrail": 0.5
+                            }
+                          },
+                          "id": "links",
+                          "type": "traffic",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "km_per_trip",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "reverseColorScale": "quantile",
+                            "reverseSizeScale": "linear",
+                            "reverseSpeedScale": "linear",
+                            "sizeField": {
+                              "name": "trips",
+                              "type": "integer"
+                            },
+                            "sizeScale": "sqrt",
+                            "speedField": {
+                              "name": "trips",
+                              "type": "integer"
+                            },
+                            "speedScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              154,
+                              165,
+                              177
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "lat",
+                              "lng": "lng"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Municipalities, by population",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Spain",
+                                    "#9AA5B1"
+                                  ],
+                                  [
+                                    "France",
+                                    "#B877D9"
+                                  ],
+                                  [
+                                    "Portugal",
+                                    "#B877D9"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#9AA5B1",
+                                  "#B877D9",
+                                  "#B877D9"
+                                ],
+                                "name": "Country",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.35,
+                              "outline": false,
+                              "radius": 3,
+                              "radiusRange": [
+                                1,
+                                22
+                              ],
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "thickness": 2
+                            }
+                          },
+                          "id": "zones",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "country",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeField": {
+                              "name": "size",
+                              "type": "integer"
+                            },
+                            "sizeScale": "sqrt"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1000,
+                "publishWhilePlaying": true,
+                "showSidePanel": false,
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "map_from",
+                  "to": "map_to"
+                },
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "zone",
+                    "source": "click",
+                    "variable": "zone"
+                  }
+                ]
+              }
+            },
+            "version": "0.1.0"
+          }
+        }
+      },
+      "monthly": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Trips in Spain month by month, by kind, January 2022 to June 2025.\nSELECT time,\n       sum(trips) FILTER (WHERE kind = 'Within a province')  AS \"Within a province\",\n       sum(trips) FILTER (WHERE kind = 'Between provinces')  AS \"Between provinces\",\n       sum(trips) FILTER (WHERE kind = 'To and from abroad') AS \"To and from abroad\"\nFROM $monthly\nGROUP BY time\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "MITMA's monthly totals of trips, by whether they cross a province's border or Spain's; the month of the day picked is outlined. October and November 2023 are not published: seven of their days were lost to an incident at the operator.",
+          "id": 10,
+          "links": [],
+          "title": "Trips in Spain, month by month",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Trips in Spain month by month, stacked by kind, from a frame (time, one\n// column per kind). The month of the day picked is outlined.\n// @constants begin\nconst KINDS = [\n  { field: 'Within a province', color: '#73BF69' },\n  { field: 'Between provinces', color: '#FF9830' },\n  { field: 'To and from abroad', color: '#5794F2' },\n];\nconst DAY = 'day';\n// @constants end\n\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst months = column('time').map((t) =\u003e new Date(Number(t)).toISOString().slice(0, 7));\nconst picked = context.grafana.replaceVariables('${' + DAY + '}').slice(0, 7);\nconst at = months.indexOf(picked);\nconst short = (v) =\u003e (v \u003e= 1e9 ? `${(v / 1e9).toFixed(1)} bn` : `${Math.round(v / 1e6)} M`);\n\nreturn {\n  backgroundColor: 'transparent',\n  color: KINDS.map((k) =\u003e k.color),\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 14 },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    valueFormatter: (v) =\u003e `${Math.round(Number(v)).toLocaleString()} trips`,\n  },\n  grid: { left: 8, right: 16, top: 28, bottom: 4, containLabel: true },\n  xAxis: { type: 'category', data: months, axisLabel: { color: muted } },\n  yAxis: {\n    type: 'value',\n    axisLabel: { color: muted, formatter: short },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  series: KINDS.map((k, i) =\u003e ({\n    name: k.field,\n    type: 'bar',\n    stack: 'trips',\n    barCategoryGap: '20%',\n    data: column(k.field).map((v, j) =\u003e\n      j === at ? { value: Number(v), itemStyle: { borderColor: theme.colors.text.primary, borderWidth: 1.5 } } : Number(v)\n    ),\n  })),\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "partners": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Where the trips of the municipality picked go and come from, over the\n-- whole day, the busiest links first. A click on a place picks it.\nWITH p AS (\n  SELECT other,\n         sum(trips) FILTER (WHERE scope = 'out') AS out_trips,\n         sum(trips) FILTER (WHERE scope = 'in')  AS in_trips,\n         sum(km) / sum(trips)                    AS km_per_trip\n  FROM $focus\n  WHERE kind = 'partner' AND scope IN ('out', 'in')\n  GROUP BY other\n)\nSELECT coalesce(z.name, p.other)                                AS \"Place\",\n       round(coalesce(out_trips, 0))                            AS \"Trips there\",\n       round(coalesce(in_trips, 0))                             AS \"Trips from there\",\n       round(coalesce(out_trips, 0) + coalesce(in_trips, 0))    AS \"Both ways\",\n       round(km_per_trip, 1)                                    AS \"Km per trip\",\n       p.other                                                  AS zone_id\nFROM p LEFT JOIN $zones z ON z.zone = p.other\nORDER BY \"Both ways\" DESC\nLIMIT 200"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every place the municipality picked trades trips with on the day, both ways. Click a place to pick it.",
+          "id": 6,
+          "links": [],
+          "title": "Where trips go and come from · ${zone:text}",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Place"
+                    },
+                    "properties": [
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Pick this place",
+                            "url": "/d/spain-daily-mobility${__url.params:exclude:var-zone}\u0026var-zone=${__data.fields.zone_id}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Trips there"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "gauge",
+                          "valueDisplayMode": "text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#FF9830",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Trips from there"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "gauge",
+                          "valueDisplayMode": "text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#5794F2",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Km per trip"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "none"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "zone_id"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true,
+                "sortBy": [
+                  {
+                    "desc": true,
+                    "displayName": "Both ways"
+                  }
+                ]
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "purpose": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- What each end of the trip is to the traveller, as a share of the trips of\n-- the municipality picked (leaving, arriving and within) and of all Spain:\n-- the eight commonest pairs there.\nWITH p AS (\n  SELECT scope = 'spain' AS spain,\n         CASE from_activity WHEN 'casa' THEN 'Home' WHEN 'trabajo_estudio' THEN 'Work or study'\n                            WHEN 'frecuente' THEN 'Regular place' ELSE 'Other place' END\n         || ' → ' ||\n         CASE to_activity WHEN 'casa' THEN 'Home' WHEN 'trabajo_estudio' THEN 'Work or study'\n                          WHEN 'frecuente' THEN 'Regular place' ELSE 'Other place' END AS purpose,\n         trips\n  FROM $focus WHERE kind = 'profile'\n),\ns AS (\n  SELECT purpose,\n         100 * sum(trips) FILTER (WHERE NOT spain) / sum(sum(trips) FILTER (WHERE NOT spain)) OVER () AS \"Selected\",\n         100 * sum(trips) FILTER (WHERE spain) / sum(sum(trips) FILTER (WHERE spain)) OVER () AS \"All Spain\"\n  FROM p GROUP BY purpose\n)\nSELECT purpose AS \"Purpose\", \"Selected\", \"All Spain\"\nFROM s\nORDER BY coalesce(\"Selected\", 0) DESC, \"All Spain\" DESC\nLIMIT 8"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "What each end of the trip is to the traveller (home, work or study, a place they go to regularly, or another), as a share of the trips of the municipality picked and of all Spain. The eight commonest there.",
+          "id": 5,
+          "links": [],
+          "title": "Why they travel · ${zone:text}",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Shares side by side: the municipality picked against all Spain, one pair\n// of bars per category, from a frame whose first column is the category and\n// whose 'Selected' and 'All Spain' columns are percentages.\n// @constants begin\nconst SERIES = [\n  { field: 'Selected', color: '#FF9830' },\n  { field: 'All Spain', color: '#8E8E8E' },\n];\n// @constants end\n\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst fields = frame?.fields ?? [];\nconst categories = Array.from(fields[0]?.values ?? []);\nconst column = (name) =\u003e Array.from(fields.find((f) =\u003e f.name === name)?.values ?? []).map((v) =\u003e (v === null ? null : Number(v)));\nconst zone = context.grafana.replaceVariables('${zone:text}') || 'Selected';\nconst series = SERIES.map((s) =\u003e ({ ...s, name: s.field === 'Selected' ? zone : s.field, values: column(s.field) }));\n\nreturn {\n  backgroundColor: 'transparent',\n  color: series.map((s) =\u003e s.color),\n  legend: { top: 0, right: 0, textStyle: { color: muted }, itemWidth: 14 },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    valueFormatter: (v) =\u003e (v === null || v === undefined ? '–' : `${Number(v).toFixed(1)} %`),\n  },\n  grid: { left: 8, right: 24, top: 28, bottom: 4, containLabel: true },\n  xAxis: {\n    type: 'value',\n    axisLabel: { color: muted, formatter: '{value} %' },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  yAxis: { type: 'category', data: categories, inverse: true, axisLabel: { color: muted } },\n  series: series.map((s) =\u003e ({ name: s.name, type: 'bar', barGap: '10%', data: s.values })),\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "stats": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The day in figures: all Spain, and the trips of the municipality picked.\nSELECT sum(trips) FILTER (WHERE scope = 'spain')  AS \"Trips in Spain\",\n       sum(trips) FILTER (WHERE scope = 'out')    AS \"Leaving\",\n       sum(trips) FILTER (WHERE scope = 'in')     AS \"Arriving\",\n       sum(trips) FILTER (WHERE scope = 'within') AS \"Within\",\n       sum(km) FILTER (WHERE scope = 'out') / sum(trips) FILTER (WHERE scope = 'out') AS \"Km per trip out\"\nFROM $focus\nWHERE kind = 'profile'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "On the day picked. Leaving and Arriving are trips between the municipality picked and anywhere else, France and Portugal included; Within starts and ends inside it.",
+          "id": 3,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 2,
+                  "noValue": "–",
+                  "unit": "short"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Leaving"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#FF9830",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Arriving"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#5794F2",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Within"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#73BF69",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Km per trip out"
+                    },
+                    "properties": [
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
+                      {
+                        "id": "unit",
+                        "value": "none"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "vertical",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {
+                  "titleSize": 12,
+                  "valueSize": 20
+                },
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "RowsLayout",
+      "spec": {
+        "rows": [
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "intro"
+                        },
+                        "height": 4,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "map"
+                        },
+                        "height": 24,
+                        "width": 16,
+                        "x": 0,
+                        "y": 4
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "stats"
+                        },
+                        "height": 4,
+                        "width": 8,
+                        "x": 16,
+                        "y": 4
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "hourly"
+                        },
+                        "height": 10,
+                        "width": 8,
+                        "x": 16,
+                        "y": 8
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "purpose"
+                        },
+                        "height": 10,
+                        "width": 8,
+                        "x": 16,
+                        "y": 18
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "partners"
+                        },
+                        "height": 12,
+                        "width": 10,
+                        "x": 0,
+                        "y": 28
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "distance"
+                        },
+                        "height": 6,
+                        "width": 7,
+                        "x": 10,
+                        "y": 28
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "age"
+                        },
+                        "height": 6,
+                        "width": 7,
+                        "x": 17,
+                        "y": 28
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "income"
+                        },
+                        "height": 6,
+                        "width": 14,
+                        "x": 10,
+                        "y": 34
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "monthly"
+                        },
+                        "height": 8,
+                        "width": 24,
+                        "x": 0,
+                        "y": 40
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "about"
+                        },
+                        "height": 11,
+                        "width": 24,
+                        "x": 0,
+                        "y": 48
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Spain"
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "kepler",
+      "plus",
+      "business-charts",
+      "mobility"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "2022-01-01T00:00:00.000Z",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "2025-07-01T00:00:00.000Z"
+    },
+    "title": "Spain on the move",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "2025-03-12 · Wednesday",
+            "value": "2025-03-12"
+          },
+          "description": "The day on the map and the charts. One file of 14 million rows a day: a new day takes some seconds.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Day",
+          "multi": false,
+          "name": "day",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "day",
+              "sql": "-- Every day the study publishes, the latest first: daily from January 2022 to\n-- June 2025, but for 13 days lost to incidents at the operator (none on\n-- 28-29 April 2025, the day of the blackout and the next); from July 2025, a\n-- new method and sample weeks only.\nWITH d AS (\n  SELECT unnest(range(TIMESTAMP '2022-01-01', TIMESTAMP '2025-07-01', INTERVAL 1 DAY))::DATE AS d\n  UNION ALL\n  SELECT unnest([DATE '2025-08-08', DATE '2025-08-09', DATE '2025-08-10', DATE '2025-08-14', DATE '2025-08-15', DATE '2025-08-16', DATE '2025-08-17', DATE '2025-10-13', DATE '2025-10-14', DATE '2025-10-15', DATE '2025-10-16', DATE '2025-10-17', DATE '2025-10-18', DATE '2025-10-19', DATE '2025-12-06', DATE '2025-12-07', DATE '2025-12-08'])\n)\nSELECT strftime(d, '%Y-%m-%d') AS value,\n       strftime(d, '%Y-%m-%d · %A') || CASE WHEN d \u003e= DATE '2025-07-01' THEN ' · new method' ELSE '' END AS text\nFROM d\nWHERE d NOT IN (DATE '2023-10-26', DATE '2023-10-27', DATE '2023-10-30', DATE '2023-10-31', DATE '2023-11-01', DATE '2023-11-02', DATE '2023-11-03', DATE '2024-04-18', DATE '2024-11-09', DATE '2024-11-10', DATE '2024-11-26', DATE '2025-04-28', DATE '2025-04-29')\nORDER BY d DESC"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "zones",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "zones",
+              "refId": "zones",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the study's zones, from MITMA's zoning of\n-- municipalities. 2,618 in Spain: a municipality, or several small ones\n-- counted together (code ending _AM, \"agregacion de municipios\"). And 117\n-- NUTS 3 regions of France and Portugal, where trips to and from abroad end.\n-- The centroids come in ETRS89 / UTM 30N, the Canaries too.\nWITH c AS (\n  SELECT ID AS zone, ST_Transform(geom, 'EPSG:25830', 'EPSG:4326', always_xy := true) AS g\n  FROM ST_Read('/vsicurl/http://feeds/mitma/zonificacion/zonificacion_municipios/zonificacion_municipios_centroides.shp')\n),\nn AS (\n  SELECT ID AS zone, name\n  FROM read_csv('http://feeds/mitma/zonificacion/zonificacion_municipios/nombres_municipios.csv',\n                delim = '|', header = true, all_varchar = true)\n),\np AS (\n  SELECT zone, population\n  FROM read_csv('http://feeds/mitma/zonificacion/zonificacion_municipios/poblacion_municipios.csv',\n                delim = '|', header = false, nullstr = 'NA',\n                columns = {'zone': 'VARCHAR', 'population': 'DOUBLE'})\n)\nSELECT c.zone,\n       CASE WHEN c.zone LIKE 'FR%' THEN 'France · ' || c.zone\n            WHEN c.zone LIKE 'PT%' THEN 'Portugal · ' || c.zone\n            ELSE regexp_replace(n.name, ' agregacion de municipios$', ' (and neighbours)') END AS name,\n       CASE WHEN c.zone LIKE 'FR%' THEN 'France' WHEN c.zone LIKE 'PT%' THEN 'Portugal' ELSE 'Spain' END AS country,\n       round(p.population)::INTEGER AS population,\n       round(ST_Y(c.g), 5) AS lat, round(ST_X(c.g), 5) AS lng\nFROM c LEFT JOIN n USING (zone) LEFT JOIN p USING (zone)\nORDER BY c.zone",
+                  "refId": "zones"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "Madrid",
+            "value": "28079"
+          },
+          "description": "The municipality the charts are about, and whose trips the map draws bright. A click on the map picks one too.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Municipality",
+          "multi": false,
+          "name": "zone",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "zone",
+              "sql": "-- Every municipality in Spain, the most populous first, so the large cities\n-- top the list; type to find the others. A click on the map picks any zone,\n-- France and Portugal's too.\nSELECT zone AS value, name AS text\nFROM $zones\nWHERE country = 'Spain'\nORDER BY population DESC NULLS LAST, name"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "flows",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "flows",
+              "refId": "flows",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per day picked: the day's trips between municipalities,\n-- from MITMA's open mobility study (mobile phones, Orange data expanded to\n-- the population by Nommon). The day is one 80 MB CSV of 14 million rows,\n-- trips by origin, destination, hour, distance, purpose, age, sex and income;\n-- the gateway keeps it a month, and here it is summed over all but origin,\n-- destination and hour, then cut to the 2,000 busiest links of each hour: all\n-- of them would be 350,000 a day, too many to draw or to send to a browser. A trip\n-- starting and ending in the same municipality is not a line on the map.\nWITH trips AS (\n  SELECT origen AS origin, destino AS destination, periodo::INTEGER AS hour,\n         sum(viajes) AS trips, sum(viajes_km) AS km\n  FROM read_csv('http://feeds/mitma/estudios_basicos/por-municipios/viajes/ficheros-diarios/'\n                || strftime(coalesce(TRY_CAST(${day:sqlstring} AS DATE), DATE '2025-03-12'), '%Y-%m/%Y%m%d') || '_Viajes_municipios.csv.gz',\n                delim = '|', header = true,\n                columns = {'fecha': 'VARCHAR', 'periodo': 'VARCHAR', 'origen': 'VARCHAR', 'destino': 'VARCHAR',\n                           'distancia': 'VARCHAR', 'actividad_origen': 'VARCHAR', 'actividad_destino': 'VARCHAR',\n                           'estudio_origen_posible': 'VARCHAR', 'estudio_destino_posible': 'VARCHAR',\n                           'residencia': 'VARCHAR', 'renta': 'VARCHAR', 'edad': 'VARCHAR', 'sexo': 'VARCHAR',\n                           'viajes': 'DOUBLE', 'viajes_km': 'DOUBLE'})\n  WHERE origen \u003c\u003e destino\n  GROUP BY ALL\n)\nSELECT coalesce(TRY_CAST(${day:sqlstring} AS DATE), DATE '2025-03-12') + to_hours(hour) AS time, origin, destination, hour,\n       round(trips)::INTEGER AS trips, round(km / trips, 1) AS km_per_trip\nFROM trips\nQUALIFY row_number() OVER (PARTITION BY hour ORDER BY trips DESC) \u003c= 2000",
+                  "refId": "flows"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "focus",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "focus",
+              "refId": "focus",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per day and municipality picked: everything the panels\n-- say about that municipality, and about Spain for comparison, in one pass\n-- over the day's 14 million rows (see flows). Each row is one of:\n--   partner  trips between the municipality and one other place, by hour\n--            and direction ('out', 'in'; 'within' when it stays inside);\n--   profile  trips by hour, distance and purpose (activity at each end),\n--            for the municipality (direction set) or for all Spain (none);\n--   people   trips by age, sex and income band, likewise.\n-- Age and sex are published only where the counts allow it: NA otherwise.\nWITH rows AS (\n  SELECT periodo::INTEGER AS hour, origen, destino, distancia AS distance,\n         actividad_origen AS from_activity, actividad_destino AS to_activity,\n         edad AS age, sexo AS sex, renta AS income, viajes, viajes_km,\n         CASE WHEN origen = ${zone:sqlstring} AND destino = ${zone:sqlstring} THEN 'within'\n              WHEN origen = ${zone:sqlstring} THEN 'out'\n              WHEN destino = ${zone:sqlstring} THEN 'in' END AS direction,\n         CASE WHEN origen = ${zone:sqlstring} THEN destino ELSE origen END AS other\n  FROM read_csv('http://feeds/mitma/estudios_basicos/por-municipios/viajes/ficheros-diarios/'\n                || strftime(coalesce(TRY_CAST(${day:sqlstring} AS DATE), DATE '2025-03-12'), '%Y-%m/%Y%m%d') || '_Viajes_municipios.csv.gz',\n                delim = '|', header = true,\n                columns = {'fecha': 'VARCHAR', 'periodo': 'VARCHAR', 'origen': 'VARCHAR', 'destino': 'VARCHAR',\n                           'distancia': 'VARCHAR', 'actividad_origen': 'VARCHAR', 'actividad_destino': 'VARCHAR',\n                           'estudio_origen_posible': 'VARCHAR', 'estudio_destino_posible': 'VARCHAR',\n                           'residencia': 'VARCHAR', 'renta': 'VARCHAR', 'edad': 'VARCHAR', 'sexo': 'VARCHAR',\n                           'viajes': 'DOUBLE', 'viajes_km': 'DOUBLE'})\n),\ng AS (\n  SELECT CASE WHEN GROUPING(other) = 0 THEN 'partner'\n              WHEN GROUPING(age) = 0 THEN 'people' ELSE 'profile' END AS kind,\n         GROUPING(direction) = 0 AS local,\n         direction, other, hour, distance, from_activity, to_activity, age, sex, income,\n         sum(viajes) AS trips, sum(viajes_km) AS km\n  FROM rows\n  GROUP BY GROUPING SETS (\n    (direction, other, hour),\n    (direction, hour, distance, from_activity, to_activity),\n    (hour, distance, from_activity, to_activity),\n    (direction, age, sex, income),\n    (age, sex, income)\n  )\n)\nSELECT coalesce(TRY_CAST(${day:sqlstring} AS DATE), DATE '2025-03-12') + to_hours(hour) AS time,\n       kind, CASE WHEN local THEN direction ELSE 'spain' END AS scope, other, hour,\n       distance, from_activity, to_activity, age, sex, income,\n       round(trips, 1) AS trips, round(km, 1) AS km\nFROM g\nWHERE NOT local OR direction IS NOT NULL",
+                  "refId": "focus"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "monthly",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "monthly",
+              "refId": "monthly",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: trips in Spain month by month, by kind, from\n-- MITMA's monthly totals. It publishes none for October and November 2023,\n-- seven of whose days were lost at the operator. Up to June 2025: from July\n-- 2025 the study changed its method and publishes sample weeks only, whose\n-- months do not add up.\nSELECT make_date(año::INTEGER, mes::INTEGER, 1)::TIMESTAMP AS time,\n       CASE tipo_movilidad\n         WHEN 'Intraprovinciales' THEN 'Within a province'\n         WHEN 'Interprovinciales' THEN 'Between provinces'\n         ELSE 'To and from abroad' END AS kind,\n       sum(viajes) AS trips\nFROM read_csv('http://feeds/mitma/estudios_basicos/movilidad_agregada_mensual/datos_agregados.csv',\n              delim = '|', header = true, all_varchar = true, types = {'viajes': 'DOUBLE'})\nWHERE make_date(año::INTEGER, mes::INTEGER, 1) \u003c= DATE '2025-06-01'\nGROUP BY ALL\nORDER BY time, kind",
+                  "refId": "monthly"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "2025-03-12T08:00:00.000Z",
+            "value": "2025-03-12T08:00:00.000Z"
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Map hour from",
+          "multi": false,
+          "name": "map_from",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "map_from",
+              "sql": "-- 08:00 on the day picked, as UTC ISO 8601: where the map's clock opens, at\n-- the morning rush. The study's hours are local time; the map shows them as\n-- they are, labelled UTC. The clock writes it back as it moves.\nSELECT strftime(coalesce(TRY_CAST($day AS DATE), DATE '2025-03-12') + INTERVAL 8 HOUR,\n                '%Y-%m-%dT%H:%M:%S.%g') || 'Z' AS step"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "2025-03-12T08:59:59.999Z",
+            "value": "2025-03-12T08:59:59.999Z"
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Map hour to",
+          "multi": false,
+          "name": "map_to",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "map_to",
+              "sql": "-- 08:00 on the day picked, as UTC ISO 8601: where the map's clock opens, at\n-- the morning rush. The study's hours are local time; the map shows them as\n-- they are, labelled UTC. The clock writes it back as it moves.\nSELECT strftime(coalesce(TRY_CAST($day AS DATE), DATE '2025-03-12') + INTERVAL 9 HOUR - INTERVAL 1 MILLISECOND,\n                '%Y-%m-%dT%H:%M:%S.%g') || 'Z' AS step"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
