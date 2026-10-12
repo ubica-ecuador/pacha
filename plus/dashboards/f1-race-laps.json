@@ -26,7 +26,7 @@
         }
       }
     ],
-    "cursorSync": "Off",
+    "cursorSync": "Crosshair",
     "description": "Every Formula 1 race and sprint since 2023, from OpenF1: one lap replayed with every car on the map, positions, gaps, tyres and pace over the race, and two drivers' fastest laps laid over each other, on the track and in speed, throttle and brake.",
     "editable": true,
     "elements": {
@@ -60,7 +60,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### Formula 1, lap by lap\n\nEvery Grand Prix and sprint since 2023, from [OpenF1](https://openf1.org): pick a **season** and a **race** above. The **map** replays one lap with every car on it, about four positions a second, coloured by team: press ▶ on its time bar, or pick another **replay lap**. The charts follow the whole race: positions, gaps to the leader, tyres and pace, with safety car periods shaded.\n\nPick **driver A** (blue) and **driver B** (orange) above or from the results table. The bottom row lays their fastest laps over each other: speed, throttle and brake through the lap, the time one gains on the other, and the map coloured by who is quicker in each of 25 stretches of track.\n\nOpenF1 gives positions on a plane of its own at each circuit; they are placed on the map by fitting a fast lap to the circuit's outline ([bacinger/f1-circuits](https://github.com/bacinger/f1-circuits), MIT), within a few metres. Some races lack positions for part of the race, and 2026 cars report no DRS. Unofficial data, for non-commercial use; not associated with Formula 1. The server keeps each finished session's answers for a month, so OpenF1 is asked once, whoever looks.",
+                "content": "### Formula 1, lap by lap\n\nEvery Grand Prix and sprint since 2023, from [OpenF1](https://openf1.org): pick a **season** and a **race** above. The **map** replays one lap with every car on it, about four positions a second, coloured by team: press ▶ on its time bar, or pick another **replay lap**. The charts follow the whole race: positions, gaps to the leader, tyres and pace, with safety car periods shaded.\n\nPick **driver A** (blue) and **driver B** (orange) above or from the results table: they stand out in the charts below, and the **A against B** tab races their laps from the same start, second by second, with their fastest laps laid over each other.\n\nOpenF1 gives positions on a plane of its own at each circuit; they are placed on the map by fitting a fast lap to the circuit's outline ([bacinger/f1-circuits](https://github.com/bacinger/f1-circuits), MIT), within a few metres. Some races lack positions for part of the race, and 2026 cars report no DRS. Unofficial data, for non-commercial use; not associated with Formula 1. The server keeps each finished session's answers for a month, so OpenF1 is asked once, whoever looks.",
                 "mode": "markdown"
               }
             },
@@ -276,6 +276,804 @@
           }
         }
       },
+      "panel-12": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Drivers A and B through their own lap of the replay lap number, each from\n-- when they started it: two laps side by side, whatever the gap on track.\nWITH own AS (\n  SELECT driver_number, date_start AS t0, date_end AS t1 FROM $laps\n  WHERE lap_number = ${lap:raw} AND driver_number IN (${driver_a:raw}, ${driver_b:raw})\n)\nSELECT CASE d.driver_number WHEN ${driver_a:raw} THEN 'A' ELSE 'B' END AS slot,\n       round(epoch(r.time - own.t0), 2) AS t, r.speed_kmh, r.throttle,\n       CASE WHEN r.brake \u003e 0 THEN 100 ELSE 0 END AS brake, r.gear\nFROM $replay r JOIN $drivers d ON d.driver = r.car JOIN own ON own.driver_number = d.driver_number\nWHERE r.time \u003e= own.t0 AND r.time \u003c own.t1\nORDER BY slot, t"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The ghost map's time bar, in seconds into the lap: both drivers start it at the map's start.\nWITH own AS (\n  SELECT driver_number, CASE driver_number WHEN ${driver_a:raw} THEN 'A' ELSE 'B' END AS slot,\n         date_start AS t0, date_end AS t1\n  FROM $laps WHERE lap_number = ${lap:raw} AND driver_number IN (${driver_a:raw}, ${driver_b:raw})\n)\nSELECT own.slot, epoch(try_cast(rtrim($brush_to, 'Z') AS TIMESTAMP) - (SELECT min(t0) FROM own)) AS now FROM own"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT CASE d.driver_number WHEN ${driver_a:raw} THEN 'A' ELSE 'B' END AS slot, d.driver, l.lap_duration\nFROM $drivers d LEFT JOIN $laps l ON l.driver_number = d.driver_number AND l.lap_number = ${lap:raw}\nWHERE d.driver_number IN (${driver_a:raw}, ${driver_b:raw})\nORDER BY slot"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Speed, throttle, brake (on or off) and gear of driver A (blue) and driver B (orange) on the replay lap, each from the moment they started it, so the two laps line up whatever the gap between them on track. The vertical line and the dots follow the map's time bar: play the map and they move. Hover to read all four bands at one second of the lap.",
+          "id": 12,
+          "links": [],
+          "title": "A against B, second by second",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst colOf = (i, name) =\u003e {\n  const frame = context.panel.data.series[i];\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\nconst A = '#3987e5';\nconst B = '#d95926';\nconst lapTime = (v) =\u003e (v == null ? '' : ` · ${Math.floor(v / 60)}:${(v % 60).toFixed(3).padStart(6, '0')}`);\nconst names = {};\nconst drv = {};\ncolOf(2, 'slot').forEach((s, i) =\u003e {\n  drv[s] = colOf(2, 'driver')[i];\n  names[s] = drv[s] + lapTime(colOf(2, 'lap_duration')[i]);\n});\nconst slot = colOf(0, 'slot');\nconst t = colOf(0, 't');\nconst pick = (s, k) =\u003e colOf(0, k).map((v, i) =\u003e (slot[i] === s ? [t[i], v] : null)).filter(Boolean);\n// Where the map's time bar is, in each driver's own lap: a line in their colour across\n// the four bands and a dot on their speed. None before they start the lap or after they finish it.\nconst nowOf = {};\ncolOf(1, 'slot').forEach((s, i) =\u003e (nowOf[s] = colOf(1, 'now')[i]));\nconst inLap = (s) =\u003e {\n  const pts = pick(s, 'speed_kmh');\n  const n = nowOf[s];\n  return n != null \u0026\u0026 pts.length \u0026\u0026 n \u003e= 0 \u0026\u0026 n \u003c= pts[pts.length - 1][0] ? n : null;\n};\nconst at = (s) =\u003e {\n  const n = inLap(s);\n  const pts = pick(s, 'speed_kmh').filter((p) =\u003e p[0] \u003c= n);\n  return n == null || !pts.length ? null : pts[pts.length - 1];\n};\nconst nowLine = (s, colour) =\u003e inLap(s) == null ? {} : { markLine: { silent: true, symbol: 'none', animation: false,\n  label: { show: false }, lineStyle: { color: text, width: 1.5, type: 'solid', opacity: 0.6 }, data: [{ xAxis: inLap(s) }] } };\nconst grids = [\n  { top: 28, height: '40%' }, { top: '53%', height: '17%' }, { top: '75%', height: '8%' }, { top: '87%', height: '9%' },\n].map((g) =\u003e ({ left: 48, right: 12, ...g }));\nconst axisX = (i) =\u003e ({ type: 'value', gridIndex: i, min: 0, max: 'dataMax',\n  axisLabel: { show: i === 3, color: muted, showMaxLabel: false, formatter: (v) =\u003e `${Math.round(v)} s` },\n  splitLine: { show: false }, axisLine: { lineStyle: { color: lines } } });\nconst axisY = (i, name, extra) =\u003e ({ type: 'value', gridIndex: i, name, nameLocation: 'middle', nameGap: 34,\n  nameTextStyle: { color: muted, fontSize: 10 }, axisLabel: { color: muted, fontSize: 10 },\n  splitLine: { lineStyle: { color: lines, opacity: 0.4 } }, ...extra });\nconst nameA = names.A || 'A';\nconst nameB = names.B || 'B';\nconst line = (name, s, k, i, colour, extra) =\u003e ({ name, type: 'line', xAxisIndex: i, yAxisIndex: i, data: pick(s, k),\n  showSymbol: false, lineStyle: { color: colour, width: i === 0 ? 2 : 1.5 }, itemStyle: { color: colour }, ...extra });\nconst dot = (s, colour) =\u003e {\n  const p = at(s);\n  return p ? { markPoint: { silent: true, animation: false, symbol: 'circle', symbolSize: 11,\n    itemStyle: { color: colour, borderColor: theme.colors.background.primary, borderWidth: 2 }, label: { show: false },\n    data: [{ coord: p }] } } : {};\n};\nreturn {\n  animation: false,\n  legend: { top: 0, data: [nameA, nameB], textStyle: { color: muted } },\n  axisPointer: { link: [{ xAxisIndex: 'all' }] },\n  // One block: each driver's last sample at or before the hovered second of their lap\n  // (their samples fall on different instants, so the axis alone would show one of them).\n  tooltip: { trigger: 'axis', confine: true, axisPointer: { type: 'line' }, formatter: (items) =\u003e {\n    const x = items[0].axisValue;\n    const value = (s, k) =\u003e { const pts = pick(s, k).filter((p) =\u003e p[0] \u003c= x); return pts.length ? pts[pts.length - 1][1] : null; };\n    const row = (s, colour) =\u003e { const v = value(s, 'speed_kmh'); if (v == null || !drv[s]) return '';\n      return `\u003cbr/\u003e\u003cspan style=\"color:${colour}\"\u003e●\u003c/span\u003e \u003cb\u003e${drv[s]}\u003c/b\u003e ${v} km/h, gear ${value(s, 'gear') ?? '–'}` +\n        `\u003cbr/\u003e\u0026nbsp;\u0026nbsp;\u0026nbsp;throttle ${value(s, 'throttle') ?? '–'}%${value(s, 'brake') \u003e 0 ? ', braking' : ''}`; };\n    return `${Math.round(x)} s into their lap` + row('A', A) + row('B', B);\n  } },\n  grid: grids,\n  xAxis: [0, 1, 2, 3].map(axisX),\n  yAxis: [axisY(0, 'km/h', { scale: true }), axisY(1, 'Throttle %', { min: 0, max: 100 }),\n          axisY(2, 'Brake', { min: 0, max: 100, axisLabel: { show: false } }),\n          axisY(3, 'Gear', { min: 0, max: 8, interval: 4 })],\n  series: [\n    line(nameA, 'A', 'speed_kmh', 0, A, { ...nowLine('A', A), ...dot('A', A) }),\n    line(nameB, 'B', 'speed_kmh', 0, B, { ...nowLine('B', B), ...dot('B', B) }),\n    line(nameA, 'A', 'throttle', 1, A, nowLine('A', A)), line(nameB, 'B', 'throttle', 1, B, nowLine('B', B)),\n    line(nameA, 'A', 'brake', 2, A, { step: 'end', ...nowLine('A', A) }),\n    line(nameB, 'B', 'brake', 2, B, { step: 'end', ...nowLine('B', B) }),\n    line(nameA, 'A', 'gear', 3, A, { step: 'end', ...nowLine('A', A) }),\n    line(nameB, 'B', 'gear', 3, B, { step: 'end', ...nowLine('B', B) }),\n  ],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-16": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Drivers A and B on the replay lap, B's clock moved so that both start it at\n-- the same instant: the earlier of their two starts.\nWITH own AS (\n  SELECT driver_number, CASE driver_number WHEN ${driver_a:raw} THEN 'A' ELSE 'B' END AS slot,\n         date_start AS t0, date_end AS t1\n  FROM $laps WHERE lap_number = ${lap:raw} AND driver_number IN (${driver_a:raw}, ${driver_b:raw})\n),\nbase AS (SELECT min(t0) AS t0 FROM own)\nSELECT r.time - own.t0 + base.t0 AS time, r.car, r.type, own.slot, r.latitude, r.longitude, r.heading,\n       r.speed_kmh, r.gear, r.throttle, r.brake\nFROM $replay r JOIN $drivers d ON d.driver = r.car JOIN own ON own.driver_number = d.driver_number, base\nWHERE r.time \u003e= own.t0 AND r.time \u003c own.t1\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The track: driver A's fastest lap, as one line.\nSELECT '{\"type\":\"LineString\",\"coordinates\":['\n       || string_agg('[' || round(longitude, 6) || ',' || round(latitude, 6) || ']', ',' ORDER BY time) || ']}' AS _geojson\nFROM $duel WHERE slot = 'A' AND latitude IS NOT NULL"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Drivers A (blue) and B (orange) on the replay lap, B's clock moved so that both cross the line at the same moment: a race between the two laps, whatever the gap between them on track. Press ▶ on the time bar; the curves beside it follow it. On lap 1 each starts from their own grid slot.",
+          "id": 16,
+          "links": [],
+          "title": "A against B, from the same start",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "hoverMaxAgeSeconds": 10,
+                "hoverPublishSpike": true,
+                "hoverSync": true,
+                "mapConfig": {
+                  "config": {
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-fiord",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "charts": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "incremental",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "clock",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "defaultTimeFormat": "L  LTS",
+                            "interval": "1-second",
+                            "type": "lineChart"
+                          },
+                          "speed": 0.341,
+                          "syncTimelineMode": 1,
+                          "timezone": "UTC",
+                          "type": "timeRange",
+                          "view": "minified",
+                          "yAxis": {
+                            "name": "speed_kmh",
+                            "type": "integer"
+                          }
+                        }
+                      ],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "car"
+                              },
+                              {
+                                "name": "speed_kmh"
+                              },
+                              {
+                                "name": "gear"
+                              },
+                              {
+                                "name": "throttle"
+                              },
+                              {
+                                "name": "brake"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "additive",
+                      "layerOrder": [
+                        "cars",
+                        "track"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              144,
+                              144,
+                              144
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "A and B",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "A",
+                                    "#3987e5"
+                                  ],
+                                  [
+                                    "B",
+                                    "#d95926"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#3987e5",
+                                  "#d95926"
+                                ],
+                                "name": "A or B",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "fleetAltitudeField": "none",
+                              "fleetAssetField": "car",
+                              "fleetCard": false,
+                              "fleetCardMinutes": 3,
+                              "fleetCardOpacity": 0.9,
+                              "fleetCardSize": "M",
+                              "fleetCardWindow": "minutes",
+                              "fleetChangeColours": "risingGood",
+                              "fleetCrossValue": false,
+                              "fleetCrosshair": true,
+                              "fleetDisplay": "3d",
+                              "fleetFollow": "",
+                              "fleetFollowMode": "follow",
+                              "fleetGhost": false,
+                              "fleetHeadingField": "heading",
+                              "fleetHeadingFrom": "auto",
+                              "fleetIcons": "{\"car\":{\"silhouette\":\"car\",\"preset\":\"none\"}}",
+                              "fleetLabel": "name",
+                              "fleetLabelColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "fleetLabelOffset": -1,
+                              "fleetLabelOutline": true,
+                              "fleetLabelSize": 11,
+                              "fleetMarker": "silhouette",
+                              "fleetModelColours": "original",
+                              "fleetOrbitSecs": 60,
+                              "fleetPinned": [],
+                              "fleetPublishCrosshair": true,
+                              "fleetPulseBy": "auto",
+                              "fleetPulseCycle": 3,
+                              "fleetPulseLength": 0.3,
+                              "fleetPulseRange": [
+                                1,
+                                4
+                              ],
+                              "fleetRemember": "off",
+                              "fleetRememberMin": 10,
+                              "fleetShadow": false,
+                              "fleetSize": 38,
+                              "fleetSmooth": true,
+                              "fleetSmoothMs": 300,
+                              "fleetSpeedField": "speed_kmh",
+                              "fleetSpeedUnit": "km/h",
+                              "fleetStaleAfter": 10,
+                              "fleetStatusFrom": "column",
+                              "fleetStem": false,
+                              "fleetStopSpeed": 5,
+                              "fleetTimeField": "time",
+                              "fleetTimeRef": "history",
+                              "fleetTrail": 0.15,
+                              "fleetTrailAnimate": false,
+                              "fleetTrailDashLength": 0.5,
+                              "fleetTrailFade": true,
+                              "fleetTrailMode": "fleet",
+                              "fleetTrailOpacity": 0.6,
+                              "fleetTrailShow": true,
+                              "fleetTrailSpacing": 18,
+                              "fleetTrailStyle": "solid",
+                              "fleetTrailWidth": 3,
+                              "fleetTripsGap": 0,
+                              "fleetTripsTrail": 24,
+                              "fleetTypeField": "type",
+                              "fleetZoomRate": 0.35,
+                              "fleetZoomRef": 16.6,
+                              "fleetZoomScale": true,
+                              "opacity": 0.8,
+                              "outline": false,
+                              "radius": 25.2,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "A",
+                                    "#3987e5"
+                                  ],
+                                  [
+                                    "B",
+                                    "#d95926"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#3987e5",
+                                  "#d95926"
+                                ],
+                                "name": "A or B",
+                                "type": "customOrdinal"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "cars",
+                          "type": "fleet",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "slot",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "customOrdinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              110,
+                              110,
+                              110
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Track",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "elevationScale": 5,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.6,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColor": [
+                                110,
+                                110,
+                                110
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "strokeOpacity": 0.18,
+                              "stroked": true,
+                              "thickness": 6,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "track",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 250,
+                "publishWhilePlaying": true,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 9,
+                "showSidePanel": false,
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "brush_from",
+                  "to": "brush_to"
+                },
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "",
+                    "source": "center",
+                    "variable": "clat",
+                    "variableTo": "clon",
+                    "zoom": 14
+                  }
+                ]
+              }
+            },
+            "version": "1.0.0"
+          }
+        }
+      },
+      "panel-17": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- How far apart A and B are through the replay lap, both from their own start,\n-- measured at the same place: each of B's positions is projected onto A's line\n-- (the nearest of A's segments within 15 s of the same moment, so a parallel\n-- stretch of track is never taken), and A's time there is interpolated along\n-- that segment. B's time less A's: above zero A is ahead. The x axis is the\n-- distance along A's line.\nWITH own AS (\n  SELECT driver_number, CASE driver_number WHEN ${driver_a:raw} THEN 'A' ELSE 'B' END AS slot,\n         date_start AS t0, date_end AS t1\n  FROM $laps WHERE lap_number = ${lap:raw} AND driver_number IN (${driver_a:raw}, ${driver_b:raw})\n),\np AS (\n  SELECT own.slot, epoch(r.time - own.t0) AS t, r.latitude AS lat, r.longitude AS lon\n  FROM $replay r JOIN $drivers d ON d.driver = r.car JOIN own ON own.driver_number = d.driver_number\n  WHERE r.time \u003e= own.t0 AND r.time \u003c own.t1 AND r.latitude IS NOT NULL\n),\nk AS (SELECT cos(radians(avg(lat))) AS c FROM p),\nxy AS (SELECT slot, t, lon * 111320 * k.c AS x, lat * 110574 AS y FROM p, k),\na AS (\n  SELECT t, x, y, lead(t) OVER w AS t2, lead(x) OVER w AS x2, lead(y) OVER w AS y2\n  FROM xy WHERE slot = 'A' WINDOW w AS (ORDER BY t)\n),\nseg AS (\n  SELECT *, sqrt(pow(x2 - x, 2) + pow(y2 - y, 2)) AS len,\n         coalesce(sum(sqrt(pow(x2 - x, 2) + pow(y2 - y, 2))) OVER (ORDER BY t ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING), 0) AS d0\n  FROM a WHERE t2 IS NOT NULL\n),\nm AS (\n  SELECT b.t AS tb, b.x AS px, b.y AS py, seg.*,\n         CASE WHEN seg.len \u003e 0 THEN greatest(0, least(1, ((b.x - seg.x) * (seg.x2 - seg.x) + (b.y - seg.y) * (seg.y2 - seg.y)) / (seg.len * seg.len))) ELSE 0 END AS u\n  FROM xy b JOIN seg ON abs(seg.t - b.t) \u003c 15\n  WHERE b.slot = 'B'\n),\nhit AS (\n  SELECT tb, arg_min(d0 + u * len, pow(px - x - u * (x2 - x), 2) + pow(py - y - u * (y2 - y), 2)) AS d,\n             arg_min(t + u * (t2 - t), pow(px - x - u * (x2 - x), 2) + pow(py - y - u * (y2 - y), 2)) AS ta\n  FROM m GROUP BY tb\n)\n-- Positions are a few metres off: a moving mean over seven samples (about two\n-- seconds) takes out the tenth of jitter that leaves.\nSELECT round(d) AS distance_m,\n       round(avg(tb - ta) OVER (ORDER BY d ROWS BETWEEN 3 PRECEDING AND 3 FOLLOWING), 3) AS gap\nFROM hit ORDER BY distance_m"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT 'A' AS slot, driver FROM $drivers WHERE driver_number = ${driver_a:raw}\nUNION ALL\nSELECT 'B', driver FROM $drivers WHERE driver_number = ${driver_b:raw}\nORDER BY slot"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "How far ahead one driver is of the other at each point of the replay lap, both from the same start: in blue where A is ahead, in orange where B is. Where the line climbs, A is gaining; where it falls, B is. Measured at the same place on track: each of B's positions against A's line.",
+          "id": 17,
+          "links": [],
+          "title": "Gap through the lap",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst colOf = (i, name) =\u003e {\n  const frame = context.panel.data.series[i];\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\nconst A = '#3987e5';\nconst B = '#d95926';\nconst names = {};\ncolOf(1, 'slot').forEach((s, i) =\u003e (names[s] = colOf(1, 'driver')[i]));\nconst nameA = names.A || 'A';\nconst nameB = names.B || 'B';\nconst dist = colOf(0, 'distance_m');\nconst gap = colOf(0, 'gap');\nconst data = dist.map((d, i) =\u003e [d, gap[i]]);\nreturn {\n  animation: false,\n  grid: { left: 8, right: 16, top: 28, bottom: 8, containLabel: true },\n  tooltip: { trigger: 'axis', formatter: (items) =\u003e {\n    const i = items[0].dataIndex;\n    const m = dist[i];\n    const g = gap[i];\n    const who = g \u003e= 0 ? nameA : nameB;\n    return `${(m / 1000).toFixed(2)} km into the lap\u003cbr/\u003e\u003cb\u003e${who}\u003c/b\u003e ahead by ${Math.abs(g).toFixed(2)} s`;\n  } },\n  xAxis: { type: 'value', min: 0, max: 'dataMax', axisLabel: { color: muted, formatter: (v) =\u003e (v / 1000).toFixed(1) + ' km' },\n           splitLine: { show: false }, axisLine: { lineStyle: { color: lines } } },\n  yAxis: { type: 'value', name: `↑ ${nameA} ahead (s) · ${nameB} ahead ↓`, nameTextStyle: { color: muted, align: 'left' },\n           axisLabel: { color: muted, formatter: (v) =\u003e Math.abs(v).toFixed(1) },\n           splitLine: { lineStyle: { color: lines, opacity: 0.4 } } },\n  // Blue where A is ahead, orange where B is: the gap split at zero into two areas.\n  series: [\n    { name: nameA, type: 'line', data: data.map(([m, g]) =\u003e [m, Math.max(g, 0)]), showSymbol: false,\n      lineStyle: { color: A, width: 2 }, itemStyle: { color: A }, areaStyle: { color: A, opacity: 0.18 } },\n    { name: nameB, type: 'line', data: data.map(([m, g]) =\u003e [m, Math.min(g, 0)]), showSymbol: false,\n      lineStyle: { color: B, width: 2 }, itemStyle: { color: B }, areaStyle: { color: B, opacity: 0.18 } },\n  ],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-18": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 18,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "Drivers **A** (blue) and **B** (orange), picked above or from the results table on the first tab. The map races their two **replay laps** from the same start; the curves beside it and the gap below follow the same lap. Further down, the pace of every lap of the race, and their two fastest laps laid over each other.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
       "panel-2": {
         "kind": "Panel",
         "spec": {
@@ -472,66 +1270,6 @@
                 "hoverSync": true,
                 "mapConfig": {
                   "config": {
-                    "mapState": {
-                      "bearing": 24,
-                      "dragRotate": true,
-                      "globe": {
-                        "config": {
-                          "adminLines": true,
-                          "adminLinesColor": [
-                            40,
-                            63,
-                            93
-                          ],
-                          "atmosphere": true,
-                          "azimuth": false,
-                          "azimuthAngle": 45,
-                          "backgroundColor": [
-                            4,
-                            9,
-                            17
-                          ],
-                          "basemap": true,
-                          "hugeHalo": true,
-                          "hugeHaloOpacity": 0.2,
-                          "hugeHaloRadius": 3.5,
-                          "labels": false,
-                          "labelsColor": [
-                            114.75,
-                            114.75,
-                            114.75
-                          ],
-                          "stars": true,
-                          "surface": true,
-                          "surfaceColor": [
-                            9,
-                            16,
-                            29
-                          ],
-                          "terminator": true,
-                          "terminatorOpacity": 0.35,
-                          "water": true,
-                          "waterColor": [
-                            17,
-                            35,
-                            48
-                          ]
-                        },
-                        "enabled": false
-                      },
-                      "isSplit": false,
-                      "isViewportSynced": true,
-                      "isZoomLocked": false,
-                      "latitude": 1.2915771885241785,
-                      "longitude": 103.8585880403077,
-                      "mapSplitMode": "SINGLE_MAP",
-                      "mapViewMode": "MODE_3D",
-                      "maxPitch": 85,
-                      "pitch": 50,
-                      "splitMapViewports": [],
-                      "swipeComparePercentage": 50,
-                      "zoom": 16
-                    },
                     "mapStyle": {
                       "backgroundColor": [
                         0,
@@ -601,10 +1339,6 @@
                           "syncTimelineMode": 1,
                           "timezone": "UTC",
                           "type": "timeRange",
-                          "value": [
-                            1791722785252,
-                            1791722916042.0156
-                          ],
                           "view": "minified",
                           "yAxis": {
                             "name": "speed_kmh",
@@ -2094,150 +2828,256 @@
       }
     },
     "layout": {
-      "kind": "GridLayout",
+      "kind": "TabsLayout",
       "spec": {
-        "items": [
+        "tabs": [
           {
-            "kind": "GridLayoutItem",
+            "kind": "TabsLayoutTab",
             "spec": {
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-1"
+              "layout": {
+                "kind": "RowsLayout",
+                "spec": {
+                  "rows": [
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "collapse": false,
+                        "hideHeader": true,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-1"
+                                  },
+                                  "height": 5,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-2"
+                                  },
+                                  "height": 4,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 5
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-3"
+                                  },
+                                  "height": 18,
+                                  "width": 15,
+                                  "x": 0,
+                                  "y": 9
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-4"
+                                  },
+                                  "height": 18,
+                                  "width": 9,
+                                  "x": 15,
+                                  "y": 9
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-5"
+                                  },
+                                  "height": 12,
+                                  "width": 12,
+                                  "x": 0,
+                                  "y": 27
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-6"
+                                  },
+                                  "height": 12,
+                                  "width": 12,
+                                  "x": 12,
+                                  "y": 27
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-7"
+                                  },
+                                  "height": 13,
+                                  "width": 12,
+                                  "x": 0,
+                                  "y": 39
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-11"
+                                  },
+                                  "height": 13,
+                                  "width": 12,
+                                  "x": 12,
+                                  "y": 39
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
               },
-              "height": 5,
-              "width": 24,
-              "x": 0,
-              "y": 0
+              "title": "Race"
             }
           },
           {
-            "kind": "GridLayoutItem",
+            "kind": "TabsLayoutTab",
             "spec": {
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-2"
+              "layout": {
+                "kind": "RowsLayout",
+                "spec": {
+                  "rows": [
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "collapse": false,
+                        "hideHeader": true,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-18"
+                                  },
+                                  "height": 3,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-16"
+                                  },
+                                  "height": 18,
+                                  "width": 14,
+                                  "x": 0,
+                                  "y": 3
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-12"
+                                  },
+                                  "height": 18,
+                                  "width": 10,
+                                  "x": 14,
+                                  "y": 3
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-17"
+                                  },
+                                  "height": 10,
+                                  "width": 12,
+                                  "x": 0,
+                                  "y": 21
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-8"
+                                  },
+                                  "height": 10,
+                                  "width": 12,
+                                  "x": 12,
+                                  "y": 21
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-9"
+                                  },
+                                  "height": 17,
+                                  "width": 9,
+                                  "x": 0,
+                                  "y": 31
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-10"
+                                  },
+                                  "height": 17,
+                                  "width": 15,
+                                  "x": 9,
+                                  "y": 31
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
               },
-              "height": 4,
-              "width": 24,
-              "x": 0,
-              "y": 5
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-3"
-              },
-              "height": 18,
-              "width": 15,
-              "x": 0,
-              "y": 9
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-4"
-              },
-              "height": 18,
-              "width": 9,
-              "x": 15,
-              "y": 9
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-5"
-              },
-              "height": 12,
-              "width": 12,
-              "x": 0,
-              "y": 27
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-6"
-              },
-              "height": 12,
-              "width": 12,
-              "x": 12,
-              "y": 27
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-7"
-              },
-              "height": 13,
-              "width": 12,
-              "x": 0,
-              "y": 39
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-8"
-              },
-              "height": 13,
-              "width": 12,
-              "x": 12,
-              "y": 39
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-9"
-              },
-              "height": 17,
-              "width": 9,
-              "x": 0,
-              "y": 52
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-10"
-              },
-              "height": 17,
-              "width": 15,
-              "x": 9,
-              "y": 52
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-11"
-              },
-              "height": 10,
-              "width": 24,
-              "x": 0,
-              "y": 69
+              "title": "A against B"
             }
           }
         ]
@@ -2836,6 +3676,34 @@
           "regexApplyTo": "value",
           "skipUrlSync": false,
           "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "brush_from",
+          "name": "brush_from",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "brush_to",
+          "name": "brush_to",
+          "query": "",
+          "skipUrlSync": false
         }
       }
     ]

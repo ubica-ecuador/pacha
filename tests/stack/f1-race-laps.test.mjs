@@ -115,12 +115,15 @@ test('is provisioned in Plus', { skip }, () => {
   assert.equal(provisioned.json.meta.folderUid, 'plus');
 });
 
-test('loads Baku for an anonymous visitor within 60 s, with no panel in error', { skip }, async () => {
+test('loads Baku for an anonymous visitor within 60 s, both tabs with no panel in error', { skip }, async () => {
   const query = Object.entries(VARS).map(([k, v]) => `var-${k}=${v}`).join('&');
   view = await openDashboard(`/d/f1-race-laps?${query}`, { datasets: DATASETS, timeoutMs: 120_000 });
   assert.ok(view.loadMs <= 60_000, `took ${view.loadMs} ms`);
-  for (const title of ['Tyre strategy', 'Who is quicker where', 'Fastest laps, A against B', 'Race control']) {
+  for (const title of ['Tyre strategy', 'Race control']) await view.panel(title);
+  assert.equal(await view.panelErrors(), 0, 'Race');
+  await view.page.getByRole('tab', { name: 'A against B' }).click();
+  for (const title of ['A against B, second by second', 'Gap through the lap', 'Who is quicker where', 'Fastest laps, A against B']) {
     await view.panel(title);
   }
-  assert.equal(await view.panelErrors(), 0);
+  assert.equal(await view.panelErrors(), 0, 'A against B');
 });
