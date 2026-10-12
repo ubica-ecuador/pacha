@@ -1,0 +1,2645 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "f1-race-laps"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Every Formula 1 race and sprint since 2023, from OpenF1: one lap replayed with every car on the map, positions, gaps, tyres and pace over the race, and two drivers' fastest laps laid over each other, on the track and in speed, throttle and brake.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Formula 1, lap by lap\n\nEvery Grand Prix and sprint since 2023, from [OpenF1](https://openf1.org): pick a **season** and a **race** above. The **map** replays one lap with every car on it, about four positions a second, coloured by team: press ▶ on its time bar, or pick another **replay lap**. The charts follow the whole race: positions, gaps to the leader, tyres and pace, with safety car periods shaded.\n\nPick **driver A** (blue) and **driver B** (orange) above or from the results table. The bottom row lays their fastest laps over each other: speed, throttle and brake through the lap, the time one gains on the other, and the map coloured by who is quicker in each of 25 stretches of track.\n\nOpenF1 gives positions on a plane of its own at each circuit; they are placed on the map by fitting a fast lap to the circuit's outline ([bacinger/f1-circuits](https://github.com/bacinger/f1-circuits), MIT), within a few metres. Some races lack positions for part of the race, and 2026 cars report no DRS. Unofficial data, for non-commercial use; not associated with Formula 1. The server keeps each finished session's answers for a month, so OpenF1 is asked once, whoever looks.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-10": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Both fastest laps on the distance into the lap, and the gap: B's time into the\n-- lap at each of A's samples (interpolated between B's), less A's. Above zero A\n-- is ahead.\nWITH b AS (\n  SELECT distance_m AS d, t, lead(distance_m) OVER (ORDER BY time) AS d2, lead(t) OVER (ORDER BY time) AS t2\n  FROM $duel WHERE slot = 'B'\n),\na AS (SELECT * FROM $duel WHERE slot = 'A'),\ndelta AS (\n  SELECT a.distance_m, b.t + CASE WHEN b.d2 \u003e b.d THEN (b.t2 - b.t) * (a.distance_m - b.d) / (b.d2 - b.d) ELSE 0 END - a.t AS gap\n  FROM a ASOF JOIN b ON a.distance_m \u003e= b.d\n)\nSELECT slot, distance_m, speed_kmh, throttle, brake, gear, NULL::DOUBLE AS gap FROM $duel\nUNION ALL\nSELECT 'D', distance_m, NULL, NULL, NULL, NULL, round(gap, 3) FROM delta\nORDER BY slot, distance_m"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT x.slot, d.driver, any_value(x.lap) AS lap, any_value(x.lap_s) AS lap_s\nFROM $duel x JOIN $drivers d ON d.driver_number = CASE x.slot WHEN 'A' THEN ${driver_a:raw} ELSE ${driver_b:raw} END\nGROUP BY ALL ORDER BY x.slot"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The fastest laps of driver A (blue) and driver B (orange) laid over each other on the distance into the lap: speed, throttle and brake (on or off), and at the top the gap between them, positive where A is ahead. Distance is speed integrated over time, scaled so both laps are the same length. Hover anywhere to read all four at that point.",
+          "id": 10,
+          "links": [],
+          "title": "Fastest laps, A against B",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst surface = theme.colors.background.primary;\nconst frameOf = (i) =\u003e context.panel.data.series[i];\nconst colOf = (i, name) =\u003e {\n  const frame = frameOf(i);\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\nconst col = (name) =\u003e colOf(0, name);\nconst lapTime = (s) =\u003e (s == null ? '–' : `${Math.floor(s / 60)}:${(s % 60).toFixed(3).padStart(6, '0')}`);\nconst A = '#3987e5';\nconst B = '#d95926';\nconst info = {};\ncolOf(1, 'slot').forEach((s, i) =\u003e (info[s] = { driver: colOf(1, 'driver')[i], lap: colOf(1, 'lap')[i], lapS: colOf(1, 'lap_s')[i] }));\nconst slot = col('slot');\nconst dist = col('distance_m');\nconst pick = (s, k) =\u003e col(k).map((v, i) =\u003e (slot[i] === s ? [dist[i], v] : null)).filter(Boolean);\nconst label = (s) =\u003e info[s] ? `${info[s].driver} (lap ${info[s].lap}, ${lapTime(info[s].lapS)})` : s;\nconst grids = [\n  { top: 30, height: '16%' }, { top: '27%', height: '36%' }, { top: '68%', height: '13%' }, { top: '86%', height: '8%' },\n].map((g) =\u003e ({ left: 56, right: 16, ...g }));\nconst axisX = (i) =\u003e ({ type: 'value', gridIndex: i, min: 0, max: 'dataMax', axisLabel: { show: i === 3, color: muted,\n  formatter: (v) =\u003e (v / 1000).toFixed(1) + ' km' }, splitLine: { show: false }, axisLine: { lineStyle: { color: lines } } });\nconst axisY = (i, name, extra) =\u003e ({ type: 'value', gridIndex: i, name, nameLocation: 'middle', nameGap: 40,\n  nameTextStyle: { color: muted, fontSize: 10 }, axisLabel: { color: muted, fontSize: 10 },\n  splitLine: { lineStyle: { color: lines, opacity: 0.4 } }, ...extra });\nconst line = (name, s, k, i, colour, extra) =\u003e ({ name, type: 'line', xAxisIndex: i, yAxisIndex: i, data: pick(s, k),\n  showSymbol: false, lineStyle: { color: colour, width: i === 1 ? 2 : 1.5 }, itemStyle: { color: colour }, ...extra });\nconst nameA = label('A');\nconst nameB = label('B');\nreturn {\n  animation: false,\n  legend: { top: 0, data: [nameA, nameB], textStyle: { color: muted } },\n  axisPointer: { link: [{ xAxisIndex: 'all' }] },\n  tooltip: { trigger: 'axis', axisPointer: { type: 'line' }, valueFormatter: (v) =\u003e (v == null ? '–' : String(v)) },\n  grid: grids,\n  xAxis: [0, 1, 2, 3].map(axisX),\n  yAxis: [axisY(0, 'Gap (s)'), axisY(1, 'Speed (km/h)', { scale: true }), axisY(2, 'Throttle %', { min: 0, max: 100 }),\n          axisY(3, 'Brake', { min: 0, max: 100, axisLabel: { show: false } })],\n  series: [\n    line('Gap: A ahead above 0', 'D', 'gap', 0, text, { areaStyle: { color: text, opacity: 0.08 },\n      markLine: { silent: true, symbol: 'none', data: [{ yAxis: 0 }], lineStyle: { color: muted, type: 'dashed' }, label: { show: false } } }),\n    line(nameA, 'A', 'speed_kmh', 1, A), line(nameB, 'B', 'speed_kmh', 1, B),\n    line(nameA, 'A', 'throttle', 2, A), line(nameB, 'B', 'throttle', 2, B),\n    line(nameA, 'A', 'brake', 3, A, { step: 'end' }), line(nameB, 'B', 'brake', 3, B, { step: 'end' }),\n  ],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-11": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT lap_number AS \"Lap\", date AS \"Time\", coalesce(flag, category) AS \"Kind\", message AS \"Message\"\nFROM $control\nWHERE kind = 'control' AND coalesce(flag, '') NOT IN ('BLUE', 'CLEAR') AND category \u003c\u003e 'Other'\n   OR kind = 'control' AND (message ILIKE '%PENALTY%' OR message ILIKE '%INVESTIGATION%')\nORDER BY date"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Race control's messages: flags, safety cars, investigations and penalties. Blue flags and the all-clears after yellows are left out.",
+          "id": 11,
+          "links": [],
+          "title": "Race control",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "filterable": true,
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Lap"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 56
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Kind"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 140
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Time"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "time: HH:mm:ss"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 96
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Safety car periods from race control: a DEPLOYED message starts one.\nWITH sc AS (\n  SELECT count(*) FILTER (WHERE message NOT ILIKE '%VSC%' AND message NOT ILIKE '%VIRTUAL%') AS sc,\n         count(*) FILTER (WHERE message ILIKE '%VSC%' OR message ILIKE '%VIRTUAL%') AS vsc\n  FROM $control WHERE kind = 'control' AND category = 'SafetyCar' AND message ILIKE '%DEPLOYED%'\n),\nw AS (SELECT avg(track_c) AS track_c, avg(air_c) AS air_c, max(rain) AS rain FROM $control WHERE kind = 'weather')\nSELECT (SELECT driver FROM $drivers WHERE position = 1) AS \"Winner\",\n       (SELECT printf('%d:%06.3f', floor(best_lap / 60)::INTEGER, best_lap % 60) || ' ' || driver\n        FROM $drivers WHERE best_lap IS NOT NULL ORDER BY best_lap LIMIT 1) AS \"Fastest lap\",\n       (SELECT count(*) FROM $drivers WHERE result IN ('DNF', 'DNS', 'DSQ')) AS \"Retired\",\n       (SELECT sum(stops) FROM $drivers) AS \"Pit stops\",\n       sc.sc AS \"Safety cars\", sc.vsc AS \"Virtual safety cars\",\n       round(w.track_c) AS \"Track\", round(w.air_c) AS \"Air\",\n       CASE WHEN w.rain \u003e 0 THEN 'Yes' ELSE 'No' END AS \"Rain\"\nFROM sc, w"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Fastest lap: the quickest lap anyone set in the race. Safety cars: how many times one came out, from race control. Track and air: mean temperatures over the race.",
+          "id": 2,
+          "links": [],
+          "title": "The race",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Track"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "celsius"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Air"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "celsius"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {
+                  "titleSize": 12,
+                  "valueSize": 22
+                },
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT * FROM $replay ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The track: driver A's fastest lap, as one line.\nSELECT '{\"type\":\"LineString\",\"coordinates\":['\n       || string_agg('[' || round(longitude, 6) || ',' || round(latitude, 6) || ']', ',' ORDER BY time) || ']}' AS _geojson\nFROM $duel WHERE slot = 'A' AND latitude IS NOT NULL"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every car through the picked lap, from the first one starting it to the last one finishing it, coloured by team. Press ▶ on the time bar to play it in real time; drag the bar to scrub. A car with no positions for that stretch is missing. Hover a car for its speed, gear, throttle and brake.",
+          "id": 3,
+          "links": [],
+          "title": "Lap replay",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "hoverMaxAgeSeconds": 10,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "dark-matter",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "charts": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "incremental",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "clock",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "defaultTimeFormat": "L  LTS",
+                            "interval": "1-second",
+                            "type": "lineChart"
+                          },
+                          "speed": 1,
+                          "syncTimelineMode": 1,
+                          "timezone": "UTC",
+                          "type": "timeRange",
+                          "view": "minified",
+                          "yAxis": {
+                            "name": "speed_kmh",
+                            "type": "integer"
+                          }
+                        }
+                      ],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "car"
+                              },
+                              {
+                                "name": "team"
+                              },
+                              {
+                                "name": "speed_kmh"
+                              },
+                              {
+                                "name": "gear"
+                              },
+                              {
+                                "name": "throttle"
+                              },
+                              {
+                                "name": "brake"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "cars",
+                        "track"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              144,
+                              144,
+                              144
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Cars",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Alfa Romeo",
+                                    "#C92D4B"
+                                  ],
+                                  [
+                                    "AlphaTauri",
+                                    "#5E8FAA"
+                                  ],
+                                  [
+                                    "Alpine",
+                                    "#00A1E8"
+                                  ],
+                                  [
+                                    "Aston Martin",
+                                    "#229971"
+                                  ],
+                                  [
+                                    "Audi",
+                                    "#F50537"
+                                  ],
+                                  [
+                                    "Cadillac",
+                                    "#909090"
+                                  ],
+                                  [
+                                    "Ferrari",
+                                    "#ED1131"
+                                  ],
+                                  [
+                                    "Haas F1 Team",
+                                    "#9C9FA2"
+                                  ],
+                                  [
+                                    "Kick Sauber",
+                                    "#01C00E"
+                                  ],
+                                  [
+                                    "McLaren",
+                                    "#F47600"
+                                  ],
+                                  [
+                                    "Mercedes",
+                                    "#00D7B6"
+                                  ],
+                                  [
+                                    "RB",
+                                    "#6692FF"
+                                  ],
+                                  [
+                                    "Racing Bulls",
+                                    "#6C98FF"
+                                  ],
+                                  [
+                                    "Red Bull Racing",
+                                    "#4781D7"
+                                  ],
+                                  [
+                                    "Williams",
+                                    "#1868DB"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#C92D4B",
+                                  "#5E8FAA",
+                                  "#00A1E8",
+                                  "#229971",
+                                  "#F50537",
+                                  "#909090",
+                                  "#ED1131",
+                                  "#9C9FA2",
+                                  "#01C00E",
+                                  "#F47600",
+                                  "#00D7B6",
+                                  "#6692FF",
+                                  "#6C98FF",
+                                  "#4781D7",
+                                  "#1868DB"
+                                ],
+                                "name": "Teams",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "fleetAltitudeField": "none",
+                              "fleetAssetField": "car",
+                              "fleetCard": false,
+                              "fleetCardMinutes": 60,
+                              "fleetCardOpacity": 0.9,
+                              "fleetCardSize": "M",
+                              "fleetCardWindow": "trail",
+                              "fleetChangeColours": "risingGood",
+                              "fleetCrossValue": true,
+                              "fleetCrosshair": true,
+                              "fleetDisplay": "flat",
+                              "fleetFollow": "",
+                              "fleetFollowMode": "follow",
+                              "fleetGhost": false,
+                              "fleetHeadingField": "heading",
+                              "fleetHeadingFrom": "auto",
+                              "fleetIcons": "{}",
+                              "fleetLabel": "name",
+                              "fleetLabelColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "fleetLabelOffset": -1,
+                              "fleetLabelOutline": true,
+                              "fleetLabelSize": 11,
+                              "fleetMarker": "silhouette",
+                              "fleetModelColours": "original",
+                              "fleetOrbitSecs": 60,
+                              "fleetPinned": [],
+                              "fleetPublishCrosshair": false,
+                              "fleetPulseBy": "auto",
+                              "fleetPulseCycle": 3,
+                              "fleetPulseLength": 0.3,
+                              "fleetPulseRange": [
+                                1,
+                                4
+                              ],
+                              "fleetRemember": "off",
+                              "fleetRememberMin": 10,
+                              "fleetShadow": false,
+                              "fleetSize": 26,
+                              "fleetSmooth": true,
+                              "fleetSmoothMs": 300,
+                              "fleetSpeedField": "speed_kmh",
+                              "fleetSpeedUnit": "km/h",
+                              "fleetStaleAfter": 10,
+                              "fleetStatusFrom": "column",
+                              "fleetStem": false,
+                              "fleetStopSpeed": 5,
+                              "fleetTimeField": "time",
+                              "fleetTimeRef": "history",
+                              "fleetTrail": 0.1,
+                              "fleetTrailAnimate": true,
+                              "fleetTrailDashLength": 0.5,
+                              "fleetTrailFade": true,
+                              "fleetTrailOpacity": 1,
+                              "fleetTrailShow": true,
+                              "fleetTrailSpacing": 18,
+                              "fleetTrailStyle": "solid",
+                              "fleetTrailWidth": 3,
+                              "fleetTypeField": "type",
+                              "fleetZoomRate": 0.35,
+                              "fleetZoomRef": 15,
+                              "fleetZoomScale": true,
+                              "opacity": 0.8,
+                              "outline": false,
+                              "radius": 25.2,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Alfa Romeo",
+                                    "#C92D4B"
+                                  ],
+                                  [
+                                    "AlphaTauri",
+                                    "#5E8FAA"
+                                  ],
+                                  [
+                                    "Alpine",
+                                    "#00A1E8"
+                                  ],
+                                  [
+                                    "Aston Martin",
+                                    "#229971"
+                                  ],
+                                  [
+                                    "Audi",
+                                    "#F50537"
+                                  ],
+                                  [
+                                    "Cadillac",
+                                    "#909090"
+                                  ],
+                                  [
+                                    "Ferrari",
+                                    "#ED1131"
+                                  ],
+                                  [
+                                    "Haas F1 Team",
+                                    "#9C9FA2"
+                                  ],
+                                  [
+                                    "Kick Sauber",
+                                    "#01C00E"
+                                  ],
+                                  [
+                                    "McLaren",
+                                    "#F47600"
+                                  ],
+                                  [
+                                    "Mercedes",
+                                    "#00D7B6"
+                                  ],
+                                  [
+                                    "RB",
+                                    "#6692FF"
+                                  ],
+                                  [
+                                    "Racing Bulls",
+                                    "#6C98FF"
+                                  ],
+                                  [
+                                    "Red Bull Racing",
+                                    "#4781D7"
+                                  ],
+                                  [
+                                    "Williams",
+                                    "#1868DB"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#C92D4B",
+                                  "#5E8FAA",
+                                  "#00A1E8",
+                                  "#229971",
+                                  "#F50537",
+                                  "#909090",
+                                  "#ED1131",
+                                  "#9C9FA2",
+                                  "#01C00E",
+                                  "#F47600",
+                                  "#00D7B6",
+                                  "#6692FF",
+                                  "#6C98FF",
+                                  "#4781D7",
+                                  "#1868DB"
+                                ],
+                                "name": "Teams",
+                                "type": "customOrdinal"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "cars",
+                          "type": "fleet",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "team",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "customOrdinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              110,
+                              110,
+                              110
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Track",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": false,
+                              "filled": false,
+                              "opacity": 0.6,
+                              "strokeColor": [
+                                110,
+                                110,
+                                110
+                              ],
+                              "strokeOpacity": 0.6,
+                              "stroked": true,
+                              "thickness": 6
+                            }
+                          },
+                          "id": "track",
+                          "type": "geojson",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 250,
+                "publishWhilePlaying": true,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 7,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "",
+                    "source": "center",
+                    "variable": "clat",
+                    "variableTo": "clon",
+                    "zoom": 14
+                  }
+                ]
+              }
+            },
+            "version": "0.1.0"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT position AS \"Pos\", driver_number AS \"No\", driver AS \"Driver\", team AS \"Team\",\n       result AS \"Gap\", points AS \"Points\", stops AS \"Stops\", best_lap AS \"Best lap\"\nFROM $drivers ORDER BY position NULLS LAST, laps DESC, driver"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The classification. Click a driver to compare them as A (blue) or B (orange). No: car number. Gap: to the winner, or laps down. Best lap: their fastest of the race.",
+          "id": 4,
+          "links": [],
+          "title": "Results",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "filterable": false,
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Driver"
+                    },
+                    "properties": [
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "targetBlank": false,
+                            "title": "Compare as A (blue)",
+                            "url": "/d/f1-race-laps${__url.params:exclude:var-driver_a}\u0026var-driver_a=${__data.fields.No}"
+                          },
+                          {
+                            "targetBlank": false,
+                            "title": "Compare as B (orange)",
+                            "url": "/d/f1-race-laps${__url.params:exclude:var-driver_b}\u0026var-driver_b=${__data.fields.No}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "No"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 44
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Pos"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 44
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Driver"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 60
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Team"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 128
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Stops"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 52
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Points"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 56
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Best lap"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "clocks"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 3
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT d.driver, d.colour, d.team, l.lap_number AS lap, l.position,\n       CASE l.driver_number WHEN ${driver_a:raw} THEN 'A' WHEN ${driver_b:raw} THEN 'B' ELSE '' END AS pick\nFROM $laps l JOIN $drivers d USING (driver_number)\nWHERE l.position IS NOT NULL\nORDER BY d.position NULLS LAST, d.laps DESC, d.driver, lap"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Safety car periods: from a DEPLOYED message to the next ending of the same kind,\n-- or to the end of the race.\nWITH m AS (\n  SELECT date, lap_number AS lap, message ILIKE '%DEPLOYED%' AS starts,\n         CASE WHEN message ILIKE '%VSC%' OR message ILIKE '%VIRTUAL%' THEN 'VSC' ELSE 'SC' END AS sc\n  FROM $control WHERE kind = 'control' AND category = 'SafetyCar'\n)\nSELECT s.sc, s.lap AS from_lap,\n       coalesce((SELECT min(e.lap) FROM m e WHERE e.sc = s.sc AND NOT e.starts AND e.date \u003e s.date),\n                (SELECT max(lap_number) FROM $laps)) AS to_lap\nFROM m s WHERE s.starts ORDER BY s.date"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each driver's position at the end of every lap, in team colours; a team's second driver is dashed, and drivers A and B are drawn thicker. Shaded: safety car (SC) and virtual safety car (VSC) periods. Hover a line to pick it out.",
+          "id": 5,
+          "links": [],
+          "title": "Positions, lap by lap",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst surface = theme.colors.background.primary;\nconst frameOf = (i) =\u003e context.panel.data.series[i];\nconst colOf = (i, name) =\u003e {\n  const frame = frameOf(i);\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\nconst col = (name) =\u003e colOf(0, name);\n// One series per driver, in finishing order; a team's second driver dashed. A and B stand out.\nconst drivers = [];\nconst byDriver = {};\nconst teamSeen = {};\ncol('driver').forEach((d, i) =\u003e {\n  if (!byDriver[d]) {\n    const team = col('team')[i];\n    teamSeen[team] = (teamSeen[team] || 0) + 1;\n    byDriver[d] = { name: d, colour: col('colour')[i], pick: col('pick')[i], dashed: teamSeen[team] \u003e 1, data: [] };\n    drivers.push(d);\n  }\n});\n// Safety car periods, shaded on the lap axis.\nconst scKind = colOf(1, 'sc');\nconst scFrom = colOf(1, 'from_lap');\nconst scTo = colOf(1, 'to_lap');\nconst scAreas = scKind.map((k, i) =\u003e [\n  { xAxis: scFrom[i], name: k, itemStyle: { color: k === 'SC' ? 'rgba(250, 178, 25, 0.16)' : 'rgba(250, 178, 25, 0.08)' },\n    label: { show: true, position: 'insideTop', color: muted, fontSize: 10 } },\n  { xAxis: scTo[i] },\n]);\nconst laps = col('lap');\nconst pos = col('position');\ncol('driver').forEach((d, i) =\u003e byDriver[d].data.push([laps[i], pos[i]]));\nconst n = Math.max(1, ...pos.filter((p) =\u003e p != null));\nconst picked = drivers.some((d) =\u003e byDriver[d].pick);\nconst series = drivers.map((d, k) =\u003e {\n  const s = byDriver[d];\n  const on = !picked || s.pick;\n  return {\n    name: d, type: 'line', data: s.data, showSymbol: false, step: false,\n    lineStyle: { color: s.colour, width: s.pick ? 3.5 : 1.5, type: s.dashed ? [6, 3] : 'solid', opacity: on ? 1 : 0.45 },\n    itemStyle: { color: s.colour },\n    endLabel: { show: true, formatter: d, color: on ? text : muted, fontSize: 11, fontWeight: s.pick ? 'bold' : 'normal' },\n    emphasis: { focus: 'series', lineStyle: { width: 3.5 } },\n    z: s.pick ? 3 : 2,\n    ...(k === 0 ? { markArea: { silent: true, data: scAreas } } : {}),\n  };\n});\nreturn {\n  animation: false,\n  grid: { left: 8, right: 48, top: 16, bottom: 8, containLabel: true },\n  tooltip: { trigger: 'item', formatter: (p) =\u003e `\u003cb\u003e${p.seriesName}\u003c/b\u003e\u003cbr/\u003eLap ${p.data[0]}: P${p.data[1]}` },\n  xAxis: { type: 'value', name: 'Lap', nameLocation: 'end', min: 1, max: 'dataMax', minInterval: 1,\n           axisLabel: { color: muted }, nameTextStyle: { color: muted }, splitLine: { show: false },\n           axisLine: { lineStyle: { color: lines } } },\n  yAxis: { type: 'value', inverse: true, min: 1, max: n, interval: 1,\n           axisLabel: { color: muted, formatter: (v) =\u003e 'P' + v, fontSize: 10 },\n           splitLine: { lineStyle: { color: lines, opacity: 0.4 } } },\n  series,\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The race trace: how far behind the first car to finish each lap every driver\n-- crossed the line. A lapped car falls a lap time further back each time.\nWITH g AS (\n  SELECT driver_number, lap_number, epoch(date_end - min(date_end) OVER (PARTITION BY lap_number)) AS gap\n  FROM $laps WHERE date_end IS NOT NULL\n)\nSELECT d.driver, d.colour, d.team, g.lap_number AS lap, round(g.gap, 2) AS gap,\n       CASE g.driver_number WHEN ${driver_a:raw} THEN 'A' WHEN ${driver_b:raw} THEN 'B' ELSE '' END AS pick\nFROM g JOIN $drivers d USING (driver_number)\nORDER BY d.position NULLS LAST, d.laps DESC, d.driver, lap"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Safety car periods: from a DEPLOYED message to the next ending of the same kind,\n-- or to the end of the race.\nWITH m AS (\n  SELECT date, lap_number AS lap, message ILIKE '%DEPLOYED%' AS starts,\n         CASE WHEN message ILIKE '%VSC%' OR message ILIKE '%VIRTUAL%' THEN 'VSC' ELSE 'SC' END AS sc\n  FROM $control WHERE kind = 'control' AND category = 'SafetyCar'\n)\nSELECT s.sc, s.lap AS from_lap,\n       coalesce((SELECT min(e.lap) FROM m e WHERE e.sc = s.sc AND NOT e.starts AND e.date \u003e s.date),\n                (SELECT max(lap_number) FROM $laps)) AS to_lap\nFROM m s WHERE s.starts ORDER BY s.date"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Seconds behind the leader at the end of every lap: the race trace. A pit stop is a drop of 20 seconds or so; under the safety car the field closes up. Cut at 90 s, past which cars are being lapped. Team colours; A and B thicker.",
+          "id": 6,
+          "links": [],
+          "title": "Gap to the leader",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst surface = theme.colors.background.primary;\nconst frameOf = (i) =\u003e context.panel.data.series[i];\nconst colOf = (i, name) =\u003e {\n  const frame = frameOf(i);\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\nconst col = (name) =\u003e colOf(0, name);\n// One series per driver, in finishing order; a team's second driver dashed. A and B stand out.\nconst drivers = [];\nconst byDriver = {};\nconst teamSeen = {};\ncol('driver').forEach((d, i) =\u003e {\n  if (!byDriver[d]) {\n    const team = col('team')[i];\n    teamSeen[team] = (teamSeen[team] || 0) + 1;\n    byDriver[d] = { name: d, colour: col('colour')[i], pick: col('pick')[i], dashed: teamSeen[team] \u003e 1, data: [] };\n    drivers.push(d);\n  }\n});\n// Safety car periods, shaded on the lap axis.\nconst scKind = colOf(1, 'sc');\nconst scFrom = colOf(1, 'from_lap');\nconst scTo = colOf(1, 'to_lap');\nconst scAreas = scKind.map((k, i) =\u003e [\n  { xAxis: scFrom[i], name: k, itemStyle: { color: k === 'SC' ? 'rgba(250, 178, 25, 0.16)' : 'rgba(250, 178, 25, 0.08)' },\n    label: { show: true, position: 'insideTop', color: muted, fontSize: 10 } },\n  { xAxis: scTo[i] },\n]);\nconst laps = col('lap');\nconst gap = col('gap');\ncol('driver').forEach((d, i) =\u003e byDriver[d].data.push([laps[i], gap[i]]));\nconst picked = drivers.some((d) =\u003e byDriver[d].pick);\nconst series = drivers.map((d, k) =\u003e {\n  const s = byDriver[d];\n  const on = !picked || s.pick;\n  return {\n    name: d, type: 'line', data: s.data, showSymbol: false,\n    lineStyle: { color: s.colour, width: s.pick ? 3 : 1.25, type: s.dashed ? [6, 3] : 'solid', opacity: on ? 1 : 0.4 },\n    itemStyle: { color: s.colour },\n    emphasis: { focus: 'series', lineStyle: { width: 3 } },\n    z: s.pick ? 3 : 2,\n    ...(k === 0 ? { markArea: { silent: true, data: scAreas } } : {}),\n  };\n});\nreturn {\n  animation: false,\n  grid: { left: 8, right: 40, top: 24, bottom: 8, containLabel: true },\n  tooltip: { trigger: 'item', formatter: (p) =\u003e `\u003cb\u003e${p.seriesName}\u003c/b\u003e\u003cbr/\u003eLap ${p.data[0]}: ${p.data[1].toFixed(1)} s behind` },\n  xAxis: { type: 'value', name: 'Lap', min: 1, max: 'dataMax', minInterval: 1, axisLabel: { color: muted },\n           nameTextStyle: { color: muted }, splitLine: { show: false }, axisLine: { lineStyle: { color: lines } } },\n  // Gaps past a minute and a half are lapped cars: cut there so the battle stays readable.\n  yAxis: { type: 'value', inverse: true, min: 0, max: (v) =\u003e Math.min(v.max, 90), name: 's behind the leader',\n           nameTextStyle: { color: muted }, axisLabel: { color: muted },\n           splitLine: { lineStyle: { color: lines, opacity: 0.4 } } },\n  series: series.map((s) =\u003e ({ ...s, clip: true })),\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT d.driver, l.stint, l.compound, min(l.lap_number) AS first_lap, max(l.lap_number) AS last_lap,\n       min(l.tyre_age) AS age_start,\n       CASE d.driver_number WHEN ${driver_a:raw} THEN 'A' WHEN ${driver_b:raw} THEN 'B' ELSE '' END AS pick,\n       d.position, d.laps\nFROM $laps l JOIN $drivers d USING (driver_number)\nWHERE l.stint IS NOT NULL\nGROUP BY ALL\nORDER BY d.position NULLS LAST, d.laps DESC, d.driver, first_lap"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each driver's stints, from OpenF1's stints: the compound and the laps it ran. Hover a stint for how old the tyres were when it began. Drivers in finishing order; A and B in bold.",
+          "id": 7,
+          "links": [],
+          "title": "Tyre strategy",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst surface = theme.colors.background.primary;\nconst frameOf = (i) =\u003e context.panel.data.series[i];\nconst colOf = (i, name) =\u003e {\n  const frame = frameOf(i);\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\nconst col = (name) =\u003e colOf(0, name);\n// One bar per driver, in finishing order, split into stints by compound.\n// Compound colours are the sport's own: red soft, yellow medium, white hard, green intermediate, blue wet.\nconst COMPOUND = { SOFT: '#da291c', MEDIUM: '#ffd12e', HARD: '#ebebe6', INTERMEDIATE: '#43b02a', WET: '#0067ad' };\nconst drivers = [...new Set(col('driver'))];\nconst picks = {};\ncol('driver').forEach((d, i) =\u003e (picks[d] = col('pick')[i]));\nconst rows = col('driver').map((d, i) =\u003e [drivers.indexOf(d), col('first_lap')[i] - 1, col('last_lap')[i],\n  col('compound')[i], col('age_start')[i], d]);\nconst used = [...new Set(col('compound'))].filter((c) =\u003e COMPOUND[c]);\nreturn {\n  animation: false,\n  grid: { left: 8, right: 16, top: 28, bottom: 8, containLabel: true },\n  legend: { top: 0, data: used, textStyle: { color: muted }, itemWidth: 12, itemHeight: 8 },\n  tooltip: { trigger: 'item', formatter: (p) =\u003e `\u003cb\u003e${p.data[5]}\u003c/b\u003e\u003cbr/\u003e${p.data[3]}, laps ${p.data[1] + 1}–${p.data[2]}` +\n    `\u003cbr/\u003e${p.data[4] \u003e 0 ? p.data[4] + ' laps old at the start' : 'new'}` },\n  xAxis: { type: 'value', name: 'Lap', min: 0, max: 'dataMax', axisLabel: { color: muted, showMaxLabel: false },\n           nameTextStyle: { color: muted }, splitLine: { lineStyle: { color: lines, opacity: 0.4 } } },\n  yAxis: { type: 'category', data: drivers, inverse: true,\n           axisLabel: { color: (d) =\u003e (picks[d] ? text : muted), fontWeight: (d) =\u003e (picks[d] ? 'bold' : 'normal'),\n                        formatter: (d) =\u003e (picks[d] ? `${d} (${picks[d]})` : d), fontSize: 10 },\n           axisLine: { lineStyle: { color: lines } } },\n  series: used.map((c) =\u003e ({\n    name: c, type: 'custom', itemStyle: { color: COMPOUND[c] },\n    encode: { x: [1, 2], y: 0 },\n    data: rows.filter((r) =\u003e r[3] === c),\n    renderItem: (params, api) =\u003e {\n      const start = api.coord([api.value(1), api.value(0)]);\n      const end = api.coord([api.value(2), api.value(0)]);\n      const h = api.size([0, 1])[1] * 0.62;\n      return { type: 'rect', shape: { x: start[0] + 1, y: start[1] - h / 2, width: Math.max(1, end[0] - start[0] - 2), height: h, r: 3 },\n               style: { fill: COMPOUND[c], stroke: surface, lineWidth: 1 } };\n    },\n  })),\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-8": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Lap times of A and B, without the laps that say little about pace: the first,\n-- in and out laps, and anything slower than 107% of the driver's median (safety\n-- car, incidents). The field's median of those same clean laps for reference.\nWITH clean AS (\n  SELECT *, median(lap_duration) OVER (PARTITION BY driver_number) AS med\n  FROM $laps WHERE lap_number \u003e 1 AND NOT pit_out AND NOT pit_in AND lap_duration IS NOT NULL\n),\nok AS (SELECT * FROM clean WHERE lap_duration \u003c 1.07 * med),\nfield AS (SELECT lap_number, median(lap_duration) AS field FROM ok GROUP BY lap_number)\nSELECT f.lap_number AS lap, round(f.field, 3) AS field,\n       a.lap_duration AS a, a.compound AS a_tyre, a.tyre_age AS a_age,\n       b.lap_duration AS b, b.compound AS b_tyre, b.tyre_age AS b_age\nFROM field f\nLEFT JOIN ok a ON a.lap_number = f.lap_number AND a.driver_number = ${driver_a:raw}\nLEFT JOIN ok b ON b.lap_number = f.lap_number AND b.driver_number = ${driver_b:raw}\nORDER BY lap"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT 'A' AS slot, driver FROM $drivers WHERE driver_number = ${driver_a:raw}\nUNION ALL\nSELECT 'B', driver FROM $drivers WHERE driver_number = ${driver_b:raw}\nORDER BY slot"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT CASE driver_number WHEN ${driver_a:raw} THEN 'A' ELSE 'B' END AS slot, lap_number AS lap\nFROM $laps WHERE pit_in AND driver_number IN (${driver_a:raw}, ${driver_b:raw})"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Safety car periods: from a DEPLOYED message to the next ending of the same kind,\n-- or to the end of the race.\nWITH m AS (\n  SELECT date, lap_number AS lap, message ILIKE '%DEPLOYED%' AS starts,\n         CASE WHEN message ILIKE '%VSC%' OR message ILIKE '%VIRTUAL%' THEN 'VSC' ELSE 'SC' END AS sc\n  FROM $control WHERE kind = 'control' AND category = 'SafetyCar'\n)\nSELECT s.sc, s.lap AS from_lap,\n       coalesce((SELECT min(e.lap) FROM m e WHERE e.sc = s.sc AND NOT e.starts AND e.date \u003e s.date),\n                (SELECT max(lap_number) FROM $laps)) AS to_lap\nFROM m s WHERE s.starts ORDER BY s.date"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Lap times of driver A (blue) and driver B (orange), against the median of the whole field. Left out: lap 1, in and out laps, and laps slower than 107% of the driver's median (safety car, incidents), which leave gaps. Dashed lines: their pit stops. Hover a lap for the tyres and their age.",
+          "id": 8,
+          "links": [],
+          "title": "Race pace: A against B",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst surface = theme.colors.background.primary;\nconst frameOf = (i) =\u003e context.panel.data.series[i];\nconst colOf = (i, name) =\u003e {\n  const frame = frameOf(i);\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\nconst col = (name) =\u003e colOf(0, name);\nconst lapTime = (s) =\u003e (s == null ? '–' : `${Math.floor(s / 60)}:${(s % 60).toFixed(3).padStart(6, '0')}`);\nconst A = '#3987e5';\nconst B = '#d95926';\nconst names = {};\ncolOf(1, 'slot').forEach((s, i) =\u003e (names[s] = colOf(1, 'driver')[i]));\nconst nameA = names.A || 'A';\nconst nameB = names.B || 'B';\n// Safety car periods (query D) and A's and B's stops (query C) on the lap axis.\nconst scKind = colOf(3, 'sc');\nconst scAreas = scKind.map((k, i) =\u003e [\n  { xAxis: colOf(3, 'from_lap')[i], name: k, itemStyle: { color: k === 'SC' ? 'rgba(250, 178, 25, 0.16)' : 'rgba(250, 178, 25, 0.08)' },\n    label: { show: true, position: 'insideTop', color: muted, fontSize: 10 } },\n  { xAxis: colOf(3, 'to_lap')[i] },\n]);\nconst stops = colOf(2, 'slot').map((s, i) =\u003e ({\n  xAxis: colOf(2, 'lap')[i], lineStyle: { color: s === 'A' ? A : B, type: 'dashed', width: 1.5 },\n  label: { show: true, formatter: 'pit', color: muted, fontSize: 10, position: 'end' },\n}));\nconst lap = col('lap');\nconst pair = (k) =\u003e col(k).map((v, i) =\u003e [lap[i], v]);\nconst tyre = { a: col('a_tyre'), b: col('b_tyre') };\nconst age = { a: col('a_age'), b: col('b_age') };\nreturn {\n  animation: false,\n  grid: { left: 8, right: 24, top: 32, bottom: 8, containLabel: true },\n  legend: { top: 0, data: [nameA, nameB, 'Field median'], textStyle: { color: muted } },\n  tooltip: { trigger: 'axis', formatter: (items) =\u003e {\n    const i = items[0].dataIndex;\n    const row = (label, colour, v, t, a) =\u003e v == null ? '' :\n      `\u003cbr/\u003e\u003cspan style=\"color:${colour}\"\u003e●\u003c/span\u003e ${label}: \u003cb\u003e${lapTime(v)}\u003c/b\u003e${t ? ` · ${t.toLowerCase()}, ${a} laps` : ''}`;\n    return `Lap ${lap[i]}` + row(nameA, A, col('a')[i], tyre.a[i], age.a[i]) + row(nameB, B, col('b')[i], tyre.b[i], age.b[i]) +\n      row('Field median', muted, col('field')[i]);\n  } },\n  xAxis: { type: 'value', name: 'Lap', min: 1, max: 'dataMax', axisLabel: { color: muted }, nameTextStyle: { color: muted },\n           splitLine: { show: false }, axisLine: { lineStyle: { color: lines } } },\n  yAxis: { type: 'value', scale: true, name: 'Lap time', nameTextStyle: { color: muted },\n           axisLabel: { color: muted, formatter: (v) =\u003e lapTime(v).replace(/\\.\\d+$/, '') },\n           splitLine: { lineStyle: { color: lines, opacity: 0.4 } } },\n  series: [\n    { name: 'Field median', type: 'line', data: pair('field'), showSymbol: false, connectNulls: false,\n      lineStyle: { color: muted, width: 1.5, type: [4, 3] }, itemStyle: { color: muted },\n      markArea: { silent: true, data: scAreas }, markLine: { silent: true, symbol: 'none', data: stops } },\n    { name: nameA, type: 'line', data: pair('a'), showSymbol: true, symbolSize: 5, connectNulls: false,\n      lineStyle: { color: A, width: 2 }, itemStyle: { color: A } },\n    { name: nameB, type: 'line', data: pair('b'), showSymbol: true, symbolSize: 5, connectNulls: false,\n      lineStyle: { color: B, width: 2 }, itemStyle: { color: B } },\n  ],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-9": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The lap split into 25 stretches of equal length. The time each driver took\n-- over a stretch comes from the time into the lap at its two ends, interpolated\n-- between samples; the stretch goes to whoever was quicker, drawn along A's line.\nWITH len AS (SELECT min(m) AS len FROM (SELECT max(distance_m) AS m FROM $duel GROUP BY slot)),\npts AS (\n  SELECT slot, distance_m AS d, t, lead(distance_m) OVER w AS d2, lead(t) OVER w AS t2\n  FROM $duel WINDOW w AS (PARTITION BY slot ORDER BY time)\n),\nbnd AS (SELECT k, k * len / 25 AS dk FROM range(1, 25) r(k), len),\ntk AS (\n  SELECT p.slot, b.k, p.t + (p.t2 - p.t) * (b.dk - p.d) / (p.d2 - p.d) AS tk\n  FROM bnd b JOIN pts p ON b.dk \u003e= p.d AND b.dk \u003c p.d2\n  UNION ALL SELECT DISTINCT slot, 0, 0 FROM $duel\n  UNION ALL SELECT slot, 25, any_value(lap_s) FROM $duel GROUP BY slot\n),\nsec AS (SELECT slot, k, lead(tk) OVER (PARTITION BY slot ORDER BY k) - tk AS dt FROM tk),\ncmp AS (\n  SELECT a.k, a.dt AS dt_a, b.dt AS dt_b, CASE WHEN a.dt \u003c= b.dt THEN 'A' ELSE 'B' END AS faster\n  FROM sec a JOIN sec b ON b.k = a.k AND b.slot = 'B' WHERE a.slot = 'A' AND a.dt IS NOT NULL\n),\nnames AS (\n  SELECT max(driver) FILTER (WHERE driver_number = ${driver_a:raw}) AS a,\n         max(driver) FILTER (WHERE driver_number = ${driver_b:raw}) AS b\n  FROM $drivers\n),\npath AS (\n  SELECT least(24, floor(distance_m / len * 25))::INTEGER AS k, time, latitude, longitude\n  FROM $duel, len WHERE slot = 'A' AND latitude IS NOT NULL\n),\n-- Each stretch's line runs on to the first point of the next, so they join up.\njoined AS (\n  SELECT k, time, latitude, longitude FROM path\n  UNION ALL\n  SELECT k - 1, time, latitude, longitude FROM (SELECT *, row_number() OVER (PARTITION BY k ORDER BY time) AS i FROM path) WHERE i = 1 AND k \u003e 0\n)\nSELECT '{\"type\":\"LineString\",\"coordinates\":['\n         || string_agg('[' || round(longitude, 6) || ',' || round(latitude, 6) || ']', ',' ORDER BY time) || ']}' AS _geojson,\n       c.k + 1 AS stretch, c.faster,\n       CASE c.faster WHEN 'A' THEN names.a ELSE names.b END AS quicker,\n       round(abs(c.dt_a - c.dt_b), 3) AS by_s\nFROM joined j JOIN cmp c USING (k), names\nGROUP BY c.k, c.faster, names.a, names.b, c.dt_a, c.dt_b\nORDER BY stretch"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The fastest laps of driver A and driver B, split into 25 stretches of equal length, each coloured by who was quicker over it: blue A, orange B. Hover a stretch for by how much. Drawn along A's line.",
+          "id": 9,
+          "links": [],
+          "title": "Who is quicker where",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "hoverMaxAgeSeconds": 10,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "dark-matter",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "charts": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "stretch"
+                              },
+                              {
+                                "name": "quicker"
+                              },
+                              {
+                                "name": "by_s"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "stretches"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              57,
+                              135,
+                              229
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Quicker",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "A",
+                                    "#3987e5"
+                                  ],
+                                  [
+                                    "B",
+                                    "#d95926"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#3987e5",
+                                  "#d95926"
+                                ],
+                                "name": "A or B",
+                                "type": "customOrdinal"
+                              },
+                              "filled": false,
+                              "opacity": 0.9,
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "A",
+                                    "#3987e5"
+                                  ],
+                                  [
+                                    "B",
+                                    "#d95926"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#3987e5",
+                                  "#d95926"
+                                ],
+                                "name": "A or B",
+                                "type": "customOrdinal"
+                              },
+                              "strokeOpacity": 0.95,
+                              "stroked": true,
+                              "thickness": 7
+                            }
+                          },
+                          "id": "stretches",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "strokeColorField": {
+                              "name": "faster",
+                              "type": "string"
+                            },
+                            "strokeColorScale": "customOrdinal"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 250,
+                "publishWhilePlaying": true,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 7,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "",
+                    "source": "center",
+                    "variable": "clat",
+                    "variableTo": "clon",
+                    "zoom": 14
+                  }
+                ]
+              }
+            },
+            "version": "0.1.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 5,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              },
+              "height": 4,
+              "width": 24,
+              "x": 0,
+              "y": 5
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 18,
+              "width": 15,
+              "x": 0,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 18,
+              "width": 9,
+              "x": 15,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 12,
+              "width": 12,
+              "x": 0,
+              "y": 27
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              },
+              "height": 12,
+              "width": 12,
+              "x": 12,
+              "y": 27
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-7"
+              },
+              "height": 13,
+              "width": 12,
+              "x": 0,
+              "y": 39
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-8"
+              },
+              "height": 13,
+              "width": 12,
+              "x": 12,
+              "y": 39
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-9"
+              },
+              "height": 17,
+              "width": 9,
+              "x": 0,
+              "y": 52
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-10"
+              },
+              "height": 17,
+              "width": 15,
+              "x": 9,
+              "y": 52
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-11"
+              },
+              "height": 10,
+              "width": 24,
+              "x": 0,
+              "y": 69
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "kepler",
+      "plus",
+      "business-charts",
+      "sport"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-1h",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Formula 1, lap by lap",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "2026",
+            "value": "2026"
+          },
+          "description": "OpenF1 has every session from 2023 on.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Season",
+          "multi": false,
+          "name": "year",
+          "options": [],
+          "query": "2026,2025,2024,2023",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "The season's races",
+          "multi": false,
+          "name": "sessions",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "sessions",
+              "refId": "sessions",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, on every change of year: the year's races and sprints that\n-- finished three hours ago or more, so their data is final before the gateway\n-- keeps it for a month. From OpenF1's sessions, kept an hour by the gateway.\n-- Each carries its circuit's place on the map. OpenF1's x and y are\n-- decimetres on a plane turned a degree or two from north, with an origin of\n-- its own at each circuit: (a, b) turn and scale them into metres east and\n-- north of (lat0, lon0), the centre of the circuit's outline in\n-- bacinger/f1-circuits (MIT), fitted to a fast lap within a few metres. A\n-- circuit missing here gets no map; its charts still work.\nWITH g AS (\n  SELECT * FROM (VALUES\n    (2, 52.071824, -1.016350, 0.0993277, -0.0024865, -305.69, -502.24),\n    (4, 47.582730, 19.250819, 0.0995493, 0.0023272, -15.36, -419.36),\n    (6, 44.340893, 11.712650, 0.0996202, -0.0033233, 677.95, 502.07),\n    (7, 50.434718, 5.968647, 0.0993403, -0.0039938, -153.30, 811.07),\n    (9, 30.135188, -97.634773, 0.0996049, -0.0009404, -570.71, -158.62),\n    (10, -37.845939, 144.970360, 0.0994299, -0.0019584, -15.65, -308.90),\n    (12, 2.760746, 101.736964, 0.0996960, 0.0000250, 27.95, 97.37),\n    (14, -23.700953, -46.698042, 0.0995870, -0.0005235, 166.30, 247.71),\n    (15, 41.569008, 2.257373, 0.0998240, 0.0007545, 234.72, 218.19),\n    (19, 47.223373, 14.762043, 0.0992684, 0.0003815, 221.07, -225.52),\n    (22, 43.737158, 7.425301, 0.0994902, 0.0019187, 423.41, 455.45),\n    (23, 45.504385, -73.526422, 0.0997167, -0.0016920, -40.39, -577.43),\n    (39, 45.623385, 9.286545, 0.0995192, -0.0003714, -305.44, -696.44),\n    (46, 34.844582, 136.532820, 0.0999107, -0.0013796, 383.16, 87.48),\n    (49, 31.340176, 121.219292, 0.0998572, 0.0016185, 266.66, -129.13),\n    (55, 52.387687, 4.545503, 0.0996324, -0.0019660, -361.63, -208.36),\n    (61, 1.290684, 103.858010, 0.0994568, 0.0012198, 597.99, 49.57),\n    (63, 26.032221, 50.514119, 0.0994473, -0.0000238, -332.10, -320.76),\n    (65, 19.402752, -99.089764, 0.0998066, 0.0000239, -497.56, 274.32),\n    (70, 24.469357, 54.605590, 0.0998293, 0.0016811, -182.78, -158.56),\n    (144, 40.368992, 49.840966, 0.0999315, 0.0014080, 833.44, 419.46),\n    (149, 21.638888, 39.102743, 0.0998817, -0.0000203, 387.08, -932.62),\n    (150, 25.491746, 51.454253, 0.0996872, -0.0003568, -232.13, -411.13),\n    (151, 25.957636, -80.237747, 0.0997516, -0.0006187, -259.91, 219.16),\n    (152, 36.116431, -115.165712, 0.0999035, -0.0016232, 100.82, -773.09),\n    (153, 40.472760, -3.621432, 0.0998121, 0.0008042, 75.58, -666.51)\n  ) AS t(circuit_key, lat0, lon0, a, b, e0, n0)\n)\nSELECT s.session_key, s.circuit_key, s.session_name, s.location, s.country_name, s.circuit_short_name,\n       s.date_start, s.date_end, g.lat0, g.lon0, g.a, g.b, g.e0, g.n0\nFROM read_json('http://feeds/openf1/v1/sessions?year=${year:raw}\u0026session_type=Race',\n               columns = {session_key: 'INTEGER', circuit_key: 'INTEGER', session_name: 'VARCHAR',\n                          location: 'VARCHAR', country_name: 'VARCHAR', circuit_short_name: 'VARCHAR',\n                          date_start: 'TIMESTAMPTZ', date_end: 'TIMESTAMPTZ', is_cancelled: 'BOOLEAN'}) s\nLEFT JOIN g USING (circuit_key)\nWHERE NOT coalesce(s.is_cancelled, false) AND s.date_end \u003c now() - INTERVAL 3 HOUR\nORDER BY s.date_start",
+                  "refId": "sessions"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Grands prix and sprints that finished at least three hours ago.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Race",
+          "multi": false,
+          "name": "session",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "session",
+              "sql": "-- The newest first, so a new season opens on its latest race.\nSELECT session_key::BIGINT::VARCHAR AS value,\n       country_name || ' · ' || location || ' · ' || session_name || ' · ' || strftime(date_start, '%-d %b') AS text\nFROM $sessions ORDER BY date_start DESC"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Circuit on the map",
+          "multi": false,
+          "name": "geo",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "geo",
+              "sql": "-- The circuit's centre and the turn and scale from OpenF1's x/y, for the server SQL.\nSELECT concat_ws(',', lat0, lon0, a, b, e0, n0) AS value FROM $sessions WHERE session_key = ${session:raw}"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Circuit latitude",
+          "multi": false,
+          "name": "clat",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "clat",
+              "sql": "SELECT coalesce(round(lat0, 5), 0)::VARCHAR AS value FROM $sessions WHERE session_key = ${session:raw}"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Circuit longitude",
+          "multi": false,
+          "name": "clon",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "clon",
+              "sql": "SELECT coalesce(round(lon0, 5), 0)::VARCHAR AS value FROM $sessions WHERE session_key = ${session:raw}"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Drivers and results",
+          "multi": false,
+          "name": "drivers",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "drivers",
+              "refId": "drivers",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, on every change of race: one row per driver, with the result,\n-- the best lap and the pit stops. OpenF1's drivers, session_result, laps and\n-- pit, kept a month by the gateway. A gap is seconds to the winner, or laps\n-- down (\"+1 LAP\"), so it stays text.\nWITH d AS (\n  SELECT * FROM read_json('http://feeds/openf1/v1/drivers?session_key=${session:raw}',\n    columns = {driver_number: 'INTEGER', name_acronym: 'VARCHAR', full_name: 'VARCHAR',\n               team_name: 'VARCHAR', team_colour: 'VARCHAR'})\n),\nr AS (\n  SELECT * FROM read_json('http://feeds/openf1/v1/session_result?session_key=${session:raw}',\n    columns = {driver_number: 'INTEGER', position: 'INTEGER', number_of_laps: 'INTEGER', points: 'DOUBLE',\n               dnf: 'BOOLEAN', dns: 'BOOLEAN', dsq: 'BOOLEAN', duration: 'VARCHAR', gap_to_leader: 'VARCHAR'})\n),\nl AS (\n  SELECT driver_number, min(lap_duration) AS best_lap, arg_min(lap_number, lap_duration) AS best_lap_number,\n         max(st_speed) AS top_speed\n  FROM read_json('http://feeds/openf1/v1/laps?session_key=${session:raw}',\n    columns = {driver_number: 'INTEGER', lap_number: 'INTEGER', lap_duration: 'DOUBLE', st_speed: 'INTEGER'})\n  GROUP BY ALL\n),\np AS (\n  SELECT driver_number, count(*) AS stops, min(lane_duration) AS best_pit_lane\n  FROM read_json('http://feeds/openf1/v1/pit?session_key=${session:raw}',\n    columns = {driver_number: 'INTEGER', lap_number: 'INTEGER', lane_duration: 'DOUBLE'})\n  GROUP BY ALL\n)\nSELECT d.driver_number, d.name_acronym AS driver, d.full_name, d.team_name AS team,\n       '#' || coalesce(d.team_colour, '909090') AS colour,\n       r.position,\n       CASE WHEN r.dsq THEN 'DSQ' WHEN r.dns THEN 'DNS' WHEN r.dnf THEN 'DNF'\n            WHEN r.position = 1 THEN 'Winner'\n            WHEN try_cast(r.gap_to_leader AS DOUBLE) IS NOT NULL THEN '+' || printf('%.3f', r.gap_to_leader::DOUBLE) || ' s'\n            ELSE r.gap_to_leader END AS result,\n       r.number_of_laps AS laps, coalesce(r.points, 0) AS points,\n       try_cast(r.duration AS DOUBLE) AS race_time_s,\n       l.best_lap, l.best_lap_number, l.top_speed,\n       coalesce(p.stops, 0) AS stops, p.best_pit_lane\nFROM d LEFT JOIN r USING (driver_number) LEFT JOIN l USING (driver_number) LEFT JOIN p USING (driver_number)\nORDER BY r.position NULLS LAST, r.number_of_laps DESC, d.driver_number",
+                  "refId": "drivers"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Every lap",
+          "multi": false,
+          "name": "laps",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "laps",
+              "refId": "laps",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, on every change of race: one row per driver and lap, about a\n-- thousand, with its tyre (from the stints), its position when the lap ended\n-- (the last position change before then) and whether the driver pitted at its\n-- end. OpenF1's laps, stints, position and pit, kept a month by the gateway.\nWITH l AS (\n  SELECT *, coalesce(lead(date_start) OVER (PARTITION BY driver_number ORDER BY lap_number),\n                     date_start + to_microseconds(CAST(lap_duration * 1e6 AS BIGINT))) AS date_end\n  FROM read_json('http://feeds/openf1/v1/laps?session_key=${session:raw}',\n    columns = {driver_number: 'INTEGER', lap_number: 'INTEGER', date_start: 'TIMESTAMPTZ', lap_duration: 'DOUBLE',\n               duration_sector_1: 'DOUBLE', duration_sector_2: 'DOUBLE', duration_sector_3: 'DOUBLE',\n               is_pit_out_lap: 'BOOLEAN', st_speed: 'INTEGER'})\n),\ns AS (\n  SELECT * FROM read_json('http://feeds/openf1/v1/stints?session_key=${session:raw}',\n    columns = {driver_number: 'INTEGER', stint_number: 'INTEGER', lap_start: 'INTEGER', lap_end: 'INTEGER',\n               compound: 'VARCHAR', tyre_age_at_start: 'INTEGER'})\n),\np AS (\n  SELECT * FROM read_json('http://feeds/openf1/v1/position?session_key=${session:raw}',\n    columns = {driver_number: 'INTEGER', date: 'TIMESTAMPTZ', position: 'INTEGER'})\n),\npit AS (\n  SELECT DISTINCT driver_number, lap_number\n  FROM read_json('http://feeds/openf1/v1/pit?session_key=${session:raw}',\n    columns = {driver_number: 'INTEGER', lap_number: 'INTEGER'})\n)\nSELECT l.driver_number, l.lap_number, l.date_start, l.date_end, l.lap_duration,\n       l.duration_sector_1 AS sector_1, l.duration_sector_2 AS sector_2, l.duration_sector_3 AS sector_3,\n       coalesce(l.is_pit_out_lap, false) AS pit_out, pit.lap_number IS NOT NULL AS pit_in, l.st_speed AS trap_speed,\n       s.stint_number AS stint, coalesce(s.compound, 'UNKNOWN') AS compound,\n       s.tyre_age_at_start + l.lap_number - s.lap_start AS tyre_age,\n       p.position\nFROM l\nLEFT JOIN s ON s.driver_number = l.driver_number AND l.lap_number BETWEEN s.lap_start AND s.lap_end\nLEFT JOIN pit ON pit.driver_number = l.driver_number AND pit.lap_number = l.lap_number\nASOF LEFT JOIN p ON p.driver_number = l.driver_number AND p.date \u003c= l.date_end\nORDER BY l.driver_number, l.lap_number",
+                  "refId": "laps"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Race control and weather",
+          "multi": false,
+          "name": "control",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "control",
+              "refId": "control",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, on every change of race: race control's flags, safety cars and\n-- penalties, and the weather once a minute. OpenF1's race_control and weather,\n-- kept a month by the gateway.\nWITH rc AS (\n  SELECT date, lap_number, category, flag, scope, sector, driver_number, message\n  FROM read_json('http://feeds/openf1/v1/race_control?session_key=${session:raw}',\n    columns = {date: 'TIMESTAMPTZ', lap_number: 'INTEGER', category: 'VARCHAR', flag: 'VARCHAR', scope: 'VARCHAR',\n               sector: 'INTEGER', driver_number: 'INTEGER', message: 'VARCHAR'})\n),\nw AS (\n  SELECT date, air_temperature, track_temperature, humidity, rainfall, wind_speed\n  FROM read_json('http://feeds/openf1/v1/weather?session_key=${session:raw}',\n    columns = {date: 'TIMESTAMPTZ', air_temperature: 'DOUBLE', track_temperature: 'DOUBLE', humidity: 'DOUBLE',\n               rainfall: 'DOUBLE', wind_speed: 'DOUBLE'})\n)\nSELECT 'control' AS kind, date, lap_number, category, flag, scope, sector, driver_number, message,\n       NULL::DOUBLE AS air_c, NULL::DOUBLE AS track_c, NULL::DOUBLE AS humidity, NULL::DOUBLE AS rain, NULL::DOUBLE AS wind_ms\nFROM rc\nUNION ALL\nSELECT 'weather', date, NULL, NULL, NULL, NULL, NULL, NULL, NULL,\n       air_temperature, track_temperature, humidity, rainfall, wind_speed\nFROM w\nORDER BY date",
+                  "refId": "control"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Compared with driver B on the charts and the map at the bottom. Also: a row of the results table.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Driver A (blue)",
+          "multi": false,
+          "name": "driver_a",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "driver_a",
+              "sql": "-- The winner first, so a new race opens on the winner against second place.\nSELECT driver_number::BIGINT::VARCHAR AS value, driver || ' · ' || coalesce('P' || position::INTEGER, coalesce(result, '')) || ' · ' || team AS text\nFROM $drivers ORDER BY position NULLS LAST, laps DESC, driver"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Driver B (orange)",
+          "multi": false,
+          "name": "driver_b",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "driver_b",
+              "sql": "-- Second place first, so a new race opens on the winner against second place.\nSELECT driver_number::BIGINT::VARCHAR AS value, driver || ' · ' || coalesce('P' || position::INTEGER, coalesce(result, '')) || ' · ' || team AS text\nFROM $drivers ORDER BY position = 2 DESC, position NULLS LAST, laps DESC, driver"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The lap the map replays, every car on it.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Replay lap",
+          "multi": false,
+          "name": "lap",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "lap",
+              "sql": "-- Lap 1 first: the start.\nSELECT lap_number::BIGINT::VARCHAR AS value, 'Lap ' || lap_number::BIGINT AS text\nFROM $laps GROUP BY lap_number ORDER BY lap_number"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Every car through the replay lap",
+          "multi": false,
+          "name": "replay",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "replay",
+              "refId": "replay",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, on every change of race or lap: every car through the picked\n-- lap, about four positions a second, with its speed, gear, throttle, brake\n-- and DRS at that moment. The window runs from the first car starting the lap\n-- to the last one finishing it (four minutes at most, for a lap behind the\n-- safety car), and only that window is asked of OpenF1's location and\n-- car_data, kept a month by the gateway.\nSET VARIABLE w = (\n  SELECT {'t0': min(date_start),\n          't1': least(min(date_start) + INTERVAL 4 MINUTE,\n                      coalesce(max(date_start + to_microseconds(CAST(lap_duration * 1e6 AS BIGINT))),\n                               min(date_start) + INTERVAL 2 MINUTE))}\n  FROM read_json('http://feeds/openf1/v1/laps?session_key=${session:raw}',\n    columns = {lap_number: 'INTEGER', date_start: 'TIMESTAMPTZ', lap_duration: 'DOUBLE'})\n  WHERE lap_number = ${lap:raw}\n);\nSET VARIABLE q = 'session_key=${session:raw}\u0026date\u003e='\n  || strftime(timezone('UTC', date_trunc('second', getvariable('w').t0)), '%Y-%m-%dT%H:%M:%S')\n  || '\u0026date\u003c' || strftime(timezone('UTC', date_trunc('second', getvariable('w').t1) + INTERVAL 1 SECOND), '%Y-%m-%dT%H:%M:%S');\n-- The circuit's place on the map comes from the sessions dataset, through the geo variable.\nWITH g AS (\n  SELECT try_cast(p[1] AS DOUBLE) AS lat0, try_cast(p[2] AS DOUBLE) AS lon0, try_cast(p[3] AS DOUBLE) AS a,\n         try_cast(p[4] AS DOUBLE) AS b, try_cast(p[5] AS DOUBLE) AS e0, try_cast(p[6] AS DOUBLE) AS n0\n  FROM (SELECT string_split('${geo:raw}', ',') AS p)\n),\nd AS (\n  SELECT driver_number, name_acronym AS car, team_name AS team\n  FROM read_json('http://feeds/openf1/v1/drivers?session_key=${session:raw}',\n    columns = {driver_number: 'INTEGER', name_acronym: 'VARCHAR', team_name: 'VARCHAR'})\n),\nloc AS (\n  SELECT driver_number, date AS time, g.a * x - g.b * y + g.e0 AS e, g.b * x + g.a * y + g.n0 AS n, g.lat0, g.lon0\n  FROM read_json('http://feeds/openf1/v1/location?' || getvariable('q'),\n    columns = {driver_number: 'INTEGER', date: 'TIMESTAMPTZ', x: 'DOUBLE', y: 'DOUBLE'}), g\n),\ncar AS (\n  SELECT driver_number, date AS time, speed, n_gear, throttle, brake, drs\n  FROM read_json('http://feeds/openf1/v1/car_data?' || getvariable('q'),\n    columns = {driver_number: 'INTEGER', date: 'TIMESTAMPTZ', speed: 'INTEGER', n_gear: 'INTEGER',\n               throttle: 'INTEGER', brake: 'INTEGER', drs: 'INTEGER'})\n),\nm AS (\n  SELECT *, e - lag(e) OVER w AS de, n - lag(n) OVER w AS dn\n  FROM loc WINDOW w AS (PARTITION BY driver_number ORDER BY time)\n)\nSELECT m.time, d.car, 'car' AS type, d.team,\n       m.lat0 + m.n / 110574 AS latitude,\n       m.lon0 + m.e / (111320 * cos(radians(m.lat0))) AS longitude,\n       CASE WHEN de * de + dn * dn \u003e 1 THEN round((degrees(atan2(de, dn)) + 360) % 360) END AS heading,\n       car.speed AS speed_kmh, car.n_gear AS gear, car.throttle, car.brake,\n       car.drs \u003e= 10 AS drs_open\nFROM m JOIN d USING (driver_number)\nASOF LEFT JOIN car ON car.driver_number = m.driver_number AND car.time \u003c= m.time\nORDER BY m.time, d.car",
+                  "refId": "replay"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "The fastest laps of drivers A and B",
+          "multi": false,
+          "name": "duel",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "duel",
+              "refId": "duel",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, on every change of race or drivers: the fastest lap of each of\n-- the two picked drivers, sample by sample, with the distance into the lap\n-- (speed integrated over time, scaled so both laps measure the same), the\n-- time into the lap, and where the car was. Only those two laps are asked of\n-- OpenF1's car_data and location, kept a month by the gateway.\nSET VARIABLE w = (\n  SELECT list({'slot': slot, 'driver': driver_number, 'lap': lap_number, 't0': date_start,\n               't1': date_start + to_microseconds(CAST(lap_duration * 1e6 AS BIGINT))} ORDER BY slot)\n  FROM (\n    SELECT CASE driver_number WHEN ${driver_a:raw} THEN 'A' ELSE 'B' END AS slot,\n           driver_number, arg_min(lap_number, lap_duration) AS lap_number,\n           arg_min(date_start, lap_duration) AS date_start, min(lap_duration) AS lap_duration\n    FROM read_json('http://feeds/openf1/v1/laps?session_key=${session:raw}',\n      columns = {driver_number: 'INTEGER', lap_number: 'INTEGER', date_start: 'TIMESTAMPTZ',\n                 lap_duration: 'DOUBLE', is_pit_out_lap: 'BOOLEAN'})\n    WHERE driver_number IN (${driver_a:raw}, ${driver_b:raw}) AND lap_duration IS NOT NULL\n      AND NOT coalesce(is_pit_out_lap, false) AND date_start IS NOT NULL\n    GROUP BY driver_number\n  )\n);\nSET VARIABLE urls = (\n  SELECT list('session_key=${session:raw}\u0026driver_number=' || x.driver\n              || '\u0026date\u003e=' || strftime(timezone('UTC', date_trunc('second', x.t0)), '%Y-%m-%dT%H:%M:%S')\n              || '\u0026date\u003c' || strftime(timezone('UTC', date_trunc('second', x.t1) + INTERVAL 2 SECOND), '%Y-%m-%dT%H:%M:%S'))\n  FROM (SELECT unnest(getvariable('w')) AS x)\n);\nWITH win AS (SELECT unnest(getvariable('w'), recursive := true)),\ng AS (\n  SELECT try_cast(p[1] AS DOUBLE) AS lat0, try_cast(p[2] AS DOUBLE) AS lon0, try_cast(p[3] AS DOUBLE) AS a,\n         try_cast(p[4] AS DOUBLE) AS b, try_cast(p[5] AS DOUBLE) AS e0, try_cast(p[6] AS DOUBLE) AS n0\n  FROM (SELECT string_split('${geo:raw}', ',') AS p)\n),\ncar AS (\n  SELECT win.slot, win.lap, c.date AS time, epoch(c.date - win.t0) AS t, c.speed, c.throttle, c.brake, c.n_gear, c.drs,\n         epoch(win.t1 - win.t0) AS lap_s\n  FROM read_json(list_transform(getvariable('urls'), u -\u003e 'http://feeds/openf1/v1/car_data?' || u),\n    columns = {driver_number: 'INTEGER', date: 'TIMESTAMPTZ', speed: 'INTEGER', throttle: 'INTEGER', brake: 'INTEGER',\n               n_gear: 'INTEGER', drs: 'INTEGER'}) c\n  JOIN win ON win.driver = c.driver_number AND c.date BETWEEN win.t0 AND win.t1\n),\ndist AS (\n  SELECT *, sum(speed / 3.6 * dt) OVER (PARTITION BY slot ORDER BY time) AS raw_m\n  FROM (SELECT *, coalesce(t - lag(t) OVER (PARTITION BY slot ORDER BY time), t) AS dt FROM car)\n),\nscaled AS (\n  SELECT *, raw_m * avg(max_m) OVER () / max_m AS distance_m\n  FROM (SELECT *, max(raw_m) OVER (PARTITION BY slot) AS max_m FROM dist)\n),\nloc AS (\n  SELECT win.slot, l.date AS time, g.lat0 + (g.b * x + g.a * y + g.n0) / 110574 AS latitude,\n         g.lon0 + (g.a * x - g.b * y + g.e0) / (111320 * cos(radians(g.lat0))) AS longitude\n  FROM read_json(list_transform(getvariable('urls'), u -\u003e 'http://feeds/openf1/v1/location?' || u),\n    columns = {driver_number: 'INTEGER', date: 'TIMESTAMPTZ', x: 'DOUBLE', y: 'DOUBLE'}) l\n  JOIN win ON win.driver = l.driver_number AND l.date BETWEEN win.t0 AND win.t1, g\n)\nSELECT s.slot, s.lap, s.time, round(s.t, 3) AS t, round(s.distance_m, 1) AS distance_m, s.lap_s,\n       s.speed AS speed_kmh, s.throttle, CASE WHEN s.brake \u003e 0 THEN 100 ELSE 0 END AS brake,\n       s.n_gear AS gear, s.drs \u003e= 10 AS drs_open, loc.latitude, loc.longitude\nFROM scaled s ASOF LEFT JOIN loc ON loc.slot = s.slot AND loc.time \u003c= s.time\nORDER BY s.slot, s.time",
+                  "refId": "duel"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}

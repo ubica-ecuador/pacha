@@ -13,16 +13,23 @@ Every interval the recorder runs it and writes what is new under
 A reader only ever follows the manifest. Every file is written under a .tmp
 name and renamed, and a file the manifest stops naming is deleted a poll later,
 so a reader holding the previous manifest still finds what it names.
+
+A feed with `-- schedule: daily` is read a day at a time instead: see DailyFeed.
 """
 import datetime as dt
+import http.client
 import json
 import logging
 import os
 import re
+import shutil
 import sys
 import tempfile
+import threading
 import time
+import urllib.error
 import urllib.request
+import zipfile
 from pathlib import Path
 
 import duckdb
@@ -39,6 +46,11 @@ EXTENSIONS = os.environ.get('RECORDER_EXTENSIONS', '/opt/recorder/extensions')
 def header(sql, key):
     match = re.search(rf'^--\s*{key}:\s*(\S+)\s*$', sql, re.M)
     return match and match.group(1)
+
+
+def header_list(sql, key):
+    match = re.search(rf'^--\s*{key}:\s*(.+?)\s*$', sql, re.M)
+    return match.group(1).split() if match else []
 
 
 def iso(moment):
@@ -203,6 +215,203 @@ class Feed:
             f"COPY polls TO '{tmp}' (FORMAT parquet, COMPRESSION zstd)"))
 
 
+class CutShort(OSError):
+    """A download that ended before the length its server announced."""
+
+
+class DailyFeed:
+    """A feed published a day at a time, as one zipped CSV (`-- schedule: daily`).
+
+    Its source names the day, as {day}: http://feeds/dma-ais/aisdk-{day}.zip.
+    Every interval (an hour by default) it looks back for the days it does not
+    have, newest first, and reads each one the source has: downloads it, unzips
+    it, runs the feed's script with `source` (the CSV) and `day` set, and keeps
+    every table named in `-- tables:` as <day>/<table>.parquet. A day is written
+    under a .tmp directory and renamed whole, so a reader never sees half of it.
+
+      YYYY-MM-DD/<table>.parquet   a day, one file per table
+      manifest.json                every file, with its day and table
+      polls.parquet                every day read: when, how it went, rows written
+
+    It keeps the newest `retention_days` days the source published. A day that
+    could not be downloaded is tried again the next interval; one that could
+    not be read, a day later: a source of 650 MB a day is not fetched in a loop.
+    """
+    LOOK_BACK = 5  # days the source may publish late, beyond the ones kept
+
+    def __init__(self, sql_path, data, public_base, retention_days, source=None, interval=None,
+                 scratch=None):
+        sql_path = Path(sql_path)
+        self.name = sql_path.stem
+        self.sql = sql_path.read_text()
+        self.source = source or header(self.sql, 'source')
+        self.interval = int(interval or header(self.sql, 'interval') or 3600)
+        self.tables = header_list(self.sql, 'tables')
+        if not self.tables:
+            raise ValueError(f'{sql_path}: a daily feed names its tables (-- tables: ...)')
+        self.retention = retention_days
+        self.dir = Path(data) / self.name
+        self.public = f'{public_base.rstrip("/")}/{self.name}'
+        self.scratch = scratch or os.environ.get('RECORDER_SCRATCH') or tempfile.gettempdir()
+        self.failed = {}  # day -> when it last failed
+        self.dir.mkdir(parents=True, exist_ok=True)
+        os.chmod(self.dir, 0o755)
+        self.log_db = duckdb.connect()
+        polls = self.dir / 'polls.parquet'
+        if polls.exists():
+            self.log_db.execute(f"CREATE TABLE polls AS SELECT * FROM read_parquet('{polls}')")
+        else:
+            self.log_db.execute('CREATE TABLE polls (ts TIMESTAMPTZ, day DATE, status VARCHAR, '
+                                'written BIGINT, error VARCHAR)')
+
+    def recover(self, now):
+        """At start: drop a day a stop left half written."""
+        for path in self.dir.iterdir():
+            if path.is_dir() and path.name.endswith('.tmp'):
+                shutil.rmtree(path)
+        self._write_manifest()
+
+    def poll(self, now):
+        have = set(self._days())
+        yesterday = now.date() - dt.timedelta(days=1)
+        for back in range(self.retention + self.LOOK_BACK):
+            day = yesterday - dt.timedelta(days=back)
+            if day in have:
+                continue
+            if sum(1 for d in have if d > day) >= self.retention:
+                break
+            failed = self.failed.get(day)
+            if failed and now - failed < dt.timedelta(days=1):
+                continue
+            if self._read_day(day, now):
+                have.add(day)
+                self._write_manifest()  # each day as soon as it is read: a first fill takes a while
+        for day in sorted(have, reverse=True)[self.retention:]:
+            shutil.rmtree(self.dir / day.isoformat(), ignore_errors=True)
+        self._write_manifest()
+
+    # --- one day ---
+
+    def _fetch(self, day, into):
+        """The day's CSV in `into`, or None when the source has not published it."""
+        source = self.source.replace('{day}', day.isoformat())
+        archive = Path(into) / 'day.zip'
+        if re.match(r'^https?://', source):
+            request = urllib.request.Request(source, headers={'User-Agent': 'pacha-recorder'})
+            try:
+                with urllib.request.urlopen(request, timeout=60) as response, open(archive, 'wb') as out:
+                    shutil.copyfileobj(response, out, 1 << 20)
+                    expected = response.headers.get('Content-Length')
+                    if expected is not None and out.tell() != int(expected):
+                        raise CutShort(f'download cut short: {out.tell()} of {expected} bytes')
+            except urllib.error.HTTPError as error:
+                if error.code in (403, 404):  # S3 says 403 for a key that is not there
+                    return None
+                raise
+        elif os.path.exists(source):
+            archive = Path(source)
+        else:
+            return None
+        with zipfile.ZipFile(archive) as z:
+            (member,) = [m for m in z.namelist() if m.lower().endswith('.csv')]
+            csv = Path(into) / 'day.csv'
+            with z.open(member) as src, open(csv, 'wb') as out:
+                shutil.copyfileobj(src, out, 1 << 20)
+        if archive.parent == Path(into):
+            archive.unlink()
+        return csv
+
+    def _read_day(self, day, now):
+        written = 0
+        final = self.dir / day.isoformat()
+        partial = self.dir / f'{day.isoformat()}.tmp'
+        try:
+            with tempfile.TemporaryDirectory(dir=self.scratch) as scratch:
+                started = time.time()
+                csv = self._fetch(day, scratch)
+                if csv is None:
+                    log.info('%s: %s not published yet', self.name, day)
+                    return False
+                db = self._connect(scratch)
+                try:
+                    db.execute('SET VARIABLE source = ?', [str(csv)])
+                    db.execute('SET VARIABLE day = ?::DATE', [day])
+                    db.execute(self.sql)
+                    shutil.rmtree(partial, ignore_errors=True)
+                    partial.mkdir()
+                    for table in self.tables:
+                        db.execute(f"COPY {table} TO '{partial / table}.parquet' "
+                                   '(FORMAT parquet, COMPRESSION zstd, ROW_GROUP_SIZE 122880)')
+                        os.chmod(partial / f'{table}.parquet', 0o644)
+                        written += db.execute(f'SELECT count(*) FROM {table}').fetchone()[0]
+                finally:
+                    db.close()
+            os.chmod(partial, 0o755)
+            shutil.rmtree(final, ignore_errors=True)
+            os.replace(partial, final)
+            self.failed.pop(day, None)
+            self._log(now, day, 'ok', written, None)
+            log.info('%s: %s read, %d rows in %.0f s', self.name, day, written, time.time() - started)
+            return True
+        except duckdb.FatalException:
+            raise
+        except (urllib.error.URLError, http.client.HTTPException, CutShort, ConnectionError, TimeoutError) as error:
+            # The network, not the day: tried again the next interval.
+            shutil.rmtree(partial, ignore_errors=True)
+            log.error('%s: %s: %s', self.name, day, error)
+            self._log(now, day, 'unreachable', 0, str(error))
+            return False
+        except (duckdb.Error, OSError, ValueError, zipfile.BadZipFile) as error:
+            shutil.rmtree(partial, ignore_errors=True)
+            self.failed[day] = now
+            log.error('%s: %s: %s', self.name, day, error)
+            self._log(now, day, 'error', 0, str(error))
+            return False
+
+    def _connect(self, scratch):
+        config = {'autoinstall_known_extensions': 'false', 'temp_directory': scratch,
+                  'preserve_insertion_order': 'false',
+                  'memory_limit': os.environ.get('RECORDER_MEMORY_LIMIT', '2GB')}
+        if os.environ.get('RECORDER_THREADS'):
+            config['threads'] = int(os.environ['RECORDER_THREADS'])
+        if os.path.isdir(EXTENSIONS):
+            config['extension_directory'] = EXTENSIONS
+        db = duckdb.connect(config=config)
+        db.execute('LOAD h3')
+        return db
+
+    # --- files ---
+
+    def _days(self):
+        return sorted(dt.date.fromisoformat(p.name) for p in self.dir.iterdir()
+                      if p.is_dir() and DAY_DIR.match(p.name))
+
+    def _write_manifest(self):
+        entries = [{'url': f'{self.public}/{day.isoformat()}/{table}.parquet', 'day': day.isoformat(),
+                    'table': table}
+                   for day in self._days() for table in self.tables
+                   if (self.dir / day.isoformat() / f'{table}.parquet').exists()]
+        write_atomic(self.dir / 'manifest.json', lambda tmp: tmp.write_text(json.dumps(entries)))
+
+    def _log(self, now, day, status, written, error):
+        self.log_db.execute('INSERT INTO polls VALUES (?, ?, ?, ?, ?)', [now, day, status, written, error])
+        self.log_db.execute("DELETE FROM polls WHERE ts < ?::TIMESTAMPTZ - INTERVAL 30 DAY", [now])
+        write_atomic(self.dir / 'polls.parquet', lambda tmp: self.log_db.execute(
+            f"COPY polls TO '{tmp}' (FORMAT parquet, COMPRESSION zstd)"))
+
+
+def run_daily(feed):
+    """A daily feed's own loop, in its own thread: reading a day takes minutes, and
+    the feeds polled every minute must not wait for it."""
+    try:
+        while True:
+            feed.poll(dt.datetime.now(UTC).replace(microsecond=0))
+            time.sleep(feed.interval)
+    except duckdb.FatalException as error:
+        log.critical('%s: %s', feed.name, error)
+        os._exit(1)  # the process restarts; DuckDB refuses every later statement
+
+
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s', stream=sys.stdout)
     feeds_dir = Path(os.environ.get('RECORDER_FEEDS', '/etc/recorder/feeds'))
@@ -211,14 +420,23 @@ def main():
     retention = int(os.environ.get('RECORDER_RETENTION_DAYS', '7'))
     interval = os.environ.get('RECORDER_INTERVAL')
     health = os.environ.get('RECORDER_HEALTH_FILE', '/tmp/recorder-ok')
-    feeds = [Feed(path, data, public, retention, interval=interval,
-                  source=os.environ.get(f'RECORDER_SOURCE_{path.stem.upper()}'), health_file=health)
-             for path in sorted(feeds_dir.glob('*.sql'))]
-    if not feeds:
+    feeds, daily = [], []
+    for path in sorted(feeds_dir.glob('*.sql')):
+        source = os.environ.get(f'RECORDER_SOURCE_{path.stem.upper().replace("-", "_")}')
+        if header(path.read_text(), 'schedule') == 'daily':
+            daily.append(DailyFeed(path, data, public, retention, source=source))
+        else:
+            feeds.append(Feed(path, data, public, retention, interval=interval, source=source,
+                              health_file=health))
+    if not feeds and not daily:
         sys.exit(f'no feeds in {feeds_dir}')
     now = dt.datetime.now(UTC)
-    for feed in feeds:
+    for feed in feeds + daily:
         feed.recover(now)
+    for feed in daily:
+        threading.Thread(target=run_daily, args=(feed,), name=feed.name, daemon=True).start()
+    if not feeds:
+        threading.Event().wait()
     # On the interval's boundaries, so a poll meets the gateway's cache once.
     step = min(feed.interval for feed in feeds)
     while True:

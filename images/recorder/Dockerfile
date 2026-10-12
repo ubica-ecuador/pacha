@@ -30,7 +30,7 @@ COPY recorder.py .
 FROM base AS test
 ARG PYTEST_VERSION
 RUN pip install --no-cache-dir --root-user-action=ignore "pytest==${PYTEST_VERSION}"
-COPY --from=feeds flights.sql /repo/recorder/feeds/
+COPY --from=feeds *.sql /repo/recorder/feeds/
 COPY tests tests
 RUN python -m pytest -q -p no:cacheprovider tests
 
