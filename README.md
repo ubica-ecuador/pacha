@@ -57,6 +57,13 @@ adsb.lol around the clock and up to a few GB of disk in the `recordings` volume,
 runs only when `COMPOSE_PROFILES=recorder` is set (see `.env.example`). Without it the live
 panels work and the history panels are empty.
 
+Some data cannot be read where it is published, or not republished as it is: those dashboards
+read files built once on each instance, under `datasets/<name>/`, which the gateway serves to
+Grafana's DuckDB only (`http://feeds/datasets/`). geolife-mobility needs
+`datasets/geolife/build.sh`: GeoLife's GPS trajectories, cleaned and analysed into Parquet in
+about three minutes (313 MB download, 8 GB of memory for DuckDB). Until it runs, that
+dashboard's panels show errors.
+
 ## Working on the Kepler panel
 
 ```bash

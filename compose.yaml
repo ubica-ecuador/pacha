@@ -133,6 +133,8 @@ services:
       - recordings:/srv/recordings:ro
       # Served instead when nothing has been recorded: an empty recording.
       - ./gateway/recordings:/srv/fallback/recordings:ro
+      # Built here, not in git: datasets/<name>/build.sh. See feeds.conf.
+      - ./datasets:/srv/datasets:ro
     networks:
       default:
         # DuckDB calls http://feeds/...; see gateway/feeds.conf.
