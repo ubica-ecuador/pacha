@@ -1337,6 +1337,66 @@
                 "hoverSync": true,
                 "mapConfig": {
                   "config": {
+                    "mapState": {
+                      "bearing": 24,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 1.2875629765279681,
+                      "longitude": 103.85752847830082,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 50,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 15.27872714170765
+                    },
                     "mapStyle": {
                       "backgroundColor": [
                         0,
@@ -1406,6 +1466,10 @@
                           "syncTimelineMode": 1,
                           "timezone": "UTC",
                           "type": "timeRange",
+                          "value": [
+                            1791721615191,
+                            1791721615192
+                          ],
                           "view": "minified",
                           "yAxis": {
                             "name": "speed_kmh",
@@ -1915,7 +1979,7 @@
                 "rasterBands": "",
                 "rasterColormap": "",
                 "rasterPainted": false,
-                "saveRequest": 9,
+                "saveRequest": 10,
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table",
