@@ -7,6 +7,10 @@ file (an edit, `git pull`, a branch switch) reaches Grafana within about a
 minute: Grafana polls the files, and in practice runs a sync every 25 to 60 s
 even though dev asks for 10.
 
+Agents building a dashboard: start with [AGENTS.md](../AGENTS.md) and the
+[build-dashboard skill](../.claude/skills/build-dashboard/SKILL.md), which hold
+the workflow, the recipes and the known pitfalls.
+
 ## Folders
 
 One directory per folder. Its `_folder.json` holds the folder's uid and title.

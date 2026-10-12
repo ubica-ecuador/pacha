@@ -1,7 +1,7 @@
 // The dashboard templates, read the way the tests need them.
 import { readFileSync } from 'node:fs';
 
-const asset = (name) => readFileSync(new URL(`../../skills/build-dashboard/assets/${name}`, import.meta.url), 'utf8');
+const asset = (name) => readFileSync(new URL(`../../.claude/skills/build-dashboard/assets/${name}`, import.meta.url), 'utf8');
 
 export function brushHistogramBody() {
   return asset('brush-histogram.js');

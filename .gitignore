@@ -3,3 +3,5 @@
 node_modules/
 test-results/
 compose.override.yaml
+.claude/settings.local.json
+CLAUDE.local.md
