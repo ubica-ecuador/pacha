@@ -31,7 +31,8 @@ needs it; the other facets change only with the stack.
   `business-table`, `business-text`.
 - **Theme and behaviour:** `seismic`, `mobility`, `transit`, `energy`,
   `air-quality`, `gps`, `weather`, `migration`, `maritime`, `aviation`,
-  `network`, `space`, `wildlife`, `sport`, `live` (feeds that reload
+  `network`, `space`, `wildlife`, `sport`, `satellite`, `water`,
+  `demographics`, `buildings`, `live` (feeds that reload
   by themselves).
 
 Every Plus dashboard carries `plus`: filter what needs Plus with it.
@@ -53,12 +54,10 @@ Every Plus dashboard carries `plus`: filter what needs Plus with it.
 
 Showcase dashboards still to build, each its own piece of work:
 
-1. **GFS forecast with TiTiler.** NOAA's forecast, which TiTiler preloads from
-   Icechunk, as map tiles, with per-area statistics computed in DuckDB.
-2. **Satellite scenes by STAC.** A STAC search through `http_client`, filtered
-   by the time range; the scene on the map through TiTiler; band algebra with
-   the `raster` extension.
-3. **H3 over a large Parquet.** A public dataset too large for the browser,
+1. **Band algebra with the `raster` extension.** `stac-join` and `raster-time`
+   search STAC and draw scenes through TiTiler; none computes an index (NDVI)
+   from the bands yet.
+2. **H3 over a large Parquet.** A public dataset too large for the browser,
    read remotely and aggregated into `h3` or `a5` cells on the server.
-4. **An Iceberg table.** A public Iceberg table read with time travel between
+3. **An Iceberg table.** A public Iceberg table read with time travel between
    snapshots.

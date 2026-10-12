@@ -1,0 +1,677 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "zarr-stats"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "CarbonPlan's monthly mean temperature over the Americas from a pyramided Zarr store, drawn as tiles by TiTiler; draw an area and drag the time bar to get its minimum, maximum and mean for that month.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "id": 1,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "content": "# Statistics of what you draw, over a pyramided Zarr\n\nMonthly mean temperature from CarbonPlan's climate demo. **Draw** a polygon with the map's tool and **drag the time bar**: the numbers measure that area in that month.\n\nThis store is written **for maps** — a six-level pyramid, 128×128 chunks, already in Web Mercator — and it shows in both halves:\n\n| | Drawing a tile | Measuring an area |\n|---|---|---|\n| This store | 0.22–2.2 s, flat at every zoom | **1.0–1.5 s** |\n| GPCP, no pyramid | 1.2–17.5 s, worse as you zoom out | 6.9–21.1 s |\n\nThe four panels on the right **share a single request**: the table makes it, and the two figures reuse it through the `-- Dashboard --` datasource. One more figure costs zero requests.\n\nThe chain is the same as ever: the map publishes the shape as WKT, a query variable turns it into GeoJSON with DuckDB, and Infinity sends it to `/zarr/statistics` with the same `sel` the layer uses.\n\n**The map's clock is in charge** (`Time range sync: Slider writes variables`): on releasing the bar, the panel writes the window into `mapFrom`/`mapTo`, that recomputes the month, and the three panels refresh. In any other mode the variables are not published and the statistics stay pinned to the end of the dashboard's range.",
+                "mode": "markdown"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Una fila por mes. El store es piramidado (`zarr_levels`), asi que cada zoom\n-- pide su propio nivel; y su eje temporal no son fechas sino enteros 1..12 en\n-- una dimension llamada `month`, de ahi `zarr_time_dim` y `zarr_time_label`.\nSELECT\n  make_timestamp(2020, m, 1, 0, 0, 0)::TIMESTAMPTZ AS time,\n  'https://carbonplan-maps.s3.us-west-2.amazonaws.com/v2/demo/4d/tavg-prec-month' AS zarr_url,\n  'climate'   AS zarr_variable,\n  6           AS zarr_levels,\n  'band=tavg' AS zarr_sel,\n  'month'     AS zarr_time_dim,\n  m::TEXT     AS zarr_time_label\nFROM generate_series(1, 12) t(m)\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "id": 2,
+          "links": [],
+          "title": "Monthly mean temperature · draw an area and drag the time bar",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "areaVariable": "area",
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": -8,
+                      "longitude": -62,
+                      "pitch": 0,
+                      "zoom": 3
+                    }
+                  },
+                  "version": "v1"
+                },
+                "publishWhilePlaying": false,
+                "rasterColormap": "magma",
+                "rasterServerUrl": "/titiler",
+                "showSidePanel": false,
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "mapFrom",
+                  "to": "mapTo"
+                },
+                "zarrRescale": "-20,40"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
+                      "group": "datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "panelId": 5
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Reuses the result of the table above: no requests of its own.",
+          "id": 3,
+          "links": [],
+          "title": "Mean temperature in the area",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "unit": "celsius"
+                },
+                "overrides": []
+              },
+              "options": {
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^media$/",
+                  "values": false
+                }
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
+                      "group": "datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "panelId": 5
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The warm extreme. Same frame, another field.",
+          "id": 4,
+          "links": [],
+          "title": "Maximum in the area",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "orange",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "unit": "celsius"
+                },
+                "overrides": []
+              },
+              "options": {
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^máx$/",
+                  "values": false
+                }
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "infinity"
+                      },
+                      "group": "yesoreyeram-infinity-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "columns": [
+                          {
+                            "selector": "min",
+                            "text": "mín",
+                            "type": "number"
+                          },
+                          {
+                            "selector": "max",
+                            "text": "máx",
+                            "type": "number"
+                          },
+                          {
+                            "selector": "mean",
+                            "text": "media",
+                            "type": "number"
+                          },
+                          {
+                            "selector": "median",
+                            "text": "mediana",
+                            "type": "number"
+                          },
+                          {
+                            "selector": "std",
+                            "text": "desv",
+                            "type": "number"
+                          },
+                          {
+                            "selector": "count",
+                            "text": "celdas",
+                            "type": "number"
+                          }
+                        ],
+                        "format": "table",
+                        "parser": "backend",
+                        "root_selector": "properties.statistics.b1",
+                        "source": "url",
+                        "type": "json",
+                        "url": "http://titiler/zarr/statistics?url=${store:percentencode}\u0026variable=climate\u0026group=4\u0026sel=band%3Dtavg\u0026sel=month%3D${mes}",
+                        "url_options": {
+                          "body_content_type": "application/json",
+                          "body_type": "raw",
+                          "data": "{\"type\": \"Feature\", \"properties\": {}, \"geometry\": ${zona}}",
+                          "method": "POST"
+                        }
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "group": "organize",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "indexByName": {
+                        "celdas": 5,
+                        "desv": 4,
+                        "media": 2,
+                        "mediana": 3,
+                        "máx": 1,
+                        "mín": 0
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "description": "The dashboard's only POST to /zarr/statistics. The two panels below reuse this result.",
+          "id": 5,
+          "links": [],
+          "title": "The request · every statistic",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {}
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
+                      "group": "datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "panelId": 5
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The cold extreme, which in a temperature field says as much as the mean: it is where it freezes. Reuses the same frame, without a request of its own.",
+          "id": 6,
+          "links": [],
+          "title": "Minimum in the area",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "blue",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "unit": "celsius"
+                },
+                "overrides": []
+              },
+              "options": {
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^mín$/",
+                  "values": false
+                }
+              }
+            },
+            "version": ""
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 11,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              },
+              "height": 21,
+              "width": 15,
+              "x": 0,
+              "y": 11
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 6,
+              "width": 9,
+              "x": 15,
+              "y": 11
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 5,
+              "width": 9,
+              "x": 15,
+              "y": 17
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              },
+              "height": 5,
+              "width": 9,
+              "x": 15,
+              "y": 22
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 5,
+              "width": 9,
+              "x": 15,
+              "y": 27
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "duckdb",
+      "infinity",
+      "kepler",
+      "weather"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "2020-01-01T00:00:00.000Z",
+      "hideTimepicker": false,
+      "timezone": "utc",
+      "to": "2020-07-15T00:00:00.000Z"
+    },
+    "title": "Monthly mean temperature, measured over an area you draw",
+    "variables": [
+      {
+        "kind": "ConstantVariable",
+        "spec": {
+          "current": {
+            "text": "https://carbonplan-maps.s3.us-west-2.amazonaws.com/v2/demo/4d/tavg-prec-month",
+            "value": "https://carbonplan-maps.s3.us-west-2.amazonaws.com/v2/demo/4d/tavg-prec-month"
+          },
+          "hide": "hideVariable",
+          "label": "store",
+          "name": "store",
+          "query": "https://carbonplan-maps.s3.us-west-2.amazonaws.com/v2/demo/4d/tavg-prec-month",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "dontHide",
+          "label": "Drawn area (WKT)",
+          "name": "area",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "mapFrom",
+          "name": "mapFrom",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "mapTo",
+          "name": "mapTo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "definition": "-- El mapa publica lo que dibujas como WKT; TiTiler quiere GeoJSON.\n-- OJO: en una consulta de VARIABLE el datasource NO entrecomilla solo (si lo\n-- hace en las de panel), asi que las comillas van a mano. Y el ::VARCHAR no es\n-- cosmetico: sin el, \"unsupported Scan ... map[string]interface{}\".\nLOAD spatial;\nSELECT ST_AsGeoJSON(ST_GeomFromText(\n  coalesce(nullif('${area}', ''), 'POLYGON((-75 -12, -75 2, -50 2, -50 -12, -75 -12))')))::VARCHAR",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "zone",
+          "multi": false,
+          "name": "zona",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- El mapa publica lo que dibujas como WKT; TiTiler quiere GeoJSON.\n-- OJO: en una consulta de VARIABLE el datasource NO entrecomilla solo (si lo\n-- hace en las de panel), asi que las comillas van a mano. Y el ::VARCHAR no es\n-- cosmetico: sin el, \"unsupported Scan ... map[string]interface{}\".\nLOAD spatial;\nSELECT ST_AsGeoJSON(ST_GeomFromText(\n  coalesce(nullif('${area}', ''), 'POLYGON((-75 -12, -75 2, -50 2, -50 -12, -75 -12))')))::VARCHAR"
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "definition": "-- El mes que el mapa esta pintando. `mapTo` lo publica el propio panel al\n-- mover la barra de tiempo, y el store responde a un entero, no a una fecha.\nSELECT extract(month FROM coalesce(try_cast(nullif('${mapTo}', '') AS TIMESTAMPTZ),\n                                   $__timeTo()::TIMESTAMPTZ) AT TIME ZONE 'UTC')::INTEGER::VARCHAR",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Month measured",
+          "multi": false,
+          "name": "mes",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- El mes que el mapa esta pintando. `mapTo` lo publica el propio panel al\n-- mover la barra de tiempo, y el store responde a un entero, no a una fecha.\nSELECT extract(month FROM coalesce(try_cast(nullif('${mapTo}', '') AS TIMESTAMPTZ),\n                                   $__timeTo()::TIMESTAMPTZ) AT TIME ZONE 'UTC')::INTEGER::VARCHAR"
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
