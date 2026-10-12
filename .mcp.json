@@ -3,9 +3,7 @@
     "pacha-grafana": {
       "type": "http",
       "url": "http://127.0.0.1:8000/mcp",
-      "headers": {
-        "Authorization": "Bearer ${PACHA_MCP_TOKEN:-pacha-local}"
-      }
+      "headersHelper": "sh \"$(git rev-parse --show-toplevel)/scripts/mcp-headers.sh\""
     }
   }
 }

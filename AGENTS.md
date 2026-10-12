@@ -55,8 +55,9 @@ when it exists.
   to `::1`.
 - Load `.env` (`node --env-file=.env`) when talking to Grafana as admin. Without it the test
   helpers fall back to `admin:admin`; a run of failed logins locks the admin user for minutes.
-- The MCP server (`mcp` service, wired in `.mcp.json`; set `PACHA_MCP_TOKEN` in your shell to
-  the value in `.env`) has the `dashboard`, `datasource`, `search` and `runpanelquery` tools.
+- The MCP server (`mcp` service, wired in `.mcp.json`) has the `dashboard`, `datasource`,
+  `search` and `runpanelquery` tools. Its token is read from `PACHA_MCP_TOKEN` in `.env` by
+  `scripts/mcp-headers.sh`; Claude Code runs it once the workspace is trusted.
   Use it to read dashboards and run panel queries; rule 2 applies to every write.
 
 ## The panels
