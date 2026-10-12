@@ -122,7 +122,7 @@ test('loads Baku for an anonymous visitor within 60 s, both tabs with no panel i
   for (const title of ['Tyre strategy', 'Race control']) await view.panel(title);
   assert.equal(await view.panelErrors(), 0, 'Race');
   await view.page.getByRole('tab', { name: 'A against B' }).click();
-  for (const title of ['A against B, second by second', 'Gap through the lap', 'Who is quicker where', 'Fastest laps, A against B']) {
+  for (const title of ['The replay lap, A against B', 'A against B, second by second', 'Gap through the lap', 'Who is quicker where', 'Fastest laps, A against B']) {
     await view.panel(title);
   }
   assert.equal(await view.panelErrors(), 0, 'A against B');

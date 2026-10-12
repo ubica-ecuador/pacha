@@ -1133,7 +1133,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "Drivers **A** (blue) and **B** (orange), picked above or from the results table on the first tab. The map races their two **replay laps** from the same start; the curves beside it and the gap below follow the same lap. Further down, the pace of every lap of the race, and their two fastest laps laid over each other.",
+                "content": "Drivers **A** (blue) and **B** (orange), picked above or from the results table on the first tab. The table sets their two **replay laps** side by side: tyres, sectors, speeds and race control. The map races them from the same start; the curves beside it and the gap below follow the same lap. Further down, the pace of every lap of the race, and their two fastest laps laid over each other.",
                 "mode": "markdown"
               }
             },
@@ -2956,6 +2956,461 @@
             "version": "1.0.0"
           }
         }
+      },
+      "panel-19": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Drivers A and B on the replay lap: where they were, their lap and sectors,\n-- their tyres, from the car's telemetry through their own lap (top speed,\n-- share of it flat out and on the brakes), the gap between them as they\n-- crossed the line, and race control's flags and messages while they drove it.\nWITH own AS (\n  SELECT l.*, d.driver, CASE l.driver_number WHEN ${driver_a:raw} THEN 'A' ELSE 'B' END AS slot\n  FROM $laps l JOIN $drivers d USING (driver_number)\n  WHERE l.lap_number = ${lap:raw} AND l.driver_number IN (${driver_a:raw}, ${driver_b:raw})\n),\ntel AS (\n  SELECT own.slot, max(r.speed_kmh) AS top, avg(CASE WHEN r.throttle \u003e= 98 THEN 100 ELSE 0 END) AS flat_out,\n         avg(CASE WHEN r.brake \u003e 0 THEN 100 ELSE 0 END) AS braking\n  FROM own JOIN $replay r ON r.car = own.driver AND r.time \u003e= own.date_start AND r.time \u003c own.date_end\n  GROUP BY own.slot\n),\nrc AS (\n  SELECT own.slot, string_agg(c.message, ' · ' ORDER BY c.date) AS messages\n  FROM own JOIN $control c ON c.kind = 'control' AND c.date \u003e= own.date_start AND c.date \u003c own.date_end\n   AND (c.driver_number = own.driver_number OR (c.driver_number IS NULL AND c.category IN ('Flag', 'SafetyCar')))\n   AND c.message NOT ILIKE 'CLEAR%'\n  GROUP BY own.slot\n),\nw AS (\n  SELECT own.slot, c.track_c FROM own\n  ASOF LEFT JOIN (SELECT date, track_c FROM $control WHERE kind = 'weather') c ON c.date \u003c= own.date_start\n),\npair AS (\n  SELECT own.*, o.lap_duration - own.lap_duration AS ahead_lap, epoch(o.date_end - own.date_end) AS ahead_line\n  FROM own LEFT JOIN own o ON o.slot \u003c\u003e own.slot\n)\nSELECT p.slot AS \" \", p.driver AS \"Driver\", p.position AS \"Pos\",\n       printf('%d:%06.3f', floor(p.lap_duration / 60)::INTEGER, p.lap_duration % 60) AS \"Lap time\",\n       CASE WHEN p.ahead_lap IS NOT NULL THEN printf('%+.3f', -p.ahead_lap) END AS \"Δ\",\n       p.sector_1 AS \"S1\", p.sector_2 AS \"S2\", p.sector_3 AS \"S3\",\n       p.compound || coalesce(' · ' || p.tyre_age::BIGINT, '') AS \"Tyre\",\n       concat_ws(' ', CASE WHEN p.pit_out THEN 'Out' END, CASE WHEN p.pit_in THEN 'In' END) AS \"Pit\",\n       p.trap_speed AS \"Trap\", t.top AS \"Top\", round(t.flat_out) AS \"Flat out\", round(t.braking) AS \"Braking\",\n       CASE WHEN p.ahead_line \u003e 0 THEN printf('%.1f s ahead', p.ahead_line)\n            WHEN p.ahead_line \u003c 0 THEN printf('%.1f s behind', -p.ahead_line) END AS \"At the line\",\n       w.track_c AS \"Track\", coalesce(rc.messages, '') AS \"Race control\"\nFROM pair p LEFT JOIN tel t USING (slot) LEFT JOIN rc USING (slot) LEFT JOIN w USING (slot)\nORDER BY p.slot"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Drivers A (blue) and B (orange) on the replay lap. Pos: their place when they finished it. Δ: their lap time against the other's, green when quicker. S1–S3: sector times. Tyre: the compound and how many laps old it was. Pit: Out on the lap leaving the pits, In on the lap entering them. Trap: the speed trap; Top: their highest speed through the lap. Flat out and Braking: the share of the lap at full throttle and on the brakes, from the car's telemetry. At the line: the gap between the two as each finished the lap. Track: the track temperature as they started it. Race control: the flags and messages that fell while they drove it, about the track or about them.",
+          "id": 19,
+          "links": [],
+          "title": "The replay lap, A against B",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "filterable": false,
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": true
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": " "
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 28
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "center"
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-background",
+                          "mode": "basic"
+                        }
+                      },
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "type": "value",
+                            "options": {
+                              "A": {
+                                "color": "#3987e5",
+                                "index": 0
+                              },
+                              "B": {
+                                "color": "#d95926",
+                                "index": 1
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Driver"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 52
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Pos"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 40
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Lap time"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 76
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Δ"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 64
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "type": "regex",
+                            "options": {
+                              "pattern": "^-.*",
+                              "result": {
+                                "color": "green",
+                                "index": 0
+                              }
+                            }
+                          },
+                          {
+                            "type": "regex",
+                            "options": {
+                              "pattern": "^\\+.*",
+                              "result": {
+                                "color": "red",
+                                "index": 1
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "S1"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "s"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 3
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 68
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "S2"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "s"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 3
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 68
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "S3"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "s"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 3
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 68
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Tyre"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 112
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "center"
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-background",
+                          "mode": "basic"
+                        }
+                      },
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "type": "regex",
+                            "options": {
+                              "pattern": "^SOFT.*",
+                              "result": {
+                                "color": "#da291c",
+                                "index": 0
+                              }
+                            }
+                          },
+                          {
+                            "type": "regex",
+                            "options": {
+                              "pattern": "^MEDIUM.*",
+                              "result": {
+                                "color": "#ffd12e",
+                                "index": 1
+                              }
+                            }
+                          },
+                          {
+                            "type": "regex",
+                            "options": {
+                              "pattern": "^HARD.*",
+                              "result": {
+                                "color": "#ebebe6",
+                                "index": 2
+                              }
+                            }
+                          },
+                          {
+                            "type": "regex",
+                            "options": {
+                              "pattern": "^INTERMEDIATE.*",
+                              "result": {
+                                "color": "#43b02a",
+                                "index": 3
+                              }
+                            }
+                          },
+                          {
+                            "type": "regex",
+                            "options": {
+                              "pattern": "^WET.*",
+                              "result": {
+                                "color": "#0067ad",
+                                "index": 4
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Pit"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 48
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Trap"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "velocitykmh"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 76
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Top"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "velocitykmh"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 76
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Flat out"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 68
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Braking"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 68
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "At the line"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 104
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Track"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "celsius"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 60
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
       }
     },
     "layout": {
@@ -3128,12 +3583,25 @@
                                 "spec": {
                                   "element": {
                                     "kind": "ElementReference",
+                                    "name": "panel-19"
+                                  },
+                                  "height": 5,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 3
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
                                     "name": "panel-16"
                                   },
                                   "height": 18,
                                   "width": 14,
                                   "x": 0,
-                                  "y": 3
+                                  "y": 8
                                 }
                               },
                               {
@@ -3146,7 +3614,7 @@
                                   "height": 18,
                                   "width": 10,
                                   "x": 14,
-                                  "y": 3
+                                  "y": 8
                                 }
                               },
                               {
@@ -3159,7 +3627,7 @@
                                   "height": 10,
                                   "width": 12,
                                   "x": 0,
-                                  "y": 21
+                                  "y": 26
                                 }
                               },
                               {
@@ -3172,7 +3640,7 @@
                                   "height": 10,
                                   "width": 12,
                                   "x": 12,
-                                  "y": 21
+                                  "y": 26
                                 }
                               },
                               {
@@ -3185,7 +3653,7 @@
                                   "height": 17,
                                   "width": 9,
                                   "x": 0,
-                                  "y": 31
+                                  "y": 36
                                 }
                               },
                               {
@@ -3198,7 +3666,7 @@
                                   "height": 17,
                                   "width": 15,
                                   "x": 9,
-                                  "y": 31
+                                  "y": 36
                                 }
                               }
                             ]
