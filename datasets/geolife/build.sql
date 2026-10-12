@@ -121,8 +121,9 @@ w AS (
 ),
 v AS (
   SELECT *,
-         sum(coalesce(step, 0)) OVER (PARTITION BY trip ORDER BY t ROWS BETWEEN 1 FOLLOWING AND 2 FOLLOWING)
-         + sum(coalesce(step, 0)) OVER (PARTITION BY trip ORDER BY t ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS path5
+         -- Either end of a trip has no fixes on one side: that sum is NULL, not 0.
+         coalesce(sum(coalesce(step, 0)) OVER (PARTITION BY trip ORDER BY t ROWS BETWEEN 1 FOLLOWING AND 2 FOLLOWING), 0)
+         + coalesce(sum(coalesce(step, 0)) OVER (PARTITION BY trip ORDER BY t ROWS BETWEEN 1 PRECEDING AND CURRENT ROW), 0) AS path5
   FROM w
 )
 SELECT v.uid, v.n, v.file, v.trip, v.i, v.t, v.lat, v.lon, v.alt_m, coalesce(v.step, 0) AS step_km,
