@@ -1,11 +1,31 @@
 {
-  "apiVersion": "dashboard.grafana.app/v2beta1",
+  "apiVersion": "dashboard.grafana.app/v2",
   "kind": "Dashboard",
   "metadata": {
     "name": "air-quality-amsterdam"
   },
   "spec": {
-    "annotations": [],
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
     "cursorSync": "Crosshair",
     "description": "Hourly NO2 at GGD Amsterdam's 17 reference stations, from Luchtmeetnet, with a surface between them; reloaded every 15 minutes.",
     "editable": true,
@@ -21,6 +41,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 12,
           "links": [],
           "title": "About the data",
@@ -135,6 +156,9 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
                   "custom": {
                     "axisBorderShow": false,
                     "axisCenteredZero": false,
@@ -170,6 +194,19 @@
                     }
                   },
                   "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "conμgm3"
                 },
                 "overrides": [
@@ -321,7 +358,7 @@
                     "steps": [
                       {
                         "color": "#8A3413",
-                        "value": null
+                        "value": 0
                       },
                       {
                         "color": "#AE461C",
@@ -350,6 +387,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -357,10 +395,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -375,6 +415,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 8,
           "links": [],
           "title": "How to use this map",
@@ -387,11 +428,16 @@
                 "overrides": []
               },
               "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
                 "content": "**Click a station** on the map, or **its bar** in the ranking, to see every pollutant it measures. **Hover** the graph above, or a card's chart, and every card follows the same hour. The **time filter** at the foot of the map picks the hours the surface averages: it opens on the whole range; drag its handles to one hour and press **play** to watch the surface and the cards move hour by hour. The **time range** picks the hours, up to its last 7 days.",
                 "mode": "markdown"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -435,6 +481,19 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "time:HH:mm"
                 },
                 "overrides": []
@@ -444,6 +503,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -451,10 +511,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -515,7 +577,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -523,25 +599,122 @@
                   "show": false
                 },
                 "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
                 "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
                 "mapConfig": {
                   "config": {
                     "mapState": {
                       "bearing": 0,
                       "dragRotate": false,
-                      "latitude": 52.366,
-                      "longitude": 4.852,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 52.35369677192465,
+                      "longitude": 4.827197156351732,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
                       "pitch": 0,
-                      "zoom": 10.6
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 10.30913367637519
                     },
                     "mapStyle": {
-                      "styleType": "dark-matter"
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "dark-matter",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
                     },
                     "visState": {
                       "animationConfig": {
-                        "currentTime": null,
                         "speed": 1
                       },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
                       "filters": [
                         {
                           "animationWindow": "free",
@@ -556,17 +729,23 @@
                             "time"
                           ],
                           "plotType": {
+                            "aggregation": "average",
+                            "colorsByDataId": {
+                              "grafana-A": "#005CFF",
+                              "grafana-B": "#C06C84"
+                            },
+                            "defaultTimeFormat": "L  LT",
+                            "interval": "30-minute",
                             "type": "histogram"
                           },
                           "speed": 1,
                           "timezone": "Europe/Amsterdam",
                           "type": "timeRange",
                           "value": [
-                            0,
-                            4102444800000
+                            1791597600000,
+                            1791727200000
                           ],
-                          "view": "minified",
-                          "yAxis": null
+                          "view": "minified"
                         }
                       ],
                       "interactionConfig": {
@@ -578,52 +757,82 @@
                           "enabled": false
                         },
                         "geocoder": {
-                          "enabled": false
+                          "enabled": false,
+                          "limitSearch": false
                         },
                         "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
                           "config": {
                             "compareMode": false,
                             "compareType": "absolute",
                             "fieldsToShow": {
                               "grafana-A": [
                                 {
-                                  "format": null,
                                   "name": "name"
                                 },
                                 {
-                                  "format": null,
                                   "name": "kind"
                                 },
                                 {
-                                  "format": null,
                                   "name": "station"
                                 },
                                 {
-                                  "format": null,
                                   "name": "no2"
                                 },
                                 {
-                                  "format": null,
                                   "name": "time"
                                 }
                               ],
                               "grafana-B": [
                                 {
-                                  "format": null,
                                   "name": "name"
                                 },
                                 {
-                                  "format": null,
                                   "name": "no2"
                                 },
                                 {
-                                  "format": null,
                                   "name": "time"
                                 }
                               ]
                             }
                           },
-                          "enabled": true
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "station"
+                              },
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              },
+                              {
+                                "name": "no2"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "station"
+                              },
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              },
+                              {
+                                "name": "no2"
+                              }
+                            ]
+                          }
                         }
                       },
                       "layerBlending": "normal",
@@ -634,68 +843,146 @@
                       "layers": [
                         {
                           "config": {
+                            "color": [
+                              136,
+                              87,
+                              44
+                            ],
                             "columnMode": "points",
                             "columns": {
                               "lat": "latitude",
                               "lng": "longitude"
                             },
                             "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
                             "isVisible": true,
                             "label": "NO2, hourly (µg/m³)",
                             "textLabel": [
                               {
                                 "alignment": "center",
                                 "anchor": "middle",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
                                 "field": {
                                   "name": "name",
                                   "type": "string"
                                 },
-                                "size": 18
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
                               }
                             ],
                             "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
                               "colorRange": {
-                                "category": "Custom",
+                                "category": "Uber",
                                 "colorMap": [
                                   [
                                     5,
-                                    "#8A3413"
+                                    "#00939C"
                                   ],
                                   [
                                     10,
-                                    "#AE461C"
+                                    "#8BC6C9"
                                   ],
                                   [
                                     15,
-                                    "#CC5D28"
+                                    "#E6FAFA"
                                   ],
                                   [
                                     25,
-                                    "#E07A3E"
+                                    "#EB9373"
                                   ],
                                   [
                                     null,
-                                    "#EE9A60"
+                                    "#C22E00"
                                   ]
                                 ],
                                 "colors": [
-                                  "#8A3413",
-                                  "#AE461C",
-                                  "#CC5D28",
-                                  "#E07A3E",
-                                  "#EE9A60"
+                                  "#00939C",
+                                  "#8BC6C9",
+                                  "#E6FAFA",
+                                  "#EB9373",
+                                  "#C22E00"
                                 ],
-                                "name": "NO2 (µg/m³)",
-                                "type": "custom"
+                                "name": "Uber Viz Diverging",
+                                "type": "diverging"
                               },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.8,
+                              "outline": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "rowsAsset": "auto",
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "sparkAlertWorst": false,
+                              "sparkAlerts": true,
+                              "sparkCardOpacity": 0.9,
                               "sparkCards": "auto",
+                              "sparkChangeColours": "neutral",
+                              "sparkCrossValue": true,
+                              "sparkCrosshair": true,
+                              "sparkDotRadius": 5,
+                              "sparkDots": true,
                               "sparkFill": true,
+                              "sparkMax": "auto",
                               "sparkMin": 0,
+                              "sparkNoDataAfter": "auto",
                               "sparkOverlap": "none",
+                              "sparkPinned": [],
                               "sparkPublishCrosshair": true,
-                              "sparkScale": "common",
+                              "sparkScale": "perSite",
                               "sparkSize": "S",
-                              "sparkUnit": " µg/m³"
+                              "sparkTimeField": "auto",
+                              "sparkTooltip": true,
+                              "sparkUnit": " µg/m³",
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
                             }
                           },
                           "id": "stations",
@@ -705,65 +992,121 @@
                               "name": "no2",
                               "type": "real"
                             },
-                            "colorScale": "custom"
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
                           }
                         },
                         {
                           "config": {
+                            "color": [
+                              34,
+                              63,
+                              154
+                            ],
                             "columnMode": "points",
                             "columns": {
                               "lat": "latitude",
                               "lng": "longitude"
                             },
                             "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
                             "isVisible": true,
                             "label": "NO2 between the stations (µg/m³)",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
                             "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
                               "colorRange": {
-                                "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    5,
-                                    "#8A3413"
-                                  ],
-                                  [
-                                    10,
-                                    "#AE461C"
-                                  ],
-                                  [
-                                    15,
-                                    "#CC5D28"
-                                  ],
-                                  [
-                                    25,
-                                    "#E07A3E"
-                                  ],
-                                  [
-                                    null,
-                                    "#EE9A60"
-                                  ]
-                                ],
+                                "category": "Uber",
                                 "colors": [
-                                  "#8A3413",
-                                  "#AE461C",
-                                  "#CC5D28",
-                                  "#E07A3E",
-                                  "#EE9A60"
+                                  "#00939C",
+                                  "#8BC6C9",
+                                  "#E6FAFA",
+                                  "#EB9373",
+                                  "#C22E00"
                                 ],
-                                "name": "NO2 (µg/m³)",
-                                "type": "custom"
+                                "name": "Uber Viz Diverging",
+                                "type": "diverging"
                               },
+                              "filled": true,
+                              "fixedRadius": false,
                               "opacity": 0.28,
+                              "outline": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
                               "surfaceBands": true,
+                              "surfaceBreaks": "",
                               "surfaceExtent": "hull",
-                              "surfaceIsolines": true,
+                              "surfaceFade": true,
+                              "surfaceIsolineWidth": 1,
+                              "surfaceIsolines": false,
+                              "surfaceLabelSize": 11,
                               "surfaceLabels": true,
                               "surfaceMargin": 1500,
-                              "surfaceMaxDistance": null,
                               "surfaceMode": "interpolate",
+                              "surfaceNeighbours": "auto",
                               "surfacePower": 2,
-                              "surfaceReduce": "mean",
-                              "surfaceResolution": "high"
+                              "surfaceRadius": 500,
+                              "surfaceReduce": "last",
+                              "surfaceResolution": "high",
+                              "surfaceVehicle": ":auto",
+                              "thickness": 2
                             }
                           },
                           "id": "surface",
@@ -773,17 +1116,29 @@
                               "name": "no2",
                               "type": "real"
                             },
-                            "colorScale": "custom"
+                            "colorScale": "quantize",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
                           }
                         }
                       ],
+                      "overlayBlending": "normal",
                       "splitMaps": []
                     }
                   },
                   "version": "v1"
                 },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 3,
                 "showSidePanel": false,
                 "timeSync": "off",
+                "tripLayerMode": "table",
                 "variableMappings": [
                   {
                     "field": "station",
@@ -793,7 +1148,7 @@
                 ]
               }
             },
-            "version": "0.1.0"
+            "version": "1.0.0"
           }
         }
       },
@@ -846,7 +1201,7 @@
                     "steps": [
                       {
                         "color": "#8A3413",
-                        "value": null
+                        "value": 0
                       },
                       {
                         "color": "#AE461C",
@@ -875,6 +1230,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -882,10 +1238,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -932,9 +1290,34 @@
                 "overrides": []
               },
               "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
                 "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
                 "getOption": "// Stations by their mean over the last 24 hours, in the map's colours, with\n// their latest hour as a tick. Clicking a bar picks the station, as a click on\n// the map does; clicking it again clears it.\nconst VAR = 'station';\nconst BREAKS = [5, 10, 15, 25];\nconst COLORS = [\"#8A3413\", \"#AE461C\", \"#CC5D28\", \"#E07A3E\", \"#EE9A60\"];\nconst colorOf = (v) =\u003e COLORS[BREAKS.filter((b) =\u003e v \u003e b).length];\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst muted = context.grafana.theme.colors.text.secondary;\nconst text = context.grafana.theme.colors.text.primary;\n\nconst frame = context.panel.data.series[0];\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name).values) : []);\n// ECharts draws a category axis bottom up: reversed, the highest is on top.\nconst ids = col('station').reverse();\nconst names = col('name').reverse();\nconst kinds = col('kind').reverse();\nconst means = col('mean_24h').reverse();\nconst lasts = col('last_no2').reverse();\nconst picked = context.grafana.replaceVariables('${' + VAR + '}');\n\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const id = ids[event.dataIndex];\n  const same = id === context.grafana.replaceVariables('${' + VAR + '}');\n  location.partial({ ['var-' + VAR]: same ? '' : id }, true);\n});\n\nreturn {\n  animation: false,\n  grid: { left: 8, right: 40, top: 28, bottom: 24, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e {\n      const i = items[0].dataIndex;\n      const last = lasts[i] == null ? 'no reading' : `${lasts[i]} µg/m³`;\n      return `\u003cb\u003e${names[i]}\u003c/b\u003e · ${kinds[i]}\u003cbr/\u003e24 h mean: \u003cb\u003e${means[i]} µg/m³\u003c/b\u003e\u003cbr/\u003eLatest hour: ${last}`;\n    },\n  },\n  xAxis: {\n    type: 'value',\n    name: 'µg/m³',\n    nameLocation: 'end',\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  yAxis: {\n    type: 'category',\n    data: names,\n    axisTick: { show: false },\n    axisLabel: { color: text, fontSize: 11 },\n  },\n  series: [\n    {\n      type: 'bar',\n      barWidth: '70%',\n      cursor: 'pointer',\n      data: means.map((v, i) =\u003e ({\n        value: v,\n        itemStyle: {\n          color: colorOf(v),\n          opacity: picked \u0026\u0026 picked !== ids[i] ? 0.35 : 1,\n          borderRadius: [0, 4, 4, 0],\n        },\n      })),\n      label: { show: true, position: 'right', color: muted, fontSize: 11, formatter: (p) =\u003e p.value.toFixed(0) },\n      markLine: {\n        silent: true,\n        symbol: 'none',\n        label: { formatter: 'WHO 24 h', color: muted, fontSize: 10 },\n        lineStyle: { type: 'dashed', color: muted },\n        data: [{ xAxis: 25 }],\n      },\n    },\n    {\n      type: 'scatter',\n      name: 'Latest hour',\n      symbol: 'rect',\n      symbolSize: [2, 12],\n      itemStyle: { color: text },\n      data: lasts,\n      tooltip: { show: false },\n    },\n  ],\n};\n",
-                "renderer": "canvas"
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
               }
             },
             "version": "7.2.5"
@@ -982,6 +1365,19 @@
               "fieldConfig": {
                 "defaults": {
                   "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "suffix: of 17"
                 },
                 "overrides": []
@@ -991,6 +1387,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -998,10 +1395,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -1050,7 +1449,23 @@
                     "cellOptions": {
                       "type": "auto"
                     },
+                    "footer": {
+                      "reducers": []
+                    },
                     "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": []
@@ -1110,7 +1525,23 @@
                     "cellOptions": {
                       "type": "auto"
                     },
+                    "footer": {
+                      "reducers": []
+                    },
                     "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -1141,7 +1572,7 @@
                           "steps": [
                             {
                               "color": "#8A3413",
-                              "value": null
+                              "value": 0
                             },
                             {
                               "color": "#AE461C",
@@ -1254,9 +1685,9 @@
               "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "prepareTimeSeries",
+                  "group": "prepareTimeSeries",
+                  "kind": "Transformation",
                   "spec": {
-                    "id": "prepareTimeSeries",
                     "options": {
                       "format": "multi"
                     }
@@ -1320,7 +1751,7 @@
                     "steps": [
                       {
                         "color": "transparent",
-                        "value": null
+                        "value": 0
                       },
                       {
                         "color": "#8e8e8e",
