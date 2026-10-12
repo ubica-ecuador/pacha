@@ -13,7 +13,7 @@
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations & Alerts",
+          "name": "Annotations \u0026 Alerts",
           "query": {
             "datasource": {
               "name": "-- Grafana --"
@@ -27,9 +27,47 @@
       }
     ],
     "cursorSync": "Off",
-    "description": "GeoLife, 182 people logging their GPS in Beijing from 2007 to 2012, explored the way Anita Graser does: DuckDB reads and cleans 24.9 million fixes into 50,000 trips, then speeds and stops, flows generalized after Andrienko & Andrienko, and any trip up close.",
+    "description": "GeoLife, 182 people logging their GPS in Beijing from 2007 to 2012, explored the way Anita Graser does: DuckDB reads and cleans 24.9 million fixes into 50,000 trips, then speeds and stops, flows generalized after Andrienko \u0026 Andrienko, and any trip up close.",
     "editable": true,
     "elements": {
+      "about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 24,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### About the data and the method\n**Data.** [GeoLife GPS Trajectories 1.3](https://www.microsoft.com/en-us/download/details.aspx?id=52367), Microsoft Research Asia: 182 users, April 2007 to August 2012, 24.9 million fixes, mostly in Beijing; 69 users labelled spans of their trips with how they travelled. Released for **non-commercial research** under the Microsoft Research License Agreement. Please cite: Yu Zheng, Lizhu Zhang, Xing Xie, Wei-Ying Ma. *Mining interesting locations and travel sequences from GPS trajectories*, WWW 2009; Yu Zheng, Quannan Li, Yukun Chen, Xing Xie, Wei-Ying Ma. *Understanding Mobility Based on GPS Data*, UbiComp 2008; Yu Zheng, Xing Xie, Wei-Ying Ma. *GeoLife: A Collaborative Social Networking Service among User, location and trajectory*, IEEE Data Engineering Bulletin 2010.\n\n**Where it lives.** The dataset is not in git and not served to browsers. `datasets/geolife/build.sh` downloads it once per instance and runs `build.sql` with DuckDB 1.5.4 (about three minutes); the gateway serves the resulting Parquet to Grafana's DuckDB only, and each tab's figures are computed from it, on the server for the datasets and in the browser (Chaski) for the panels.\n\n**Method.** After Anita Graser's [Movement data in GIS](https://anitagraser.com/movement-data-in-gis/) series:\n- *Reading* — [Wrangling hundreds of GPS files with DuckDB, QGIS \u0026 Trajectools](https://anitagraser.com/2025/10/12/geolife-gps-track-collection-processing-with-duckdb-qgis-trajectools/) (2025): all the `.plt` files in one DuckDB `read_csv`, the folder as the user, the file as the trajectory.\n- *Cleaning* — [Trajectools tutorial: trajectory preprocessing](https://anitagraser.com/2024/09/21/trajectools-tutorial-trajectory-preprocessing/) (2024): one fix per user and second; trips split at 5-minute gaps and at jumps over 300 km/h for over 500 m; a fix that jumps away and back at over 100 km/h removed; trips under 10 fixes, a minute or 100 m dropped. Speed over five fixes. Times are UTC in the data; Beijing time is UTC+8.\n- *Stops* — after MovingPandas' stop detection ([2021](https://anitagraser.com/2021/03/28/movement-data-in-gis-35-stop-detection-analysis-with-movingpandas/)): five minutes within 100 m; plus pauses, where the GPS went silent and the next trip starts within 200 m.\n- *Flows* — [Visualizing massive trajectory datasets](https://anitagraser.com/2016/11/07/movement-data-in-gis-3-visualizing-massive-trajectory-datasets/) (2016), after G. Andrienko \u0026 N. Andrienko, *Spatial generalization and aggregation of massive movement data*, IEEE TVCG 17(2), 2011. Places from the characteristic points grouped on a square grid (no Voronoi step, as in Anita's version), moves counted between consecutive places.\n\n**Limits.** These are the people of one lab in one city, a decade and a half ago, logging when they chose to: the map shows where *they* went, not how Beijing moves. Labelled modes cover 17 % of trips. A mode in *Speed by mode* and on the maps is the label of the fix; on a trip, the label most of its fixes carry.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
       "clean-intro": {
         "kind": "Panel",
         "spec": {
@@ -45,6 +83,7 @@
           "id": 1,
           "links": [],
           "title": "",
+          "transparent": true,
           "vizConfig": {
             "group": "text",
             "kind": "VizConfig",
@@ -59,13 +98,622 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### 1 · Cleaning — from GPS files to trips\n[GeoLife](https://www.microsoft.com/en-us/research/publication/geolife-gps-trajectory-dataset-user-guide/): 182 people in Beijing, most of them at Microsoft Research Asia, logged their GPS from 2007 to 2012 — **24.9 million fixes in 18,670 files**. Following [Anita Graser's protocol](https://anitagraser.com/movement-data-in-gis/), DuckDB reads every file and cleans them as her [Trajectools tutorial](https://anitagraser.com/2024/09/21/trajectools-tutorial-trajectory-preprocessing/) does: one fix a second, **split at gaps**, **remove speed outliers**, drop what is too short. Then *2 · Speed & stops* analyses what is left, and *3 · Generalized flows* and *4 · One trip up close* show the results.",
+                "content": "### 1 · Cleaning — from GPS files to trips\n[GeoLife](https://www.microsoft.com/en-us/research/publication/geolife-gps-trajectory-dataset-user-guide/): 182 people in Beijing, most of them at Microsoft Research Asia, logged their GPS from 2007 to 2012 — **24.9 million fixes in 18,670 files**. Following [Anita Graser's protocol](https://anitagraser.com/movement-data-in-gis/), DuckDB reads every file and cleans them as her [Trajectools tutorial](https://anitagraser.com/2024/09/21/trajectools-tutorial-trajectory-preprocessing/) does: one fix a second, **split at gaps**, **remove speed outliers**, drop what is too short. Then *2 · Speed \u0026 stops* analyses what is left, and *3 · Generalized flows* and *4 · One trip up close* show the results.",
                 "mode": "markdown"
               }
             },
             "version": "13.2.1"
+          }
+        }
+      },
+      "clean-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Where every trip starts, coloured by whether it starts and ends in Beijing:\n-- most do; the rest are the users' travels, as far as the US and Europe.\nSELECT lat0 AS latitude, lon0 AS longitude, CASE WHEN beijing THEN 'Beijing' ELSE 'Elsewhere' END AS \"where\",\n       uid AS person, strftime(t0 + INTERVAL 8 HOUR, '%Y-%m-%d %H:%M') AS \"start (Beijing time)\",\n       km, minutes, CASE WHEN mode = '' THEN 'not labelled' ELSE mode END AS mode\nFROM $trips"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
           },
-          "transparent": true
+          "description": "The first fix of every trip after cleaning. *2 · Speed \u0026 stops* and *3 · Generalized flows* keep the trips that start and end in Beijing (lat 39.6–40.3, lon 115.9–116.9).",
+          "id": 5,
+          "links": [],
+          "title": "Where the trips start",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 39.91337369761163,
+                      "longitude": 116.22802089609127,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 8.30942367253214
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "dark-matter",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "charts": [
+                        {
+                          "applyFilters": true,
+                          "chartDisplay": {
+                            "colorRange": {
+                              "category": "Uber",
+                              "colors": [
+                                "#12939A",
+                                "#DDB27C",
+                                "#88572C",
+                                "#FF991F",
+                                "#F15C17",
+                                "#223F9A",
+                                "#DA70BF",
+                                "#125C77"
+                              ],
+                              "name": "Chart Colors",
+                              "reversed": false,
+                              "type": "ordinal"
+                            }
+                          },
+                          "colorBy": "category",
+                          "crossFilter": {
+                            "enabled": false,
+                            "fieldNames": {
+                              "x": "mode"
+                            },
+                            "filterId": "chart-q0be2c-el6mi6ivh",
+                            "value": {}
+                          },
+                          "dataId": "grafana-A",
+                          "display": {
+                            "isConfigActive": false
+                          },
+                          "groupBy": {
+                            "aggregation": "uniqueBin"
+                          },
+                          "groupOthers": false,
+                          "id": "q0be2c",
+                          "numGroups": 10,
+                          "pinned": false,
+                          "title": "Count by where",
+                          "type": "horizontalBar",
+                          "xAxis": {
+                            "aggregation": "count"
+                          },
+                          "yAxis": {
+                            "aggregation": "uniqueBin",
+                            "field": {
+                              "name": "mode",
+                              "type": "string"
+                            },
+                            "title": "mode"
+                          }
+                        }
+                      ],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "s4mq5s46j",
+                          "name": [
+                            "start (Beijing time)"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "defaultTimeFormat": "L",
+                            "interval": "1-month",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            1176402360000,
+                            1343405220000
+                          ],
+                          "view": "minified"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {
+                              "grafana-A": [
+                                {
+                                  "name": "where"
+                                },
+                                {
+                                  "name": "person"
+                                },
+                                {
+                                  "name": "start (Beijing time)"
+                                },
+                                {
+                                  "name": "km"
+                                },
+                                {
+                                  "name": "minutes"
+                                },
+                                {
+                                  "name": "mode"
+                                }
+                              ]
+                            }
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "where"
+                              },
+                              {
+                                "name": "person"
+                              },
+                              {
+                                "format": "L LTS",
+                                "name": "start (Beijing time)"
+                              },
+                              {
+                                "name": "km"
+                              },
+                              {
+                                "name": "minutes"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "additive",
+                      "layerOrder": [
+                        "starts"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Where trips start",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#FF9830",
+                                  "#5794F2"
+                                ],
+                                "name": "Where trips start",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.6,
+                              "outline": false,
+                              "radius": 2.5,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "starts",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "where",
+                              "type": "string"
+                            },
+                            "colorScale": "ordinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 2,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.0.0"
+          }
+        }
+      },
+      "clean-months": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT time_bucket(INTERVAL 1 MONTH, t0) AS month, mode, count(*) AS trips FROM $trips GROUP BY ALL ORDER BY month"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Trips a month, by how the user said they travelled. Most labels come from 2008 and 2009, when most of the logging was done.",
+          "id": 6,
+          "links": [],
+          "title": "When they were recorded",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const MODES = [\n  { mode: 'walk', name: 'Walking', color: '#73BF69' },\n  { mode: 'bike', name: 'Cycling', color: '#FADE2A' },\n  { mode: 'bus', name: 'Bus', color: '#FF9830' },\n  { mode: 'car', name: 'Car and taxi', color: '#F2495C' },\n  { mode: 'subway', name: 'Subway', color: '#5794F2' },\n  { mode: 'train', name: 'Train', color: '#B877D9' },\n  { mode: 'other', name: 'Plane, boat, motorbike', color: '#8AB8FF' },\n  { mode: '', name: 'Not labelled', color: '#8E8E8E' },\n];\n\n// Trips a month, stacked by mode, on a time axis; modes in the dashboard's\n// colours, the unlabelled ones last, in grey.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst months = column('month').map(Number);\nconst modes = column('mode');\nconst trips = column('trips').map(Number);\n\nconst series = MODES.map((m) =\u003e ({\n  name: m.name,\n  type: 'bar',\n  stack: 'trips',\n  itemStyle: { color: m.color },\n  barMaxWidth: 14,\n  data: months.flatMap((t, i) =\u003e (modes[i] === m.mode ? [[t, trips[i]]] : [])),\n})).filter((s) =\u003e s.data.length \u003e 0);\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12, type: 'scroll' },\n  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'time', axisLabel: { color: muted }, axisLine: { lineStyle: { color: theme.colors.border.medium } } },\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series,\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "clean-sampling": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT bin, fixes FROM $sampling ORDER BY bin"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Seconds between one fix and the next of the same person, before cleaning. Most loggers wrote every 1 to 5 seconds; the long gaps are where trips are split.",
+          "id": 4,
+          "links": [],
+          "title": "How often the GPS spoke",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Fixes by the seconds since the previous one, in the bins build.sql made; the\n// bins past five minutes, where a trip is split, in the warning colour.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst LABELS = ['≤ 1 s', '2 s', '3–5 s', '6–10 s', '11–60 s', '1–5 min', '5–60 min', '\u003e 1 h'];\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst bins = column('bin').map(Number);\nconst fixes = column('fixes').map(Number);\nconst total = fixes.reduce((a, b) =\u003e a + b, 0) || 1;\nconst data = bins.map((b, i) =\u003e ({\n  value: fixes[i],\n  itemStyle: { color: b \u003e= 7 ? '#F2495C' : b \u003e= 5 ? '#FF9830' : '#5794F2' },\n}));\n\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e `${items[0].name}: \u003cb\u003e${items[0].value.toLocaleString()}\u003c/b\u003e fixes, ${(100 * items[0].value / total).toFixed(1)} %`,\n  },\n  grid: { left: 8, right: 16, top: 16, bottom: 8, containLabel: true },\n  xAxis: { type: 'category', data: bins.map((b) =\u003e LABELS[b - 1]), axisLabel: { color: muted },\n           axisLine: { lineStyle: { color: theme.colors.border.medium } } },\n  yAxis: { type: 'log', min: 1000, axisLabel: { color: muted, formatter: (v) =\u003e (v \u003e= 1e6 ? v / 1e6 + ' M' : v / 1e3 + ' k') },\n           splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series: [{ type: 'bar', data, barWidth: '60%',\n             label: { show: true, position: 'top', color: muted, formatter: (p) =\u003e (100 * p.value / total).toFixed(1) + ' %' } }],\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
         }
       },
       "clean-stats": {
@@ -86,7 +734,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT max(trips) FILTER (step = 1) AS \"GPS files\",\n       max(fixes) FILTER (step = 1) AS \"Fixes read\",\n       round(100.0 * max(fixes) FILTER (step = 5) / max(fixes) FILTER (step = 1), 1) AS \"Fixes kept\",\n       max(trips) FILTER (step = 5) AS \"Trips\",\n       max(trips) FILTER (step = 6) AS \"Trips in Beijing\",\n       (SELECT count(DISTINCT uid) FROM $trips) AS \"People\",\n       (SELECT count(*) FROM $trips WHERE mode <> '') AS \"Trips labelled\"\nFROM $cleaning"
+                        "rawSql": "SELECT max(trips) FILTER (step = 1) AS \"GPS files\",\n       max(fixes) FILTER (step = 1) AS \"Fixes read\",\n       round(100.0 * max(fixes) FILTER (step = 5) / max(fixes) FILTER (step = 1), 1) AS \"Fixes kept\",\n       max(trips) FILTER (step = 5) AS \"Trips\",\n       max(trips) FILTER (step = 6) AS \"Trips in Beijing\",\n       (SELECT count(DISTINCT uid) FROM $trips) AS \"People\",\n       (SELECT count(*) FROM $trips WHERE mode \u003c\u003e '') AS \"Trips labelled\"\nFROM $cleaning"
                       },
                       "version": "v0"
                     },
@@ -113,6 +761,19 @@
                     "mode": "fixed"
                   },
                   "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "locale"
                 },
                 "overrides": [
@@ -211,6 +872,7 @@
                   "key": "",
                   "plugin": "AMap.Scale,AMap.ToolBar"
                 },
+                "getOption": "// The cleaning steps, top to bottom: fixes left as bars, labelled with the\n// trips left where the step counts them.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst what = column('what');\nconst fixes = column('fixes').map(Number);\nconst trips = column('trips').map((v) =\u003e (v === null || v === undefined ? null : Number(v)));\nconst millions = (v) =\u003e (v / 1e6).toFixed(2) + ' M';\n\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e {\n      const i = items[0].dataIndex;\n      const prev = i \u003e 0 ? fixes[i - 1] - fixes[i] : 0;\n      return `\u003cb\u003e${what[i]}\u003c/b\u003e\u003cbr/\u003e${fixes[i].toLocaleString()} fixes` +\n        (prev \u003e 0 ? ` (${prev.toLocaleString()} fewer)` : '') +\n        (trips[i] !== null ? `\u003cbr/\u003e${trips[i].toLocaleString()} trips` : '');\n    },\n  },\n  grid: { left: 8, right: 16, top: 8, bottom: 8, containLabel: true },\n  yAxis: { type: 'category', inverse: true, data: what, axisLabel: { color: muted, width: 190, overflow: 'truncate' },\n           axisLine: { lineStyle: { color: theme.colors.border.medium } } },\n  xAxis: { type: 'value', min: 0, axisLabel: { color: muted, formatter: millions }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series: [\n    { name: 'Fixes', type: 'bar', data: fixes, itemStyle: { color: '#5794F2' }, barWidth: '55%',\n      label: { show: true, position: 'insideRight', color: '#fff',\n               formatter: (p) =\u003e millions(p.value) + (trips[p.dataIndex] !== null ? ` · ${trips[p.dataIndex].toLocaleString()} trips` : '') } },\n  ],\n};\n",
                 "google": {
                   "callback": "gmapReady",
                   "key": ""
@@ -225,1045 +887,10 @@
                   "code": "",
                   "dataset": [],
                   "series": []
-                },
-                "getOption": "// The cleaning steps, top to bottom: fixes left as bars, labelled with the\n// trips left where the step counts them.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst column = (name) => Array.from(frame?.fields.find((f) => f.name === name)?.values ?? []);\nconst what = column('what');\nconst fixes = column('fixes').map(Number);\nconst trips = column('trips').map((v) => (v === null || v === undefined ? null : Number(v)));\nconst millions = (v) => (v / 1e6).toFixed(2) + ' M';\n\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) => {\n      const i = items[0].dataIndex;\n      const prev = i > 0 ? fixes[i - 1] - fixes[i] : 0;\n      return `<b>${what[i]}</b><br/>${fixes[i].toLocaleString()} fixes` +\n        (prev > 0 ? ` (${prev.toLocaleString()} fewer)` : '') +\n        (trips[i] !== null ? `<br/>${trips[i].toLocaleString()} trips` : '');\n    },\n  },\n  grid: { left: 8, right: 16, top: 8, bottom: 8, containLabel: true },\n  yAxis: { type: 'category', inverse: true, data: what, axisLabel: { color: muted, width: 190, overflow: 'truncate' },\n           axisLine: { lineStyle: { color: theme.colors.border.medium } } },\n  xAxis: { type: 'value', min: 0, axisLabel: { color: muted, formatter: millions }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series: [\n    { name: 'Fixes', type: 'bar', data: fixes, itemStyle: { color: '#5794F2' }, barWidth: '55%',\n      label: { show: true, position: 'insideRight', color: '#fff',\n               formatter: (p) => millions(p.value) + (trips[p.dataIndex] !== null ? ` · ${trips[p.dataIndex].toLocaleString()} trips` : '') } },\n  ],\n};\n"
+                }
               }
             },
             "version": "7.2.5"
-          }
-        }
-      },
-      "clean-sampling": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT bin, fixes FROM $sampling ORDER BY bin"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "Seconds between one fix and the next of the same person, before cleaning. Most loggers wrote every 1 to 5 seconds; the long gaps are where trips are split.",
-          "id": 4,
-          "links": [],
-          "title": "How often the GPS spoke",
-          "vizConfig": {
-            "group": "volkovlabs-echarts-panel",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
-              },
-              "options": {
-                "baidu": {
-                  "callback": "bmapReady",
-                  "key": ""
-                },
-                "editor": {
-                  "format": "auto"
-                },
-                "editorMode": "code",
-                "gaode": {
-                  "key": "",
-                  "plugin": "AMap.Scale,AMap.ToolBar"
-                },
-                "google": {
-                  "callback": "gmapReady",
-                  "key": ""
-                },
-                "map": "none",
-                "renderer": "canvas",
-                "themeEditor": {
-                  "config": "{}",
-                  "name": "default"
-                },
-                "visualEditor": {
-                  "code": "",
-                  "dataset": [],
-                  "series": []
-                },
-                "getOption": "// Fixes by the seconds since the previous one, in the bins build.sql made; the\n// bins past five minutes, where a trip is split, in the warning colour.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst LABELS = ['≤ 1 s', '2 s', '3–5 s', '6–10 s', '11–60 s', '1–5 min', '5–60 min', '> 1 h'];\nconst frame = context.panel.data.series[0];\nconst column = (name) => Array.from(frame?.fields.find((f) => f.name === name)?.values ?? []);\nconst bins = column('bin').map(Number);\nconst fixes = column('fixes').map(Number);\nconst total = fixes.reduce((a, b) => a + b, 0) || 1;\nconst data = bins.map((b, i) => ({\n  value: fixes[i],\n  itemStyle: { color: b >= 7 ? '#F2495C' : b >= 5 ? '#FF9830' : '#5794F2' },\n}));\n\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) => `${items[0].name}: <b>${items[0].value.toLocaleString()}</b> fixes, ${(100 * items[0].value / total).toFixed(1)} %`,\n  },\n  grid: { left: 8, right: 16, top: 16, bottom: 8, containLabel: true },\n  xAxis: { type: 'category', data: bins.map((b) => LABELS[b - 1]), axisLabel: { color: muted },\n           axisLine: { lineStyle: { color: theme.colors.border.medium } } },\n  yAxis: { type: 'log', min: 1000, axisLabel: { color: muted, formatter: (v) => (v >= 1e6 ? v / 1e6 + ' M' : v / 1e3 + ' k') },\n           splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series: [{ type: 'bar', data, barWidth: '60%',\n             label: { show: true, position: 'top', color: muted, formatter: (p) => (100 * p.value / total).toFixed(1) + ' %' } }],\n};\n"
-              }
-            },
-            "version": "7.2.5"
-          }
-        }
-      },
-      "clean-map": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "-- Where every trip starts, coloured by whether it starts and ends in Beijing:\n-- most do; the rest are the users' travels, as far as the US and Europe.\nSELECT lat0 AS latitude, lon0 AS longitude, CASE WHEN beijing THEN 'Beijing' ELSE 'Elsewhere' END AS \"where\",\n       uid AS person, strftime(t0 + INTERVAL 8 HOUR, '%Y-%m-%d %H:%M') AS \"start (Beijing time)\",\n       km, minutes, CASE WHEN mode = '' THEN 'not labelled' ELSE mode END AS mode\nFROM $trips"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "The first fix of every trip after cleaning. *2 · Speed & stops* and *3 · Generalized flows* keep the trips that start and end in Beijing (lat 39.6–40.3, lon 115.9–116.9).",
-          "id": 5,
-          "links": [],
-          "title": "Where the trips start",
-          "vizConfig": {
-            "group": "ubica-keplerplus-panel",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
-              },
-              "options": {
-                "alerts": {},
-                "basemap": "dark-matter",
-                "clickArea": false,
-                "clickConfirm": false,
-                "followGrafanaTheme": false,
-                "hoverMaxAgeSeconds": 60,
-                "hoverSync": false,
-                "mapConfig": {
-                  "config": {
-                    "mapState": {
-                      "bearing": 0,
-                      "dragRotate": false,
-                      "latitude": 35,
-                      "longitude": 116.4,
-                      "pitch": 0,
-                      "zoom": 2.4
-                    },
-                    "mapStyle": {
-                      "styleType": "dark-matter"
-                    },
-                    "uiState": {
-                      "mapControls": {
-                        "mapLegend": {
-                          "active": true
-                        }
-                      }
-                    },
-                    "visState": {
-                      "filters": [],
-                      "interactionConfig": {
-                        "brush": {
-                          "enabled": false,
-                          "size": 0.5
-                        },
-                        "coordinate": {
-                          "enabled": false
-                        },
-                        "geocoder": {
-                          "enabled": false
-                        },
-                        "tooltip": {
-                          "config": {
-                            "compareMode": false,
-                            "compareType": "absolute",
-                            "fieldsToShow": {
-                              "grafana-A": [
-                                {
-                                  "name": "where"
-                                },
-                                {
-                                  "name": "person"
-                                },
-                                {
-                                  "name": "start (Beijing time)"
-                                },
-                                {
-                                  "name": "km"
-                                },
-                                {
-                                  "name": "minutes"
-                                },
-                                {
-                                  "name": "mode"
-                                }
-                              ]
-                            }
-                          },
-                          "enabled": true
-                        }
-                      },
-                      "layerOrder": [
-                        "starts"
-                      ],
-                      "layers": [
-                        {
-                          "config": {
-                            "color": [
-                              255,
-                              255,
-                              255
-                            ],
-                            "columns": {
-                              "lat": "latitude",
-                              "lng": "longitude"
-                            },
-                            "columnMode": "points",
-                            "dataId": "grafana-A",
-                            "hidden": false,
-                            "isVisible": true,
-                            "label": "Where trips start",
-                            "visConfig": {
-                              "allowHover": true,
-                              "filled": true,
-                              "opacity": 0.6,
-                              "outline": false,
-                              "radius": 2.5,
-                              "radiusRange": [
-                                0,
-                                50
-                              ],
-                              "colorRange": {
-                                "category": "Custom",
-                                "colors": [
-                                  "#FF9830",
-                                  "#5794F2"
-                                ],
-                                "name": "Where trips start",
-                                "type": "custom"
-                              }
-                            }
-                          },
-                          "id": "starts",
-                          "type": "point",
-                          "visualChannels": {
-                            "colorField": {
-                              "name": "where",
-                              "type": "string"
-                            },
-                            "colorScale": "ordinal",
-                            "sizeField": null,
-                            "sizeScale": "sqrt"
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  "version": "v1"
-                },
-                "peerTimeSync": false,
-                "places": {},
-                "publishIntervalMs": 1500,
-                "showSidePanel": false,
-                "timeSync": "off",
-                "tripLayerMode": "table",
-                "variableMappings": []
-              }
-            },
-            "version": "0.1.0"
-          }
-        }
-      },
-      "clean-months": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT time_bucket(INTERVAL 1 MONTH, t0) AS month, mode, count(*) AS trips FROM $trips GROUP BY ALL ORDER BY month"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "Trips a month, by how the user said they travelled. Most labels come from 2008 and 2009, when most of the logging was done.",
-          "id": 6,
-          "links": [],
-          "title": "When they were recorded",
-          "vizConfig": {
-            "group": "volkovlabs-echarts-panel",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
-              },
-              "options": {
-                "baidu": {
-                  "callback": "bmapReady",
-                  "key": ""
-                },
-                "editor": {
-                  "format": "auto"
-                },
-                "editorMode": "code",
-                "gaode": {
-                  "key": "",
-                  "plugin": "AMap.Scale,AMap.ToolBar"
-                },
-                "google": {
-                  "callback": "gmapReady",
-                  "key": ""
-                },
-                "map": "none",
-                "renderer": "canvas",
-                "themeEditor": {
-                  "config": "{}",
-                  "name": "default"
-                },
-                "visualEditor": {
-                  "code": "",
-                  "dataset": [],
-                  "series": []
-                },
-                "getOption": "const MODES = [\n  { mode: 'walk', name: 'Walking', color: '#73BF69' },\n  { mode: 'bike', name: 'Cycling', color: '#FADE2A' },\n  { mode: 'bus', name: 'Bus', color: '#FF9830' },\n  { mode: 'car', name: 'Car and taxi', color: '#F2495C' },\n  { mode: 'subway', name: 'Subway', color: '#5794F2' },\n  { mode: 'train', name: 'Train', color: '#B877D9' },\n  { mode: 'other', name: 'Plane, boat, motorbike', color: '#8AB8FF' },\n  { mode: '', name: 'Not labelled', color: '#8E8E8E' },\n];\n\n// Trips a month, stacked by mode, on a time axis; modes in the dashboard's\n// colours, the unlabelled ones last, in grey.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst column = (name) => Array.from(frame?.fields.find((f) => f.name === name)?.values ?? []);\nconst months = column('month').map(Number);\nconst modes = column('mode');\nconst trips = column('trips').map(Number);\n\nconst series = MODES.map((m) => ({\n  name: m.name,\n  type: 'bar',\n  stack: 'trips',\n  itemStyle: { color: m.color },\n  barMaxWidth: 14,\n  data: months.flatMap((t, i) => (modes[i] === m.mode ? [[t, trips[i]]] : [])),\n})).filter((s) => s.data.length > 0);\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12, type: 'scroll' },\n  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'time', axisLabel: { color: muted }, axisLine: { lineStyle: { color: theme.colors.border.medium } } },\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series,\n};\n"
-              }
-            },
-            "version": "7.2.5"
-          }
-        }
-      },
-      "speed-intro": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "",
-          "id": 7,
-          "links": [],
-          "title": "",
-          "vizConfig": {
-            "group": "text",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
-              },
-              "options": {
-                "code": {
-                  "language": "plaintext",
-                  "showLineNumbers": false,
-                  "showMiniMap": false
-                },
-                "content": "### 2 · Analysis — how fast, and where they stop\nEvery 15 seconds of every trip in Beijing, a speed: the distance over five fixes, two either side, over their time, so one jittery fix does not make a sprint. **Left**, the median speed in each H3 cell: ring roads and expressways light up, the old town stays dark. **Right**, every stop: five minutes within 100 m, or the GPS silent between two trips that end and start in the same place. Pick a **mode** above to see one way of travelling; the charts compare them all.",
-                "mode": "markdown"
-              }
-            },
-            "version": "13.2.1"
-          },
-          "transparent": true
-        }
-      },
-      "speed-map": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "-- The median speed in each cell, for the mode picked; a cell's colour stops at\n-- 80 km/h, faster is the same yellow.\nSELECT hex, least(kmh, 80) AS kmh, kmh AS \"median km/h\", trips, fixes\nFROM $speed WHERE mode = $mode"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "Median speed of the fixes in each H3 cell (resolution 9, about 0.1 km²), where at least three trips passed. From dark (standing, walking) to yellow (80 km/h and over).",
-          "id": 8,
-          "links": [],
-          "title": "How fast · ${mode:text}",
-          "vizConfig": {
-            "group": "ubica-keplerplus-panel",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
-              },
-              "options": {
-                "alerts": {},
-                "basemap": "dark-matter",
-                "clickArea": false,
-                "clickConfirm": false,
-                "followGrafanaTheme": false,
-                "hoverMaxAgeSeconds": 60,
-                "hoverSync": false,
-                "mapConfig": {
-                  "config": {
-                    "mapState": {
-                      "bearing": 0,
-                      "dragRotate": false,
-                      "latitude": 39.93,
-                      "longitude": 116.38,
-                      "pitch": 0,
-                      "zoom": 10.2
-                    },
-                    "mapStyle": {
-                      "styleType": "dark-matter"
-                    },
-                    "uiState": {
-                      "mapControls": {
-                        "mapLegend": {
-                          "active": true
-                        }
-                      }
-                    },
-                    "visState": {
-                      "filters": [],
-                      "interactionConfig": {
-                        "brush": {
-                          "enabled": false,
-                          "size": 0.5
-                        },
-                        "coordinate": {
-                          "enabled": false
-                        },
-                        "geocoder": {
-                          "enabled": false
-                        },
-                        "tooltip": {
-                          "config": {
-                            "compareMode": false,
-                            "compareType": "absolute",
-                            "fieldsToShow": {
-                              "grafana-A": [
-                                {
-                                  "name": "median km/h"
-                                },
-                                {
-                                  "name": "trips"
-                                },
-                                {
-                                  "name": "fixes"
-                                }
-                              ]
-                            }
-                          },
-                          "enabled": true
-                        }
-                      },
-                      "layerOrder": [
-                        "speed"
-                      ],
-                      "layers": [
-                        {
-                          "config": {
-                            "color": [
-                              255,
-                              203,
-                              153
-                            ],
-                            "columns": {
-                              "hex_id": "hex"
-                            },
-                            "dataId": "grafana-A",
-                            "isVisible": true,
-                            "label": "Median speed, km/h",
-                            "visConfig": {
-                              "colorRange": {
-                                "category": "Custom",
-                                "colors": [
-                                  "#0d0887",
-                                  "#5302a3",
-                                  "#8b0aa5",
-                                  "#b83289",
-                                  "#db5c68",
-                                  "#f48849",
-                                  "#febd2a",
-                                  "#f0f921"
-                                ],
-                                "name": "Speed",
-                                "type": "sequential"
-                              },
-                              "coverage": 0.95,
-                              "enable3d": false,
-                              "opacity": 0.85
-                            }
-                          },
-                          "id": "speed",
-                          "type": "hexagonId",
-                          "visualChannels": {
-                            "colorField": {
-                              "name": "kmh",
-                              "type": "real"
-                            },
-                            "colorScale": "quantize"
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  "version": "v1"
-                },
-                "peerTimeSync": false,
-                "places": {},
-                "publishIntervalMs": 1500,
-                "showSidePanel": false,
-                "timeSync": "off",
-                "tripLayerMode": "table",
-                "variableMappings": []
-              }
-            },
-            "version": "0.1.0"
-          }
-        }
-      },
-      "stops-map": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "-- Every stop of the mode picked (a pause belongs to the trip it ends).\nSELECT lat AS latitude, lon AS longitude, minutes, kind, uid AS person, strftime(t0 + INTERVAL 8 HOUR, '%Y-%m-%d %H:%M') AS \"from (Beijing time)\",\n       CASE WHEN mode = '' THEN 'not labelled' ELSE mode END AS mode\nFROM $stops WHERE $mode IN ('all', mode)"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "Each dot a stop, coloured by how long it lasted (quantiles). Dwell: five minutes within 100 m inside a trip. Pause: the GPS went silent (often indoors) and the next trip started within 200 m, up to 12 hours later.",
-          "id": 9,
-          "links": [],
-          "title": "Where they stop · ${mode:text}",
-          "vizConfig": {
-            "group": "ubica-keplerplus-panel",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
-              },
-              "options": {
-                "alerts": {},
-                "basemap": "dark-matter",
-                "clickArea": false,
-                "clickConfirm": false,
-                "followGrafanaTheme": false,
-                "hoverMaxAgeSeconds": 60,
-                "hoverSync": false,
-                "mapConfig": {
-                  "config": {
-                    "mapState": {
-                      "bearing": 0,
-                      "dragRotate": false,
-                      "latitude": 39.93,
-                      "longitude": 116.38,
-                      "pitch": 0,
-                      "zoom": 10.2
-                    },
-                    "mapStyle": {
-                      "styleType": "dark-matter"
-                    },
-                    "uiState": {
-                      "mapControls": {
-                        "mapLegend": {
-                          "active": true
-                        }
-                      }
-                    },
-                    "visState": {
-                      "filters": [],
-                      "interactionConfig": {
-                        "brush": {
-                          "enabled": false,
-                          "size": 0.5
-                        },
-                        "coordinate": {
-                          "enabled": false
-                        },
-                        "geocoder": {
-                          "enabled": false
-                        },
-                        "tooltip": {
-                          "config": {
-                            "compareMode": false,
-                            "compareType": "absolute",
-                            "fieldsToShow": {
-                              "grafana-A": [
-                                {
-                                  "name": "kind"
-                                },
-                                {
-                                  "name": "minutes"
-                                },
-                                {
-                                  "name": "person"
-                                },
-                                {
-                                  "name": "from (Beijing time)"
-                                },
-                                {
-                                  "name": "mode"
-                                }
-                              ]
-                            }
-                          },
-                          "enabled": true
-                        }
-                      },
-                      "layerOrder": [
-                        "stops"
-                      ],
-                      "layers": [
-                        {
-                          "config": {
-                            "color": [
-                              255,
-                              255,
-                              255
-                            ],
-                            "columns": {
-                              "lat": "latitude",
-                              "lng": "longitude"
-                            },
-                            "columnMode": "points",
-                            "dataId": "grafana-A",
-                            "hidden": false,
-                            "isVisible": true,
-                            "label": "Stops, minutes",
-                            "visConfig": {
-                              "allowHover": true,
-                              "filled": true,
-                              "opacity": 0.7,
-                              "outline": false,
-                              "radius": 3,
-                              "radiusRange": [
-                                0,
-                                50
-                              ],
-                              "colorRange": {
-                                "category": "Custom",
-                                "colors": [
-                                  "#1f3b73",
-                                  "#2f6db3",
-                                  "#4cc9f0",
-                                  "#80ed99",
-                                  "#ffb703",
-                                  "#f72585"
-                                ],
-                                "name": "Stops, minutes",
-                                "type": "sequential"
-                              }
-                            }
-                          },
-                          "id": "stops",
-                          "type": "point",
-                          "visualChannels": {
-                            "colorField": {
-                              "name": "minutes",
-                              "type": "real"
-                            },
-                            "colorScale": "quantile",
-                            "sizeField": null,
-                            "sizeScale": "sqrt"
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  "version": "v1"
-                },
-                "peerTimeSync": false,
-                "places": {},
-                "publishIntervalMs": 1500,
-                "showSidePanel": false,
-                "timeSync": "off",
-                "tripLayerMode": "table",
-                "variableMappings": []
-              }
-            },
-            "version": "0.1.0"
-          }
-        }
-      },
-      "speed-modes": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT mode, kmh, fixes FROM $speeds ORDER BY mode, kmh"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "Share of each mode’s fixes at each speed, in 2 km/h bins. Walking peaks at 4–5 km/h, cycling near 10; bus, car and subway spread wide because they stop and go.",
-          "id": 10,
-          "links": [],
-          "title": "Speed by mode",
-          "vizConfig": {
-            "group": "volkovlabs-echarts-panel",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
-              },
-              "options": {
-                "baidu": {
-                  "callback": "bmapReady",
-                  "key": ""
-                },
-                "editor": {
-                  "format": "auto"
-                },
-                "editorMode": "code",
-                "gaode": {
-                  "key": "",
-                  "plugin": "AMap.Scale,AMap.ToolBar"
-                },
-                "google": {
-                  "callback": "gmapReady",
-                  "key": ""
-                },
-                "map": "none",
-                "renderer": "canvas",
-                "themeEditor": {
-                  "config": "{}",
-                  "name": "default"
-                },
-                "visualEditor": {
-                  "code": "",
-                  "dataset": [],
-                  "series": []
-                },
-                "getOption": "const MODES = [\n  { mode: 'walk', name: 'Walking', color: '#73BF69' },\n  { mode: 'bike', name: 'Cycling', color: '#FADE2A' },\n  { mode: 'bus', name: 'Bus', color: '#FF9830' },\n  { mode: 'car', name: 'Car and taxi', color: '#F2495C' },\n  { mode: 'subway', name: 'Subway', color: '#5794F2' },\n  { mode: 'train', name: 'Train', color: '#B877D9' },\n  { mode: 'other', name: 'Plane, boat, motorbike', color: '#8AB8FF' },\n  { mode: '', name: 'Not labelled', color: '#8E8E8E' },\n];\n\n// One line per labelled mode: the share of its fixes in each 2 km/h bin, up\n// to 120 km/h; unlabelled fixes left out.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst column = (name) => Array.from(frame?.fields.find((f) => f.name === name)?.values ?? []);\nconst modes = column('mode');\nconst kmh = column('kmh').map(Number);\nconst fixes = column('fixes').map(Number);\n\nconst series = MODES.filter((m) => m.mode !== '' && m.mode !== 'other').map((m) => {\n  const rows = kmh.flatMap((k, i) => (modes[i] === m.mode ? [[k, fixes[i]]] : []));\n  const total = rows.reduce((a, r) => a + r[1], 0) || 1;\n  return {\n    name: m.name, type: 'line', smooth: true, showSymbol: false, itemStyle: { color: m.color }, lineStyle: { width: 2 },\n    data: rows.filter((r) => r[0] <= 120).map((r) => [r[0] + 1, (100 * r[1]) / total]),\n  };\n}).filter((s) => s.data.length > 0);\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12, type: 'scroll' },\n  tooltip: { trigger: 'axis', valueFormatter: (v) => v.toFixed(1) + ' %' },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'value', min: 0, max: 120, name: 'km/h', nameLocation: 'end', nameTextStyle: { color: muted },\n           axisLabel: { color: muted }, splitLine: { show: false } },\n  yAxis: { type: 'value', axisLabel: { color: muted, formatter: '{value} %' }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series,\n};\n"
-              }
-            },
-            "version": "7.2.5"
-          }
-        }
-      },
-      "speed-hours": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT mode, hour(t0 + INTERVAL 8 HOUR) AS hour, count(*) AS trips FROM $trips WHERE beijing GROUP BY ALL"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "Trips starting at each hour of the day, Beijing time, as a share of each mode’s trips. Commuting peaks at 8 and 18; the subway and cars carry the morning.",
-          "id": 11,
-          "links": [],
-          "title": "When they travel",
-          "vizConfig": {
-            "group": "volkovlabs-echarts-panel",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
-              },
-              "options": {
-                "baidu": {
-                  "callback": "bmapReady",
-                  "key": ""
-                },
-                "editor": {
-                  "format": "auto"
-                },
-                "editorMode": "code",
-                "gaode": {
-                  "key": "",
-                  "plugin": "AMap.Scale,AMap.ToolBar"
-                },
-                "google": {
-                  "callback": "gmapReady",
-                  "key": ""
-                },
-                "map": "none",
-                "renderer": "canvas",
-                "themeEditor": {
-                  "config": "{}",
-                  "name": "default"
-                },
-                "visualEditor": {
-                  "code": "",
-                  "dataset": [],
-                  "series": []
-                },
-                "getOption": "const MODES = [\n  { mode: 'walk', name: 'Walking', color: '#73BF69' },\n  { mode: 'bike', name: 'Cycling', color: '#FADE2A' },\n  { mode: 'bus', name: 'Bus', color: '#FF9830' },\n  { mode: 'car', name: 'Car and taxi', color: '#F2495C' },\n  { mode: 'subway', name: 'Subway', color: '#5794F2' },\n  { mode: 'train', name: 'Train', color: '#B877D9' },\n  { mode: 'other', name: 'Plane, boat, motorbike', color: '#8AB8FF' },\n  { mode: '', name: 'Not labelled', color: '#8E8E8E' },\n];\n\n// Trips by the hour they start, Beijing time, each mode as a share of its own\n// trips so that walking and the train read on one scale.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst column = (name) => Array.from(frame?.fields.find((f) => f.name === name)?.values ?? []);\nconst modes = column('mode');\nconst hours = column('hour').map(Number);\nconst trips = column('trips').map(Number);\nconst HOURS = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0'));\n\nconst series = MODES.filter((m) => m.mode !== 'other').map((m) => {\n  const raw = new Array(24).fill(0);\n  modes.forEach((mode, i) => { if (mode === m.mode) raw[hours[i]] += trips[i]; });\n  const total = raw.reduce((a, b) => a + b, 0);\n  return { name: m.name, type: 'line', smooth: true, showSymbol: false, itemStyle: { color: m.color },\n           lineStyle: { width: m.mode === '' ? 1.5 : 2, type: m.mode === '' ? 'dashed' : 'solid' },\n           data: total ? raw.map((v) => (100 * v) / total) : [] };\n}).filter((s) => s.data.length > 0);\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12, type: 'scroll' },\n  tooltip: { trigger: 'axis', valueFormatter: (v) => v.toFixed(1) + ' %' },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'category', data: HOURS, boundaryGap: false, axisLabel: { color: muted } },\n  yAxis: { type: 'value', axisLabel: { color: muted, formatter: '{value} %' }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series,\n};\n"
-              }
-            },
-            "version": "7.2.5"
-          }
-        }
-      },
-      "stop-lengths": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT kind, least(floor(log2(minutes / 5)), 7)::INTEGER AS bin, count(*) AS stops\nFROM $stops WHERE $mode IN ('all', mode) GROUP BY ALL ORDER BY bin"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "Stops by how long they lasted, on a doubling scale. Dwells inside a trip are mostly short: traffic lights, bus stops, a shop. Pauses between trips are longer: lunch, a meeting, a night.",
-          "id": 12,
-          "links": [],
-          "title": "How long they stop · ${mode:text}",
-          "vizConfig": {
-            "group": "volkovlabs-echarts-panel",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
-              },
-              "options": {
-                "baidu": {
-                  "callback": "bmapReady",
-                  "key": ""
-                },
-                "editor": {
-                  "format": "auto"
-                },
-                "editorMode": "code",
-                "gaode": {
-                  "key": "",
-                  "plugin": "AMap.Scale,AMap.ToolBar"
-                },
-                "google": {
-                  "callback": "gmapReady",
-                  "key": ""
-                },
-                "map": "none",
-                "renderer": "canvas",
-                "themeEditor": {
-                  "config": "{}",
-                  "name": "default"
-                },
-                "visualEditor": {
-                  "code": "",
-                  "dataset": [],
-                  "series": []
-                },
-                "getOption": "// Stops by duration, in doubling bins from five minutes, dwell and pause side\n// by side.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst LABELS = ['5–10 min', '10–20', '20–40', '40–80', '80–160', '2.7–5.3 h', '5.3–10.7 h', '> 10.7 h'];\nconst frame = context.panel.data.series[0];\nconst column = (name) => Array.from(frame?.fields.find((f) => f.name === name)?.values ?? []);\nconst kinds = column('kind');\nconst bins = column('bin').map(Number);\nconst stops = column('stops').map(Number);\nconst of = (kind) => LABELS.map((_, b) => kinds.reduce((a, k, i) => a + (k === kind && bins[i] === b ? stops[i] : 0), 0));\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12 },\n  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'category', data: LABELS, axisLabel: { color: muted, interval: 0, rotate: 30 } },\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series: [\n    { name: 'Dwell, inside a trip', type: 'bar', data: of('dwell'), itemStyle: { color: '#4cc9f0' } },\n    { name: 'Pause, between trips', type: 'bar', data: of('pause'), itemStyle: { color: '#f72585' } },\n  ],\n};\n"
-              }
-            },
-            "version": "7.2.5"
-          }
-        }
-      },
-      "stop-places": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT CASE WHEN sqrt(((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))) * ((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))) + ((median(lat) - 39.9087) * 110574) * ((median(lat) - 39.9087) * 110574)) < 750 THEN 'Tiananmen'\n            ELSE printf('%.1f km %s', sqrt(((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))) * ((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))) + ((median(lat) - 39.9087) * 110574) * ((median(lat) - 39.9087) * 110574)) / 1000,\n                        ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][floor(((degrees(atan2(((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))), ((median(lat) - 39.9087) * 110574))) + 382.5) % 360) / 45)::INTEGER + 1]) END AS \"Where, from Tiananmen\",\n       count(*) AS \"Stops\", count(DISTINCT uid) AS \"People\",\n       count(*) FILTER (kind = 'pause') AS \"Pauses\",\n       round(median(minutes)) AS \"Median minutes\",\n       round(median(lat), 4) AS \"Lat\", round(median(lon), 4) AS \"Lon\"\nFROM $stops WHERE $mode IN ('all', mode)\nGROUP BY cell\nORDER BY count(DISTINCT uid) DESC, count(*) DESC\nLIMIT 25"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "H3 cells of resolution 8 (about 0.7 km²) with the most stops, of the most people. Tsinghua, Peking University and Microsoft Research Asia, in Zhongguancun, are where most of the users worked and studied.",
-          "id": 13,
-          "links": [],
-          "title": "Where they stop most · ${mode:text}",
-          "vizConfig": {
-            "group": "table",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "custom": {
-                    "align": "auto",
-                    "cellOptions": {
-                      "type": "auto"
-                    },
-                    "footer": {
-                      "reducers": []
-                    },
-                    "inspect": false,
-                    "minWidth": 40
-                  },
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      }
-                    ]
-                  }
-                },
-                "overrides": []
-              },
-              "options": {
-                "cellHeight": "sm",
-                "showHeader": true
-              }
-            },
-            "version": "13.2.1"
           }
         }
       },
@@ -1282,6 +909,7 @@
           "id": 14,
           "links": [],
           "title": "",
+          "transparent": true,
           "vizConfig": {
             "group": "text",
             "kind": "VizConfig",
@@ -1296,13 +924,12 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### 3 · Results — generalized flows\nMillions of fixes are unreadable as lines; Anita Graser [showed in 2016](https://anitagraser.com/2016/11/07/movement-data-in-gis-3-visualizing-massive-trajectory-datasets/) how [Andrienko & Andrienko's generalization](https://doi.org/10.1109/TVCG.2010.44) turns GeoLife into a map of flows. Here it runs live in DuckDB: the points where trips **start, end, stop or turn** are grouped on a grid of the **place size** picked above, each group's centroid becomes a place, and every move of a trip from one place to the next adds to a link. Links fewer trips than the **fewest trips** picked are left out. Bigger places, fewer and stronger links; arrows show the direction, and the circles each place's total.",
+                "content": "### 3 · Results — generalized flows\nMillions of fixes are unreadable as lines; Anita Graser [showed in 2016](https://anitagraser.com/2016/11/07/movement-data-in-gis-3-visualizing-massive-trajectory-datasets/) how [Andrienko \u0026 Andrienko's generalization](https://doi.org/10.1109/TVCG.2010.44) turns GeoLife into a map of flows. Here it runs live in DuckDB: the points where trips **start, end, stop or turn** are grouped on a grid of the **place size** picked above, each group's centroid becomes a place, and every move of a trip from one place to the next adds to a link. Links fewer trips than the **fewest trips** picked are left out. Bigger places, fewer and stronger links; arrows show the direction, and the circles each place's total.",
                 "mode": "markdown"
               }
             },
             "version": "13.2.1"
-          },
-          "transparent": true
+          }
         }
       },
       "flows-map": {
@@ -1344,16 +971,33 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
                 "alerts": {},
                 "basemap": "dark-matter",
                 "clickArea": false,
+                "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
+                "flowRenderMode": "straight",
                 "followGrafanaTheme": false,
                 "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
                 "hoverSync": false,
                 "mapConfig": {
                   "config": {
@@ -1467,13 +1111,17 @@
                 "peerTimeSync": false,
                 "places": {},
                 "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table",
                 "variableMappings": []
               }
             },
-            "version": "0.1.0"
+            "version": "1.0.0"
           }
         }
       },
@@ -1522,6 +1170,19 @@
                     "mode": "fixed"
                   },
                   "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "locale"
                 },
                 "overrides": []
@@ -1624,45 +1285,7 @@
           }
         }
       },
-      "trip-intro": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "",
-          "id": 18,
-          "links": [],
-          "title": "",
-          "vizConfig": {
-            "group": "text",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
-              },
-              "options": {
-                "code": {
-                  "language": "plaintext",
-                  "showLineNumbers": false,
-                  "showMiniMap": false
-                },
-                "content": "### 4 · One trip up close\nPick **a person** — those who labelled how they travelled come first — and then **a trip**: the map flies to it, each fix coloured by its smoothed speed, the outliers removed in cleaning as **red rings**, the stops as **white circles**. Below, its speed along the way, coloured by the mode its user labelled.",
-                "mode": "markdown"
-              }
-            },
-            "version": "13.2.1"
-          },
-          "transparent": true
-        }
-      },
-      "trip-people": {
+      "speed-hours": {
         "kind": "Panel",
         "spec": {
           "data": {
@@ -1680,7 +1303,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH p AS (\n  SELECT uid, count(*) AS trips, count(*) FILTER (mode <> '') AS labelled, sum(km) AS km,\n         min(t0) AS t0, max(t1) AS t1,\n         coalesce(arg_max(trip, km) FILTER (beijing AND mode <> ''), arg_max(trip, km)) AS show\n  FROM $trips GROUP BY uid\n)\nSELECT lpad(p.uid::INTEGER::VARCHAR, 3, '0') AS \"Person\", p.labelled AS \"Labelled\", p.trips AS \"Trips\",\n       round(p.km) AS \"Km\", strftime(p.t0, '%Y') || '–' || strftime(p.t1, '%y') AS \"Years\",\n       p.uid, p.show AS trip_id, round((t.lat0 + t.lat1) / 2, 4) AS lat, round((t.lon0 + t.lon1) / 2, 4) AS lng\nFROM p JOIN $trips t ON t.trip = p.show\nORDER BY (p.uid = try_cast($user AS INTEGER)) DESC, p.labelled DESC, p.trips DESC"
+                        "rawSql": "SELECT mode, hour(t0 + INTERVAL 8 HOUR) AS hour, count(*) AS trips FROM $trips WHERE beijing GROUP BY ALL"
                       },
                       "version": "v0"
                     },
@@ -1692,10 +1315,470 @@
               "transformations": []
             }
           },
-          "description": "One row per person, most labelled trips first. Click a person to see their trips, opening the longest labelled one in Beijing.",
-          "id": 19,
+          "description": "Trips starting at each hour of the day, Beijing time, as a share of each mode’s trips. Commuting peaks at 8 and 18; the subway and cars carry the morning.",
+          "id": 11,
           "links": [],
-          "title": "People",
+          "title": "When they travel",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const MODES = [\n  { mode: 'walk', name: 'Walking', color: '#73BF69' },\n  { mode: 'bike', name: 'Cycling', color: '#FADE2A' },\n  { mode: 'bus', name: 'Bus', color: '#FF9830' },\n  { mode: 'car', name: 'Car and taxi', color: '#F2495C' },\n  { mode: 'subway', name: 'Subway', color: '#5794F2' },\n  { mode: 'train', name: 'Train', color: '#B877D9' },\n  { mode: 'other', name: 'Plane, boat, motorbike', color: '#8AB8FF' },\n  { mode: '', name: 'Not labelled', color: '#8E8E8E' },\n];\n\n// Trips by the hour they start, Beijing time, each mode as a share of its own\n// trips so that walking and the train read on one scale.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst modes = column('mode');\nconst hours = column('hour').map(Number);\nconst trips = column('trips').map(Number);\nconst HOURS = Array.from({ length: 24 }, (_, h) =\u003e String(h).padStart(2, '0'));\n\nconst series = MODES.filter((m) =\u003e m.mode !== 'other').map((m) =\u003e {\n  const raw = new Array(24).fill(0);\n  modes.forEach((mode, i) =\u003e { if (mode === m.mode) raw[hours[i]] += trips[i]; });\n  const total = raw.reduce((a, b) =\u003e a + b, 0);\n  return { name: m.name, type: 'line', smooth: true, showSymbol: false, itemStyle: { color: m.color },\n           lineStyle: { width: m.mode === '' ? 1.5 : 2, type: m.mode === '' ? 'dashed' : 'solid' },\n           data: total ? raw.map((v) =\u003e (100 * v) / total) : [] };\n}).filter((s) =\u003e s.data.length \u003e 0);\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12, type: 'scroll' },\n  tooltip: { trigger: 'axis', valueFormatter: (v) =\u003e v.toFixed(1) + ' %' },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'category', data: HOURS, boundaryGap: false, axisLabel: { color: muted } },\n  yAxis: { type: 'value', axisLabel: { color: muted, formatter: '{value} %' }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series,\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "speed-intro": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 7,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### 2 · Analysis — how fast, and where they stop\nEvery 15 seconds of every trip in Beijing, a speed: the distance over five fixes, two either side, over their time, so one jittery fix does not make a sprint. **Left**, the median speed in each H3 cell: ring roads and expressways light up, the old town stays dark. **Right**, every stop: five minutes within 100 m, or the GPS silent between two trips that end and start in the same place. Pick a **mode** above to see one way of travelling; the charts compare them all.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "speed-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The median speed in each cell, for the mode picked; a cell's colour stops at\n-- 80 km/h, faster is the same yellow.\nSELECT hex, least(kmh, 80) AS kmh, kmh AS \"median km/h\", trips, fixes\nFROM $speed WHERE mode = $mode"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Median speed of the fixes in each H3 cell (resolution 9, about 0.1 km²), where at least three trips passed. From dark (standing, walking) to yellow (80 km/h and over).",
+          "id": 8,
+          "links": [],
+          "title": "How fast · ${mode:text}",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": 39.93,
+                      "longitude": 116.38,
+                      "pitch": 0,
+                      "zoom": 10.2
+                    },
+                    "mapStyle": {
+                      "styleType": "dark-matter"
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": true
+                        }
+                      }
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {
+                              "grafana-A": [
+                                {
+                                  "name": "median km/h"
+                                },
+                                {
+                                  "name": "trips"
+                                },
+                                {
+                                  "name": "fixes"
+                                }
+                              ]
+                            }
+                          },
+                          "enabled": true
+                        }
+                      },
+                      "layerOrder": [
+                        "speed"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              203,
+                              153
+                            ],
+                            "columns": {
+                              "hex_id": "hex"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Median speed, km/h",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#0d0887",
+                                  "#5302a3",
+                                  "#8b0aa5",
+                                  "#b83289",
+                                  "#db5c68",
+                                  "#f48849",
+                                  "#febd2a",
+                                  "#f0f921"
+                                ],
+                                "name": "Speed",
+                                "type": "sequential"
+                              },
+                              "coverage": 0.95,
+                              "enable3d": false,
+                              "opacity": 0.85
+                            }
+                          },
+                          "id": "speed",
+                          "type": "hexagonId",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "kmh",
+                              "type": "real"
+                            },
+                            "colorScale": "quantize"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.0.0"
+          }
+        }
+      },
+      "speed-modes": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT mode, kmh, fixes FROM $speeds ORDER BY mode, kmh"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Share of each mode’s fixes at each speed, in 2 km/h bins. Walking peaks at 4–5 km/h, cycling near 10; bus, car and subway spread wide because they stop and go.",
+          "id": 10,
+          "links": [],
+          "title": "Speed by mode",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const MODES = [\n  { mode: 'walk', name: 'Walking', color: '#73BF69' },\n  { mode: 'bike', name: 'Cycling', color: '#FADE2A' },\n  { mode: 'bus', name: 'Bus', color: '#FF9830' },\n  { mode: 'car', name: 'Car and taxi', color: '#F2495C' },\n  { mode: 'subway', name: 'Subway', color: '#5794F2' },\n  { mode: 'train', name: 'Train', color: '#B877D9' },\n  { mode: 'other', name: 'Plane, boat, motorbike', color: '#8AB8FF' },\n  { mode: '', name: 'Not labelled', color: '#8E8E8E' },\n];\n\n// One line per labelled mode: the share of its fixes in each 2 km/h bin, up\n// to 120 km/h; unlabelled fixes left out.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst modes = column('mode');\nconst kmh = column('kmh').map(Number);\nconst fixes = column('fixes').map(Number);\n\nconst series = MODES.filter((m) =\u003e m.mode !== '' \u0026\u0026 m.mode !== 'other').map((m) =\u003e {\n  const rows = kmh.flatMap((k, i) =\u003e (modes[i] === m.mode ? [[k, fixes[i]]] : []));\n  const total = rows.reduce((a, r) =\u003e a + r[1], 0) || 1;\n  return {\n    name: m.name, type: 'line', smooth: true, showSymbol: false, itemStyle: { color: m.color }, lineStyle: { width: 2 },\n    data: rows.filter((r) =\u003e r[0] \u003c= 120).map((r) =\u003e [r[0] + 1, (100 * r[1]) / total]),\n  };\n}).filter((s) =\u003e s.data.length \u003e 0);\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12, type: 'scroll' },\n  tooltip: { trigger: 'axis', valueFormatter: (v) =\u003e v.toFixed(1) + ' %' },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'value', min: 0, max: 120, name: 'km/h', nameLocation: 'end', nameTextStyle: { color: muted },\n           axisLabel: { color: muted }, splitLine: { show: false } },\n  yAxis: { type: 'value', axisLabel: { color: muted, formatter: '{value} %' }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series,\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "stop-lengths": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT kind, least(floor(log2(minutes / 5)), 7)::INTEGER AS bin, count(*) AS stops\nFROM $stops WHERE $mode IN ('all', mode) GROUP BY ALL ORDER BY bin"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Stops by how long they lasted, on a doubling scale. Dwells inside a trip are mostly short: traffic lights, bus stops, a shop. Pauses between trips are longer: lunch, a meeting, a night.",
+          "id": 12,
+          "links": [],
+          "title": "How long they stop · ${mode:text}",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Stops by duration, in doubling bins from five minutes, dwell and pause side\n// by side.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst LABELS = ['5–10 min', '10–20', '20–40', '40–80', '80–160', '2.7–5.3 h', '5.3–10.7 h', '\u003e 10.7 h'];\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst kinds = column('kind');\nconst bins = column('bin').map(Number);\nconst stops = column('stops').map(Number);\nconst of = (kind) =\u003e LABELS.map((_, b) =\u003e kinds.reduce((a, k, i) =\u003e a + (k === kind \u0026\u0026 bins[i] === b ? stops[i] : 0), 0));\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12 },\n  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'category', data: LABELS, axisLabel: { color: muted, interval: 0, rotate: 30 } },\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series: [\n    { name: 'Dwell, inside a trip', type: 'bar', data: of('dwell'), itemStyle: { color: '#4cc9f0' } },\n    { name: 'Pause, between trips', type: 'bar', data: of('pause'), itemStyle: { color: '#f72585' } },\n  ],\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "stop-places": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT CASE WHEN sqrt(((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))) * ((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))) + ((median(lat) - 39.9087) * 110574) * ((median(lat) - 39.9087) * 110574)) \u003c 750 THEN 'Tiananmen'\n            ELSE printf('%.1f km %s', sqrt(((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))) * ((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))) + ((median(lat) - 39.9087) * 110574) * ((median(lat) - 39.9087) * 110574)) / 1000,\n                        ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][floor(((degrees(atan2(((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))), ((median(lat) - 39.9087) * 110574))) + 382.5) % 360) / 45)::INTEGER + 1]) END AS \"Where, from Tiananmen\",\n       count(*) AS \"Stops\", count(DISTINCT uid) AS \"People\",\n       count(*) FILTER (kind = 'pause') AS \"Pauses\",\n       round(median(minutes)) AS \"Median minutes\",\n       round(median(lat), 4) AS \"Lat\", round(median(lon), 4) AS \"Lon\"\nFROM $stops WHERE $mode IN ('all', mode)\nGROUP BY cell\nORDER BY count(DISTINCT uid) DESC, count(*) DESC\nLIMIT 25"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "H3 cells of resolution 8 (about 0.7 km²) with the most stops, of the most people. Tsinghua, Peking University and Microsoft Research Asia, in Zhongguancun, are where most of the users worked and studied.",
+          "id": 13,
+          "links": [],
+          "title": "Where they stop most · ${mode:text}",
           "vizConfig": {
             "group": "table",
             "kind": "VizConfig",
@@ -1723,77 +1806,254 @@
                     ]
                   }
                 },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Person"
-                    },
-                    "properties": [
-                      {
-                        "id": "links",
-                        "value": [
-                          {
-                            "title": "Show this person’s trips",
-                            "url": "/d/geolife-mobility${__url.params:exclude:var-user,var-trip,var-tlat,var-tlng}&var-user=${__data.fields.uid}&var-trip=${__data.fields.trip_id}&var-tlat=${__data.fields.lat}&var-tlng=${__data.fields.lng}"
-                          }
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "uid"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.hideFrom.viz",
-                        "value": true
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "trip_id"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.hideFrom.viz",
-                        "value": true
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "lat"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.hideFrom.viz",
-                        "value": true
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "lng"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.hideFrom.viz",
-                        "value": true
-                      }
-                    ]
-                  }
-                ]
+                "overrides": []
               },
               "options": {
                 "cellHeight": "sm",
                 "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "stops-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every stop of the mode picked (a pause belongs to the trip it ends).\nSELECT lat AS latitude, lon AS longitude, minutes, kind, uid AS person, strftime(t0 + INTERVAL 8 HOUR, '%Y-%m-%d %H:%M') AS \"from (Beijing time)\",\n       CASE WHEN mode = '' THEN 'not labelled' ELSE mode END AS mode\nFROM $stops WHERE $mode IN ('all', mode)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each dot a stop, coloured by how long it lasted (quantiles). Dwell: five minutes within 100 m inside a trip. Pause: the GPS went silent (often indoors) and the next trip started within 200 m, up to 12 hours later.",
+          "id": 9,
+          "links": [],
+          "title": "Where they stop · ${mode:text}",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": 39.93,
+                      "longitude": 116.38,
+                      "pitch": 0,
+                      "zoom": 10.2
+                    },
+                    "mapStyle": {
+                      "styleType": "dark-matter"
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": true
+                        }
+                      }
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {
+                              "grafana-A": [
+                                {
+                                  "name": "kind"
+                                },
+                                {
+                                  "name": "minutes"
+                                },
+                                {
+                                  "name": "person"
+                                },
+                                {
+                                  "name": "from (Beijing time)"
+                                },
+                                {
+                                  "name": "mode"
+                                }
+                              ]
+                            }
+                          },
+                          "enabled": true
+                        }
+                      },
+                      "layerOrder": [
+                        "stops"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Stops, minutes",
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#1f3b73",
+                                  "#2f6db3",
+                                  "#4cc9f0",
+                                  "#80ed99",
+                                  "#ffb703",
+                                  "#f72585"
+                                ],
+                                "name": "Stops, minutes",
+                                "type": "sequential"
+                              },
+                              "filled": true,
+                              "opacity": 0.7,
+                              "outline": false,
+                              "radius": 3,
+                              "radiusRange": [
+                                0,
+                                50
+                              ]
+                            }
+                          },
+                          "id": "stops",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "minutes",
+                              "type": "real"
+                            },
+                            "colorScale": "quantile",
+                            "sizeScale": "sqrt"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.0.0"
+          }
+        }
+      },
+      "trip-intro": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 18,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### 4 · One trip up close\nPick **a person** — those who labelled how they travelled come first — and then **a trip**: the map flies to it, each fix coloured by its smoothed speed, the outliers removed in cleaning as **red rings**, the stops as **white circles**. Below, its speed along the way, coloured by the mode its user labelled.",
+                "mode": "markdown"
               }
             },
             "version": "13.2.1"
@@ -1818,7 +2078,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT CASE WHEN trip = try_cast($trip AS INTEGER) THEN '▶ ' ELSE '' END\n       || strftime(t0 + INTERVAL 8 HOUR, '%Y-%m-%d %H:%M') AS \"Start\",\n       CASE WHEN mode = '' THEN '–' ELSE mode END AS \"Mode\",\n       km AS \"Km\", minutes AS \"Min\", avg_kmh AS \"Avg km/h\",\n       trip AS trip_id, round((lat0 + lat1) / 2, 4) AS lat, round((lon0 + lon1) / 2, 4) AS lng\nFROM $trips WHERE uid = try_cast($user AS INTEGER)\nORDER BY trip = try_cast($trip AS INTEGER) DESC, mode <> '' DESC, t0 DESC"
+                        "rawSql": "SELECT CASE WHEN trip = try_cast($trip AS INTEGER) THEN '▶ ' ELSE '' END\n       || strftime(t0 + INTERVAL 8 HOUR, '%Y-%m-%d %H:%M') AS \"Start\",\n       CASE WHEN mode = '' THEN '–' ELSE mode END AS \"Mode\",\n       km AS \"Km\", minutes AS \"Min\", avg_kmh AS \"Avg km/h\",\n       trip AS trip_id, round((lat0 + lat1) / 2, 4) AS lat, round((lon0 + lon1) / 2, 4) AS lng\nFROM $trips WHERE uid = try_cast($user AS INTEGER)\nORDER BY trip = try_cast($trip AS INTEGER) DESC, mode \u003c\u003e '' DESC, t0 DESC"
                       },
                       "version": "v0"
                     },
@@ -1873,7 +2133,7 @@
                         "value": [
                           {
                             "title": "Follow this trip",
-                            "url": "/d/geolife-mobility${__url.params:exclude:var-trip,var-tlat,var-tlng}&var-trip=${__data.fields.trip_id}&var-tlat=${__data.fields.lat}&var-tlng=${__data.fields.lng}"
+                            "url": "/d/geolife-mobility${__url.params:exclude:var-trip,var-tlat,var-tlng}\u0026var-trip=${__data.fields.trip_id}\u0026var-tlat=${__data.fields.lat}\u0026var-tlng=${__data.fields.lng}"
                           }
                         ]
                       }
@@ -1932,81 +2192,6 @@
               "options": {
                 "cellHeight": "sm",
                 "showHeader": true
-              }
-            },
-            "version": "13.2.1"
-          }
-        }
-      },
-      "trip-stats": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT round(max(km), 1) AS \"Km\", max(minutes) AS \"Minutes\", max(avg_kmh) AS \"Avg km/h\", max(p95_kmh) AS \"95th pct km/h\",\n       max(fixes) AS \"Fixes\",\n       (SELECT count(*) FROM $trip_fixes WHERE flag = 'spike') AS \"Outliers removed\",\n       (SELECT count(*) FROM $stops WHERE trip = try_cast($trip AS INTEGER)) AS \"Stops\"\nFROM $trips WHERE trip = try_cast($trip AS INTEGER)"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "Km adds up the straight lines between kept fixes. Stops counts the dwells inside the trip and the pause that ends it, if it is in Beijing.",
-          "id": 21,
-          "links": [],
-          "title": "",
-          "vizConfig": {
-            "group": "stat",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "fixedColor": "text",
-                    "mode": "fixed"
-                  },
-                  "noValue": "–",
-                  "unit": "locale"
-                },
-                "overrides": []
-              },
-              "options": {
-                "colorMode": "value",
-                "graphMode": "none",
-                "justifyMode": "center",
-                "orientation": "vertical",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "text": {
-                  "titleSize": 12,
-                  "valueSize": 21
-                },
-                "textMode": "value_and_name",
-                "wideLayout": true
               }
             },
             "version": "13.2.1"
@@ -2188,25 +2373,17 @@
                               255,
                               255
                             ],
+                            "columnMode": "points",
                             "columns": {
                               "lat": "latitude",
                               "lng": "longitude"
                             },
-                            "columnMode": "points",
                             "dataId": "grafana-A",
                             "hidden": false,
                             "isVisible": true,
                             "label": "Speed, km/h",
                             "visConfig": {
                               "allowHover": true,
-                              "filled": true,
-                              "opacity": 0.9,
-                              "outline": false,
-                              "radius": 4,
-                              "radiusRange": [
-                                0,
-                                50
-                              ],
                               "colorRange": {
                                 "category": "Custom",
                                 "colors": [
@@ -2219,7 +2396,15 @@
                                 ],
                                 "name": "Speed, km/h",
                                 "type": "sequential"
-                              }
+                              },
+                              "filled": true,
+                              "opacity": 0.9,
+                              "outline": false,
+                              "radius": 4,
+                              "radiusRange": [
+                                0,
+                                50
+                              ]
                             }
                           },
                           "id": "fixes",
@@ -2230,7 +2415,6 @@
                               "type": "real"
                             },
                             "colorScale": "quantize",
-                            "sizeField": null,
                             "sizeScale": "sqrt"
                           }
                         },
@@ -2241,11 +2425,11 @@
                               0,
                               0
                             ],
+                            "columnMode": "points",
                             "columns": {
                               "lat": "latitude",
                               "lng": "longitude"
                             },
-                            "columnMode": "points",
                             "dataId": "grafana-B",
                             "hidden": false,
                             "isVisible": true,
@@ -2260,20 +2444,18 @@
                                 0,
                                 50
                               ],
-                              "thickness": 2,
                               "strokeColor": [
                                 255,
                                 0,
                                 0
-                              ]
+                              ],
+                              "thickness": 2
                             }
                           },
                           "id": "removed",
                           "type": "point",
                           "visualChannels": {
-                            "colorField": null,
                             "colorScale": "quantize",
-                            "sizeField": null,
                             "sizeScale": "sqrt"
                           }
                         },
@@ -2284,11 +2466,11 @@
                               255,
                               255
                             ],
+                            "columnMode": "points",
                             "columns": {
                               "lat": "latitude",
                               "lng": "longitude"
                             },
-                            "columnMode": "points",
                             "dataId": "grafana-C",
                             "hidden": false,
                             "isVisible": true,
@@ -2308,9 +2490,7 @@
                           "id": "stops",
                           "type": "point",
                           "visualChannels": {
-                            "colorField": null,
                             "colorScale": "quantize",
-                            "sizeField": null,
                             "sizeScale": "sqrt"
                           }
                         }
@@ -2337,6 +2517,144 @@
               }
             },
             "version": "0.1.0"
+          }
+        }
+      },
+      "trip-people": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH p AS (\n  SELECT uid, count(*) AS trips, count(*) FILTER (mode \u003c\u003e '') AS labelled, sum(km) AS km,\n         min(t0) AS t0, max(t1) AS t1,\n         coalesce(arg_max(trip, km) FILTER (beijing AND mode \u003c\u003e ''), arg_max(trip, km)) AS show\n  FROM $trips GROUP BY uid\n)\nSELECT lpad(p.uid::INTEGER::VARCHAR, 3, '0') AS \"Person\", p.labelled AS \"Labelled\", p.trips AS \"Trips\",\n       round(p.km) AS \"Km\", strftime(p.t0, '%Y') || '–' || strftime(p.t1, '%y') AS \"Years\",\n       p.uid, p.show AS trip_id, round((t.lat0 + t.lat1) / 2, 4) AS lat, round((t.lon0 + t.lon1) / 2, 4) AS lng\nFROM p JOIN $trips t ON t.trip = p.show\nORDER BY (p.uid = try_cast($user AS INTEGER)) DESC, p.labelled DESC, p.trips DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "One row per person, most labelled trips first. Click a person to see their trips, opening the longest labelled one in Beijing.",
+          "id": 19,
+          "links": [],
+          "title": "People",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false,
+                    "minWidth": 40
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Person"
+                    },
+                    "properties": [
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Show this person’s trips",
+                            "url": "/d/geolife-mobility${__url.params:exclude:var-user,var-trip,var-tlat,var-tlng}\u0026var-user=${__data.fields.uid}\u0026var-trip=${__data.fields.trip_id}\u0026var-tlat=${__data.fields.lat}\u0026var-tlng=${__data.fields.lng}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "uid"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "trip_id"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "lat"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "lng"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
           }
         }
       },
@@ -2413,6 +2731,7 @@
                   "key": "",
                   "plugin": "AMap.Scale,AMap.ToolBar"
                 },
+                "getOption": "const MODES = [\n  { mode: 'walk', name: 'Walking', color: '#73BF69' },\n  { mode: 'bike', name: 'Cycling', color: '#FADE2A' },\n  { mode: 'bus', name: 'Bus', color: '#FF9830' },\n  { mode: 'car', name: 'Car and taxi', color: '#F2495C' },\n  { mode: 'subway', name: 'Subway', color: '#5794F2' },\n  { mode: 'train', name: 'Train', color: '#B877D9' },\n  { mode: 'other', name: 'Plane, boat, motorbike', color: '#8AB8FF' },\n  { mode: '', name: 'Not labelled', color: '#8E8E8E' },\n];\n\n// The trip's speed over time, one series per mode so the line takes the\n// mode's colour where the user labelled it; stops as shaded spans.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst series0 = context.panel.data.series[0];\nconst series1 = context.panel.data.series[1];\nconst column = (frame, name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst times = column(series0, 'time').map(Number);\nconst kmh = column(series0, 'kmh').map(Number);\nconst modes = column(series0, 'mode');\nconst stopsFrom = column(series1, 't0').map(Number);\nconst stopsMin = column(series1, 'minutes').map(Number);\nconst BEIJING = 8 * 3600 * 1000;\n\nconst series = MODES.map((m) =\u003e ({\n  name: m.name, type: 'line', showSymbol: false, connectNulls: false, itemStyle: { color: m.color }, lineStyle: { width: 1.5 },\n  // A point either side of a change of mode, so the line has no gaps.\n  data: times.map((t, i) =\u003e [t + BEIJING,\n    modes[i] === m.mode || modes[i - 1] === m.mode ? kmh[i] : null]),\n})).filter((s) =\u003e s.data.some((d) =\u003e d[1] !== null));\nif (series.length) {\n  series[0].markArea = {\n    silent: true, itemStyle: { color: 'rgba(255, 255, 255, 0.08)' },\n    data: stopsFrom.map((t, i) =\u003e [{ xAxis: t + BEIJING }, { xAxis: t + BEIJING + stopsMin[i] * 60000 }]),\n  };\n}\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12 },\n  tooltip: { trigger: 'axis', valueFormatter: (v) =\u003e (v === null || v === undefined ? '–' : v.toFixed(1) + ' km/h') },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'time', axisLabel: { color: muted, formatter: '{HH}:{mm}' } },\n  yAxis: { type: 'value', name: 'km/h', nameTextStyle: { color: muted }, axisLabel: { color: muted },\n           splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series,\n};\n",
                 "google": {
                   "callback": "gmapReady",
                   "key": ""
@@ -2427,50 +2746,86 @@
                   "code": "",
                   "dataset": [],
                   "series": []
-                },
-                "getOption": "const MODES = [\n  { mode: 'walk', name: 'Walking', color: '#73BF69' },\n  { mode: 'bike', name: 'Cycling', color: '#FADE2A' },\n  { mode: 'bus', name: 'Bus', color: '#FF9830' },\n  { mode: 'car', name: 'Car and taxi', color: '#F2495C' },\n  { mode: 'subway', name: 'Subway', color: '#5794F2' },\n  { mode: 'train', name: 'Train', color: '#B877D9' },\n  { mode: 'other', name: 'Plane, boat, motorbike', color: '#8AB8FF' },\n  { mode: '', name: 'Not labelled', color: '#8E8E8E' },\n];\n\n// The trip's speed over time, one series per mode so the line takes the\n// mode's colour where the user labelled it; stops as shaded spans.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst series0 = context.panel.data.series[0];\nconst series1 = context.panel.data.series[1];\nconst column = (frame, name) => Array.from(frame?.fields.find((f) => f.name === name)?.values ?? []);\nconst times = column(series0, 'time').map(Number);\nconst kmh = column(series0, 'kmh').map(Number);\nconst modes = column(series0, 'mode');\nconst stopsFrom = column(series1, 't0').map(Number);\nconst stopsMin = column(series1, 'minutes').map(Number);\nconst BEIJING = 8 * 3600 * 1000;\n\nconst series = MODES.map((m) => ({\n  name: m.name, type: 'line', showSymbol: false, connectNulls: false, itemStyle: { color: m.color }, lineStyle: { width: 1.5 },\n  // A point either side of a change of mode, so the line has no gaps.\n  data: times.map((t, i) => [t + BEIJING,\n    modes[i] === m.mode || modes[i - 1] === m.mode ? kmh[i] : null]),\n})).filter((s) => s.data.some((d) => d[1] !== null));\nif (series.length) {\n  series[0].markArea = {\n    silent: true, itemStyle: { color: 'rgba(255, 255, 255, 0.08)' },\n    data: stopsFrom.map((t, i) => [{ xAxis: t + BEIJING }, { xAxis: t + BEIJING + stopsMin[i] * 60000 }]),\n  };\n}\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12 },\n  tooltip: { trigger: 'axis', valueFormatter: (v) => (v === null || v === undefined ? '–' : v.toFixed(1) + ' km/h') },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'time', axisLabel: { color: muted, formatter: '{HH}:{mm}' } },\n  yAxis: { type: 'value', name: 'km/h', nameTextStyle: { color: muted }, axisLabel: { color: muted },\n           splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series,\n};\n"
+                }
               }
             },
             "version": "7.2.5"
           }
         }
       },
-      "about": {
+      "trip-stats": {
         "kind": "Panel",
         "spec": {
           "data": {
             "kind": "QueryGroup",
             "spec": {
-              "queries": [],
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT round(max(km), 1) AS \"Km\", max(minutes) AS \"Minutes\", max(avg_kmh) AS \"Avg km/h\", max(p95_kmh) AS \"95th pct km/h\",\n       max(fixes) AS \"Fixes\",\n       (SELECT count(*) FROM $trip_fixes WHERE flag = 'spike') AS \"Outliers removed\",\n       (SELECT count(*) FROM $stops WHERE trip = try_cast($trip AS INTEGER)) AS \"Stops\"\nFROM $trips WHERE trip = try_cast($trip AS INTEGER)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
               "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "",
-          "id": 24,
+          "description": "Km adds up the straight lines between kept fixes. Stops counts the dwells inside the trip and the pause that ends it, if it is in Beijing.",
+          "id": 21,
           "links": [],
           "title": "",
           "vizConfig": {
-            "group": "text",
+            "group": "stat",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "noValue": "–",
+                  "unit": "locale"
+                },
                 "overrides": []
               },
               "options": {
-                "code": {
-                  "language": "plaintext",
-                  "showLineNumbers": false,
-                  "showMiniMap": false
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "vertical",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
                 },
-                "content": "### About the data and the method\n**Data.** [GeoLife GPS Trajectories 1.3](https://www.microsoft.com/en-us/download/details.aspx?id=52367), Microsoft Research Asia: 182 users, April 2007 to August 2012, 24.9 million fixes, mostly in Beijing; 69 users labelled spans of their trips with how they travelled. Released for **non-commercial research** under the Microsoft Research License Agreement. Please cite: Yu Zheng, Lizhu Zhang, Xing Xie, Wei-Ying Ma. *Mining interesting locations and travel sequences from GPS trajectories*, WWW 2009; Yu Zheng, Quannan Li, Yukun Chen, Xing Xie, Wei-Ying Ma. *Understanding Mobility Based on GPS Data*, UbiComp 2008; Yu Zheng, Xing Xie, Wei-Ying Ma. *GeoLife: A Collaborative Social Networking Service among User, location and trajectory*, IEEE Data Engineering Bulletin 2010.\n\n**Where it lives.** The dataset is not in git and not served to browsers. `datasets/geolife/build.sh` downloads it once per instance and runs `build.sql` with DuckDB 1.5.4 (about three minutes); the gateway serves the resulting Parquet to Grafana's DuckDB only, and each tab's figures are computed from it, on the server for the datasets and in the browser (Chaski) for the panels.\n\n**Method.** After Anita Graser's [Movement data in GIS](https://anitagraser.com/movement-data-in-gis/) series:\n- *Reading* — [Wrangling hundreds of GPS files with DuckDB, QGIS & Trajectools](https://anitagraser.com/2025/10/12/geolife-gps-track-collection-processing-with-duckdb-qgis-trajectools/) (2025): all the `.plt` files in one DuckDB `read_csv`, the folder as the user, the file as the trajectory.\n- *Cleaning* — [Trajectools tutorial: trajectory preprocessing](https://anitagraser.com/2024/09/21/trajectools-tutorial-trajectory-preprocessing/) (2024): one fix per user and second; trips split at 5-minute gaps and at jumps over 300 km/h for over 500 m; a fix that jumps away and back at over 100 km/h removed; trips under 10 fixes, a minute or 100 m dropped. Speed over five fixes. Times are UTC in the data; Beijing time is UTC+8.\n- *Stops* — after MovingPandas' stop detection ([2021](https://anitagraser.com/2021/03/28/movement-data-in-gis-35-stop-detection-analysis-with-movingpandas/)): five minutes within 100 m; plus pauses, where the GPS went silent and the next trip starts within 200 m.\n- *Flows* — [Visualizing massive trajectory datasets](https://anitagraser.com/2016/11/07/movement-data-in-gis-3-visualizing-massive-trajectory-datasets/) (2016), after G. Andrienko & N. Andrienko, *Spatial generalization and aggregation of massive movement data*, IEEE TVCG 17(2), 2011. Places from the characteristic points grouped on a square grid (no Voronoi step, as in Anita's version), moves counted between consecutive places.\n\n**Limits.** These are the people of one lab in one city, a decade and a half ago, logging when they chose to: the map shows where *they* went, not how Beijing moves. Labelled modes cover 17 % of trips. A mode in *Speed by mode* and on the maps is the label of the fix; on a trip, the label most of its fixes carry.",
-                "mode": "markdown"
+                "showPercentChange": false,
+                "text": {
+                  "titleSize": 12,
+                  "valueSize": 21
+                },
+                "textMode": "value_and_name",
+                "wideLayout": true
               }
             },
             "version": "13.2.1"
-          },
-          "transparent": true
+          }
         }
       }
     },
@@ -2481,7 +2836,6 @@
           {
             "kind": "TabsLayoutTab",
             "spec": {
-              "title": "1 · Cleaning",
               "layout": {
                 "kind": "RowsLayout",
                 "spec": {
@@ -2491,7 +2845,6 @@
                       "spec": {
                         "collapse": false,
                         "hideHeader": true,
-                        "title": "",
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
@@ -2503,10 +2856,10 @@
                                     "kind": "ElementReference",
                                     "name": "clean-intro"
                                   },
-                                  "x": 0,
-                                  "y": 0,
+                                  "height": 4,
                                   "width": 24,
-                                  "height": 4
+                                  "x": 0,
+                                  "y": 0
                                 }
                               },
                               {
@@ -2516,10 +2869,10 @@
                                     "kind": "ElementReference",
                                     "name": "clean-stats"
                                   },
-                                  "x": 0,
-                                  "y": 4,
+                                  "height": 4,
                                   "width": 24,
-                                  "height": 4
+                                  "x": 0,
+                                  "y": 4
                                 }
                               },
                               {
@@ -2529,10 +2882,10 @@
                                     "kind": "ElementReference",
                                     "name": "clean-steps"
                                   },
-                                  "x": 0,
-                                  "y": 8,
+                                  "height": 10,
                                   "width": 12,
-                                  "height": 10
+                                  "x": 0,
+                                  "y": 8
                                 }
                               },
                               {
@@ -2542,10 +2895,10 @@
                                     "kind": "ElementReference",
                                     "name": "clean-sampling"
                                   },
-                                  "x": 12,
-                                  "y": 8,
+                                  "height": 10,
                                   "width": 12,
-                                  "height": 10
+                                  "x": 12,
+                                  "y": 8
                                 }
                               },
                               {
@@ -2555,10 +2908,10 @@
                                     "kind": "ElementReference",
                                     "name": "clean-map"
                                   },
-                                  "x": 0,
-                                  "y": 18,
+                                  "height": 13,
                                   "width": 12,
-                                  "height": 13
+                                  "x": 0,
+                                  "y": 18
                                 }
                               },
                               {
@@ -2568,26 +2921,27 @@
                                     "kind": "ElementReference",
                                     "name": "clean-months"
                                   },
-                                  "x": 12,
-                                  "y": 18,
+                                  "height": 13,
                                   "width": 12,
-                                  "height": 13
+                                  "x": 12,
+                                  "y": 18
                                 }
                               }
                             ]
                           }
-                        }
+                        },
+                        "title": ""
                       }
                     }
                   ]
                 }
-              }
+              },
+              "title": "1 · Cleaning"
             }
           },
           {
             "kind": "TabsLayoutTab",
             "spec": {
-              "title": "2 · Speed & stops",
               "layout": {
                 "kind": "RowsLayout",
                 "spec": {
@@ -2597,7 +2951,6 @@
                       "spec": {
                         "collapse": false,
                         "hideHeader": true,
-                        "title": "",
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
@@ -2609,10 +2962,10 @@
                                     "kind": "ElementReference",
                                     "name": "speed-intro"
                                   },
-                                  "x": 0,
-                                  "y": 0,
+                                  "height": 4,
                                   "width": 24,
-                                  "height": 4
+                                  "x": 0,
+                                  "y": 0
                                 }
                               },
                               {
@@ -2622,10 +2975,10 @@
                                     "kind": "ElementReference",
                                     "name": "speed-map"
                                   },
-                                  "x": 0,
-                                  "y": 4,
+                                  "height": 16,
                                   "width": 12,
-                                  "height": 16
+                                  "x": 0,
+                                  "y": 4
                                 }
                               },
                               {
@@ -2635,10 +2988,10 @@
                                     "kind": "ElementReference",
                                     "name": "stops-map"
                                   },
-                                  "x": 12,
-                                  "y": 4,
+                                  "height": 16,
                                   "width": 12,
-                                  "height": 16
+                                  "x": 12,
+                                  "y": 4
                                 }
                               },
                               {
@@ -2648,10 +3001,10 @@
                                     "kind": "ElementReference",
                                     "name": "speed-modes"
                                   },
-                                  "x": 0,
-                                  "y": 20,
+                                  "height": 10,
                                   "width": 8,
-                                  "height": 10
+                                  "x": 0,
+                                  "y": 20
                                 }
                               },
                               {
@@ -2661,10 +3014,10 @@
                                     "kind": "ElementReference",
                                     "name": "speed-hours"
                                   },
-                                  "x": 8,
-                                  "y": 20,
+                                  "height": 10,
                                   "width": 8,
-                                  "height": 10
+                                  "x": 8,
+                                  "y": 20
                                 }
                               },
                               {
@@ -2674,10 +3027,10 @@
                                     "kind": "ElementReference",
                                     "name": "stop-lengths"
                                   },
-                                  "x": 16,
-                                  "y": 20,
+                                  "height": 10,
                                   "width": 8,
-                                  "height": 10
+                                  "x": 16,
+                                  "y": 20
                                 }
                               },
                               {
@@ -2687,26 +3040,27 @@
                                     "kind": "ElementReference",
                                     "name": "stop-places"
                                   },
-                                  "x": 0,
-                                  "y": 30,
+                                  "height": 9,
                                   "width": 24,
-                                  "height": 9
+                                  "x": 0,
+                                  "y": 30
                                 }
                               }
                             ]
                           }
-                        }
+                        },
+                        "title": ""
                       }
                     }
                   ]
                 }
-              }
+              },
+              "title": "2 · Speed \u0026 stops"
             }
           },
           {
             "kind": "TabsLayoutTab",
             "spec": {
-              "title": "3 · Generalized flows",
               "layout": {
                 "kind": "RowsLayout",
                 "spec": {
@@ -2716,7 +3070,6 @@
                       "spec": {
                         "collapse": false,
                         "hideHeader": true,
-                        "title": "",
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
@@ -2728,10 +3081,10 @@
                                     "kind": "ElementReference",
                                     "name": "flows-intro"
                                   },
-                                  "x": 0,
-                                  "y": 0,
+                                  "height": 4,
                                   "width": 24,
-                                  "height": 4
+                                  "x": 0,
+                                  "y": 0
                                 }
                               },
                               {
@@ -2741,10 +3094,10 @@
                                     "kind": "ElementReference",
                                     "name": "flows-map"
                                   },
-                                  "x": 0,
-                                  "y": 4,
+                                  "height": 22,
                                   "width": 16,
-                                  "height": 22
+                                  "x": 0,
+                                  "y": 4
                                 }
                               },
                               {
@@ -2754,10 +3107,10 @@
                                     "kind": "ElementReference",
                                     "name": "flows-stats"
                                   },
-                                  "x": 16,
-                                  "y": 4,
+                                  "height": 4,
                                   "width": 8,
-                                  "height": 4
+                                  "x": 16,
+                                  "y": 4
                                 }
                               },
                               {
@@ -2767,26 +3120,27 @@
                                     "kind": "ElementReference",
                                     "name": "flows-top"
                                   },
-                                  "x": 16,
-                                  "y": 8,
+                                  "height": 18,
                                   "width": 8,
-                                  "height": 18
+                                  "x": 16,
+                                  "y": 8
                                 }
                               }
                             ]
                           }
-                        }
+                        },
+                        "title": ""
                       }
                     }
                   ]
                 }
-              }
+              },
+              "title": "3 · Generalized flows"
             }
           },
           {
             "kind": "TabsLayoutTab",
             "spec": {
-              "title": "4 · One trip up close",
               "layout": {
                 "kind": "RowsLayout",
                 "spec": {
@@ -2796,7 +3150,6 @@
                       "spec": {
                         "collapse": false,
                         "hideHeader": true,
-                        "title": "",
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
@@ -2808,10 +3161,10 @@
                                     "kind": "ElementReference",
                                     "name": "trip-intro"
                                   },
-                                  "x": 0,
-                                  "y": 0,
+                                  "height": 3,
                                   "width": 24,
-                                  "height": 3
+                                  "x": 0,
+                                  "y": 0
                                 }
                               },
                               {
@@ -2821,10 +3174,10 @@
                                     "kind": "ElementReference",
                                     "name": "trip-people"
                                   },
-                                  "x": 0,
-                                  "y": 3,
+                                  "height": 10,
                                   "width": 8,
-                                  "height": 10
+                                  "x": 0,
+                                  "y": 3
                                 }
                               },
                               {
@@ -2834,10 +3187,10 @@
                                     "kind": "ElementReference",
                                     "name": "trip-stats"
                                   },
-                                  "x": 8,
-                                  "y": 3,
+                                  "height": 3,
                                   "width": 16,
-                                  "height": 3
+                                  "x": 8,
+                                  "y": 3
                                 }
                               },
                               {
@@ -2847,10 +3200,10 @@
                                     "kind": "ElementReference",
                                     "name": "trip-map"
                                   },
-                                  "x": 8,
-                                  "y": 6,
+                                  "height": 15,
                                   "width": 16,
-                                  "height": 15
+                                  "x": 8,
+                                  "y": 6
                                 }
                               },
                               {
@@ -2860,10 +3213,10 @@
                                     "kind": "ElementReference",
                                     "name": "trip-list"
                                   },
-                                  "x": 0,
-                                  "y": 13,
+                                  "height": 15,
                                   "width": 8,
-                                  "height": 15
+                                  "x": 0,
+                                  "y": 13
                                 }
                               },
                               {
@@ -2873,26 +3226,27 @@
                                     "kind": "ElementReference",
                                     "name": "trip-speed"
                                   },
-                                  "x": 8,
-                                  "y": 21,
+                                  "height": 7,
                                   "width": 16,
-                                  "height": 7
+                                  "x": 8,
+                                  "y": 21
                                 }
                               }
                             ]
                           }
-                        }
+                        },
+                        "title": ""
                       }
                     }
                   ]
                 }
-              }
+              },
+              "title": "4 · One trip up close"
             }
           },
           {
             "kind": "TabsLayoutTab",
             "spec": {
-              "title": "About the data",
               "layout": {
                 "kind": "RowsLayout",
                 "spec": {
@@ -2902,7 +3256,6 @@
                       "spec": {
                         "collapse": false,
                         "hideHeader": true,
-                        "title": "",
                         "layout": {
                           "kind": "GridLayout",
                           "spec": {
@@ -2914,20 +3267,22 @@
                                     "kind": "ElementReference",
                                     "name": "about"
                                   },
-                                  "x": 0,
-                                  "y": 0,
+                                  "height": 16,
                                   "width": 24,
-                                  "height": 16
+                                  "x": 0,
+                                  "y": 0
                                 }
                               }
                             ]
                           }
-                        }
+                        },
+                        "title": ""
                       }
                     }
                   ]
                 }
-              }
+              },
+              "title": "About the data"
             }
           }
         ]
@@ -2983,7 +3338,8 @@
           "name": "mode",
           "options": [],
           "query": "All : all,Walking : walk,Cycling : bike,Bus : bus,Car and taxi : car,Subway : subway,Train : train",
-          "skipUrlSync": false
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
         }
       },
       {
@@ -3002,7 +3358,8 @@
           "name": "cell",
           "options": [],
           "query": "500 m : 500,1 km : 1000,2 km : 2000,4 km : 4000",
-          "skipUrlSync": false
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
         }
       },
       {
@@ -3021,7 +3378,8 @@
           "name": "min_trips",
           "options": [],
           "query": "3 : 3,5 : 5,10 : 10,20 : 20,50 : 50,100 : 100",
-          "skipUrlSync": false
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
         }
       },
       {
@@ -3213,7 +3571,7 @@
                   "editorMode": "code",
                   "format": 1,
                   "rawQuery": true,
-                  "rawSql": "-- Beijing in H3 cells of resolution 9 (about 0.1 km2): the median speed of the\n-- fixes in each, every 15 s of every trip, for all of them and for each mode\n-- the users labelled. A cell needs three trips, so one person's walk is not a\n-- street.\nSELECT h3_latlng_to_cell_string(lat, lon, 9) AS hex, coalesce(mode, 'all') AS mode,\n       count(*) AS fixes, count(DISTINCT trip) AS trips, round(median(kmh), 1) AS kmh\nFROM 'http://feeds/datasets/geolife/track.parquet'\nGROUP BY GROUPING SETS ((hex), (hex, mode))\nHAVING count(DISTINCT trip) >= 3 AND coalesce(mode, 'all') <> ''",
+                  "rawSql": "-- Beijing in H3 cells of resolution 9 (about 0.1 km2): the median speed of the\n-- fixes in each, every 15 s of every trip, for all of them and for each mode\n-- the users labelled. A cell needs three trips, so one person's walk is not a\n-- street.\nSELECT h3_latlng_to_cell_string(lat, lon, 9) AS hex, coalesce(mode, 'all') AS mode,\n       count(*) AS fixes, count(DISTINCT trip) AS trips, round(median(kmh), 1) AS kmh\nFROM 'http://feeds/datasets/geolife/track.parquet'\nGROUP BY GROUPING SETS ((hex), (hex, mode))\nHAVING count(DISTINCT trip) \u003e= 3 AND coalesce(mode, 'all') \u003c\u003e ''",
                   "refId": "speed"
                 },
                 "type": "datasource"
@@ -3366,7 +3724,7 @@
                   "editorMode": "code",
                   "format": 1,
                   "rawQuery": true,
-                  "rawSql": "-- Generalized flows, after Andrienko & Andrienko (2011) as Anita Graser built\n-- them for GeoLife in QGIS (2016), live on the place size picked:\n-- 1. characteristic points: where trips start, end, stop or turn over 45 deg;\n-- 2. grouped on a grid of the size picked, each group's centroid a place;\n-- 3. every trip, fix by fix (every 15 s), from place to place: consecutive\n--    fixes in one place are one visit, and a move is two visits in a row;\n-- 4. a link is every move from one place to another, if enough trips made it.\nWITH t AS (\n  SELECT trip, t, lat, lon, x, y, keypoint, floor(x / ${cell:raw})::INTEGER AS gx, floor(y / ${cell:raw})::INTEGER AS gy\n  FROM 'http://feeds/datasets/geolife/track.parquet'\n  WHERE ${mode:sqlstring} IN ('all', mode)\n),\nplaces AS (\n  SELECT gx, gy, avg(lat) AS lat, avg(lon) AS lon, avg(x) AS x, avg(y) AS y, count(*) AS points\n  FROM t WHERE keypoint GROUP BY gx, gy HAVING count(*) >= 3\n),\nseq AS (\n  SELECT trip, gx, gy, lag(gx) OVER w AS px, lag(gy) OVER w AS py\n  FROM t SEMI JOIN places USING (gx, gy)\n  WINDOW w AS (PARTITION BY trip ORDER BY t)\n),\nmoves AS (\n  SELECT px, py, gx, gy, count(*) AS moves, count(DISTINCT trip) AS trips\n  FROM seq WHERE px IS NOT NULL AND (gx <> px OR gy <> py)\n  GROUP BY ALL HAVING count(DISTINCT trip) >= ${min_trips:raw}\n)\nSELECT a.lat AS lat0, a.lon AS lng0, b.lat AS lat1, b.lon AS lng1, m.trips, m.moves,\n       CASE WHEN sqrt(a.x * a.x + a.y * a.y) < 750 THEN 'Tiananmen'\n            ELSE printf('%.1f km %s', sqrt(a.x * a.x + a.y * a.y) / 1000,\n                        ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][floor(((degrees(atan2(a.x, a.y)) + 382.5) % 360) / 45)::INTEGER + 1]) END AS place0,\n       CASE WHEN sqrt(b.x * b.x + b.y * b.y) < 750 THEN 'Tiananmen'\n            ELSE printf('%.1f km %s', sqrt(b.x * b.x + b.y * b.y) / 1000,\n                        ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][floor(((degrees(atan2(b.x, b.y)) + 382.5) % 360) / 45)::INTEGER + 1]) END AS place1,\n       a.points AS points0, b.points AS points1\nFROM moves m\nJOIN places a ON a.gx = m.px AND a.gy = m.py\nJOIN places b ON b.gx = m.gx AND b.gy = m.gy",
+                  "rawSql": "-- Generalized flows, after Andrienko \u0026 Andrienko (2011) as Anita Graser built\n-- them for GeoLife in QGIS (2016), live on the place size picked:\n-- 1. characteristic points: where trips start, end, stop or turn over 45 deg;\n-- 2. grouped on a grid of the size picked, each group's centroid a place;\n-- 3. every trip, fix by fix (every 15 s), from place to place: consecutive\n--    fixes in one place are one visit, and a move is two visits in a row;\n-- 4. a link is every move from one place to another, if enough trips made it.\nWITH t AS (\n  SELECT trip, t, lat, lon, x, y, keypoint, floor(x / ${cell:raw})::INTEGER AS gx, floor(y / ${cell:raw})::INTEGER AS gy\n  FROM 'http://feeds/datasets/geolife/track.parquet'\n  WHERE ${mode:sqlstring} IN ('all', mode)\n),\nplaces AS (\n  SELECT gx, gy, avg(lat) AS lat, avg(lon) AS lon, avg(x) AS x, avg(y) AS y, count(*) AS points\n  FROM t WHERE keypoint GROUP BY gx, gy HAVING count(*) \u003e= 3\n),\nseq AS (\n  SELECT trip, gx, gy, lag(gx) OVER w AS px, lag(gy) OVER w AS py\n  FROM t SEMI JOIN places USING (gx, gy)\n  WINDOW w AS (PARTITION BY trip ORDER BY t)\n),\nmoves AS (\n  SELECT px, py, gx, gy, count(*) AS moves, count(DISTINCT trip) AS trips\n  FROM seq WHERE px IS NOT NULL AND (gx \u003c\u003e px OR gy \u003c\u003e py)\n  GROUP BY ALL HAVING count(DISTINCT trip) \u003e= ${min_trips:raw}\n)\nSELECT a.lat AS lat0, a.lon AS lng0, b.lat AS lat1, b.lon AS lng1, m.trips, m.moves,\n       CASE WHEN sqrt(a.x * a.x + a.y * a.y) \u003c 750 THEN 'Tiananmen'\n            ELSE printf('%.1f km %s', sqrt(a.x * a.x + a.y * a.y) / 1000,\n                        ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][floor(((degrees(atan2(a.x, a.y)) + 382.5) % 360) / 45)::INTEGER + 1]) END AS place0,\n       CASE WHEN sqrt(b.x * b.x + b.y * b.y) \u003c 750 THEN 'Tiananmen'\n            ELSE printf('%.1f km %s', sqrt(b.x * b.x + b.y * b.y) / 1000,\n                        ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][floor(((degrees(atan2(b.x, b.y)) + 382.5) % 360) / 45)::INTEGER + 1]) END AS place1,\n       a.points AS points0, b.points AS points1\nFROM moves m\nJOIN places a ON a.gx = m.px AND a.gy = m.py\nJOIN places b ON b.gx = m.gx AND b.gy = m.gy",
                   "refId": "flows"
                 },
                 "type": "datasource"
