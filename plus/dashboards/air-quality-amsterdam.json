@@ -605,8 +605,8 @@
                 "flowRenderMode": "straight",
                 "followGrafanaTheme": false,
                 "hoverMaxAgeSeconds": 60,
-                "hoverPublishSpike": false,
-                "hoverSync": false,
+                "hoverPublishSpike": true,
+                "hoverSync": true,
                 "mapConfig": {
                   "config": {
                     "mapState": {
@@ -659,15 +659,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": 52.35369677192465,
-                      "longitude": 4.827197156351732,
+                      "latitude": 52.361280013194616,
+                      "longitude": 4.8263711486585725,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_2D",
                       "maxPitch": 85,
                       "pitch": 0,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 10.30913367637519
+                      "zoom": 9.293858805630268
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -676,7 +676,7 @@
                         0
                       ],
                       "mapStyles": {},
-                      "styleType": "dark-matter",
+                      "styleType": "openfreemap-positron",
                       "threeDBuildingColor": [
                         15.035172933000911,
                         15.035172933000911,
@@ -743,7 +743,7 @@
                           "type": "timeRange",
                           "value": [
                             1791597600000,
-                            1791727200000
+                            1791757800000
                           ],
                           "view": "minified"
                         }
@@ -1057,13 +1057,13 @@
                               "colorRange": {
                                 "category": "Uber",
                                 "colors": [
-                                  "#00939C",
-                                  "#8BC6C9",
-                                  "#E6FAFA",
-                                  "#EB9373",
-                                  "#C22E00"
+                                  "#0198BD",
+                                  "#6FD3B7",
+                                  "#FAFEB3",
+                                  "#F1925E",
+                                  "#D50255"
                                 ],
-                                "name": "Uber Viz Diverging",
+                                "name": "Ice And Fire",
                                 "type": "diverging"
                               },
                               "filled": true,
@@ -1135,7 +1135,7 @@
                 "rasterBands": "",
                 "rasterColormap": "",
                 "rasterPainted": false,
-                "saveRequest": 3,
+                "saveRequest": 5,
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table",
