@@ -45,6 +45,19 @@ A text panel (`group: "text"`, `options.mode: "markdown"`) titled "About the dat
 where each source comes from, its licence, and how any derived figure is computed. Every
 dashboard here has one.
 
+**Say how fresh the data is, and where each figure comes from.** A reader must be able to
+tell whether a number is from a minute ago or from last year, and how it was computed:
+
+- Live or periodically updated sources: a small stat in the first row, "Latest data", with
+  `SELECT max(time) AS time FROM $dataset` and the unit `dateTimeFromNow` ("3 minutes ago"),
+  one per source when they update at different rates. A per-row "last seen" column in a table
+  takes the same unit (`wildfires-power-grid`).
+- Fixed or historical data: "About the data" states the period the data covers and when the
+  source published it (or when `datasets/<name>/build.sh` built it).
+- Every panel's description says what the figure is computed from, in a sentence: which
+  dataset, which filter, which unit. The SQL itself is one click away in the query inspector;
+  the description is for the reader who will not open it.
+
 ## Layouts
 
 - `GridLayout` with `GridLayoutItem` `{element: {kind: "ElementReference", name}, x, y, width, height}`

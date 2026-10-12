@@ -34,7 +34,8 @@ Do the steps in order. **Do not write the dashboard JSON before steps 1–3 are 
    time by type. See [references/kepler.md](references/kepler.md).
 5. **Write the JSON.** Grafana's own format (keys sorted, two-space indent, no trailing
    newline), uid = file name, a description that says what it shows, tags from the
-   vocabulary in `dashboards/README.md`. Chart code: [references/business-charts.md](references/business-charts.md).
+   vocabulary in `dashboards/README.md`, an "About the data" panel, and how fresh the data is
+   (a "Latest data" stat for live sources; see grafana.md). Chart code: [references/business-charts.md](references/business-charts.md).
    Layouts, variables and Grafana 13 quirks: [references/grafana.md](references/grafana.md).
 6. **Write the basic tests** `tests/stack/<uid>.test.mjs` (pattern in workflow.md).
 7. **Preview, screenshot, look, fix.** Import a temporary copy, open it with Playwright, take
