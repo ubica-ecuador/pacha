@@ -1889,22 +1889,109 @@
                     "mapState": {
                       "bearing": 0,
                       "dragRotate": false,
-                      "latitude": 39.93,
-                      "longitude": 116.38,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 39.92771803746438,
+                      "longitude": 116.34002808786742,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
                       "pitch": 0,
-                      "zoom": 10.2
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 10.000064743198278
                     },
                     "mapStyle": {
-                      "styleType": "dark-matter"
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "dark-matter",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "road": true,
+                        "water": true
+                      }
                     },
                     "uiState": {
+                      "locale": "en",
                       "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
                         "mapLegend": {
                           "active": true
                         }
-                      }
+                      },
+                      "theme": "dark"
                     },
                     "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
                       "filters": [],
                       "interactionConfig": {
                         "brush": {
@@ -1915,9 +2002,12 @@
                           "enabled": false
                         },
                         "geocoder": {
-                          "enabled": false
+                          "enabled": false,
+                          "limitSearch": false
                         },
                         "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
                           "config": {
                             "compareMode": false,
                             "compareType": "absolute",
@@ -1941,11 +2031,32 @@
                               ]
                             }
                           },
-                          "enabled": true
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "minutes"
+                              },
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "name": "person"
+                              },
+                              {
+                                "format": "L LTS",
+                                "name": "from (Beijing time)"
+                              },
+                              {
+                                "name": "mode"
+                              }
+                            ]
+                          }
                         }
                       },
+                      "layerBlending": "additive",
                       "layerOrder": [
-                        "stops"
+                        "8wqkcys"
                       ],
                       "layers": [
                         {
@@ -1962,10 +2073,49 @@
                             },
                             "dataId": "grafana-A",
                             "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
                             "isVisible": true,
                             "label": "Stops, minutes",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
                             "visConfig": {
-                              "allowHover": true,
+                              "clusterRadius": 14.7,
+                              "colorAggregation": "sum",
                               "colorRange": {
                                 "category": "Custom",
                                 "colors": [
@@ -1979,28 +2129,26 @@
                                 "name": "Stops, minutes",
                                 "type": "sequential"
                               },
-                              "filled": true,
-                              "opacity": 0.7,
-                              "outline": false,
-                              "radius": 3,
+                              "opacity": 0.6,
                               "radiusRange": [
-                                0,
-                                50
+                                2,
+                                10
                               ]
                             }
                           },
-                          "id": "stops",
-                          "type": "point",
+                          "id": "8wqkcys",
+                          "type": "cluster",
                           "visualChannels": {
                             "colorField": {
-                              "name": "minutes",
-                              "type": "real"
+                              "name": "person",
+                              "type": "integer"
                             },
-                            "colorScale": "quantile",
-                            "sizeScale": "sqrt"
+                            "colorScale": "quantile"
                           }
                         }
-                      ]
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
                     }
                   },
                   "version": "v1"
@@ -2012,6 +2160,7 @@
                 "rasterBands": "",
                 "rasterColormap": "",
                 "rasterPainted": false,
+                "saveRequest": 1,
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table",
