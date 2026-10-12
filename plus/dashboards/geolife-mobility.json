@@ -1004,22 +1004,108 @@
                     "mapState": {
                       "bearing": 0,
                       "dragRotate": false,
-                      "latitude": 39.95,
-                      "longitude": 116.37,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 39.94029686492145,
+                      "longitude": 116.36751459930126,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
                       "pitch": 0,
-                      "zoom": 10.4
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 10.847343964413119
                     },
                     "mapStyle": {
-                      "styleType": "dark-matter"
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-fiord",
+                      "threeDBuildingColor": [
+                        64.2493441415438,
+                        75.42314312268185,
+                        102.42649066043215
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
                     },
                     "uiState": {
+                      "locale": "en",
                       "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
                         "mapLegend": {
                           "active": true
                         }
-                      }
+                      },
+                      "theme": "dark"
                     },
                     "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
                       "filters": [],
                       "interactionConfig": {
                         "brush": {
@@ -1030,9 +1116,12 @@
                           "enabled": false
                         },
                         "geocoder": {
-                          "enabled": false
+                          "enabled": false,
+                          "limitSearch": false
                         },
                         "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
                           "config": {
                             "compareMode": false,
                             "compareType": "absolute",
@@ -1053,57 +1142,155 @@
                               ]
                             }
                           },
-                          "enabled": true
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "lat0"
+                              },
+                              {
+                                "name": "lng0"
+                              },
+                              {
+                                "name": "lat1"
+                              },
+                              {
+                                "name": "lng1"
+                              },
+                              {
+                                "name": "count"
+                              }
+                            ]
+                          }
                         }
                       },
+                      "layerBlending": "normal",
                       "layerOrder": [
-                        "flows"
+                        "g599kb"
                       ],
                       "layers": [
                         {
                           "config": {
-                            "columnMode": "LAT_LNG",
+                            "color": [
+                              30,
+                              150,
+                              190
+                            ],
+                            "columnMode": "points",
                             "columns": {
-                              "count": "trips",
                               "lat0": "lat0",
                               "lat1": "lat1",
                               "lng0": "lng0",
                               "lng1": "lng1"
                             },
                             "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
                             "isVisible": true,
                             "label": "Trips between places",
-                            "visConfig": {
-                              "colorRange": {
-                                "category": "Custom",
-                                "colors": [
-                                  "#2c105c",
-                                  "#711f81",
-                                  "#b63679",
-                                  "#ee605e",
-                                  "#fb9b4b",
-                                  "#fde725"
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
                                 ],
-                                "name": "Flows",
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#7400B8",
+                                  "#6055CC",
+                                  "#3D82DC",
+                                  "#4CA7DE",
+                                  "#52CCE2",
+                                  "#72EFDD"
+                                ],
+                                "name": "ViovetOcean",
                                 "type": "sequential"
                               },
-                              "darkBaseMapEnabled": false,
-                              "flowAdaptiveScalesEnabled": true,
-                              "flowClusteringEnabled": false,
-                              "flowFadeAmount": 70,
-                              "flowFadeEnabled": true,
-                              "flowLineThicknessScale": 0.35,
-                              "flowLinesRenderingMode": "straight",
-                              "flowLocationTotalsEnabled": true,
-                              "maxTopFlowsDisplayNum": 5000,
-                              "opacity": 0.9
+                              "elevationScale": 1,
+                              "historyField": "color",
+                              "opacity": 0.9,
+                              "sizeRange": [
+                                2,
+                                3
+                              ],
+                              "thickness": 2.7,
+                              "trafficAnimate": true,
+                              "trafficArcHeight": 1,
+                              "trafficCycle": 4,
+                              "trafficDashLength": 0.5,
+                              "trafficDirectionMode": "lanes",
+                              "trafficGlow": true,
+                              "trafficLaneBend": 0.12,
+                              "trafficLapsRange": [
+                                1,
+                                6
+                              ],
+                              "trafficShape": "flat",
+                              "trafficSpacing": 40,
+                              "trafficStyle": "dots",
+                              "trafficTrail": 0.25
                             }
                           },
-                          "id": "flows",
-                          "type": "flow",
-                          "visualChannels": {}
+                          "id": "g599kb",
+                          "type": "traffic",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "count",
+                              "type": "integer"
+                            },
+                            "colorScale": "quantile",
+                            "reverseColorScale": "quantile",
+                            "reverseSizeScale": "linear",
+                            "reverseSpeedScale": "linear",
+                            "sizeField": {
+                              "name": "count",
+                              "type": "integer"
+                            },
+                            "sizeScale": "linear",
+                            "speedField": {
+                              "name": "count",
+                              "type": "integer"
+                            },
+                            "speedScale": "linear"
+                          }
                         }
-                      ]
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
                     }
                   },
                   "version": "v1"
@@ -1115,6 +1302,7 @@
                 "rasterBands": "",
                 "rasterColormap": "",
                 "rasterPainted": false,
+                "saveRequest": 1,
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table",
