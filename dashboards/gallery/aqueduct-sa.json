@@ -62,7 +62,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "# Water risk — WRI Aqueduct 4.0\n\nThe polygons are **HydroBASINS level 6 basins cut by province**, served live from the ArcGIS Online Feature Service, **with no prior download and no ETL**. Changing the indicator or the country queries the service again.\n\n| | |\n|---|---|\n| Source | [Aqueduct 4.0 Water Risk](https://www.arcgis.com/home/item.html?id=c784f4ebddaf43c8b816612fb62e7e5b) · **Aqueduct 4.0, World Resources Institute (WRI)**, hosted by Esri. Licensed CC BY 4.0 |\n| Coverage | 13 countries of South America · 6,469 units with data for water stress (out of 6,717) |\n| How it arrives | Infinity → `f=geojson` → a `geojson` column → the panel detects it and kepler draws it |\n\n**Three things to know so as not to misread the map:**\n\n- **The gaps are \"No Data\".** Aqueduct encodes a missing value as `-9999`, and a single `-9999` would\n  wreck the colour scale, so they are filtered at source (`$​{indicador}_score \u003e= 0`). What is missing\n  from the map is data that does not exist, not zero risk.\n- **\"Arid and Low Water Use\" scores high by convention**, not from measured stress: these are 493 arid\n  units with little water use. They come out red without there being any competition for the resource.\n- **Level 6 is coarse.** It works for a national or regional read. It does not work at municipal scale.\n\n**Filtering by drawing on the map.** With the map's draw tool (polygon or rectangle) you can narrow the\nanalysis: the ranking by country, the table and the \"In selection\" counter come to describe only the\nbasins the shape touches. **The map deliberately does not filter itself** — it goes on showing the whole\nextent as context, because if its own query depended on the shape, shrinking the dataset would leave no\nway to widen it again from the map. To go back to the total, delete the shape.",
+                "content": "# Water risk — WRI Aqueduct 4.0\n\nThe polygons are **HydroBASINS level 6 basins cut by province**, served live from the ArcGIS Online Feature Service, **with no prior download and no ETL**. Changing the indicator queries the service again; picking countries (in the selector or by clicking the bars of the ranking) filters the map in the browser.\n\n| | |\n|---|---|\n| Source | [Aqueduct 4.0 Water Risk](https://www.arcgis.com/home/item.html?id=c784f4ebddaf43c8b816612fb62e7e5b) · **Aqueduct 4.0, World Resources Institute (WRI)**, hosted by Esri. Licensed CC BY 4.0 |\n| Coverage | 13 countries of South America · 6,469 units with data for water stress (out of 6,717) |\n| How it arrives | Infinity → `f=geojson` → a `geojson` column → the panel detects it and kepler draws it |\n\n**Three things to know so as not to misread the map:**\n\n- **The gaps are \"No Data\".** Aqueduct encodes a missing value as `-9999`, and a single `-9999` would\n  wreck the colour scale, so they are filtered at source (`$​{indicador}_score \u003e= 0`). What is missing\n  from the map is data that does not exist, not zero risk.\n- **\"Arid and Low Water Use\" scores high by convention**, not from measured stress: these are 493 arid\n  units with little water use. They come out red without there being any competition for the resource.\n- **Level 6 is coarse.** It works for a national or regional read. It does not work at municipal scale.\n\n**Filtering by drawing on the map.** With the map's draw tool (polygon or rectangle) you can narrow the\nanalysis: the ranking by country, the table and the \"In selection\" counter come to describe only the\nbasins the shape touches. **The map deliberately does not filter itself** — it goes on showing the whole\nextent as context, because if its own query depended on the shape, shrinking the dataset would leave no\nway to widen it again from the map. To go back to the total, delete the shape.",
                 "mode": "markdown"
               }
             },
@@ -214,7 +214,7 @@
                           "params": [
                             {
                               "key": "where",
-                              "value": "name_0 IN (${pais:sqlstring}) AND ${indicador}_score \u003e= 0"
+                              "value": "name_0 IN ('Argentina', 'Bolivia', 'Brazil', 'Chile', 'Colombia', 'Ecuador', 'Guyana', 'Paraguay', 'Peru', 'Suriname', 'Uruguay', 'Venezuela', 'French Guiana') AND ${indicador}_score \u003e= 0"
                             },
                             {
                               "key": "outFields",
@@ -553,7 +553,14 @@
                 "saveRequest": 3,
                 "showSidePanel": false,
                 "timeSync": "off",
-                "tripLayerMode": "table"
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "pais",
+                    "source": "filter",
+                    "variable": "pais"
+                  }
+                ]
               }
             },
             "version": "1.0.0"
@@ -757,12 +764,17 @@
                         "columns": [
                           {
                             "selector": "attributes.name_0",
-                            "text": "País",
+                            "text": "country",
                             "type": "string"
                           },
                           {
                             "selector": "attributes.score_medio",
-                            "text": "Score medio",
+                            "text": "mean",
+                            "type": "number"
+                          },
+                          {
+                            "selector": "attributes.n",
+                            "text": "n",
                             "type": "number"
                           }
                         ],
@@ -777,7 +789,7 @@
                           "params": [
                             {
                               "key": "where",
-                              "value": "name_0 IN (${pais:sqlstring}) AND ${indicador}_score \u003e= 0"
+                              "value": "name_0 IN ('Argentina', 'Bolivia', 'Brazil', 'Chile', 'Colombia', 'Ecuador', 'Guyana', 'Paraguay', 'Peru', 'Suriname', 'Uruguay', 'Venezuela', 'French Guiana') AND ${indicador}_score \u003e= 0"
                             },
                             {
                               "key": "groupByFieldsForStatistics",
@@ -818,91 +830,117 @@
                     },
                     "refId": "B"
                   }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "infinity"
+                      },
+                      "group": "yesoreyeram-infinity-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "columns": [
+                          {
+                            "selector": "attributes.name_0",
+                            "text": "country",
+                            "type": "string"
+                          },
+                          {
+                            "selector": "attributes.lo",
+                            "text": "lo",
+                            "type": "number"
+                          },
+                          {
+                            "selector": "attributes.hi",
+                            "text": "hi",
+                            "type": "number"
+                          }
+                        ],
+                        "format": "table",
+                        "parser": "backend",
+                        "root_selector": "features",
+                        "source": "url",
+                        "type": "json",
+                        "url": "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/aqueduct_water_risk/FeatureServer/1/query",
+                        "url_options": {
+                          "method": "GET",
+                          "params": [
+                            {
+                              "key": "where",
+                              "value": "name_0 IN ('Argentina', 'Bolivia', 'Brazil', 'Chile', 'Colombia', 'Ecuador', 'Guyana', 'Paraguay', 'Peru', 'Suriname', 'Uruguay', 'Venezuela', 'French Guiana') AND ${indicador}_score \u003e= 0"
+                            },
+                            {
+                              "key": "groupByFieldsForStatistics",
+                              "value": "name_0"
+                            },
+                            {
+                              "key": "outStatistics",
+                              "value": "[{\"statisticType\": \"min\", \"onStatisticField\": \"${indicador}_score\", \"outStatisticFieldName\": \"lo\"}, {\"statisticType\": \"max\", \"onStatisticField\": \"${indicador}_score\", \"outStatisticFieldName\": \"hi\"}]"
+                            },
+                            {
+                              "key": "f",
+                              "value": "json"
+                            }
+                          ]
+                        }
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "range"
+                  }
                 }
               ],
               "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "Aggregated on the ArcGIS server: one request, ~2 KB, no pagination.",
+          "description": "Mean score per country of the units the drawn area touches (all of them with no area), aggregated on the ArcGIS server: one request, ~2 KB, no pagination. Each bar has the colour the map gives a basin with that score. **Click a bar** to filter the map, the counter and the table by that country; more clicks add countries, a picked one clicked again leaves (the last one out means all). The map filters in the browser, with no new request; the countries not picked stay here in grey.",
           "id": 4,
           "links": [],
           "title": "Mean score by country",
           "vizConfig": {
-            "group": "barchart",
+            "group": "volkovlabs-echarts-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "continuous-YlRd"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "fillOpacity": 80,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "lineWidth": 1,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "decimals": 2,
-                  "max": 5,
-                  "min": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "none"
-                },
+                "defaults": {},
                 "overrides": []
               },
               "options": {
-                "barRadius": 0,
-                "barWidth": 0.8,
-                "fullHighlight": false,
-                "groupWidth": 0.7,
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": false
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
                 },
-                "orientation": "horizontal",
-                "showValue": "auto",
-                "stacking": "none",
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
+                "editor": {
+                  "format": "auto"
                 },
-                "xField": "País",
-                "xTickLabelRotation": 0,
-                "xTickLabelSpacing": 0
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Mean score of the chosen indicator by country, in the map's colours: each\n// bar takes the colour the map gives a basin with that score, so the chart\n// reads against the map's legend.\n//\n// Clicking a bar adds that country to the `pais` variable, or takes it out if\n// it is already in; taking out the last one goes back to All. The map filters\n// on `pais` in the browser (a kepler filter, no new request); the units\n// counter and the worst-20 table ask the service again. This chart does not\n// filter itself: the countries not picked stay, in grey, as context.\n//\n// Two query frames: `B` (columns `country`, `mean`, `n`: the units the drawn\n// area touches, or all) and `range` (columns `country`, `lo`, `hi`: each\n// country's lowest and highest score, never cut by the area). The map's\n// colour scale is a quantize over the lowest to the highest score it holds,\n// that is over the countries it shows: `range` rebuilds the same breaks.\n// @constants begin\nconst VAR = 'pais';\nconst COLORS = ['#00939C', '#6BB5B9', '#AAD7D9', '#F4B198', '#DF744E', '#C22E00'];\nconst MAX = 5;\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst text = theme.colors.text.primary;\n\nconst frameOf = (refId) =\u003e context.panel.data.series.find((f) =\u003e f.refId === refId);\nconst col = (frame, name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst means = frameOf('B');\nconst ranges = frameOf('range');\n// Largest on top: a category axis draws bottom up.\nconst order = col(means, 'country')\n  .map((c, i) =\u003e ({ country: String(c), mean: Number(col(means, 'mean')[i]), n: Number(col(means, 'n')[i]) }))\n  .sort((a, b) =\u003e a.mean - b.mean);\nconst keys = order.map((r) =\u003e r.country);\nconst lo = new Map(col(ranges, 'country').map((c, i) =\u003e [String(c), Number(col(ranges, 'lo')[i])]));\nconst hi = new Map(col(ranges, 'country').map((c, i) =\u003e [String(c), Number(col(ranges, 'hi')[i])]));\n\nconst picked = () =\u003e {\n  const values = new URLSearchParams(location.getLocation().search).getAll('var-' + VAR);\n  return values.length === 0 || values.includes('$__all') || values.includes('All') ? null : values;\n};\nconst toggle = (key) =\u003e {\n  const now = picked();\n  const next = !now ? [key] : now.includes(key) ? now.filter((v) =\u003e v !== key) : [...now, key];\n  location.partial({ ['var-' + VAR]: next.length ? next : '$__all' }, true);\n};\n\nchart.off('click');\nchart.on('click', (event) =\u003e toggle(keys[event.dataIndex]));\n\n// The map's breaks: equal steps between the lowest and highest score of the\n// countries it shows.\nconst scale = (chosen) =\u003e {\n  const shown = [...lo.keys()].filter((c) =\u003e !chosen || chosen.includes(c));\n  const min = Math.min(...shown.map((c) =\u003e lo.get(c)));\n  const max = Math.max(...shown.map((c) =\u003e hi.get(c)));\n  return (v) =\u003e {\n    if (!Number.isFinite(min) || !(max \u003e min)) {\n      return COLORS[COLORS.length - 1];\n    }\n    const i = Math.floor(((v - min) / (max - min)) * COLORS.length);\n    return COLORS[Math.max(0, Math.min(COLORS.length - 1, i))];\n  };\n};\nconst bars = (chosen) =\u003e {\n  const color = scale(chosen);\n  return order.map((r) =\u003e ({\n    value: r.mean,\n    itemStyle: {\n      color: chosen \u0026\u0026 !chosen.includes(r.country) ? 'rgba(128, 128, 128, 0.22)' : color(r.mean),\n      borderRadius: [0, 3, 3, 0],\n    },\n  }));\n};\n\n// A click changes the variable but not this query, so the panel is not drawn\n// again: repaint the bars from the URL whenever it changes.\nlet drawn = JSON.stringify(picked());\nconst stop = location.getHistory().listen(() =\u003e {\n  const now = picked();\n  if (JSON.stringify(now) !== drawn \u0026\u0026 !chart.isDisposed()) {\n    drawn = JSON.stringify(now);\n    chart.setOption({ series: [{ id: 'bars', data: bars(now) }] });\n  }\n});\n\nconst option = {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 36, top: 8, bottom: 22, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e {\n      const r = order[items[0].dataIndex];\n      return `\u003cb\u003e${r.country}\u003c/b\u003e\u003cbr/\u003eMean score: \u003cb\u003e${r.mean.toFixed(2)}\u003c/b\u003e of ${MAX}\u003cbr/\u003e${r.n} units\u003cbr/\u003e\u003cspan style=\"opacity:.7\"\u003eclick to filter\u003c/span\u003e`;\n    },\n  },\n  xAxis: {\n    type: 'value',\n    min: 0,\n    max: MAX,\n    name: 'mean score (0–5)',\n    nameLocation: 'middle',\n    nameGap: 22,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  yAxis: { type: 'category', data: keys, axisTick: { show: false }, axisLabel: { color: text, fontSize: 11 } },\n  series: [\n    {\n      id: 'bars',\n      type: 'bar',\n      barWidth: '70%',\n      barMaxWidth: 24,\n      cursor: 'pointer',\n      data: bars(picked()),\n      label: { show: true, position: 'right', color: muted, fontSize: 11, formatter: (p) =\u003e p.value.toFixed(2) },\n    },\n  ],\n};\n\nreturn { version: 2, option, unsubscribe: stop };\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
               }
             },
-            "version": "13.2.0"
+            "version": "7.2.5"
           }
         }
       },
@@ -1279,7 +1317,8 @@
       "infinity",
       "duckdb",
       "kepler",
-      "water"
+      "water",
+      "business-charts"
     ],
     "timeSettings": {
       "autoRefresh": "",

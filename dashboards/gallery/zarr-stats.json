@@ -434,6 +434,85 @@
             "version": ""
           }
         }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- La media de la figura dibujada, mes por mes, en UNA sola peticion.\n--\n-- El mismo truco que el pronostico GFS: NO fijar `month`. Con la banda fijada\n-- (`sel=band=tavg`) y el eje de meses intacto, TiTiler lo deja como bandas y\n-- devuelve una por mes, cada una con su media, su minimo y su maximo; la\n-- descripcion de cada banda es el mes (\"1.0\" ... \"12.0\").\n--\n-- Las variables como en el resto del tablero: ${store:percentencode} llega\n-- cruda (un modificador de formato apaga el entrecomillado automatico) y $zona\n-- va con `:raw`, porque el automatismo escaparia las comillas del GeoJSON.\nLOAD http_client; LOAD json;\nWITH resp AS (\n  SELECT (http_post(\n    'http://titiler/zarr/statistics?url=' || '${store:percentencode}'\n      || '\u0026variable=climate\u0026group=4\u0026sel=band%3Dtavg',\n    MAP {'content-type': 'application/json'},\n    ('{\"type\":\"Feature\",\"properties\":{},\"geometry\":' || '${zona:raw}' || '}')::JSON\n  ) -\u003e\u003e 'body')::JSON AS body\n), st AS (\n  SELECT body -\u003e 'properties' -\u003e 'statistics' AS s FROM resp\n), bandas AS (\n  SELECT s, unnest(json_keys(s)) AS b FROM st\n)\nSELECT\n  CAST(json_extract_string(s, '$.\"' || b || '\".description') AS DOUBLE)::INTEGER AS month,\n  json_extract(s, '$.\"' || b || '\".mean')::DOUBLE AS mean,\n  json_extract(s, '$.\"' || b || '\".min')::DOUBLE  AS min,\n  json_extract(s, '$.\"' || b || '\".max')::DOUBLE  AS max\nFROM bandas\nORDER BY month"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The mean over the drawn area for each of the twelve months, in one request: leaving the month axis unpinned makes the tile server answer with one band per month. Bars are coloured with the map’s ramp. Click a bar to draw that month on the map and measure it on the right.",
+          "id": 7,
+          "links": [],
+          "title": "Mean temperature in the area · month by month",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// The drawn area's mean temperature, month by month: one bar a month, coloured\n// with the map's own ramp (magma over -20…40 °C), so a bar is the colour the\n// area has on the map that month. The month the map is drawing is in full\n// colour and outlined; the others are dimmed behind it.\n//\n// Clicking a bar moves the map to that month: it writes the map's window\n// (mapFrom/mapTo), which is what the map's own time bar writes, and `mes`,\n// the month the three figures measure. There is nothing to clear: the map\n// always draws one month.\n\n// @constants begin\nconst MONTH_VAR = 'mes'; // the month the figures measure (1-12)\n// written out, not built from the name: a variable spelled in the code is what\n// makes Grafana redraw the chart when it changes, with no query re-run\nconst PICKED = '${mes}';\nconst FROM_VAR = 'mapFrom'; // the map's window: from the first month...\nconst TO_VAR = 'mapTo'; // ...to the picked one; the map draws the latest inside it\nconst YEAR = 2020; // the year the map's rows are stamped with\nconst RESCALE = [-20, 40]; // the map's zarrRescale, °C\nconst RAMP = ['#000004', '#140e36', '#3b0f70', '#641a80', '#8c2981', '#b73779', '#de4968', '#f7705c', '#fe9f6d', '#fecf92', '#fcfdbf']; // magma\nconst UNIT = '°C';\n// @constants end\n\nconst chart = context.panel.chart;\nconst grafana = context.grafana;\nconst theme = grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst num = (v) =\u003e (v == null || v === '' ? null : Number(v));\nconst months = col('month').map(Number);\nconst mean = col('mean').map(num);\nconst min = col('min').map(num);\nconst max = col('max').map(num);\n\n// The ramp at a value, interpolated between its stops.\nconst hex = (h) =\u003e [1, 3, 5].map((i) =\u003e parseInt(h.slice(i, i + 2), 16));\nconst colorOf = (v) =\u003e {\n  if (v == null) {\n    return 'rgba(128,128,128,0.22)';\n  }\n  const t = Math.min(1, Math.max(0, (v - RESCALE[0]) / (RESCALE[1] - RESCALE[0]))) * (RAMP.length - 1);\n  const i = Math.min(RAMP.length - 2, Math.floor(t));\n  const [a, b] = [hex(RAMP[i]), hex(RAMP[i + 1])];\n  const f = t - i;\n  return 'rgb(' + a.map((x, k) =\u003e Math.round(x + (b[k] - x) * f)).join(',') + ')';\n};\n\nconst picked = Number(grafana.replaceVariables(PICKED));\nconst iso = (m) =\u003e new Date(Date.UTC(YEAR, m - 1, 1)).toISOString();\n\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const m = months[event.dataIndex];\n  if (!m) {\n    return;\n  }\n  grafana.locationService.partial(\n    {\n      ['var-' + FROM_VAR]: iso(1),\n      ['var-' + TO_VAR]: iso(m),\n      ['var-' + MONTH_VAR]: String(m),\n    },\n    true\n  );\n});\n\nconst fmt = (v) =\u003e (v == null ? '–' : v.toFixed(1));\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 16, top: 36, bottom: 8, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e {\n      const i = items[0].dataIndex;\n      return (\n        `\u003cb\u003e${MONTHS[months[i] - 1]}\u003c/b\u003e\u003cbr/\u003emean \u003cb\u003e${fmt(mean[i])} ${UNIT}\u003c/b\u003e\u003cbr/\u003e` +\n        `min ${fmt(min[i])} · max ${fmt(max[i])} ${UNIT}` +\n        `\u003cbr/\u003e\u003cspan style=\"opacity:.7\"\u003eclick to draw this month on the map\u003c/span\u003e`\n      );\n    },\n  },\n  xAxis: {\n    type: 'category',\n    data: months.map((m) =\u003e MONTHS[m - 1]),\n    axisTick: { show: false },\n    axisLabel: {\n      color: muted,\n      formatter: (v) =\u003e (MONTHS.indexOf(v) + 1 === picked ? '{on|' + v + '}' : v),\n      rich: { on: { color: theme.colors.text.primary, fontWeight: 'bold' } },\n    },\n    axisLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  yAxis: {\n    type: 'value',\n    scale: true,\n    name: 'mean ' + UNIT,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  series: [\n    {\n      type: 'bar',\n      barWidth: '70%',\n      cursor: 'pointer',\n      data: mean.map((v, i) =\u003e ({\n        value: v,\n        itemStyle: {\n          color: colorOf(v),\n          opacity: picked \u0026\u0026 months[i] !== picked ? 0.4 : 1,\n          borderColor: months[i] === picked ? theme.colors.text.primary : 'transparent',\n          borderWidth: months[i] === picked ? 2 : 0,\n          borderRadius: [3, 3, 0, 0],\n        },\n      })),\n      label: {\n        show: true,\n        position: 'top',\n        color: muted,\n        fontSize: 11,\n        formatter: (p) =\u003e fmt(p.value),\n      },\n    },\n  ],\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
       }
     },
     "layout": {
@@ -517,6 +596,19 @@
               "x": 15,
               "y": 27
             }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-7"
+              },
+              "height": 9,
+              "width": 24,
+              "x": 0,
+              "y": 32
+            }
           }
         ]
       }
@@ -528,6 +620,7 @@
       "duckdb",
       "infinity",
       "kepler",
+      "business-charts",
       "weather"
     ],
     "timeSettings": {

@@ -62,7 +62,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "## Observed biodiversity in Ecuador\n\n**More than 770,000 research-grade observations** uploaded to\n[iNaturalist](https://www.inaturalist.org/) by over 21,000 people, covering\nsome 24,000 species of mainland Ecuador and the Galápagos. They are read live from the\n*Feature Service* [iNaturalist Species Observations](https://www.arcgis.com/home/item.html?id=996576ae63d4499c924aabea1c3d3768)\nin the ArcGIS Living Atlas: **no download and no ETL**, every panel is a query\nagainst the service.\n\nThree things to know so as to read the map properly:\n\n- **The dots are a sample; the hexagons are the total.** The service cuts off at\n  10,000 features per request and nothing here pages, so the dot layer is the N\n  most recent observations. The H3 cells come already aggregated by the service\n  itself and cover them all. The figure to trust is the one in the\n  **Observation effort** panel.\n- **The hexagons carry no date.** They are historical totals: they follow neither\n  \"From year\" nor the map's time brush. Everything else does.\n- **This measures observation effort, not abundance.** iNaturalist records where\n  people go and what they photograph. Quito and the Galápagos stand out for their\n  observers as much as for their biodiversity.\n\nTo narrow things to a particular area, draw it on the map: the side panels and the\ntables obey it.",
+                "content": "## Observed biodiversity in Ecuador\n\n**More than 770,000 research-grade observations** uploaded to\n[iNaturalist](https://www.inaturalist.org/) by over 21,000 people, covering\nsome 24,000 species of mainland Ecuador and the Galápagos. They are read live from the\n*Feature Service* [iNaturalist Species Observations](https://www.arcgis.com/home/item.html?id=996576ae63d4499c924aabea1c3d3768)\nin the ArcGIS Living Atlas: **no download and no ETL**, every panel is a query\nagainst the service.\n\nThree things to know so as to read the map properly:\n\n- **The dots are a sample; the hexagons are the total.** The service cuts off at\n  10,000 features per request and nothing here pages, so the dot layer is the N\n  most recent observations. The H3 cells come already aggregated by the service\n  itself and cover them all. The figure to trust is the one in the\n  **Observation effort** panel.\n- **The hexagons carry no date.** They are historical totals: they follow neither\n  the years, the month nor the map's time brush. Everything else does.\n- **This measures observation effort, not abundance.** iNaturalist records where\n  people go and what they photograph. Quito and the Galápagos stand out for their\n  observers as much as for their biodiversity.\n\nTo narrow things to a particular area, draw it on the map: the side panels and the\ntables obey it. The three charts on the right are filters too: click a group or a\nmonth (click again to clear), or drag across the years.",
                 "mode": "markdown"
               }
             },
@@ -106,7 +106,7 @@
                           "params": [
                             {
                               "key": "where",
-                              "value": "latitude BETWEEN -5.1 AND 1.7 AND longitude BETWEEN -92.0 AND -75.0 AND observed_on_year \u003e= $desdeAnio AND taxon_category_name IN (${taxon:sqlstring})"
+                              "value": "latitude BETWEEN -5.1 AND 1.7 AND longitude BETWEEN -92.0 AND -75.0 AND observed_on_year \u003e= $desdeAnio AND observed_on_year \u003c= $hastaAnio AND taxon_category_name IN (${taxon:sqlstring}) AND observed_on_month IN (${mes:csv})"
                             },
                             {
                               "key": "geometry",
@@ -169,7 +169,7 @@
                           "params": [
                             {
                               "key": "where",
-                              "value": "latitude BETWEEN -5.1 AND 1.7 AND longitude BETWEEN -92.0 AND -75.0 AND observed_on_year \u003e= $desdeAnio AND taxon_category_name IN (${taxon:sqlstring})"
+                              "value": "latitude BETWEEN -5.1 AND 1.7 AND longitude BETWEEN -92.0 AND -75.0 AND observed_on_year \u003e= $desdeAnio AND observed_on_year \u003c= $hastaAnio AND taxon_category_name IN (${taxon:sqlstring}) AND observed_on_month IN (${mes:csv})"
                             },
                             {
                               "key": "geometry",
@@ -240,7 +240,7 @@
                           "params": [
                             {
                               "key": "where",
-                              "value": "latitude BETWEEN -5.1 AND 1.7 AND longitude BETWEEN -92.0 AND -75.0 AND observed_on_year \u003e= $desdeAnio AND taxon_category_name IN (${taxon:sqlstring})"
+                              "value": "latitude BETWEEN -5.1 AND 1.7 AND longitude BETWEEN -92.0 AND -75.0 AND observed_on_year \u003e= $desdeAnio AND observed_on_year \u003c= $hastaAnio AND taxon_category_name IN (${taxon:sqlstring}) AND observed_on_month IN (${mes:csv})"
                             },
                             {
                               "key": "geometry",
@@ -597,7 +597,7 @@
                           "params": [
                             {
                               "key": "where",
-                              "value": "latitude BETWEEN -5.1 AND 1.7 AND longitude BETWEEN -92.0 AND -75.0 AND observed_on_year \u003e= $desdeAnio"
+                              "value": "latitude BETWEEN -5.1 AND 1.7 AND longitude BETWEEN -92.0 AND -75.0 AND observed_on_year \u003e= $desdeAnio AND observed_on_year \u003c= $hastaAnio AND observed_on_month IN (${mes:csv})"
                             },
                             {
                               "key": "outFields",
@@ -947,70 +947,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "infinity"
+                        "name": "duckdbwasm"
                       },
-                      "group": "yesoreyeram-infinity-datasource",
+                      "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "columns": [
-                          {
-                            "selector": "attributes.taxon_category_name",
-                            "text": "grupo",
-                            "type": "string"
-                          },
-                          {
-                            "selector": "attributes.n",
-                            "text": "n",
-                            "type": "number"
-                          }
-                        ],
-                        "format": "table",
-                        "parser": "backend",
-                        "root_selector": "features",
-                        "source": "url",
-                        "type": "json",
-                        "url": "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/iNaturalist/FeatureServer/0/query",
-                        "url_options": {
-                          "method": "GET",
-                          "params": [
-                            {
-                              "key": "where",
-                              "value": "latitude BETWEEN -5.1 AND 1.7 AND longitude BETWEEN -92.0 AND -75.0 AND observed_on_year \u003e= $desdeAnio AND taxon_category_name IN (${taxon:sqlstring})"
-                            },
-                            {
-                              "key": "geometry",
-                              "value": "${areaRings:raw}"
-                            },
-                            {
-                              "key": "geometryType",
-                              "value": "esriGeometryPolygon"
-                            },
-                            {
-                              "key": "spatialRel",
-                              "value": "esriSpatialRelIntersects"
-                            },
-                            {
-                              "key": "inSR",
-                              "value": "4326"
-                            },
-                            {
-                              "key": "groupByFieldsForStatistics",
-                              "value": "taxon_category_name"
-                            },
-                            {
-                              "key": "outStatistics",
-                              "value": "[{\"statisticType\": \"count\", \"onStatisticField\": \"observation_id\", \"outStatisticFieldName\": \"n\"}]"
-                            },
-                            {
-                              "key": "orderByFields",
-                              "value": "n DESC"
-                            },
-                            {
-                              "key": "f",
-                              "value": "json"
-                            }
-                          ]
-                        }
+                        "rawSql": "-- Observations by group, over the years and month picked (not the group: this chart picks it).\n-- Named here so the panel redraws its selection when it changes: $taxon\nSELECT grupo, sum(n)::DOUBLE AS n\nFROM $cubo\nWHERE anio BETWEEN CAST($desdeAnio AS INTEGER) AND CAST($hastaAnio AS INTEGER)\n  AND CAST(CAST(mes AS INTEGER) AS VARCHAR) IN ($mes)\nGROUP BY grupo ORDER BY n DESC"
                       },
                       "version": "v0"
                     },
@@ -1022,83 +964,50 @@
               "transformations": []
             }
           },
-          "description": "A `groupByFieldsForStatistics` over `taxon_category_name`: a single request for the twelve groups. Grafana opens a context menu when a bar is pressed; the filter is an option in that menu, so it is two clicks, not one.",
+          "description": "Observations by group over the years and the month picked, in the colours of the map's dots. **Click a bar to filter the dashboard by that group**, click it again to clear (Ctrl- or Shift-click adds a group). It does not filter itself: the other groups stay in grey. Counted in the browser from the cube of group × year × month (Chaski), so it answers at once.",
           "id": 4,
           "links": [],
           "title": "Taxonomic composition",
           "vizConfig": {
-            "group": "barchart",
+            "group": "volkovlabs-echarts-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "fixedColor": "#3f8f4a",
-                    "mode": "fixed"
-                  },
-                  "custom": {
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "fillOpacity": 80,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "lineWidth": 1,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "decimals": 0,
-                  "links": [
-                    {
-                      "title": "Filtrar el tablero por este grupo",
-                      "url": "/d/inaturalist-ecuador?var-taxon=${__data.fields.grupo}\u0026${desdeAnio:queryparam}\u0026var-area=${area}"
-                    }
-                  ],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": null
-                      }
-                    ]
-                  }
-                },
+                "defaults": {},
                 "overrides": []
               },
               "options": {
-                "barRadius": 0,
-                "barWidth": 0.8,
-                "fullHighlight": false,
-                "groupWidth": 0.7,
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": false
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
                 },
-                "orientation": "horizontal",
-                "showValue": "auto",
-                "stacking": "none",
-                "tooltip": {
-                  "mode": "single",
-                  "sort": "none"
+                "editor": {
+                  "format": "auto"
                 },
-                "xField": "grupo",
-                "xTickLabelRotation": 0,
-                "xTickLabelSpacing": 0
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Observations by taxonomic group, in the colours of the map's dots, so the\n// chart is also the map's legend. Clicking a bar filters the dashboard by that\n// group (the `taxon` variable, which the map's filter, the counts and the\n// tables follow); clicking it again clears it. Ctrl- or Shift-click adds or\n// removes a group. The chart does not filter itself: the groups not picked\n// stay in grey, for context. It follows the years and the month.\n// @constants begin\nconst VAR = 'taxon';\nconst COLORS = {\n  Aves: '#2f7ec4',\n  Plantae: '#3f8f4a',\n  Insecta: '#e0a02e',\n  Reptilia: '#8c5a2b',\n  Amphibia: '#63bfa0',\n  Mammalia: '#b5443c',\n  Arachnida: '#7a5aa8',\n  Mollusca: '#d97fb0',\n  Fungi: '#d9662a',\n  Actinopterygii: '#3fb0c4',\n  Protozoa: '#9aa63f',\n  Other: '#8a8f96',\n};\nconst UNIT = 'observations';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst text = theme.colors.text.primary;\nconst CONTEXT = 'rgba(128, 128, 128, 0.22)';\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'C');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst groups = col('grupo');\nconst counts = col('n').map((v) =\u003e (v == null ? null : Number(v)));\n\n// The variable as a list. \"All\" expands to every group: that is no selection.\nconst read = () =\u003e {\n  let values;\n  try {\n    values = [JSON.parse(context.grafana.replaceVariables('${' + VAR + ':json}'))].flat();\n  } catch (e) {\n    values = [];\n  }\n  const picked = values.filter((v) =\u003e groups.includes(v));\n  return picked.length === 0 || groups.every((g) =\u003e picked.includes(g)) || values.includes('$__all') ? [] : picked;\n};\nconst picked = read();\n\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const id = groups[event.dataIndex];\n  const now = read();\n  const add = event.event \u0026\u0026 event.event.event \u0026\u0026 (event.event.event.ctrlKey || event.event.event.metaKey || event.event.event.shiftKey);\n  let next;\n  if (add) {\n    next = now.includes(id) ? now.filter((g) =\u003e g !== id) : [...now, id];\n  } else {\n    next = now.length === 1 \u0026\u0026 now[0] === id ? [] : [id];\n  }\n  location.partial({ ['var-' + VAR]: next.length ? next : '$__all' }, true);\n});\n\nconst fmt = (v) =\u003e (v == null ? '–' : v \u003e= 1000 ? `${(v / 1000).toFixed(v \u003e= 10000 ? 0 : 1)}k` : String(v));\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 40, top: 8, bottom: 8, containLabel: true },\n  tooltip: {\n    trigger: 'item',\n    formatter: (p) =\u003e `\u003cb\u003e${groups[p.dataIndex]}\u003c/b\u003e\u003cbr/\u003e${(counts[p.dataIndex] ?? 0).toLocaleString('en')} ${UNIT}\u003cbr/\u003e\u003ci\u003eClick to filter, again to clear\u003c/i\u003e`,\n  },\n  xAxis: { type: 'value', show: false },\n  yAxis: {\n    type: 'category',\n    inverse: true,\n    data: groups,\n    axisTick: { show: false },\n    axisLine: { show: false },\n    axisLabel: { color: (v) =\u003e (picked.length \u0026\u0026 !picked.includes(v) ? muted : text), fontSize: 11 },\n  },\n  series: [\n    {\n      type: 'bar',\n      barWidth: '72%',\n      cursor: 'pointer',\n      data: counts.map((v, i) =\u003e ({\n        value: v,\n        itemStyle: {\n          color: picked.length \u0026\u0026 !picked.includes(groups[i]) ? CONTEXT : COLORS[groups[i]] ?? muted,\n          borderRadius: [0, 3, 3, 0],\n        },\n      })),\n      label: { show: true, position: 'right', color: muted, fontSize: 10, formatter: (p) =\u003e fmt(p.value) },\n    },\n  ],\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
               }
             },
-            "version": ""
+            "version": "7.2.5"
           }
         }
       },
@@ -1115,74 +1024,34 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "infinity"
+                        "name": "duckdbwasm"
                       },
-                      "group": "yesoreyeram-infinity-datasource",
+                      "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "columns": [
-                          {
-                            "selector": "attributes.observed_on_year",
-                            "text": "anio",
-                            "type": "string"
-                          },
-                          {
-                            "selector": "attributes.n",
-                            "text": "n",
-                            "type": "number"
-                          }
-                        ],
-                        "format": "table",
-                        "parser": "backend",
-                        "root_selector": "features",
-                        "source": "url",
-                        "type": "json",
-                        "url": "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/iNaturalist/FeatureServer/0/query",
-                        "url_options": {
-                          "method": "GET",
-                          "params": [
-                            {
-                              "key": "where",
-                              "value": "latitude BETWEEN -5.1 AND 1.7 AND longitude BETWEEN -92.0 AND -75.0 AND observed_on_year \u003e= 2016 AND taxon_category_name IN (${taxon:sqlstring})"
-                            },
-                            {
-                              "key": "geometry",
-                              "value": "${areaRings:raw}"
-                            },
-                            {
-                              "key": "geometryType",
-                              "value": "esriGeometryPolygon"
-                            },
-                            {
-                              "key": "spatialRel",
-                              "value": "esriSpatialRelIntersects"
-                            },
-                            {
-                              "key": "inSR",
-                              "value": "4326"
-                            },
-                            {
-                              "key": "groupByFieldsForStatistics",
-                              "value": "observed_on_year"
-                            },
-                            {
-                              "key": "outStatistics",
-                              "value": "[{\"statisticType\": \"count\", \"onStatisticField\": \"observation_id\", \"outStatisticFieldName\": \"n\"}]"
-                            },
-                            {
-                              "key": "orderByFields",
-                              "value": "observed_on_year"
-                            },
-                            {
-                              "key": "f",
-                              "value": "json"
-                            }
-                          ]
-                        }
+                        "rawSql": "-- Context: every observation of the extent or the drawn area, per year.\n-- Named here so the panel redraws its brush when they change: $desdeAnio $hastaAnio\nSELECT anio::INTEGER AS bin, sum(n)::DOUBLE AS n\nFROM $cubo\nWHERE anio \u003e= 2016\nGROUP BY 1 ORDER BY 1"
                       },
                       "version": "v0"
                     },
-                    "refId": "E"
+                    "refId": "all"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- What the group and month filters leave, per year (not the years: this chart picks them).\nSELECT anio::INTEGER AS bin, sum(n)::DOUBLE AS n\nFROM $cubo\nWHERE anio \u003e= 2016\n  AND grupo IN ($taxon)\n  AND CAST(CAST(mes AS INTEGER) AS VARCHAR) IN ($mes)\nGROUP BY 1 ORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "selected"
                   }
                 }
               ],
@@ -1190,77 +1059,50 @@
               "transformations": []
             }
           },
-          "description": "Deliberately does **not** follow \"From year\": this is the panel you look at to decide that value. Its floor is the literal 2016. `anio` is typed as a `string` because a bar chart's X axis needs a string or a time field.",
+          "description": "**Drag across the bars to filter the dashboard by years** (\"From year\" and \"To year\"); the bin in the corner goes back to the whole history. Grey is every observation in the extent or drawn area, colour what the group and month leave. It does not filter itself by year. From 2016: before that the service holds few observations.",
           "id": 5,
           "links": [],
           "title": "Observations per year",
           "vizConfig": {
-            "group": "barchart",
+            "group": "volkovlabs-echarts-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "fixedColor": "#2f7ec4",
-                    "mode": "fixed"
-                  },
-                  "custom": {
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "fillOpacity": 80,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "lineWidth": 1,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "decimals": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": null
-                      }
-                    ]
-                  }
-                },
+                "defaults": {},
                 "overrides": []
               },
               "options": {
-                "barRadius": 0,
-                "barWidth": 0.8,
-                "fullHighlight": false,
-                "groupWidth": 0.7,
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": false
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
                 },
-                "orientation": "vertical",
-                "showValue": "auto",
-                "stacking": "none",
-                "tooltip": {
-                  "mode": "single",
-                  "sort": "none"
+                "editor": {
+                  "format": "auto"
                 },
-                "xField": "anio",
-                "xTickLabelRotation": 0,
-                "xTickLabelSpacing": 0
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Observations per year, from 2016 on. Dragging across the bars sets the\n// dashboard's years (\"From year\" and \"To year\"); the counts, the map's dots,\n// the other charts and the tables follow. Clearing the brush (the toolbox's\n// bin) goes back to the whole history. Grey is every observation in the drawn\n// area; colour is what the group and month filters leave. The chart does not\n// filter itself by year, so the whole range stays in view.\n// Adapted from assets/brush-histogram.js for whole years, inclusive at both\n// ends, and for variables whose \"no filter\" value is not empty (1900 and 9999,\n// which the ArcGIS where clauses compare as plain numbers).\n// @constants begin\nconst LO = 'desdeAnio';\nconst HI = 'hastaAnio';\nconst NONE = ['1900', '9999'];\nconst UNIT = 'observations';\nconst COLOR = '#2f7ec4';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\n\nconst frameOf = (refId) =\u003e context.panel.data.series.find((f) =\u003e f.refId === refId);\nconst pairs = (refId) =\u003e {\n  const frame = frameOf(refId);\n  if (!frame) {\n    return new Map();\n  }\n  const bins = frame.fields.find((f) =\u003e f.name === 'bin')?.values ?? [];\n  const counts = frame.fields.find((f) =\u003e f.name === 'n')?.values ?? [];\n  return new Map(Array.from(bins, (b, i) =\u003e [Number(b), counts[i] == null ? null : Number(counts[i])]));\n};\nconst all = pairs('all');\nconst selected = pairs('selected');\nconst years = [...all.keys()].sort((a, b) =\u003e a - b);\nconst first = years[0];\nconst last = years[years.length - 1];\n\n// A bar stands at its year, from year - 0.5 to year + 0.5. A brush takes the\n// years whose bar it covers at least half of; it is redrawn over whole bars.\nconst snap = (range) =\u003e {\n  const a = Math.min(...range);\n  const b = Math.max(...range);\n  let lo = Math.ceil(a);\n  let hi = Math.floor(b);\n  if (hi \u003c lo) {\n    lo = hi = Math.round((a + b) / 2); // a brush inside one bar takes that year\n  }\n  return [Math.max(lo, first), Math.min(hi, last)];\n};\nconst drawBrush = (range) =\u003e\n  chart.dispatchAction({ type: 'brush', areas: range ? [{ brushType: 'lineX', xAxisIndex: 0, coordRange: range }] : [] });\nconst publish = (lo, hi) =\u003e {\n  location.partial({ ['var-' + LO]: String(lo), ['var-' + HI]: String(hi) }, true);\n};\n\nchart.off('brushEnd');\nchart.off('brush');\nchart.on('brushEnd', (event) =\u003e {\n  const area = event.areas[0];\n  if (!area || !area.coordRange || !years.length) {\n    publish(NONE[0], NONE[1]);\n    return;\n  }\n  const [y0, y1] = snap(area.coordRange);\n  // The last bar is the year in course: reaching it means \"up to now\".\n  publish(y0, y1 === last ? NONE[1] : y1);\n  setTimeout(() =\u003e drawBrush([y0 - 0.5, y1 + 0.5]), 0);\n});\nchart.on('brush', (event) =\u003e {\n  if (event.command === 'clear') {\n    publish(NONE[0], NONE[1]);\n  }\n});\n\n// Every redraw wipes the brush: draw it back from the variables, which is\n// also how a shared link (or the \"From year\" dropdown) shows its range.\nconst lo = parseInt(context.grafana.replaceVariables('${' + LO + '}'), 10);\nconst hi = parseInt(context.grafana.replaceVariables('${' + HI + '}'), 10);\nconst filtered = years.length \u0026\u0026 ((Number.isFinite(lo) \u0026\u0026 lo \u003e first) || (Number.isFinite(hi) \u0026\u0026 hi \u003c last));\nconst range = filtered\n  ? [Math.max(Number.isFinite(lo) ? lo : first, first) - 0.5, Math.min(Number.isFinite(hi) ? hi : last, last) + 0.5]\n  : undefined;\nsetTimeout(() =\u003e {\n  chart.dispatchAction({ type: 'takeGlobalCursor', key: 'brush', brushOption: { brushType: 'lineX', brushMode: 'single' } });\n  if (range \u0026\u0026 range[0] \u003c= range[1]) {\n    drawBrush(range);\n  }\n}, 0);\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 16, top: 30, bottom: 4, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e {\n      const rows = items.map((it) =\u003e `${it.marker}${it.seriesName}: \u003cb\u003e${(it.value[1] ?? 0).toLocaleString('en')}\u003c/b\u003e`).join('\u003cbr/\u003e');\n      return `${items[0].value[0]} · ${UNIT}\u003cbr/\u003e${rows}`;\n    },\n  },\n  toolbox: {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: { brush: { type: ['lineX', 'clear'], title: { lineX: 'Select years', clear: 'All history' } } },\n  },\n  brush: {\n    xAxisIndex: 0,\n    seriesIndex: [1],\n    brushType: 'lineX',\n    brushMode: 'single',\n    transformable: true,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.12)', borderColor: muted, borderWidth: 1 },\n    outOfBrush: { colorAlpha: 0.25 },\n  },\n  xAxis: {\n    type: 'value',\n    min: first - 0.5,\n    max: last + 0.5,\n    minInterval: 1,\n    splitLine: { show: false },\n    axisTick: { show: false },\n    axisLabel: { color: muted, fontSize: 10, showMinLabel: false, showMaxLabel: false, formatter: (v) =\u003e (Number.isInteger(v) ? String(v) : '') },\n  },\n  yAxis: {\n    type: 'value',\n    axisLabel: { color: muted, fontSize: 10, formatter: (v) =\u003e (v \u003e= 1000 ? `${v / 1000}k` : v) },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  series: [\n    { name: 'All groups', type: 'bar', data: years.map((y) =\u003e [y, all.get(y)]), barWidth: '80%', silent: true, itemStyle: { color: 'rgba(128, 128, 128, 0.22)' } },\n    { name: 'Filtered', type: 'bar', data: years.map((y) =\u003e [y, selected.get(y) ?? 0]), barWidth: '80%', barGap: '-100%', itemStyle: { color: COLOR } },\n  ],\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
               }
             },
-            "version": ""
+            "version": "7.2.5"
           }
         }
       },
@@ -1277,70 +1119,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "infinity"
+                        "name": "duckdbwasm"
                       },
-                      "group": "yesoreyeram-infinity-datasource",
+                      "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "columns": [
-                          {
-                            "selector": "attributes.observed_on_month",
-                            "text": "mes",
-                            "type": "string"
-                          },
-                          {
-                            "selector": "attributes.n",
-                            "text": "n",
-                            "type": "number"
-                          }
-                        ],
-                        "format": "table",
-                        "parser": "backend",
-                        "root_selector": "features",
-                        "source": "url",
-                        "type": "json",
-                        "url": "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/iNaturalist/FeatureServer/0/query",
-                        "url_options": {
-                          "method": "GET",
-                          "params": [
-                            {
-                              "key": "where",
-                              "value": "latitude BETWEEN -5.1 AND 1.7 AND longitude BETWEEN -92.0 AND -75.0 AND observed_on_year \u003e= $desdeAnio AND taxon_category_name IN (${taxon:sqlstring})"
-                            },
-                            {
-                              "key": "geometry",
-                              "value": "${areaRings:raw}"
-                            },
-                            {
-                              "key": "geometryType",
-                              "value": "esriGeometryPolygon"
-                            },
-                            {
-                              "key": "spatialRel",
-                              "value": "esriSpatialRelIntersects"
-                            },
-                            {
-                              "key": "inSR",
-                              "value": "4326"
-                            },
-                            {
-                              "key": "groupByFieldsForStatistics",
-                              "value": "observed_on_month"
-                            },
-                            {
-                              "key": "outStatistics",
-                              "value": "[{\"statisticType\": \"count\", \"onStatisticField\": \"observation_id\", \"outStatisticFieldName\": \"n\"}]"
-                            },
-                            {
-                              "key": "orderByFields",
-                              "value": "observed_on_month"
-                            },
-                            {
-                              "key": "f",
-                              "value": "json"
-                            }
-                          ]
-                        }
+                        "rawSql": "-- Observations by month, for the group and years picked (not the month: this chart picks it).\n-- Named here so the panel redraws its selection when it changes: $mes\nSELECT CAST(mes AS INTEGER) AS mes, sum(n)::DOUBLE AS n\nFROM $cubo\nWHERE grupo IN ($taxon)\n  AND anio BETWEEN CAST($desdeAnio AS INTEGER) AND CAST($hastaAnio AS INTEGER)\nGROUP BY 1 ORDER BY 1"
                       },
                       "version": "v0"
                     },
@@ -1352,132 +1136,50 @@
               "transformations": []
             }
           },
-          "description": "Observations by month of the year, summing the whole history of the extent. It measures **observation effort**, not abundance: it is when people go out to look and to photograph.",
+          "description": "Observations by month of the year, for the group and years picked. It measures **observation effort**, not abundance: it is when people go out to look and to photograph. **Click a month to filter the dashboard by it**, click it again to clear (Ctrl- or Shift-click adds a month).",
           "id": 6,
           "links": [],
           "title": "Seasonality",
           "vizConfig": {
-            "group": "barchart",
+            "group": "volkovlabs-echarts-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "fixedColor": "#e0a02e",
-                    "mode": "fixed"
-                  },
-                  "custom": {
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "fillOpacity": 80,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "lineWidth": 1,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "decimals": 0,
-                  "mappings": [
-                    {
-                      "options": {
-                        "1": {
-                          "index": 0,
-                          "text": "Ene"
-                        },
-                        "2": {
-                          "index": 1,
-                          "text": "Feb"
-                        },
-                        "3": {
-                          "index": 2,
-                          "text": "Mar"
-                        },
-                        "4": {
-                          "index": 3,
-                          "text": "Abr"
-                        },
-                        "5": {
-                          "index": 4,
-                          "text": "May"
-                        },
-                        "6": {
-                          "index": 5,
-                          "text": "Jun"
-                        },
-                        "7": {
-                          "index": 6,
-                          "text": "Jul"
-                        },
-                        "8": {
-                          "index": 7,
-                          "text": "Ago"
-                        },
-                        "9": {
-                          "index": 8,
-                          "text": "Sep"
-                        },
-                        "10": {
-                          "index": 9,
-                          "text": "Oct"
-                        },
-                        "11": {
-                          "index": 10,
-                          "text": "Nov"
-                        },
-                        "12": {
-                          "index": 11,
-                          "text": "Dic"
-                        }
-                      },
-                      "type": "value"
-                    }
-                  ],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": null
-                      }
-                    ]
-                  }
-                },
+                "defaults": {},
                 "overrides": []
               },
               "options": {
-                "barRadius": 0,
-                "barWidth": 0.8,
-                "fullHighlight": false,
-                "groupWidth": 0.7,
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": false
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
                 },
-                "orientation": "vertical",
-                "showValue": "auto",
-                "stacking": "none",
-                "tooltip": {
-                  "mode": "single",
-                  "sort": "none"
+                "editor": {
+                  "format": "auto"
                 },
-                "xField": "mes",
-                "xTickLabelRotation": 0,
-                "xTickLabelSpacing": 0
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Observations by month of the year: when people go out and photograph, not\n// how abundant life is. Clicking a month filters the dashboard by it (the\n// hidden `mes` variable, which the counts, the map's dots, the other charts\n// and the tables follow); clicking it again clears it. Ctrl- or Shift-click\n// adds or removes a month. The chart does not filter itself: the months not\n// picked stay in grey. It follows the group and the years.\n// @constants begin\nconst VAR = 'mes';\nconst COLOR = '#e0a02e';\nconst MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];\nconst UNIT = 'observations';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst text = theme.colors.text.primary;\nconst CONTEXT = 'rgba(128, 128, 128, 0.22)';\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'F');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst byMonth = new Map(col('mes').map((m, i) =\u003e [String(Number(m)), Number(col('n')[i])]));\nconst ids = MONTHS.map((_, i) =\u003e String(i + 1));\nconst counts = ids.map((m) =\u003e byMonth.get(m) ?? 0);\n\n// The variable as a list. \"All\" expands to the twelve months: no selection.\nconst read = () =\u003e {\n  let values;\n  try {\n    values = [JSON.parse(context.grafana.replaceVariables('${' + VAR + ':json}'))].flat().map(String);\n  } catch (e) {\n    values = [];\n  }\n  const picked = values.filter((v) =\u003e ids.includes(v));\n  return picked.length === 0 || picked.length === ids.length || values.includes('$__all') ? [] : picked;\n};\nconst picked = read();\n\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const id = ids[event.dataIndex];\n  const now = read();\n  const add = event.event \u0026\u0026 event.event.event \u0026\u0026 (event.event.event.ctrlKey || event.event.event.metaKey || event.event.event.shiftKey);\n  let next;\n  if (add) {\n    next = now.includes(id) ? now.filter((m) =\u003e m !== id) : [...now, id];\n  } else {\n    next = now.length === 1 \u0026\u0026 now[0] === id ? [] : [id];\n  }\n  location.partial({ ['var-' + VAR]: next.length \u0026\u0026 next.length \u003c ids.length ? next : '$__all' }, true);\n});\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 8, top: 10, bottom: 4, containLabel: true },\n  tooltip: {\n    trigger: 'item',\n    formatter: (p) =\u003e `\u003cb\u003e${MONTHS[p.dataIndex]}\u003c/b\u003e\u003cbr/\u003e${counts[p.dataIndex].toLocaleString('en')} ${UNIT}\u003cbr/\u003e\u003ci\u003eClick to filter, again to clear\u003c/i\u003e`,\n  },\n  xAxis: {\n    type: 'category',\n    data: MONTHS,\n    axisTick: { show: false },\n    axisLabel: { fontSize: 10, interval: 0, color: (v, i) =\u003e (picked.length \u0026\u0026 !picked.includes(ids[i]) ? muted : text) },\n  },\n  yAxis: {\n    type: 'value',\n    axisLabel: { color: muted, fontSize: 10, formatter: (v) =\u003e (v \u003e= 1000 ? `${v / 1000}k` : v) },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  series: [\n    {\n      type: 'bar',\n      barWidth: '72%',\n      cursor: 'pointer',\n      data: counts.map((v, i) =\u003e ({ value: v, itemStyle: { color: picked.length \u0026\u0026 !picked.includes(ids[i]) ? CONTEXT : COLOR, borderRadius: [2, 2, 0, 0] } })),\n    },\n  ],\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
               }
             },
-            "version": ""
+            "version": "7.2.5"
           }
         }
       },
@@ -1537,7 +1239,7 @@
                           "params": [
                             {
                               "key": "where",
-                              "value": "latitude BETWEEN -5.1 AND 1.7 AND longitude BETWEEN -92.0 AND -75.0 AND observed_on_year \u003e= $desdeAnio AND taxon_category_name IN (${taxon:sqlstring})"
+                              "value": "latitude BETWEEN -5.1 AND 1.7 AND longitude BETWEEN -92.0 AND -75.0 AND observed_on_year \u003e= $desdeAnio AND observed_on_year \u003c= $hastaAnio AND taxon_category_name IN (${taxon:sqlstring}) AND observed_on_month IN (${mes:csv})"
                             },
                             {
                               "key": "geometry",
@@ -1760,7 +1462,7 @@
                           "params": [
                             {
                               "key": "where",
-                              "value": "latitude BETWEEN -5.1 AND 1.7 AND longitude BETWEEN -92.0 AND -75.0 AND observed_on_year \u003e= $desdeAnio AND taxon_category_name IN (${taxon:sqlstring})"
+                              "value": "latitude BETWEEN -5.1 AND 1.7 AND longitude BETWEEN -92.0 AND -75.0 AND observed_on_year \u003e= $desdeAnio AND observed_on_year \u003c= $hastaAnio AND taxon_category_name IN (${taxon:sqlstring}) AND observed_on_month IN (${mes:csv})"
                             },
                             {
                               "key": "geometry",
@@ -2118,7 +1820,9 @@
     "tags": [
       "infinity",
       "duckdb",
+      "chaski",
       "kepler",
+      "business-charts",
       "wildlife"
     ],
     "timeSettings": {
@@ -2349,6 +2053,41 @@
         }
       },
       {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "Today",
+            "value": "9999"
+          },
+          "description": "The last year counted, inclusive; 9999 is no upper bound. The \"Observations per year\" chart writes it, with \"From year\", when you drag across its bars. Like \"From year\", it is compared with `observed_on_year` and the hexagons do not follow it.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "To year",
+          "multi": false,
+          "name": "hastaAnio",
+          "options": [
+            {
+              "selected": true,
+              "text": "Today",
+              "value": "9999"
+            },
+            {
+              "selected": false,
+              "text": "To 2019",
+              "value": "2019"
+            },
+            {
+              "selected": false,
+              "text": "To 2023",
+              "value": "2023"
+            }
+          ],
+          "query": "Today : 9999,To 2019 : 2019,To 2023 : 2023",
+          "skipUrlSync": false
+        }
+      },
+      {
         "kind": "QueryVariable",
         "spec": {
           "allowCustomValue": true,
@@ -2432,6 +2171,90 @@
         }
       },
       {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "description": "Months of the year (1–12), written by clicking the \"Seasonality\" chart. \"All\" expands to the twelve, so it filters nothing (`observed_on_month` is never null in this extent).",
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Month",
+          "multi": true,
+          "name": "mes",
+          "options": [
+            {
+              "selected": false,
+              "text": "Jan",
+              "value": "1"
+            },
+            {
+              "selected": false,
+              "text": "Feb",
+              "value": "2"
+            },
+            {
+              "selected": false,
+              "text": "Mar",
+              "value": "3"
+            },
+            {
+              "selected": false,
+              "text": "Apr",
+              "value": "4"
+            },
+            {
+              "selected": false,
+              "text": "May",
+              "value": "5"
+            },
+            {
+              "selected": false,
+              "text": "Jun",
+              "value": "6"
+            },
+            {
+              "selected": false,
+              "text": "Jul",
+              "value": "7"
+            },
+            {
+              "selected": false,
+              "text": "Aug",
+              "value": "8"
+            },
+            {
+              "selected": false,
+              "text": "Sep",
+              "value": "9"
+            },
+            {
+              "selected": false,
+              "text": "Oct",
+              "value": "10"
+            },
+            {
+              "selected": false,
+              "text": "Nov",
+              "value": "11"
+            },
+            {
+              "selected": false,
+              "text": "Dec",
+              "value": "12"
+            }
+          ],
+          "query": "Jan : 1,Feb : 2,Mar : 3,Apr : 4,May : 5,Jun : 6,Jul : 7,Aug : 8,Sep : 9,Oct : 10,Nov : 11,Dec : 12",
+          "skipUrlSync": false
+        }
+      },
+      {
         "kind": "TextVariable",
         "spec": {
           "current": {
@@ -2475,6 +2298,128 @@
           "refresh": "onDashboardLoad",
           "regex": "",
           "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Chaski dataset: observations counted by group, year and month in the extent (or the drawn area), about 3,600 rows in one ArcGIS request (`maxRecordCountFactor` lifts the 2,000-row cap on statistics). The three charts read it in the browser, so they answer a click at once; the counts, the map and the tables still ask ArcGIS.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Cube (Chaski)",
+          "multi": false,
+          "name": "cubo",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "cubo",
+              "refId": "cubo",
+              "source": {
+                "datasource": {
+                  "type": "yesoreyeram-infinity-datasource",
+                  "uid": "infinity"
+                },
+                "query": {
+                  "columns": [
+                    {
+                      "selector": "attributes.taxon_category_name",
+                      "text": "grupo",
+                      "type": "string"
+                    },
+                    {
+                      "selector": "attributes.observed_on_year",
+                      "text": "anio",
+                      "type": "number"
+                    },
+                    {
+                      "selector": "attributes.observed_on_month",
+                      "text": "mes",
+                      "type": "number"
+                    },
+                    {
+                      "selector": "attributes.n",
+                      "text": "n",
+                      "type": "number"
+                    }
+                  ],
+                  "datasource": {
+                    "type": "yesoreyeram-infinity-datasource",
+                    "uid": "infinity"
+                  },
+                  "format": "table",
+                  "parser": "backend",
+                  "refId": "cubo",
+                  "root_selector": "features",
+                  "source": "url",
+                  "type": "json",
+                  "url": "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/iNaturalist/FeatureServer/0/query",
+                  "url_options": {
+                    "method": "GET",
+                    "params": [
+                      {
+                        "key": "where",
+                        "value": "latitude BETWEEN -5.1 AND 1.7 AND longitude BETWEEN -92.0 AND -75.0"
+                      },
+                      {
+                        "key": "geometry",
+                        "value": "${areaRings:raw}"
+                      },
+                      {
+                        "key": "geometryType",
+                        "value": "esriGeometryPolygon"
+                      },
+                      {
+                        "key": "spatialRel",
+                        "value": "esriSpatialRelIntersects"
+                      },
+                      {
+                        "key": "inSR",
+                        "value": "4326"
+                      },
+                      {
+                        "key": "groupByFieldsForStatistics",
+                        "value": "taxon_category_name,observed_on_year,observed_on_month"
+                      },
+                      {
+                        "key": "outStatistics",
+                        "value": "[{\"statisticType\": \"count\", \"onStatisticField\": \"observation_id\", \"outStatisticFieldName\": \"n\"}]"
+                      },
+                      {
+                        "key": "maxRecordCountFactor",
+                        "value": "5"
+                      },
+                      {
+                        "key": "resultRecordCount",
+                        "value": "10000"
+                      },
+                      {
+                        "key": "f",
+                        "value": "json"
+                      }
+                    ]
+                  }
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
           "sort": "disabled"
         }
       },

@@ -62,7 +62,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "# Severe weather reports — NOAA / National Weather Service\n\nA replica on this panel of [Esri's ArcGIS dashboard](https://www.arcgis.com/apps/dashboards/94054353efa943b781cc5d6176ca8283),\non the same data and live: the *Local Storm Reports* that the 122 forecast offices of the NWS\npublish every day, aggregated by Esri into a public Feature Service.\n\n| | |\n| --- | --- |\n| **Source** | `NOAA_storm_reports_v1/FeatureServer/4` — *ALL Storm Reports (past week)*, no token |\n| **Pipeline** | Infinity → `f=json` → `latitude`/`longitude`/`time` columns → the panel detects them and kepler draws |\n| **Coverage** | rolling 7-day window · one request, no pagination |\n| **Licence** | public domain (NOAA); service hosted by Esri |\n\n**Everything beside and below the map is computed for what is on screen** — pan or zoom and the\ncounts follow. The time player under the map narrows them further. `MAGNITUDE` mixes units by type\n(inches, knots, EF number), so it is in the tooltip and drives no point size.\n",
+                "content": "# Severe weather reports — NOAA / National Weather Service\n\nA replica on this panel of [Esri's ArcGIS dashboard](https://www.arcgis.com/apps/dashboards/94054353efa943b781cc5d6176ca8283),\non the same data and live: the *Local Storm Reports* that the 122 forecast offices of the NWS\npublish every day, aggregated by Esri into a public Feature Service.\n\n| | |\n| --- | --- |\n| **Source** | `NOAA_storm_reports_v1/FeatureServer/4` — *ALL Storm Reports (past week)*, no token |\n| **Pipeline** | Infinity → `f=json` → `latitude`/`longitude`/`time` columns → the panel detects them and kepler draws |\n| **Coverage** | rolling 7-day window · one request, no pagination |\n| **Licence** | public domain (NOAA); service hosted by Esri |\n\n**Everything beside and below the map is computed for what is on screen** — pan or zoom and the\ncounts follow. The time player under the map, or a drag across *Reports per day*, narrows them further. `MAGNITUDE` mixes units by type\n(inches, knots, EF number), so it is in the tooltip and drives no point size.\n",
                 "mode": "markdown"
               }
             },
@@ -264,6 +264,186 @@
               }
             },
             "version": ""
+          }
+        }
+      },
+      "panel-11": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "infinity"
+                      },
+                      "group": "yesoreyeram-infinity-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "columns": [
+                          {
+                            "selector": "attributes.EXPR_1",
+                            "text": "bin",
+                            "type": "number"
+                          },
+                          {
+                            "selector": "attributes.n",
+                            "text": "n",
+                            "type": "number"
+                          }
+                        ],
+                        "format": "table",
+                        "parser": "backend",
+                        "root_selector": "features",
+                        "source": "url",
+                        "type": "json",
+                        "url": "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/NOAA_storm_reports_v1/FeatureServer/4/query",
+                        "url_options": {
+                          "body_form": [
+                            {
+                              "key": "where",
+                              "value": "LONGITUDE BETWEEN $west AND $east AND LATITUDE BETWEEN $south AND $north"
+                            },
+                            {
+                              "key": "groupByFieldsForStatistics",
+                              "value": "CAST(INCIDENT_DATETIME AS DATE)"
+                            },
+                            {
+                              "key": "outStatistics",
+                              "value": "[{\"statisticType\":\"count\",\"onStatisticField\":\"OBJECTID\",\"outStatisticFieldName\":\"n\"}]"
+                            },
+                            {
+                              "key": "f",
+                              "value": "json"
+                            }
+                          ],
+                          "body_type": "x-www-form-urlencoded",
+                          "method": "POST",
+                          "params": []
+                        }
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "all"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "infinity"
+                      },
+                      "group": "yesoreyeram-infinity-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "columns": [
+                          {
+                            "selector": "attributes.EXPR_1",
+                            "text": "bin",
+                            "type": "number"
+                          },
+                          {
+                            "selector": "attributes.INCIDENT_TYPE",
+                            "text": "type",
+                            "type": "string"
+                          },
+                          {
+                            "selector": "attributes.n",
+                            "text": "n",
+                            "type": "number"
+                          }
+                        ],
+                        "format": "table",
+                        "parser": "backend",
+                        "root_selector": "features",
+                        "source": "url",
+                        "type": "json",
+                        "url": "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/NOAA_storm_reports_v1/FeatureServer/4/query",
+                        "url_options": {
+                          "body_form": [
+                            {
+                              "key": "where",
+                              "value": "LONGITUDE BETWEEN $west AND $east AND LATITUDE BETWEEN $south AND $north AND INCIDENT_TYPE IN (${type:sqlstring}) AND STATE IN (${state:sqlstring})"
+                            },
+                            {
+                              "key": "groupByFieldsForStatistics",
+                              "value": "CAST(INCIDENT_DATETIME AS DATE),INCIDENT_TYPE"
+                            },
+                            {
+                              "key": "outStatistics",
+                              "value": "[{\"statisticType\":\"count\",\"onStatisticField\":\"OBJECTID\",\"outStatisticFieldName\":\"n\"}]"
+                            },
+                            {
+                              "key": "f",
+                              "value": "json"
+                            }
+                          ],
+                          "body_type": "x-www-form-urlencoded",
+                          "method": "POST",
+                          "params": []
+                        }
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "selected"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Reports per UTC day in the map's extent. Grey is every report there; colour is what the type and state pickers leave, by type, in the map's colours. **Drag across the bars** to pick days: the map's time window moves to them, and the counters, the two charts and the table follow. Moving the map's time player moves the brush here, and the eraser in the corner gives back the whole week. The histogram itself does not filter on its window, so there is always the week to pick from. Two server-side group-bys, a few hundred bytes each.",
+          "id": 11,
+          "links": [],
+          "title": "Reports per day",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Reports per day, and a brush that sets the map's time window.\n//\n// Dragging across the histogram writes the window, snapped to whole UTC days,\n// to `mapFrom` and `mapTo` as ISO 8601: the same pair the map's time player\n// writes, so the map moves its own window to match, and the counters, the\n// type and state charts and the table follow it. Moving the map's player\n// moves the brush here. Clearing the brush hands back the whole week.\n//\n// The histogram does not filter on its own window. Two query frames feed it:\n// `all` (grey, every report in the map's extent; columns `bin`, `n`) and\n// `selected` (what the type and state pickers leave, split by type in the\n// map's colours; columns `bin`, `type`, `n`). `bin` is the day's UTC midnight\n// in epoch ms. This is assets/brush-histogram.js with time bins, ISO\n// variables and stacked types.\n// @constants begin\nconst LO = 'mapFrom';\nconst HI = 'mapTo';\nconst STEP = 86400000;\nconst UNIT = 'reports';\nconst COLORS = {\n  'Flash Flood': '#1f5fa9',\n  Flood: '#6baed6',\n  Hail: '#8c6bb1',\n  Lightning: '#e7b416',\n  Tornado: '#d62728',\n  Wildfire: '#e8642f',\n  'Wind Damage': '#2b8c5d',\n  'Wind Gust': '#7fcaa0',\n  Snow: '#17becf',\n};\nconst OTHER = '#9e9e9e';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\n\nconst frameOf = (refId) =\u003e context.panel.data.series.find((f) =\u003e f.refId === refId);\nconst col = (frame, name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst allFrame = frameOf('all');\nconst selFrame = frameOf('selected');\nconst allBins = col(allFrame, 'bin').map(Number);\nconst allCounts = col(allFrame, 'n').map(Number);\nconst selBins = col(selFrame, 'bin').map(Number);\nconst selTypes = col(selFrame, 'type').map(String);\nconst selCounts = col(selFrame, 'n').map(Number);\nconst types = [...new Set(selTypes)].sort((a, b) =\u003e (b in COLORS) - (a in COLORS) || a.localeCompare(b));\n\nconst starts = allBins.concat(selBins);\nconst first = starts.length ? Math.min(...starts) : Math.floor(Date.now() / STEP) * STEP - 7 * STEP;\nconst last = starts.length ? Math.max(...starts) : Math.floor(Date.now() / STEP) * STEP;\nconst domain = [first, last + STEP];\n// One category per day for the bars: ECharts stacks bars by their position\n// in the data, which a value axis does not line up. A second, hidden time\n// axis over the same span carries the brush, so it can cover whole days\n// edge to edge rather than run between bar centres.\nconst days = Array.from({ length: Math.round((last - first) / STEP) + 1 }, (_, i) =\u003e first + i * STEP);\nconst cell = new Map(selBins.map((b, i) =\u003e [b + '|' + selTypes[i], selCounts[i]]));\nconst allByDay = new Map(allBins.map((b, i) =\u003e [b, allCounts[i]]));\n\nconst day = (ms) =\u003e new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });\nconst iso = (ms) =\u003e new Date(ms).toISOString();\n\n// Whole days only: a window that cuts a bar in two would count part of it.\nconst snap = (range) =\u003e {\n  const lo = Math.max(domain[0], Math.floor(range[0] / STEP) * STEP);\n  const hi = Math.min(domain[1], Math.max(Math.ceil(range[1] / STEP) * STEP, lo + STEP));\n  return [lo, hi];\n};\nconst drawBrush = (range) =\u003e\n  chart.dispatchAction({ type: 'brush', areas: range ? [{ brushType: 'lineX', xAxisIndex: 1, coordRange: range }] : [] });\n// Empty variables would leave the map where it is (it waits out blanks), so a\n// cleared brush writes the whole span instead: the map widens to match.\nconst publish = (range) =\u003e {\n  const [lo, hi] = range ?? domain;\n  location.partial({ ['var-' + LO]: iso(lo), ['var-' + HI]: iso(hi - 1) }, true);\n};\n\nchart.off('brushEnd');\nchart.off('brush');\nchart.on('brushEnd', (event) =\u003e {\n  const area = event.areas[0];\n  if (!area || !area.coordRange) {\n    publish(undefined);\n    return;\n  }\n  const range = snap(area.coordRange);\n  publish(range);\n  setTimeout(() =\u003e drawBrush(range), 0);\n});\nchart.on('brush', (event) =\u003e {\n  if (event.command === 'clear') {\n    publish(undefined);\n  }\n});\n\n// The window from the variables: a shared link, or the map's player. One that\n// covers the whole span is no window at all, and draws no brush.\nconst windowOf = () =\u003e {\n  const params = new URLSearchParams(location.getLocation().search);\n  const lo = Date.parse(params.get('var-' + LO) ?? '');\n  const hi = Date.parse(params.get('var-' + HI) ?? '');\n  if (!Number.isFinite(lo) || !Number.isFinite(hi) || hi \u003c= lo) {\n    return null;\n  }\n  return lo \u003c= domain[0] + STEP \u0026\u0026 hi \u003e= domain[1] - STEP ? null : [Math.max(lo, domain[0]), Math.min(hi, domain[1])];\n};\n\n// The days outside the window fade, as on the map's own timeline.\nconst series = (window) =\u003e {\n  const fade = (b) =\u003e (window \u0026\u0026 (b + STEP \u003c= window[0] || b \u003e window[1]) ? 0.3 : 1);\n  return [\n    {\n      id: 'all',\n      name: 'All in view',\n      type: 'bar',\n      barWidth: '94%',\n      silent: true,\n      itemStyle: { color: 'rgba(128, 128, 128, 0.22)' },\n      data: days.map((b) =\u003e allByDay.get(b) ?? 0),\n    },\n    ...types.map((type) =\u003e ({\n      id: type,\n      name: type,\n      type: 'bar',\n      stack: 'selected',\n      barWidth: '94%',\n      barGap: '-100%',\n      itemStyle: { color: COLORS[type] ?? OTHER },\n      data: days.map((b) =\u003e ({ value: cell.get(b + '|' + type) ?? null, itemStyle: { opacity: fade(b) } })),\n    })),\n  ];\n};\n\n// Every redraw wipes the brush, and the map's player changes the variables\n// without changing this panel's data: draw both back from the variables.\nlet drawn = JSON.stringify(windowOf());\nconst redraw = () =\u003e {\n  chart.dispatchAction({ type: 'takeGlobalCursor', key: 'brush', brushOption: { brushType: 'lineX', brushMode: 'single' } });\n  drawBrush(windowOf());\n};\nsetTimeout(redraw, 0);\nconst stop = location.getHistory().listen(() =\u003e {\n  const now = windowOf();\n  if (JSON.stringify(now) !== drawn \u0026\u0026 !chart.isDisposed()) {\n    drawn = JSON.stringify(now);\n    chart.setOption({ series: series(now) });\n    redraw();\n  }\n});\n\nconst option = {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 24, top: 30, bottom: 4, containLabel: true },\n  legend: { top: 2, left: 0, icon: 'rect', itemWidth: 10, itemHeight: 10, textStyle: { color: muted, fontSize: 11 }, data: types },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'none' },\n    formatter: (items) =\u003e {\n      const at = days[items[0].dataIndex];\n      const rows = items\n        .filter((it) =\u003e it.value != null)\n        .map((it) =\u003e `${it.marker}${it.seriesName}: \u003cb\u003e${it.value}\u003c/b\u003e`)\n        .join('\u003cbr/\u003e');\n      return `${day(at)} (UTC), ${UNIT}\u003cbr/\u003e${rows}`;\n    },\n  },\n  toolbox: {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: { brush: { type: ['lineX', 'clear'], title: { lineX: 'Select days', clear: 'Back to the whole week' } } },\n  },\n  brush: {\n    xAxisIndex: 1,\n    seriesIndex: [],\n    brushType: 'lineX',\n    brushMode: 'single',\n    transformable: true,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.12)', borderColor: muted, borderWidth: 1 },\n  },\n  xAxis: [\n    { type: 'category', data: days.map(day), axisTick: { show: false }, axisLabel: { color: muted } },\n    { type: 'value', min: domain[0], max: domain[1], show: false },\n  ],\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { opacity: 0.15 } } },\n  series: series(windowOf()),\n};\n\nreturn { version: 2, option, unsubscribe: stop };\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
           }
         }
       },
@@ -1215,10 +1395,10 @@
               "transformations": []
             }
           },
-          "description": "The same, for the span the map's time brush marks. With no brush the `mapFrom` / `mapTo` guards span everything and the block shows the whole week. Sent as `POST`: with every state picked and a brush set, the `GET` form is 2.186 characters of query string and Esri answers **404** above 2.048.",
+          "description": "The same, for the window the histogram's brush or the map's time player marks (they are one window: `mapFrom` / `mapTo`). With no brush the `mapFrom` / `mapTo` guards span everything and the block shows the whole week. Sent as `POST`: with every state picked and a brush set, the `GET` form is 2.186 characters of query string and Esri answers **404** above 2.048.",
           "id": 4,
           "links": [],
-          "title": "In the player's window",
+          "title": "In the selected days",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -1444,108 +1624,50 @@
               "transformations": []
             }
           },
-          "description": "Click a bar, then *Filter the dashboard by this value* in the menu Grafana opens — that is how a data link on a chart behaves. It filters the map and every other panel by that type. kepler's own filter on `type` writes to the same variable, so the channel runs both ways.",
+          "description": "Reports in the map's extent and time window, by event type, in the map's colours. **Click a bar** to filter the whole dashboard by that type; click more bars to add them, click a picked one again to take it out (the last one out means all types). The types not picked stay in grey: this chart does not filter itself. kepler's own filter on `type` writes the same variable, so the map and the chart agree both ways.",
           "id": 5,
           "links": [],
           "title": "Reports by type",
           "vizConfig": {
-            "group": "barchart",
+            "group": "volkovlabs-echarts-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "fixedColor": "#5a7fa8",
-                    "mode": "fixed"
-                  },
-                  "custom": {
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "fillOpacity": 80,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "lineWidth": 1,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "decimals": 0,
-                  "links": [
-                    {
-                      "title": "Filter the dashboard by this value",
-                      "url": "/d/noaa-storm-reports?var-type=${__data.fields.key}\u0026${type:queryparam}\u0026${state:queryparam}\u0026var-mapFrom=${mapFrom}\u0026var-mapTo=${mapTo}\u0026var-west=${west}\u0026var-south=${south}\u0026var-east=${east}\u0026var-north=${north}"
-                    }
-                  ],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": null
-                      }
-                    ]
-                  }
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "key"
-                    },
-                    "properties": [
-                      {
-                        "id": "displayName",
-                        "value": " "
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "n"
-                    },
-                    "properties": [
-                      {
-                        "id": "displayName",
-                        "value": "Reports"
-                      }
-                    ]
-                  }
-                ]
+                "defaults": {},
+                "overrides": []
               },
               "options": {
-                "barRadius": 0,
-                "barWidth": 0.8,
-                "fullHighlight": false,
-                "groupWidth": 0.7,
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": false
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
                 },
-                "orientation": "horizontal",
-                "showValue": "auto",
-                "stacking": "none",
-                "tooltip": {
-                  "mode": "single",
-                  "sort": "none"
+                "editor": {
+                  "format": "auto"
                 },
-                "xField": "key",
-                "xTickLabelRotation": 0,
-                "xTickLabelSpacing": 0
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Reports by event type, in the map's colours: the chart is the map's legend.\n//\n// Clicking a bar adds that type to the `type` variable, or takes it out if it\n// is already in; taking out the last one goes back to All. The map, the\n// counters, the state chart, the histogram and the table all filter on `type`;\n// this chart does not, so the types left out stay in grey as context. The\n// query frame has columns `key` (the type) and `n` (reports), already\n// filtered by the map's extent, its time window and the state.\n// @constants begin\nconst VAR = 'type';\nconst COLORS = {\n  'Flash Flood': '#1f5fa9',\n  Flood: '#6baed6',\n  Hail: '#8c6bb1',\n  Lightning: '#e7b416',\n  Tornado: '#d62728',\n  Wildfire: '#e8642f',\n  'Wind Damage': '#2b8c5d',\n  'Wind Gust': '#7fcaa0',\n  Snow: '#17becf',\n};\nconst OTHER = '#9e9e9e';\nconst UNIT = 'reports';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst text = theme.colors.text.primary;\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'D');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\n// ECharts draws a category axis bottom up: reversed, the largest is on top.\nconst keys = col('key').map(String).reverse();\nconst counts = col('n').map((v) =\u003e (v == null ? null : Number(v))).reverse();\n\n// The variable's values, read from the URL, where the panel's own writes land\n// first; null means All.\nconst picked = () =\u003e {\n  const values = new URLSearchParams(location.getLocation().search).getAll('var-' + VAR);\n  return values.length === 0 || values.includes('$__all') || values.includes('All') ? null : values;\n};\nconst toggle = (key) =\u003e {\n  const now = picked();\n  const next = !now ? [key] : now.includes(key) ? now.filter((v) =\u003e v !== key) : [...now, key];\n  location.partial({ ['var-' + VAR]: next.length ? next : '$__all' }, true);\n};\n\nchart.off('click');\nchart.on('click', (event) =\u003e toggle(keys[event.dataIndex]));\n\nconst bars = (chosen) =\u003e\n  keys.map((key, i) =\u003e ({\n    value: counts[i],\n    itemStyle: {\n      color: chosen \u0026\u0026 !chosen.includes(key) ? 'rgba(128, 128, 128, 0.22)' : COLORS[key] ?? OTHER,\n      borderRadius: [0, 3, 3, 0],\n    },\n  }));\n\n// A click changes the variable but not this query, so the panel is not drawn\n// again: repaint the bars from the URL whenever it changes.\nlet drawn = JSON.stringify(picked());\nconst stop = location.getHistory().listen(() =\u003e {\n  const now = picked();\n  if (JSON.stringify(now) !== drawn \u0026\u0026 !chart.isDisposed()) {\n    drawn = JSON.stringify(now);\n    chart.setOption({ series: [{ id: 'bars', data: bars(now) }] });\n  }\n});\n\nconst option = {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 36, top: 8, bottom: 22, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e `${items[0].name}: \u003cb\u003e${items[0].value}\u003c/b\u003e ${UNIT}\u003cbr/\u003e\u003cspan style=\"opacity:.7\"\u003eclick to filter\u003c/span\u003e`,\n  },\n  xAxis: {\n    type: 'value',\n    name: UNIT,\n    nameLocation: 'middle',\n    nameGap: 22,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  yAxis: { type: 'category', data: keys, axisTick: { show: false }, axisLabel: { color: text, fontSize: 11 } },\n  series: [\n    {\n      id: 'bars',\n      type: 'bar',\n      barWidth: '70%',\n      barMaxWidth: 24,\n      cursor: 'pointer',\n      data: bars(picked()),\n      label: { show: true, position: 'right', color: muted, fontSize: 11 },\n    },\n  ],\n};\n\nreturn { version: 2, option, unsubscribe: stop };\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
               }
             },
-            "version": ""
+            "version": "7.2.5"
           }
         }
       },
@@ -1574,6 +1696,11 @@
                             "type": "string"
                           },
                           {
+                            "selector": "attributes.INCIDENT_TYPE",
+                            "text": "type",
+                            "type": "string"
+                          },
+                          {
                             "selector": "attributes.n",
                             "text": "n",
                             "type": "number"
@@ -1594,19 +1721,11 @@
                             },
                             {
                               "key": "groupByFieldsForStatistics",
-                              "value": "STATE"
+                              "value": "STATE,INCIDENT_TYPE"
                             },
                             {
                               "key": "outStatistics",
                               "value": "[{\"statisticType\":\"count\",\"onStatisticField\":\"OBJECTID\",\"outStatisticFieldName\":\"n\"}]"
-                            },
-                            {
-                              "key": "orderByFields",
-                              "value": "n DESC"
-                            },
-                            {
-                              "key": "resultRecordCount",
-                              "value": "15"
                             },
                             {
                               "key": "f",
@@ -1625,108 +1744,50 @@
               "transformations": []
             }
           },
-          "description": "The chart the ArcGIS *State Chart* promises in its title and does not deliver.",
+          "description": "The 15 states with most reports in the map's extent and time window, each bar split by event type in the map's colours (the ArcGIS dashboard promises this chart in its *State Chart* title and does not deliver it). **Click a bar** to filter the dashboard by that state; more clicks add states, a picked one clicked again leaves. The states not picked stay, faded.",
           "id": 6,
           "links": [],
           "title": "States with most reports",
           "vizConfig": {
-            "group": "barchart",
+            "group": "volkovlabs-echarts-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "fixedColor": "#5a7fa8",
-                    "mode": "fixed"
-                  },
-                  "custom": {
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "fillOpacity": 80,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "lineWidth": 1,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "decimals": 0,
-                  "links": [
-                    {
-                      "title": "Filter the dashboard by this value",
-                      "url": "/d/noaa-storm-reports?var-state=${__data.fields.key}\u0026${type:queryparam}\u0026${state:queryparam}\u0026var-mapFrom=${mapFrom}\u0026var-mapTo=${mapTo}\u0026var-west=${west}\u0026var-south=${south}\u0026var-east=${east}\u0026var-north=${north}"
-                    }
-                  ],
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": null
-                      }
-                    ]
-                  }
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "key"
-                    },
-                    "properties": [
-                      {
-                        "id": "displayName",
-                        "value": " "
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "n"
-                    },
-                    "properties": [
-                      {
-                        "id": "displayName",
-                        "value": "Reports"
-                      }
-                    ]
-                  }
-                ]
+                "defaults": {},
+                "overrides": []
               },
               "options": {
-                "barRadius": 0,
-                "barWidth": 0.8,
-                "fullHighlight": false,
-                "groupWidth": 0.7,
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": false
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
                 },
-                "orientation": "horizontal",
-                "showValue": "auto",
-                "stacking": "none",
-                "tooltip": {
-                  "mode": "single",
-                  "sort": "none"
+                "editor": {
+                  "format": "auto"
                 },
-                "xField": "key",
-                "xTickLabelRotation": 0,
-                "xTickLabelSpacing": 0
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// The states with most reports, each bar split by event type in the map's\n// colours.\n//\n// Clicking a bar adds that state to the `state` variable, or takes it out if\n// it is already in; taking out the last one goes back to All. The map, the\n// counters, the type chart, the histogram and the table filter on `state`;\n// this chart does not, so the states left out stay, faded, as context. The\n// query frame has columns `key` (the state), `type` and `n` (reports), already\n// filtered by the map's extent, its time window and the type.\n// @constants begin\nconst VAR = 'state';\nconst TOP = 15;\nconst COLORS = {\n  'Flash Flood': '#1f5fa9',\n  Flood: '#6baed6',\n  Hail: '#8c6bb1',\n  Lightning: '#e7b416',\n  Tornado: '#d62728',\n  Wildfire: '#e8642f',\n  'Wind Damage': '#2b8c5d',\n  'Wind Gust': '#7fcaa0',\n  Snow: '#17becf',\n};\nconst OTHER = '#9e9e9e';\nconst UNIT = 'reports';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst text = theme.colors.text.primary;\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'E');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst states = col('key').map(String);\nconst kinds = col('type').map(String);\nconst counts = col('n').map(Number);\n\nconst totals = new Map();\nstates.forEach((s, i) =\u003e totals.set(s, (totals.get(s) ?? 0) + counts[i]));\n// The largest on top: a category axis draws bottom up.\nconst keys = [...totals.keys()].sort((a, b) =\u003e totals.get(b) - totals.get(a)).slice(0, TOP).reverse();\nconst types = [...new Set(kinds)].sort((a, b) =\u003e (a in COLORS) - (b in COLORS) || a.localeCompare(b)).reverse();\nconst cell = new Map(states.map((s, i) =\u003e [s + '|' + kinds[i], counts[i]]));\n\nconst picked = () =\u003e {\n  const values = new URLSearchParams(location.getLocation().search).getAll('var-' + VAR);\n  return values.length === 0 || values.includes('$__all') || values.includes('All') ? null : values;\n};\nconst toggle = (key) =\u003e {\n  const now = picked();\n  const next = !now ? [key] : now.includes(key) ? now.filter((v) =\u003e v !== key) : [...now, key];\n  location.partial({ ['var-' + VAR]: next.length ? next : '$__all' }, true);\n};\n\nchart.off('click');\nchart.on('click', (event) =\u003e toggle(keys[event.dataIndex]));\n\nconst series = (chosen) =\u003e\n  types.map((type) =\u003e ({\n    id: type,\n    name: type,\n    type: 'bar',\n    stack: 'reports',\n    barWidth: '70%',\n    barMaxWidth: 24,\n    cursor: 'pointer',\n    itemStyle: { color: COLORS[type] ?? OTHER },\n    data: keys.map((key) =\u003e ({\n      value: cell.get(key + '|' + type) ?? null,\n      itemStyle: { opacity: chosen \u0026\u0026 !chosen.includes(key) ? 0.2 : 1 },\n    })),\n  }));\n\n// A click changes the variable but not this query: repaint from the URL.\nlet drawn = JSON.stringify(picked());\nconst stop = location.getHistory().listen(() =\u003e {\n  const now = picked();\n  if (JSON.stringify(now) !== drawn \u0026\u0026 !chart.isDisposed()) {\n    drawn = JSON.stringify(now);\n    chart.setOption({ series: series(now) });\n  }\n});\n\nconst option = {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 16, top: 8, bottom: 22, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e {\n      const rows = items\n        .filter((it) =\u003e it.value != null)\n        .reverse()\n        .map((it) =\u003e `${it.marker}${it.seriesName}: \u003cb\u003e${it.value}\u003c/b\u003e`)\n        .join('\u003cbr/\u003e');\n      return `\u003cb\u003e${items[0].name}\u003c/b\u003e · ${totals.get(items[0].name)} ${UNIT}\u003cbr/\u003e${rows}\u003cbr/\u003e\u003cspan style=\"opacity:.7\"\u003eclick to filter\u003c/span\u003e`;\n    },\n  },\n  xAxis: {\n    type: 'value',\n    name: UNIT,\n    nameLocation: 'middle',\n    nameGap: 22,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  yAxis: { type: 'category', data: keys, axisTick: { show: false }, axisLabel: { color: text, fontSize: 11 } },\n  series: series(picked()),\n};\n\nreturn { version: 2, option, unsubscribe: stop };\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
               }
             },
-            "version": ""
+            "version": "7.2.5"
           }
         }
       },
@@ -2187,12 +2248,25 @@
             "spec": {
               "element": {
                 "kind": "ElementReference",
+                "name": "panel-11"
+              },
+              "height": 7,
+              "width": 24,
+              "x": 0,
+              "y": 32
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
                 "name": "panel-6"
               },
               "height": 11,
               "width": 9,
               "x": 0,
-              "y": 32
+              "y": 39
             }
           },
           {
@@ -2205,7 +2279,7 @@
               "height": 11,
               "width": 15,
               "x": 9,
-              "y": 32
+              "y": 39
             }
           },
           {
@@ -2218,7 +2292,7 @@
               "height": 10,
               "width": 24,
               "x": 0,
-              "y": 43
+              "y": 50
             }
           },
           {
@@ -2231,7 +2305,7 @@
               "height": 4,
               "width": 24,
               "x": 0,
-              "y": 53
+              "y": 60
             }
           }
         ]
@@ -2244,7 +2318,8 @@
       "infinity",
       "kepler",
       "weather",
-      "live"
+      "live",
+      "business-charts"
     ],
     "timeSettings": {
       "autoRefresh": "15m",

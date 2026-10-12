@@ -868,138 +868,50 @@
               "transformations": []
             }
           },
-          "description": "Every forecast hour out to sixteen days, measured over the same polygon. One request: leaving the lead-time axis unpinned makes the server answer with one band per hour instead of one number.",
+          "description": "Every forecast hour out to sixteen days, measured over the same polygon: the mean, and the band between the minimum and the maximum. One request: leaving the lead-time axis unpinned makes the server answer with one band per hour instead of one number. Click the chart to draw that hour on the map; the dashed line is the hour the map is drawing.",
           "id": 9,
           "links": [],
           "title": "${variable:text} over the drawn area · the whole forecast",
           "vizConfig": {
-            "group": "timeseries",
+            "group": "volkovlabs-echarts-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 0,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 2,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "spanNulls": true,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "decimals": 1,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": null
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  }
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "mean"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.lineWidth",
-                        "value": 3
-                      },
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "green",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "min"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "blue",
-                          "mode": "fixed"
-                        }
-                      },
-                      {
-                        "id": "custom.fillBelowTo",
-                        "value": "max"
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "max"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "orange",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  }
-                ]
+                "defaults": {},
+                "overrides": []
               },
               "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
                 },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "none"
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// The whole forecast over the drawn area: the mean as a thick line, the band\n// between the minimum and the maximum behind it. The step the map is drawing\n// is the dashed vertical line.\n//\n// Clicking anywhere on the chart picks the nearest forecast step: it writes\n// `hora`, the hour the map follows, and the map's own window with it, so the\n// map and the three figures move to that hour. There is nothing to clear: the\n// map always draws one hour.\n\n// @constants begin\nconst HOUR_VAR = 'hora'; // the variable the map and the figures follow\nconst FROM_VAR = 'mapFrom'; // the map's window, written with it\nconst TO_VAR = 'mapTo';\nconst WINDOW_MS = 6 * 3600 * 1000; // mapFrom = hora - 6 h, as the variable query does\n// written out, not built from the name: a variable spelled in the code is what\n// makes Grafana redraw the chart when it changes, with no query re-run\nconst DRAWN = '${horaDibujada}'; // the exact step the map is drawing\nconst LABEL = '${variable:text}'; // \"2 m temperature (C)\": the unit is in brackets\nconst COLOR_MEAN = 'green';\nconst COLOR_MIN = 'blue';\nconst COLOR_MAX = 'orange';\n// @constants end\n\nconst chart = context.panel.chart;\nconst grafana = context.grafana;\nconst theme = grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst color = (name) =\u003e theme.visualization.getColorByName(name);\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst num = (v) =\u003e (v == null || v === '' ? null : Number(v));\nconst times = col('time').map(Number);\nconst mean = col('mean').map(num);\nconst min = col('min').map(num);\nconst max = col('max').map(num);\n\nconst label = grafana.replaceVariables(LABEL);\nconst unit = (label.match(/\\(([^)]*)\\)\\s*$/) || [])[1] || '';\nconst drawn = Date.parse(grafana.replaceVariables(DRAWN));\nconst fmt = (v) =\u003e (v == null ? '–' : Math.abs(v) \u003e= 1000 ? v.toFixed(0) : Math.abs(v) \u003c 0.01 ? v.toExponential(2) : v.toFixed(1));\nconst when = (ms) =\u003e new Date(ms).toISOString().slice(5, 16).replace('T', ' ') + ' UTC';\n\n// The nearest step to a pixel on the x axis.\nconst nearest = (ms) =\u003e {\n  let best = -1;\n  let gap = Infinity;\n  times.forEach((t, i) =\u003e {\n    if (Math.abs(t - ms) \u003c gap) {\n      gap = Math.abs(t - ms);\n      best = i;\n    }\n  });\n  return best;\n};\n\nconst zr = chart.getZr();\nzr.off('click');\nzr.on('click', (e) =\u003e {\n  if (!times.length || !chart.containPixel({ gridIndex: 0 }, [e.offsetX, e.offsetY])) {\n    return;\n  }\n  const i = nearest(chart.convertFromPixel({ gridIndex: 0 }, [e.offsetX, e.offsetY])[0]);\n  if (i \u003c 0) {\n    return;\n  }\n  const iso = new Date(times[i]).toISOString();\n  grafana.locationService.partial(\n    {\n      ['var-' + HOUR_VAR]: iso,\n      ['var-' + FROM_VAR]: new Date(times[i] - WINDOW_MS).toISOString(),\n      ['var-' + TO_VAR]: iso,\n    },\n    true\n  );\n});\n\nconst di = Number.isFinite(drawn) ? times.indexOf(drawn) : -1;\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 24, top: 40, bottom: 8, containLabel: true },\n  legend: {\n    top: 0,\n    right: 8,\n    textStyle: { color: muted },\n    data: ['mean', 'min', 'max'],\n    selectedMode: false,\n  },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'line' },\n    formatter: (items) =\u003e {\n      const i = items[0].dataIndex;\n      return (\n        `\u003cb\u003e${when(times[i])}\u003c/b\u003e\u003cbr/\u003e` +\n        `mean \u003cb\u003e${fmt(mean[i])} ${unit}\u003c/b\u003e\u003cbr/\u003emin ${fmt(min[i])} · max ${fmt(max[i])} ${unit}` +\n        `\u003cbr/\u003e\u003cspan style=\"opacity:.7\"\u003eclick to draw this hour on the map\u003c/span\u003e`\n      );\n    },\n  },\n  xAxis: {\n    type: 'time',\n    axisLabel: { color: muted, hideOverlap: true },\n    axisLine: { lineStyle: { color: theme.colors.border.weak } },\n    splitLine: { show: false },\n  },\n  yAxis: {\n    type: 'value',\n    scale: true,\n    name: unit,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  series: [\n    // The band: an invisible base at the minimum, the range stacked on it.\n    {\n      name: 'band-base',\n      type: 'line',\n      stack: 'band',\n      symbol: 'none',\n      silent: true,\n      lineStyle: { opacity: 0 },\n      tooltip: { show: false },\n      data: times.map((t, i) =\u003e [t, min[i]]),\n    },\n    {\n      name: 'band',\n      type: 'line',\n      stack: 'band',\n      symbol: 'none',\n      silent: true,\n      lineStyle: { opacity: 0 },\n      areaStyle: { color: 'rgba(128,128,128,0.22)' },\n      tooltip: { show: false },\n      data: times.map((t, i) =\u003e [t, max[i] == null || min[i] == null ? null : max[i] - min[i]]),\n    },\n    {\n      name: 'min',\n      type: 'line',\n      symbol: 'none',\n      lineStyle: { width: 1, color: color(COLOR_MIN) },\n      itemStyle: { color: color(COLOR_MIN) },\n      data: times.map((t, i) =\u003e [t, min[i]]),\n    },\n    {\n      name: 'max',\n      type: 'line',\n      symbol: 'none',\n      lineStyle: { width: 1, color: color(COLOR_MAX) },\n      itemStyle: { color: color(COLOR_MAX) },\n      data: times.map((t, i) =\u003e [t, max[i]]),\n    },\n    {\n      name: 'mean',\n      type: 'line',\n      symbol: 'none',\n      lineStyle: { width: 3, color: color(COLOR_MEAN) },\n      itemStyle: { color: color(COLOR_MEAN) },\n      data: times.map((t, i) =\u003e [t, mean[i]]),\n      markLine:\n        di \u003c 0\n          ? undefined\n          : {\n              silent: true,\n              symbol: 'none',\n              lineStyle: { type: 'dashed', color: theme.colors.text.primary, width: 1.5 },\n              label: { formatter: 'on the map · ' + when(drawn), color: theme.colors.text.primary, position: 'end', distance: 2 },\n              data: [{ xAxis: drawn }],\n            },\n      markPoint:\n        di \u003c 0 || mean[di] == null\n          ? undefined\n          : {\n              silent: true,\n              symbol: 'circle',\n              symbolSize: 10,\n              itemStyle: { color: color(COLOR_MEAN), borderColor: theme.colors.text.primary, borderWidth: 2 },\n              label: { show: false },\n              data: [{ coord: [drawn, mean[di]] }],\n            },\n    },\n  ],\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
                 }
               }
             },
-            "version": "12.0.10"
+            "version": "7.2.5"
           }
         }
       }
@@ -1109,6 +1021,7 @@
       "duckdb",
       "infinity",
       "kepler",
+      "business-charts",
       "weather"
     ],
     "timeSettings": {

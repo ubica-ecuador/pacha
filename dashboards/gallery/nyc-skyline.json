@@ -665,7 +665,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "format": 1,
-                        "rawSql": "SELECT\n  era,\n  count(*) AS buildings,\n  round(avg(height_roof), 1) AS avg_height_ft\nFROM read_parquet('http://feeds/geolens/datasets/4a0bd0db-cd92-424a-8a2e-62d270ae918a.parquet')\nWHERE height_roof \u003e= CAST($minHeight AS DOUBLE)\n    AND era IN (${era:singlequote})\nGROUP BY era\nORDER BY min(coalesce(construction_year, 9999))"
+                        "rawSql": "-- Every era, whatever the \"Built in\" filter says: the chart is where eras are\n-- picked, so the ones left out stay on it, in grey, to be clicked back.\nSELECT\n  era,\n  count(*) AS buildings,\n  round(avg(height_roof), 1) AS avg_height_ft\nFROM read_parquet('http://feeds/geolens/datasets/4a0bd0db-cd92-424a-8a2e-62d270ae918a.parquet')\nWHERE height_roof \u003e= CAST($minHeight AS DOUBLE)\nGROUP BY era\nORDER BY min(coalesce(construction_year, 9999))"
                       },
                       "version": "v0"
                     },
@@ -677,91 +677,50 @@
               "transformations": []
             }
           },
-          "description": "How many buildings survive from each era, and how tall they were built.",
+          "description": "Buildings standing today by the era of their lot, in the map's colours, with each era's average roof height as a tick. Click a bar to keep only that era; click others to add or remove them. The map, the coverage figure and the station table follow.",
           "id": 5,
           "links": [],
           "title": "What each era left behind",
           "vizConfig": {
-            "group": "barchart",
+            "group": "volkovlabs-echarts-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "custom": {
-                    "axisPlacement": "left",
-                    "fillOpacity": 80,
-                    "lineWidth": 1
-                  }
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "avg_height_ft"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.axisPlacement",
-                        "value": "right"
-                      },
-                      {
-                        "id": "unit",
-                        "value": "lengthft"
-                      },
-                      {
-                        "id": "displayName",
-                        "value": "Average roof height"
-                      },
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "orange",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "buildings"
-                    },
-                    "properties": [
-                      {
-                        "id": "displayName",
-                        "value": "Buildings standing"
-                      },
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "blue",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  }
-                ]
+                "defaults": {},
+                "overrides": []
               },
               "options": {
-                "barWidth": 0.85,
-                "groupWidth": 0.7,
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
                 },
-                "orientation": "auto",
-                "showValue": "auto",
-                "stacking": "none",
-                "tooltip": {
-                  "mode": "multi",
-                  "sort": "none"
+                "editor": {
+                  "format": "auto"
                 },
-                "xField": "era"
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// What each era left behind: the buildings standing today, by the era of\n// their lot, in the map's own era colours, with each era's average roof\n// height as a tick on the right-hand axis.\n//\n// Clicking a bar toggles that era in the dashboard's \"Built in\" variable\n// (ERA): from All, a click keeps only that era; further clicks add or remove\n// eras; removing the last one, or adding the last missing one, goes back to\n// All. The map, the coverage figure and the station table follow. The chart\n// never filters itself: the eras left out stay as grey bars, so there is\n// always something to click back.\n// The query frame has columns `era`, `buildings` and `avg_height_ft`, one row\n// per era, already cut by the height floor but not by the era.\n// @constants begin\nconst ERA = 'era';\nconst ALL = '$__all';\nconst ERAS = [\n  { era: 'Pre-1900', color: '#2b3a67' },\n  { era: '1900-1929', color: '#3f6c9c' },\n  { era: '1930-1949', color: '#5fa0b8' },\n  { era: '1950-1979', color: '#93c4a0' },\n  { era: '1980-1999', color: '#e0c26b' },\n  { era: '2000-2014', color: '#e08a48' },\n  { era: '2015+', color: '#d1495b' },\n  { era: 'Unknown', color: '#6c6c6c' },\n];\nconst CONTEXT = 'rgba(128,128,128,0.22)';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst text = theme.colors.text.primary;\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A') ?? context.panel.data.series[0];\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst byEra = new Map(\n  col('era').map((era, i) =\u003e [\n    era,\n    { buildings: Number(col('buildings')[i]), height: col('avg_height_ft')[i] == null ? null : Number(col('avg_height_ft')[i]) },\n  ])\n);\n// Every era on the axis, in order, even one the height floor emptied.\nconst eras = ERAS.map((e) =\u003e e.era);\nconst rows = eras.map((era) =\u003e byEra.get(era) ?? { buildings: 0, height: null });\n\n// The selection, from the URL (what a click just wrote) or, before any click,\n// from the variable. null stands for All.\nconst readPicked = () =\u003e {\n  let values = new URLSearchParams(location.getLocation().search).getAll('var-' + ERA);\n  if (values.length === 0) {\n    try {\n      values = [].concat(JSON.parse(context.grafana.replaceVariables('${' + ERA + ':json}')));\n    } catch (e) {\n      values = [];\n    }\n  }\n  const picked = values.filter((v) =\u003e eras.includes(v));\n  return values.includes(ALL) || picked.length === 0 || picked.length === eras.length ? null : picked;\n};\n\n// The whole column answers a click, not only the bar: the recent eras are a\n// few pixels tall next to 1900-1929. Listened to on the canvas, by a named\n// handler the panel removes again before it runs this code next time.\nconst onClick = (event) =\u003e {\n  const at = [event.offsetX, event.offsetY];\n  if (!chart.containPixel({ gridIndex: 0 }, at)) {\n    return;\n  }\n  const era = eras[Math.round(chart.convertFromPixel({ gridIndex: 0 }, at)[0])];\n  if (!era) {\n    return;\n  }\n  const picked = readPicked();\n  let next;\n  if (picked === null) {\n    next = [era];\n  } else if (picked.includes(era)) {\n    next = picked.filter((e) =\u003e e !== era);\n  } else {\n    next = eras.filter((e) =\u003e e === era || picked.includes(e));\n  }\n  const all = next.length === 0 || next.length === eras.length;\n  location.partial({ ['var-' + ERA]: all ? ALL : next }, true);\n};\nconst zr = chart.getZr();\nzr.on('click', onClick);\n\nconst build = (picked) =\u003e ({\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 8, top: 30, bottom: 8, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e {\n      const i = items[0].dataIndex;\n      const r = rows[i];\n      const height = r.height == null ? 'none standing' : `${r.height.toFixed(0)} ft`;\n      const state = picked === null || picked.includes(eras[i]) ? 'click to filter' : 'left out · click to add';\n      return `\u003cb\u003e${eras[i]}\u003c/b\u003e\u003cbr/\u003eBuildings standing: \u003cb\u003e${r.buildings.toLocaleString('en-US')}\u003c/b\u003e\u003cbr/\u003eAverage roof height: ${height}\u003cbr/\u003e\u003cspan style=\"color:${muted}\"\u003e${state}\u003c/span\u003e`;\n    },\n  },\n  xAxis: {\n    type: 'category',\n    data: eras,\n    axisTick: { show: false },\n    axisLabel: { color: text, fontSize: 11 },\n  },\n  yAxis: [\n    {\n      type: 'value',\n      name: 'buildings',\n      nameTextStyle: { color: muted },\n      axisLabel: { color: muted },\n      splitLine: { lineStyle: { opacity: 0.15 } },\n    },\n    {\n      type: 'value',\n      name: 'avg roof, ft',\n      nameTextStyle: { color: muted },\n      axisLabel: { color: muted },\n      splitLine: { show: false },\n    },\n  ],\n  series: [\n    {\n      type: 'bar',\n      name: 'Buildings standing',\n      barWidth: '62%',\n      data: rows.map((r, i) =\u003e ({\n        value: r.buildings,\n        itemStyle: {\n          color: picked === null || picked.includes(eras[i]) ? ERAS[i].color : CONTEXT,\n          borderRadius: [3, 3, 0, 0],\n        },\n      })),\n      label: { show: true, position: 'top', color: muted, fontSize: 10, formatter: (p) =\u003e Number(p.value).toLocaleString('en-US') },\n    },\n    {\n      type: 'scatter',\n      name: 'Average roof height',\n      yAxisIndex: 1,\n      symbol: 'rect',\n      symbolSize: [26, 2],\n      itemStyle: { color: text },\n      data: rows.map((r) =\u003e r.height),\n      silent: true,\n      tooltip: { show: false },\n    },\n  ],\n});\n\n// A click changes only the variable; this panel's query does not read it, so\n// the selection is redrawn from the URL rather than waiting for a refresh.\nlet drawn = JSON.stringify(readPicked());\nconst stop = location.getHistory().listen(() =\u003e {\n  const picked = readPicked();\n  const key = JSON.stringify(picked);\n  if (key !== drawn \u0026\u0026 !chart.isDisposed()) {\n    drawn = key;\n    chart.setOption(build(picked));\n  }\n});\n\nreturn {\n  version: 2,\n  option: build(readPicked()),\n  unsubscribe: () =\u003e {\n    stop();\n    zr.off('click', onClick);\n  },\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
               }
             },
-            "version": ""
+            "version": "7.2.5"
           }
         }
       }
@@ -842,6 +801,7 @@
     "liveNow": false,
     "preload": false,
     "tags": [
+      "business-charts",
       "duckdb",
       "kepler",
       "transit"

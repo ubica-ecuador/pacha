@@ -52,7 +52,7 @@ after(async () => view && view.browser.close());
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, UID);
   assert.ok(dashboard.spec.description);
-  assert.deepEqual(dashboard.spec.tags, ['infinity', 'kepler', 'weather', 'live']);
+  assert.deepEqual(dashboard.spec.tags, ['infinity', 'kepler', 'weather', 'live', 'business-charts']);
   assert.ok(queries.every((q) => q.spec.url.startsWith('https://services9.arcgis.com/')));
 });
 
@@ -78,7 +78,7 @@ test('the map gets the whole week, the same count the service gives, in North Am
 
 test('the counters, charts and table answer, and agree with each other', { timeout: 120_000 }, async () => {
   const [day] = await infinity(queryOf('Last 24 hours', 'B'), DEFAULTS);
-  const [window] = await infinity(queryOf("In the player's window", 'C'), DEFAULTS);
+  const [window] = await infinity(queryOf('In the selected days', 'C'), DEFAULTS);
   for (const kind of ['tornado', 'hail', 'wind', 'flood', 'lightning', 'wildfire']) {
     assert.ok(day[kind] >= 0 && day[kind] <= window[kind], kind);
   }
@@ -87,7 +87,8 @@ test('the counters, charts and table answer, and agree with each other', { timeo
   const typed = types.reduce((sum, r) => sum + r.n, 0);
   assert.ok(typed > 0.95 * n && typed <= n, `${typed} of ${n}`);
   const states = await infinity(queryOf('States with most reports', 'E'), DEFAULTS);
-  assert.ok(states.length > 0 && states.length <= 15);
+  // One row per state and type: the chart keeps the 15 states with most.
+  assert.ok(states.length > 0 && states.reduce((sum, r) => sum + r.n, 0) === typed);
   const recent = await infinity(queryOf('Most recent reports', 'F'), DEFAULTS);
   assert.equal(recent.length, Math.min(200, typed));
   const days = await infinity(queryOf('Deaths and injuries per day', 'H'), DEFAULTS);

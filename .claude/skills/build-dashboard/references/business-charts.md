@@ -70,7 +70,9 @@ chart.on('click', (event) => {
 });
 ```
 
-Highlight the picked bar from the variable when drawing, so a shared link shows it too.
+Highlight the picked bar from the variable when drawing, so a shared link shows it too. Read it
+as `'${' + VAR + '}'` *and* write the literal `${var}` somewhere in the code: the panel redraws
+only when its code or query names the variable, and a name built from strings does not count.
 
 **Brush a range into two variables**: `assets/brush-histogram.js`. Two frames, `all`
 (context, grey) and `selected` (what the other filters leave), columns `bin` and `n`. The

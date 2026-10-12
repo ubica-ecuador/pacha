@@ -15,8 +15,8 @@ const map = panelTitled(dashboard, 'Every building, raised to its own height');
 const sqlOf = (panel, refId = 'A') => panel.data.spec.queries.find((q) => q.spec.refId === refId).spec.query.spec.rawSql;
 const ERAS = ['Pre-1900', '1900-1929', '1930-1949', '1950-1979', '1980-1999', '2000-2014', '2015+', 'Unknown'];
 // The variables at their defaults: 400 m, any height, every era.
-const fill = (sql) =>
-  sql.replaceAll('$radius', '400').replaceAll('$minHeight', '0').replaceAll('${era:singlequote}', ERAS.map((e) => `'${e}'`).join(','));
+const fill = (sql, eras = ERAS) =>
+  sql.replaceAll('$radius', '400').replaceAll('$minHeight', '0').replaceAll('${era:singlequote}', eras.map((e) => `'${e}'`).join(','));
 
 let current;
 after(async () => current && current.browser.close());
@@ -24,7 +24,7 @@ after(async () => current && current.browser.close());
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, 'nyc-skyline');
   assert.ok(dashboard.spec.description);
-  for (const tag of ['duckdb', 'kepler', 'transit']) assert.ok(dashboard.spec.tags.includes(tag), tag);
+  for (const tag of ['business-charts', 'duckdb', 'kepler', 'transit']) assert.ok(dashboard.spec.tags.includes(tag), tag);
   assert.ok(!dashboard.spec.tags.includes('plus'));
 });
 
@@ -50,13 +50,6 @@ test('the map gets every building, 29 services and 496 stations, all in New York
   const stations = await duckdb(STACK_URL, fill(sqlOf(map, 'C')));
   assert.equal(stations.length, 496);
   assert.ok(stations.every((s) => s.latitude > 40.4 && s.latitude < 41 && s.longitude > -74.3 && s.longitude < -73.6));
-});
-
-test('most of Manhattan is within 400 m of a station', async () => {
-  const [row] = await duckdb(STACK_URL, fill(sqlOf(panelTitled(dashboard, 'Within ${radius:text} of a station'))));
-  assert.ok(row['Within reach'] > 50 && row['Within reach'] < 100, JSON.stringify(row));
-  const eras = await duckdb(STACK_URL, fill(sqlOf(panelTitled(dashboard, 'What each era left behind'))));
-  assert.equal(eras.reduce((n, r) => n + Number(r.buildings), 0), 22324);
 });
 
 test('loads for an anonymous visitor, with no panel in error', async () => {

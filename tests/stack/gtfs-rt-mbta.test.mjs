@@ -23,9 +23,9 @@ const ALL = {
   parA: "''",
   parB: "''",
 };
-const fill = (sql) => sql.replace(/\$(\w+)/g, (m, name) => ALL[name] ?? m);
-async function query(sql, from = 'now-7d', to = 'now') {
-  const body = { queries: [{ refId: 'A', datasource: { uid: 'duckdb' }, rawSql: fill(sql), rawQuery: true, format: 1 }], from, to };
+const fill = (sql, vars = {}) => sql.replace(/\$(\w+)/g, (m, name) => vars[name] ?? ALL[name] ?? m);
+async function query(sql, from = 'now-7d', to = 'now', vars = {}) {
+  const body = { queries: [{ refId: 'A', datasource: { uid: 'duckdb' }, rawSql: fill(sql, vars), rawQuery: true, format: 1 }], from, to };
   const { status, json, text } = await api(STACK_URL, '/api/ds/query', { method: 'POST', body });
   if (status !== 200) throw new Error(`/api/ds/query ${status}: ${text.slice(0, 500)}`);
   return rowsOf(json);
@@ -37,7 +37,7 @@ after(async () => current && current.browser.close());
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, 'gtfs-rt-mbta');
   assert.ok(dashboard.spec.description);
-  for (const tag of ['duckdb', 'kepler', 'transit', 'live']) assert.ok(dashboard.spec.tags.includes(tag), tag);
+  for (const tag of ['duckdb', 'kepler', 'transit', 'live', 'business-charts']) assert.ok(dashboard.spec.tags.includes(tag), tag);
   for (const ds of findAll(dashboard, (n) => n.kind === 'DataQuery' && n.group === 'motherduck-duckdb-datasource')) {
     assert.equal(ds.datasource.name, 'duckdb');
   }

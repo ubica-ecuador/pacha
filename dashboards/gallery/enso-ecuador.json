@@ -258,7 +258,7 @@
                       "spec": {
                         "format": 1,
                         "rawQuery": true,
-                        "rawSql": "-- OJO: esta consulta es GEMELA de la refId B del panel 4 (el mapa de\n-- arriba). Se repite a proposito: reutilizarla con el datasource\n-- `-- Dashboard --` se probo y NO funciona con este panel — el frame\n-- compartido llega con UNA fila en vez de 220, con y sin choque de\n-- refId. Si cambia una, cambiar la otra.\n-- La red real de INAMHI: 1.892 estaciones, 220 transmitiendo. Los datos publicos\n-- se cortan a DIEZ DIAS (mas pide sesion): esto es la foto de ahora, no historia.\nWITH lluvia AS (\n  SELECT estacion, sum(valor) AS mm\n  FROM read_parquet($svc || '/inamhi/observaciones.parquet')\n  WHERE strptime(fecha, '%Y-%m-%dT%H:%M:%SZ') \u003e= now() - INTERVAL '24 hours'\n  GROUP BY 1)\n-- `id_estacion` va en el SELECT porque el mapeo de clic de este panel publica\n-- ESE campo en `estacionSel`. Sin el, kepler no tiene que publicar y pinchar\n-- una estacion no llenaba nada: el mapeo estaba declarado y mudo.\nSELECT e.id_estacion, e.latitude, e.longitude, e.nombre, e.provincia, e.codigo, e.altitud,\n       round(coalesce(l.mm, 0), 1) AS lluvia_24h\nFROM read_parquet($svc || '/inamhi/estaciones.parquet') e\nLEFT JOIN lluvia l ON l.estacion = e.id_estacion\nWHERE e.transmitiendo\nORDER BY lluvia_24h DESC"
+                        "rawSql": "-- OJO: esta consulta es GEMELA de la refId B del panel 4 (el mapa de\n-- arriba). Se repite a proposito: reutilizarla con el datasource\n-- `-- Dashboard --` se probo y NO funciona con este panel — el frame\n-- compartido llega con UNA fila en vez de 220, con y sin choque de\n-- refId. Si cambia una, cambiar la otra.\n-- La red real de INAMHI: 1.892 estaciones, 220 transmitiendo. Los datos publicos\n-- se cortan a DIEZ DIAS (mas pide sesion): esto es la foto de ahora, no historia.\nWITH lluvia AS (\n  SELECT estacion, sum(valor) AS mm\n  FROM read_parquet($svc || '/inamhi/observaciones.parquet')\n  WHERE strptime(fecha, '%Y-%m-%dT%H:%M:%SZ') \u003e= now() - INTERVAL '24 hours'\n  GROUP BY 1)\n-- `id_estacion` va en el SELECT porque el mapeo de clic de este panel publica\n-- ESE campo en `estacionSel`. Sin el, kepler no tiene que publicar y pinchar\n-- una estacion no llenaba nada: el mapeo estaba declarado y mudo.\nSELECT e.id_estacion, e.latitude, e.longitude, e.nombre, e.provincia, e.codigo, e.altitud,\n       round(coalesce(l.mm, 0), 1) AS lluvia_24h\nFROM read_parquet($svc || '/inamhi/estaciones.parquet') e\nLEFT JOIN lluvia l ON l.estacion = e.id_estacion\nWHERE e.transmitiendo\n  -- INAMHI publica alguna estacion sin coordenadas, como 0,0: caeria en el golfo de Guinea.\n  AND NOT (e.latitude = 0 AND e.longitude = 0)\nORDER BY lluvia_24h DESC"
                       },
                       "version": "v0"
                     },
@@ -1008,7 +1008,7 @@
                       "spec": {
                         "format": 1,
                         "rawQuery": true,
-                        "rawSql": "-- La red real de INAMHI: 1.892 estaciones, 220 transmitiendo. Los datos publicos\n-- se cortan a DIEZ DIAS (mas pide sesion): esto es la foto de ahora, no historia.\nWITH lluvia AS (\n  SELECT estacion, sum(valor) AS mm\n  FROM read_parquet($svc || '/inamhi/observaciones.parquet')\n  WHERE strptime(fecha, '%Y-%m-%dT%H:%M:%SZ') \u003e= now() - INTERVAL '24 hours'\n  GROUP BY 1)\n-- `id_estacion` va en el SELECT porque el mapeo de clic de este panel publica\n-- ESE campo en `estacionSel`. Sin el, kepler no tiene que publicar y pinchar\n-- una estacion no llenaba nada: el mapeo estaba declarado y mudo.\nSELECT e.id_estacion, e.latitude, e.longitude, e.nombre, e.provincia, e.codigo, e.altitud,\n       round(coalesce(l.mm, 0), 1) AS lluvia_24h\nFROM read_parquet($svc || '/inamhi/estaciones.parquet') e\nLEFT JOIN lluvia l ON l.estacion = e.id_estacion\nWHERE e.transmitiendo\nORDER BY lluvia_24h DESC"
+                        "rawSql": "-- La red real de INAMHI: 1.892 estaciones, 220 transmitiendo. Los datos publicos\n-- se cortan a DIEZ DIAS (mas pide sesion): esto es la foto de ahora, no historia.\nWITH lluvia AS (\n  SELECT estacion, sum(valor) AS mm\n  FROM read_parquet($svc || '/inamhi/observaciones.parquet')\n  WHERE strptime(fecha, '%Y-%m-%dT%H:%M:%SZ') \u003e= now() - INTERVAL '24 hours'\n  GROUP BY 1)\n-- `id_estacion` va en el SELECT porque el mapeo de clic de este panel publica\n-- ESE campo en `estacionSel`. Sin el, kepler no tiene que publicar y pinchar\n-- una estacion no llenaba nada: el mapeo estaba declarado y mudo.\nSELECT e.id_estacion, e.latitude, e.longitude, e.nombre, e.provincia, e.codigo, e.altitud,\n       round(coalesce(l.mm, 0), 1) AS lluvia_24h\nFROM read_parquet($svc || '/inamhi/estaciones.parquet') e\nLEFT JOIN lluvia l ON l.estacion = e.id_estacion\nWHERE e.transmitiendo\n  -- INAMHI publica alguna estacion sin coordenadas, como 0,0: caeria en el golfo de Guinea.\n  AND NOT (e.latitude = 0 AND e.longitude = 0)\nORDER BY lluvia_24h DESC"
                       },
                       "version": "v0"
                     },
@@ -1251,7 +1251,7 @@
                       "spec": {
                         "format": 1,
                         "rawQuery": true,
-                        "rawSql": "-- Sin geometria son 79 KB: aqui viven los once anos.\nSELECT fecha::TIMESTAMP AS time,\n       'zona ' || zona_id AS zona,\n       mean AS anomalia\nFROM read_parquet($svc || '/inamhi/anomalias.parquet')\nORDER BY time, zona_id"
+                        "rawSql": "-- Sin geometria son 79 KB: aqui viven los once anos. Los nombres son los del\n-- mapa de la pestaña Ahora (mismo CASE): pinchar una region aqui o alli llena\n-- la misma variable, `zonaSel`, con el `zona_id`.\nSELECT fecha::TIMESTAMP AS time,\n       zona_id,\n       CASE zona_id\n    WHEN 81 THEN 'Galapagos'\n    WHEN 20 THEN 'oriente sur'      WHEN 21 THEN 'oriente norte'\n    WHEN 26 THEN 'sierra sur'       WHEN 27 THEN 'sierra norte'\n    WHEN 31 THEN 'costa sur'        WHEN 32 THEN 'costa sur-centro'\n    WHEN 33 THEN 'costa norte'      WHEN 37 THEN 'costa El Oro'\n    WHEN 38 THEN 'peninsula'        WHEN 39 THEN 'Manabi'\n  END AS region,\n       mean AS anomalia\nFROM read_parquet($svc || '/inamhi/anomalias.parquet')\nORDER BY zona_id, time"
                       },
                       "version": "v0"
                     },
@@ -1260,59 +1260,53 @@
                 }
               ],
               "queryOptions": {},
-              "transformations": [
-                {
-                  "group": "partitionByValues",
-                  "kind": "Transformation",
-                  "spec": {
-                    "options": {
-                      "fields": [
-                        "zona"
-                      ],
-                      "keepFields": false
-                    }
-                  }
-                }
-              ]
+              "transformations": []
             }
           },
-          "description": "Cada punto es una medición de INAMHI. Son puntos y no una línea porque solo se publica durante los eventos: entre 2021 y 2022 no hay nada, y ese vacío es real, no un error.",
+          "description": "Cada línea es una región de INAMHI, cortada donde no se publicó: entre 2021 y 2022 no hay nada, y ese vacío es real, no un error. Pincha una línea, o su nombre, para elegir esa región (la gráfica «Once años de la región elegida» de la pestaña Ahora la sigue); pincha otra vez para soltarla.",
           "id": 5,
           "links": [],
           "title": "Once años, región por región",
           "vizConfig": {
-            "group": "timeseries",
+            "group": "volkovlabs-echarts-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "custom": {
-                    "axisSoftMax": 8,
-                    "axisSoftMin": -4,
-                    "drawStyle": "points",
-                    "fillOpacity": 0,
-                    "lineWidth": 0,
-                    "pointSize": 5,
-                    "showPoints": "always",
-                    "spanNulls": false
-                  },
-                  "decimals": 2
-                },
+                "defaults": {},
                 "overrides": []
               },
               "options": {
-                "legend": {
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
                 },
-                "tooltip": {
-                  "mode": "multi",
-                  "sort": "desc"
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Once años, región por región: el índice de anomalía de INAMHI de cada una de\n// las once regiones, una línea por región, cortada donde no se publicó (entre\n// 2021 y 2022 no hay nada, y ese vacío es real).\n//\n// Pinchar una línea, o su nombre en la leyenda, elige esa región: llena\n// `zonaSel` como lo hace un clic en el mapa de la pestaña Ahora, y la gráfica\n// «Once años de la región elegida» la sigue. Pinchar otra vez la misma la\n// suelta. La elegida va en color; las demás quedan en gris, de contexto.\n// Si hay una temporada elegida en las gráficas de arriba (`temporada`), su\n// enero-abril se sombrea aquí cuando cae dentro de estos once años.\n// Columnas: `time`, `zona_id`, `region`, `anomalia`.\n// @constants begin\nconst VAR = 'zonaSel';\n// Escritas literales para que Grafana redibuje el panel cuando cambian.\nconst PICKED = '${zonaSel}';\nconst SEASON = '${temporada}';\n// Una familia de color por gran región: la costa, la sierra, el oriente, Galápagos.\nconst FAMILY = (name) =\u003e\n  name.startsWith('sierra') ? 'orange' : name.startsWith('oriente') ? 'green' : name === 'Galapagos' ? 'purple' : 'blue';\nconst GAP_DAYS = 30; // más de un mes sin dato: la línea se corta\nconst UNIT = 'índice de anomalía';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst grey = 'rgba(128, 128, 128, 0.6)';\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst times = col('time').map(Number);\nconst ids = col('zona_id').map((v) =\u003e String(Number(v)));\nconst names = col('region');\nconst values = col('anomalia').map((v) =\u003e (v == null ? null : Number(v)));\n\n// Una serie por región, con un hueco (null) donde pasó más de GAP_DAYS sin dato.\nconst regions = [];\nconst byId = {};\ntimes.forEach((t, i) =\u003e {\n  let r = byId[ids[i]];\n  if (!r) {\n    r = byId[ids[i]] = { id: ids[i], name: names[i], data: [] };\n    regions.push(r);\n  }\n  const last = r.data[r.data.length - 1];\n  if (last \u0026\u0026 t - last[0] \u003e GAP_DAYS * 86400000) {\n    r.data.push([last[0] + 86400000, null]);\n  }\n  r.data.push([t, values[i]]);\n});\nregions.sort((a, b) =\u003e a.name.localeCompare(b.name));\nconst nameOf = Object.fromEntries(regions.map((r) =\u003e [r.name, r.id]));\n\nconst picked = context.grafana.replaceVariables(PICKED);\nconst pick = (id) =\u003e {\n  const same = id === context.grafana.replaceVariables(PICKED);\n  location.partial({ ['var-' + VAR]: same ? '' : id }, true);\n};\n\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  if (event.componentType === 'series' \u0026\u0026 nameOf[event.seriesName]) {\n    pick(nameOf[event.seriesName]);\n  }\n});\n// La leyenda no oculta series: un clic en un nombre elige la región.\nchart.off('legendselectchanged');\nchart.on('legendselectchanged', (event) =\u003e {\n  chart.dispatchAction({ type: 'legendAllSelect' });\n  if (nameOf[event.name]) {\n    pick(nameOf[event.name]);\n  }\n});\n\nconst season = parseInt(context.grafana.replaceVariables(SEASON), 10);\nconst first = times.length ? Math.min(...times) : 0;\nconst lastT = times.length ? Math.max(...times) : 0;\nconst seasonArea =\n  Number.isFinite(season) \u0026\u0026 Date.UTC(season, 4, 1) \u003e first \u0026\u0026 Date.UTC(season, 0, 1) \u003c lastT\n    ? [[{ xAxis: Date.UTC(season, 0, 1), name: `ene-abr ${season}` }, { xAxis: Date.UTC(season, 4, 1) }]]\n    : [];\n\nconst series = regions.map((r) =\u003e {\n  const on = picked === r.id;\n  const color = theme.visualization.getColorByName(FAMILY(r.name));\n  const shown = !picked || on ? color : grey;\n  return {\n    name: r.name,\n    type: 'line',\n    data: r.data,\n    connectNulls: false,\n    triggerLineEvent: true,\n    cursor: 'pointer',\n    showSymbol: on,\n    symbolSize: 4,\n    z: on ? 3 : 2,\n    color,\n    lineStyle: { width: on ? 2.5 : 1.2, color: shown, opacity: picked \u0026\u0026 !on ? 1 : 0.85 },\n    itemStyle: { color: shown },\n    emphasis: { focus: 'series', lineStyle: { width: 2.5 } },\n  };\n});\nseries.push({\n  name: 'temporada',\n  type: 'line',\n  data: [],\n  silent: true,\n  markArea: {\n    silent: true,\n    itemStyle: { color: 'rgba(128, 128, 128, 0.15)' },\n    label: { color: muted, fontSize: 11, position: 'insideTop' },\n    data: seasonArea,\n  },\n});\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 16, top: 56, bottom: 8, containLabel: true },\n  legend: {\n    top: 0,\n    type: 'scroll',\n    data: regions.map((r) =\u003e r.name),\n    textStyle: { color: muted },\n    icon: 'roundRect',\n    itemWidth: 14,\n    itemHeight: 4,\n  },\n  tooltip: {\n    trigger: 'item',\n    formatter: (p) =\u003e {\n      const v = Array.isArray(p.value) ? p.value[1] : p.value;\n      if (v == null) return '';\n      const d = new Date(p.value[0]).toISOString().slice(0, 10);\n      const hint = picked === nameOf[p.seriesName] ? 'pincha para soltarla' : 'pincha para elegirla';\n      return `\u003cb\u003e${p.seriesName}\u003c/b\u003e · ${d}\u003cbr/\u003e${UNIT}: \u003cb\u003e${v.toFixed(2)}\u003c/b\u003e\u003cbr/\u003e\u003cspan style=\"opacity:.7\"\u003e${hint}\u003c/span\u003e`;\n    },\n  },\n  xAxis: { type: 'time', axisLabel: { color: muted }, splitLine: { show: false } },\n  yAxis: {\n    type: 'value',\n    name: UNIT + ' (− más seco, + más lluvioso)',\n    nameTextStyle: { color: muted, align: 'left' },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  series,\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
                 }
               }
             },
-            "version": ""
+            "version": "7.2.5"
           }
         }
       },
@@ -2067,7 +2061,7 @@
                       "spec": {
                         "format": 1,
                         "rawQuery": true,
-                        "rawSql": "-- Acumulado de la temporada lluviosa de la costa (ene-abr) por año. El\n-- HAVING no es adorno: sin el, un año con tres dias de dato aparece como una\n-- sequia historica.\nSELECT year(fecha)::VARCHAR AS anio,\n       round(sum(valor)) AS \"mm ene-abr\"\nFROM read_parquet($svc || '/ghcn/ghcn.parquet')\nWHERE elemento = 'PRCP' AND estacion = $estacion\n  AND month(fecha) BETWEEN 1 AND 4\nGROUP BY 1\nHAVING count(*) \u003e 100\nORDER BY 1"
+                        "rawSql": "-- Acumulado de la temporada lluviosa de la costa (ene-abr) por año. El\n-- HAVING no es adorno: sin el, un año con tres dias de dato aparece como una\n-- sequia historica.\n-- `nino12` es el mar frente a Ecuador en dic-ene-feb, el mismo indice que la\n-- grafica de puntos de al lado: colorea la barra igual que el punto.\nWITH lluvia AS (\n  SELECT year(fecha) AS anio, sum(valor) AS mm\n  FROM read_parquet($svc || '/ghcn/ghcn.parquet')\n  WHERE elemento = 'PRCP' AND estacion = $estacion\n    AND month(fecha) BETWEEN 1 AND 4\n  GROUP BY 1\n  HAVING count(*) \u003e 100\n), indice AS (\n  SELECT CASE WHEN month(fecha) = 12 THEN year(fecha) + 1 ELSE year(fecha) END AS anio,\n         round(avg(valor), 2) AS nino12\n  FROM read_parquet($svc || '/indices/indices.parquet')\n  WHERE indice = 'nino12' AND month(fecha) IN (12, 1, 2)\n  GROUP BY 1 HAVING count(*) = 3\n)\nSELECT l.anio::VARCHAR AS anio,\n       round(l.mm) AS mm,\n       i.nino12\nFROM lluvia l LEFT JOIN indice i USING (anio)\nORDER BY l.anio"
                       },
                       "version": "v0"
                     },
@@ -2079,56 +2073,50 @@
               "transformations": []
             }
           },
-          "description": "La temporada de lluvias de cada año, desde 1945, en una estación con registro largo. La línea de referencia es lo normal. Aquí se ven los grandes eventos: 1983 se sale de la gráfica.",
+          "description": "La temporada de lluvias de cada año, en una estación con registro largo. El color es lo caliente que estuvo el mar en dic-ene-feb; la línea discontinua es lo normal (la mediana). Aquí se ven los grandes eventos: 1983 se sale de la gráfica. Pincha una barra para resaltar esa temporada aquí y en la gráfica de puntos.",
           "id": 6,
           "links": [],
           "title": "Cuánto llovió cada temporada (enero a abril)",
           "vizConfig": {
-            "group": "barchart",
+            "group": "volkovlabs-echarts-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "continuous-BlYlRd"
-                  }
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "mm ene-abr"
-                    },
-                    "properties": [
-                      {
-                        "id": "unit",
-                        "value": "none"
-                      },
-                      {
-                        "id": "decimals",
-                        "value": 0
-                      },
-                      {
-                        "id": "custom.axisLabel",
-                        "value": "mm acumulados (ene-abr)"
-                      }
-                    ]
-                  }
-                ]
+                "defaults": {},
+                "overrides": []
               },
               "options": {
-                "legend": {
-                  "showLegend": false
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
                 },
-                "orientation": "vertical",
-                "showValue": "never",
-                "tooltip": {
-                  "mode": "single"
+                "editor": {
+                  "format": "auto"
                 },
-                "xField": "anio"
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Cuánto llovió cada temporada (enero a abril), un año por barra, en la\n// estación elegida. El color es lo caliente que estuvo el mar frente a Ecuador\n// en dic-ene-feb, con los mismos tramos que la gráfica de puntos; gris claro si\n// no hay índice para ese año. La línea discontinua es lo normal: la mediana.\n//\n// Pinchar una barra elige esa temporada (`temporada`): se resalta aquí, en la\n// gráfica de puntos y, si cae después de 2015, en la de las regiones. Pinchar\n// otra vez la misma la suelta.\n// Columnas: `anio`, `mm`, `nino12`.\n// @constants begin\nconst VAR = 'temporada';\n// Escrita literal para que Grafana redibuje el panel cuando cambia.\nconst PICKED = '${temporada}';\nconst UNIT = 'mm acumulados (ene-abr)';\n// El mar frente a Ecuador en dic-ene-feb (Niño 1+2, °C sobre lo normal), en\n// cuatro tramos. Los mismos en las dos gráficas: la barra y el punto de una\n// temporada tienen el mismo color.\nconst BREAKS = [-0.5, 0.5, 1.5];\nconst PIECES = [\n  { name: 'mar más frío (\u003c −0,5 °C)', color: 'blue' },\n  { name: 'mar normal', color: 'rgba(128, 128, 128, 0.75)' },\n  { name: 'más caliente (0,5 a 1,5 °C)', color: 'orange' },\n  { name: 'mucho más caliente (\u003e 1,5 °C)', color: 'red' },\n];\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst text = theme.colors.text.primary;\nconst paint = (c) =\u003e (c.startsWith('rgba') ? c : theme.visualization.getColorByName(c));\nconst colorOf = (v) =\u003e (v == null ? 'rgba(128, 128, 128, 0.3)' : paint(PIECES[BREAKS.filter((b) =\u003e v \u003e= b).length].color));\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst years = col('anio').map(String);\nconst mm = col('mm').map((v) =\u003e (v == null ? null : Number(v)));\nconst idx = col('nino12').map((v) =\u003e (v == null ? null : Number(v)));\nconst sorted = mm.filter((v) =\u003e v != null).sort((a, b) =\u003e a - b);\nconst median = sorted.length ? sorted[Math.floor((sorted.length - 1) / 2)] : null;\n\nconst picked = context.grafana.replaceVariables(PICKED);\n\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  if (event.seriesType !== 'bar') return;\n  const year = years[event.dataIndex];\n  const same = year === context.grafana.replaceVariables(PICKED);\n  location.partial({ ['var-' + VAR]: same ? '' : year }, true);\n});\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 16, top: 28, bottom: 48, containLabel: true },\n  legend: {\n    bottom: 0,\n    selectedMode: false,\n    data: PIECES.map((p) =\u003e p.name),\n    textStyle: { color: muted, fontSize: 11 },\n    itemWidth: 10,\n    itemHeight: 10,\n  },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e {\n      const i = items[0].dataIndex;\n      const sea = idx[i] == null ? 'sin índice' : `${idx[i] \u003e 0 ? '+' : ''}${idx[i].toFixed(2)} °C`;\n      const hint = years[i] === picked ? 'pincha para soltarla' : 'pincha para elegirla';\n      return `\u003cb\u003e${years[i]}\u003c/b\u003e\u003cbr/\u003eLluvia ene-abr: \u003cb\u003e${mm[i]} mm\u003c/b\u003e\u003cbr/\u003eMar en dic-ene-feb: ${sea}\u003cbr/\u003e\u003cspan style=\"opacity:.7\"\u003e${hint}\u003c/span\u003e`;\n    },\n  },\n  xAxis: { type: 'category', data: years, axisLabel: { color: muted }, axisTick: { show: false } },\n  yAxis: {\n    type: 'value',\n    name: UNIT,\n    nameTextStyle: { color: muted, align: 'left' },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  series: [\n    {\n      type: 'bar',\n      barWidth: '70%',\n      cursor: 'pointer',\n      data: mm.map((v, i) =\u003e ({\n        value: v,\n        itemStyle: {\n          color: colorOf(idx[i]),\n          opacity: picked \u0026\u0026 picked !== years[i] ? 0.3 : 1,\n          borderColor: picked === years[i] ? text : 'transparent',\n          borderWidth: picked === years[i] ? 1.5 : 0,\n          borderRadius: [2, 2, 0, 0],\n        },\n      })),\n      markLine:\n        median == null\n          ? undefined\n          : {\n              silent: true,\n              symbol: 'none',\n              label: { formatter: `lo normal: ${median} mm`, color: muted, fontSize: 10, position: 'insideStartTop' },\n              lineStyle: { type: 'dashed', color: muted },\n              data: [{ yAxis: median }],\n            },\n    },\n    // Solo para la leyenda de colores.\n    ...PIECES.map((p) =\u003e ({ name: p.name, type: 'bar', data: [], color: paint(p.color) })),\n  ],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
               }
             },
-            "version": ""
+            "version": "7.2.5"
           }
         }
       },
@@ -2814,7 +2802,7 @@
                       "spec": {
                         "format": 1,
                         "rawQuery": true,
-                        "rawSql": "-- La tesis del tablero: cuando el Nino 1+2 sube, la costa se inunda.\n-- El indice va en dic-ene-feb (diciembre cuenta para el año siguiente, que es\n-- cuando llega la lluvia); la lluvia, ene-abr de ese mismo año.\nWITH lluvia AS (\n  SELECT year(fecha) AS anio, sum(valor) AS mm\n  FROM read_parquet($svc || '/ghcn/ghcn.parquet')\n  WHERE elemento = 'PRCP' AND estacion = $estacion AND month(fecha) BETWEEN 1 AND 4\n  GROUP BY 1 HAVING count(*) \u003e 100\n), indice AS (\n  SELECT CASE WHEN month(fecha) = 12 THEN year(fecha) + 1 ELSE year(fecha) END AS anio,\n         round(avg(valor), 2) AS nino12\n  FROM read_parquet($svc || '/indices/indices.parquet')\n  WHERE indice = 'nino12' AND month(fecha) IN (12, 1, 2)\n  GROUP BY 1 HAVING count(*) = 3\n)\nSELECT i.nino12 AS indice,\n       round(l.mm) AS mm\nFROM lluvia l JOIN indice i USING (anio)\nORDER BY i.nino12"
+                        "rawSql": "-- La tesis del tablero: cuando el Nino 1+2 sube, la costa se inunda.\n-- El indice va en dic-ene-feb (diciembre cuenta para el año siguiente, que es\n-- cuando llega la lluvia); la lluvia, ene-abr de ese mismo año.\n-- `anio` va en el SELECT porque pinchar un punto elige esa temporada.\nWITH lluvia AS (\n  SELECT year(fecha) AS anio, sum(valor) AS mm\n  FROM read_parquet($svc || '/ghcn/ghcn.parquet')\n  WHERE elemento = 'PRCP' AND estacion = $estacion AND month(fecha) BETWEEN 1 AND 4\n  GROUP BY 1 HAVING count(*) \u003e 100\n), indice AS (\n  SELECT CASE WHEN month(fecha) = 12 THEN year(fecha) + 1 ELSE year(fecha) END AS anio,\n         round(avg(valor), 2) AS nino12\n  FROM read_parquet($svc || '/indices/indices.parquet')\n  WHERE indice = 'nino12' AND month(fecha) IN (12, 1, 2)\n  GROUP BY 1 HAVING count(*) = 3\n)\nSELECT l.anio::VARCHAR AS anio,\n       i.nino12 AS indice,\n       round(l.mm) AS mm\nFROM lluvia l JOIN indice i USING (anio)\nORDER BY i.nino12"
                       },
                       "version": "v0"
                     },
@@ -2826,77 +2814,50 @@
               "transformations": []
             }
           },
-          "description": "Cada punto es una temporada. A la derecha, los años con el mar más caliente; arriba, los más lluviosos. La nube sube hacia la derecha: la relación existe, pero no es una regla exacta, y por eso hay puntos que se salen.",
+          "description": "Cada punto es una temporada. A la derecha, los años con el mar más caliente; arriba, los más lluviosos. La nube sube hacia la derecha: la relación existe, pero no es una regla exacta, y por eso hay puntos que se salen. Pincha un punto para resaltar esa temporada aquí y en las barras.",
           "id": 7,
           "links": [],
           "title": "Mar más caliente, temporada más lluviosa",
           "vizConfig": {
-            "group": "xychart",
+            "group": "volkovlabs-echarts-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "fixedColor": "super-light-blue",
-                    "mode": "fixed"
-                  },
-                  "custom": {
-                    "fillOpacity": 70,
-                    "pointShape": "circle",
-                    "pointSize": {
-                      "fixed": 9
-                    },
-                    "pointStrokeWidth": 1,
-                    "show": "points"
-                  },
-                  "decimals": 0
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "mm"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.axisLabel",
-                        "value": "lluvia ene-abr (mm)"
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "indice"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.axisLabel",
-                        "value": "Mar frente a Ecuador en dic-ene-feb (°C sobre lo normal)"
-                      },
-                      {
-                        "id": "decimals",
-                        "value": 2
-                      }
-                    ]
-                  }
-                ]
+                "defaults": {},
+                "overrides": []
               },
               "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": false
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
                 },
-                "mapping": "auto",
-                "tooltip": {
-                  "mode": "single",
-                  "sort": "none"
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Mar más caliente, temporada más lluviosa: cada punto es una temporada. Hacia\n// la derecha, el mar frente a Ecuador en dic-ene-feb (Niño 1+2, °C sobre lo\n// normal); hacia arriba, la lluvia de enero a abril que vino después. El color\n// es el mismo tramo que el de la barra de esa temporada.\n//\n// Pinchar un punto elige esa temporada (`temporada`), como pinchar su barra:\n// se resalta en las dos gráficas. Pinchar otra vez la misma la suelta.\n// Columnas: `anio`, `indice`, `mm`.\n// @constants begin\nconst VAR = 'temporada';\n// Escrita literal para que Grafana redibuje el panel cuando cambia.\nconst PICKED = '${temporada}';\nconst XUNIT = 'Mar frente a Ecuador en dic-ene-feb (°C sobre lo normal)';\nconst YUNIT = 'lluvia ene-abr (mm)';\n// El mar frente a Ecuador en dic-ene-feb (Niño 1+2, °C sobre lo normal), en\n// cuatro tramos. Los mismos en las dos gráficas: la barra y el punto de una\n// temporada tienen el mismo color.\nconst BREAKS = [-0.5, 0.5, 1.5];\nconst PIECES = [\n  { name: 'mar más frío (\u003c −0,5 °C)', color: 'blue' },\n  { name: 'mar normal', color: 'rgba(128, 128, 128, 0.75)' },\n  { name: 'más caliente (0,5 a 1,5 °C)', color: 'orange' },\n  { name: 'mucho más caliente (\u003e 1,5 °C)', color: 'red' },\n];\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst text = theme.colors.text.primary;\nconst paint = (c) =\u003e (c.startsWith('rgba') ? c : theme.visualization.getColorByName(c));\nconst colorOf = (v) =\u003e paint(PIECES[BREAKS.filter((b) =\u003e v \u003e= b).length].color);\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst years = col('anio').map(String);\nconst xs = col('indice').map(Number);\nconst ys = col('mm').map(Number);\n\nconst picked = context.grafana.replaceVariables(PICKED);\n\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const year = event.data \u0026\u0026 event.data.year;\n  if (!year) return;\n  const same = year === context.grafana.replaceVariables(PICKED);\n  location.partial({ ['var-' + VAR]: same ? '' : year }, true);\n});\n\nconst point = (i) =\u003e {\n  const on = picked === years[i];\n  return {\n    value: [xs[i], ys[i]],\n    year: years[i],\n    symbolSize: on ? 16 : 10,\n    itemStyle: {\n      color: colorOf(xs[i]),\n      opacity: picked \u0026\u0026 !on ? 0.3 : 0.9,\n      borderColor: on ? text : 'rgba(255, 255, 255, 0.6)',\n      borderWidth: on ? 2 : 1,\n    },\n    label: on ? { show: true, formatter: years[i], position: 'top', color: text, fontWeight: 'bold' } : undefined,\n    z: on ? 3 : 2,\n  };\n};\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 24, top: 30, bottom: 28, containLabel: true },\n  tooltip: {\n    trigger: 'item',\n    formatter: (p) =\u003e {\n      const [x, y] = p.value;\n      const hint = p.data.year === picked ? 'pincha para soltarla' : 'pincha para elegirla';\n      return `\u003cb\u003e${p.data.year}\u003c/b\u003e\u003cbr/\u003eMar en dic-ene-feb: ${x \u003e 0 ? '+' : ''}${x.toFixed(2)} °C\u003cbr/\u003eLluvia ene-abr: \u003cb\u003e${y} mm\u003c/b\u003e\u003cbr/\u003e\u003cspan style=\"opacity:.7\"\u003e${hint}\u003c/span\u003e`;\n    },\n  },\n  xAxis: {\n    type: 'value',\n    name: XUNIT,\n    nameLocation: 'middle',\n    nameGap: 26,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  yAxis: {\n    type: 'value',\n    name: YUNIT,\n    nameTextStyle: { color: muted, align: 'left' },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  series: [\n    {\n      type: 'scatter',\n      cursor: 'pointer',\n      data: years.map((_, i) =\u003e point(i)),\n      markLine: {\n        silent: true,\n        symbol: 'none',\n        label: { show: false },\n        lineStyle: { type: 'dashed', color: muted, opacity: 0.6 },\n        data: [{ xAxis: 0 }],\n      },\n    },\n  ],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
                 }
               }
             },
-            "version": "12.0.10"
+            "version": "7.2.5"
           }
         }
       },
@@ -3381,7 +3342,7 @@
                 "overrides": []
               },
               "options": {
-                "content": "### Cómo se leen estas dos gráficas\n\n**La de barras**: cada barra es un año, y su altura es cuánta lluvia cayó entre enero y\nabril, que es la temporada lluviosa de la Costa. La barra que se sale de la pantalla es\n**1983**, el Niño que inundó el país.\n\n**La de puntos**: cada punto es una temporada. Hacia la derecha, los años en que el mar\nestuvo más caliente; hacia arriba, los años en que llovió más después.\n\nLos puntos suben hacia la derecha, así que la relación existe: **mar caliente en diciembre\nsuele traer una temporada lluviosa**. Pero están dispersos, y esa dispersión es la parte\nimportante. Un mar caliente hace más probable una temporada de lluvias fuertes; no la\ngarantiza. Hay años que se salen de la nube en las dos direcciones.\n",
+                "content": "### Cómo se leen estas dos gráficas\n\n**La de barras**: cada barra es un año, y su altura es cuánta lluvia cayó entre enero y\nabril, que es la temporada lluviosa de la Costa, y su color, lo caliente que estaba el mar\nen diciembre, enero y febrero. La barra que se sale de la pantalla es\n**1983**, el Niño que inundó el país.\n\n**La de puntos**: cada punto es una temporada. Hacia la derecha, los años en que el mar\nestuvo más caliente; hacia arriba, los años en que llovió más después.\n\nLos puntos suben hacia la derecha, así que la relación existe: **mar caliente en diciembre\nsuele traer una temporada lluviosa**. Pero están dispersos, y esa dispersión es la parte\nimportante. Un mar caliente hace más probable una temporada de lluvias fuertes; no la\ngarantiza. Hay años que se salen de la nube en las dos direcciones.\n\n**Pincha una temporada**, en una barra o en un punto, y se resalta en las dos (y en la\ngráfica de regiones si es de 2016 en adelante). Pincha otra vez para soltarla.\n",
                 "mode": "markdown"
               }
             },
@@ -4406,7 +4367,8 @@
       "duckdb",
       "kepler",
       "weather",
-      "maritime"
+      "maritime",
+      "business-charts"
     ],
     "timeSettings": {
       "autoRefresh": "",
@@ -4469,6 +4431,20 @@
           "hide": "hideVariable",
           "label": "estacionSel",
           "name": "estacionSel",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "temporada",
+          "name": "temporada",
           "query": "",
           "skipUrlSync": false
         }

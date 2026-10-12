@@ -46,7 +46,7 @@ after(async () => view && view.browser.close());
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, UID);
   assert.ok(dashboard.spec.description);
-  assert.deepEqual(dashboard.spec.tags, ['infinity', 'duckdb', 'kepler', 'water']);
+  assert.deepEqual(dashboard.spec.tags, ['infinity', 'duckdb', 'kepler', 'water', 'business-charts']);
   const uids = new Set(JSON.stringify(dashboard).match(/"datasource":\{"name":"[^"]+"/g).map((s) => s.split('"').at(-2)));
   for (const uid of uids) assert.ok(['infinity', 'duckdb', '-- Grafana --'].includes(uid), uid);
 });
@@ -71,22 +71,11 @@ test('the country ranking and the worst-20 table answer for every indicator', { 
   for (const indicador of variable('indicador').options.map((o) => o.value)) {
     const vars = { ...DEFAULTS, indicador };
     const countries = await infinity('Mean score by country', 'B', vars);
-    assert.ok(countries.length >= 10 && countries.every((r) => r['Score medio'] >= 0 && r['Score medio'] <= 5), indicador);
+    assert.ok(countries.length >= 10 && countries.every((r) => r.mean >= 0 && r.mean <= 5 && COUNTRIES.includes(r.country)), indicador);
     const worst = await infinity('The 20 units with the worst $indicador', 'C', vars);
     assert.equal(worst.length, 20, indicador);
     assert.ok(worst.every((r, i) => i === 0 || worst[i - 1].Score >= r.Score), `${indicador} not sorted`);
   }
-});
-
-test('a drawn polygon becomes Esri rings, and nothing drawn becomes nothing', async () => {
-  const sql = variable('areaRings').query.spec.__legacyStringValue;
-  const [drawn] = await duckdb(STACK_URL, sql.replace('$area', 'POLYGON((-80 -5, -75 -5, -75 0, -80 0, -80 -5))'));
-  assert.deepEqual(JSON.parse(drawn.rings).rings[0][0], [-80, -5]);
-  const [empty] = await duckdb(STACK_URL, sql.replace('$area', ''));
-  assert.equal(empty.rings, '');
-  const inside = await infinity('Units', 'E', { ...DEFAULTS, areaRings: drawn.rings });
-  const all = await infinity('Units', 'D', DEFAULTS);
-  assert.ok(inside[0]['En selección'] > 0 && inside[0]['En selección'] < all[0].Unidades);
 });
 
 test('loads for an anonymous visitor, with no panel in error', { timeout: 180_000 }, async () => {

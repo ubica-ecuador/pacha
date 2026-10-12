@@ -19,7 +19,7 @@ const sqlOf = (title) => fill(panelTitled(dashboard, title).data.spec.queries[0]
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, 'ancestry-census');
   assert.ok(dashboard.spec.description);
-  assert.deepEqual(dashboard.spec.tags, ['duckdb', 'kepler', 'demographics']);
+  assert.deepEqual(dashboard.spec.tags, ['duckdb', 'kepler', 'business-charts', 'demographics']);
   const text = JSON.stringify(dashboard);
   assert.doesNotMatch(text, /\/testdata|sources-data|host\.docker\.internal/);
   // Every read is of a file built on this instance, served by the gateway.

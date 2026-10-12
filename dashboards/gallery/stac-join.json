@@ -62,7 +62,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "# From the sky to the ground\n\n**The map opens with an area already drawn** — move it, reshape it, or draw your\nown, and every panel follows. That is the whole interaction: you draw a shape and\nDuckDB asks a live STAC catalogue what imagery exists for exactly it. In SQL,\ninside a panel, with no Spark, no cluster and no ETL.\n\nThe area's own bounding box travels in the search URL, so the catalogue does the\nfiltering and returns tens of scenes instead of thousands. A bounding box only\nnarrows, though: `ST_Intersects` is what refines the answer to the shape you\ndrew, and `ST_Difference` turns what is left over into the **outline** that\nappears whenever some part of your area no scene reaches.\n\n| Piece | Who provides it |\n|---|---|\n| Catalogue | `earth-search.aws.element84.com`, public and unauthenticated |\n| Search | DuckDB with the `http_client` extension, one call per area |\n| The join | `ST_Intersects`, `ST_Intersection`, `ST_Union_Agg` |\n| What is missed | `ST_Difference`, drawn rather than counted |\n| The pictures | the tile server, cutting your area out of each scene |\n\n**Coverage against best scene** is the pair worth watching. *Best scene* is the\nmost any single image gives you; *coverage*, what you get by mosaicking every\nscene in the range. They rarely agree, which is why \"which scene should I use?\"\nis usually the wrong question. When they do agree, your area fits inside one.\n\n**The table on the right is the catalogue as pictures**: each thumbnail is your\nown area, cut out of that scene by the tile server — a few kilobytes, not a\ndownload. **Click any row** and the map flies to that scene and draws it, moving\nnothing else: the time range and the figures stay where they were, because the\nclick writes a coordinate and a scene rather than a range. Clear *Scene picked*\nand the clearest scene in range comes back.\n\n**Cloud ≤** decides what counts as usable: lower it and the uncovered part grows.\n**Covers ≥** drops the scenes that only clip a corner — over a province-sized\narea, six in seven can fall below 10 %.",
+                "content": "# From the sky to the ground\n\n**The map opens with an area already drawn** — move it, reshape it, or draw your\nown, and every panel follows. That is the whole interaction: you draw a shape and\nDuckDB asks a live STAC catalogue what imagery exists for exactly it. In SQL,\ninside a panel, with no Spark, no cluster and no ETL.\n\nThe area's own bounding box travels in the search URL, so the catalogue does the\nfiltering and returns tens of scenes instead of thousands. A bounding box only\nnarrows, though: `ST_Intersects` is what refines the answer to the shape you\ndrew, and `ST_Difference` turns what is left over into the **outline** that\nappears whenever some part of your area no scene reaches.\n\n| Piece | Who provides it |\n|---|---|\n| Catalogue | `earth-search.aws.element84.com`, public and unauthenticated |\n| Search | DuckDB with the `http_client` extension, one call per area |\n| The join | `ST_Intersects`, `ST_Intersection`, `ST_Union_Agg` |\n| What is missed | `ST_Difference`, drawn rather than counted |\n| The pictures | the tile server, cutting your area out of each scene |\n\n**Coverage against best scene** is the pair worth watching. *Best scene* is the\nmost any single image gives you; *coverage*, what you get by mosaicking every\nscene in the range. They rarely agree, which is why \"which scene should I use?\"\nis usually the wrong question. When they do agree, your area fits inside one.\n\n**The table on the right is the catalogue as pictures**: each thumbnail is your\nown area, cut out of that scene by the tile server — a few kilobytes, not a\ndownload. **Click any row** and the map flies to that scene and draws it, moving\nnothing else: the time range and the figures stay where they were, because the\nclick writes a coordinate and a scene rather than a range. Clear *Scene picked*\nand the clearest scene in range comes back.\n\n**The dots under the map are the same catalogue on the calendar**, cloudier\nhigher up, bigger the more of your area they cover; the grey ones are what the\ncuts below leave out. Click a dot and the map draws that scene, as a row does.\n\n**Cloud ≤** decides what counts as usable: lower it and the uncovered part grows.\n**Covers ≥** drops the scenes that only clip a corner — over a province-sized\narea, six in seven can fall below 10 %.",
                 "mode": "markdown"
               }
             },
@@ -886,6 +886,86 @@
             "version": ""
           }
         }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "CREATE OR REPLACE TEMP MACRO m2(g) AS\n  ST_Area(ST_Transform(g, 'EPSG:4326', 'EPSG:6933', always_xy := true));\n\n-- El área es la que dibujes en el mapa. Sin dibujo no hay pregunta.\n-- La escena elegida no entra aquí a propósito: este gráfico es donde se elige,\n-- y un clic no tiene por qué volver a preguntarle nada al catálogo.\nSET VARIABLE drawn = nullif($aoiArea, '');\n\nWITH aoi AS (\n  SELECT 'Drawn area' AS name, ST_GeomFromText(getvariable('drawn')) AS geom\n  WHERE getvariable('drawn') IS NOT NULL\n),\nsearch AS (\n  SELECT name, geom,\n         http_get('https://earth-search.aws.element84.com/v1/search'\n           || '?collections=' || $collection\n           || '\u0026bbox=' || ST_XMin(geom) || ',' || ST_YMin(geom) || ','\n                       || ST_XMax(geom) || ',' || ST_YMax(geom)\n           || '\u0026datetime=' || $__timeFrom() || '/' || $__timeTo()\n           || '\u0026limit=200') AS r\n  FROM aoi\n),\nfeatures AS (\n  SELECT name, geom,\n         unnest(json_extract(r-\u003e\u003e'body', '$.features[*]')) AS f\n  FROM search\n),\n-- Todas las escenas que tocan el área, también las que Cloud ≤ y Covers ≥\n-- dejan fuera: el gráfico las dibuja en gris, como contexto de lo que el\n-- corte se lleva. `usable` es exactamente el filtro de los demás paneles.\nhit AS (\n  SELECT f-\u003e\u003e'id'                                     AS scene_id,\n         (f-\u003e'properties'-\u003e\u003e'datetime')::TIMESTAMP    AS acquired,\n         (f-\u003e'properties'-\u003e\u003e'eo:cloud_cover')::DOUBLE AS cloud_cover,\n         f-\u003e'assets'-\u003e'visual'-\u003e\u003e'href'               AS visual_href,\n         geom,\n         ST_GeomFromGeoJSON(f-\u003e\u003e'geometry')           AS footprint\n  FROM features\n  WHERE ST_Intersects(geom, ST_GeomFromGeoJSON(f-\u003e\u003e'geometry'))\n)\nSELECT acquired,\n       scene_id,\n       ROUND(cloud_cover, 1)                                            AS cloud_cover,\n       ROUND(m2(ST_Intersection(geom, footprint)) / m2(geom) * 100, 1)  AS covers_pct,\n       cloud_cover \u003c= CAST($cloud AS DOUBLE)\n         AND m2(ST_Intersection(geom, footprint)) / m2(geom) * 100 \u003e= CAST($cover AS DOUBLE) AS usable,\n       -- Lo mismo que el enlace de la hoja de contactos: el centro de lo que la\n       -- escena ve del área, y la escena misma.\n       ST_Y(ST_Centroid(ST_Intersection(geom, footprint)))              AS centre_lat,\n       ST_X(ST_Centroid(ST_Intersection(geom, footprint)))              AS centre_lng,\n       visual_href                                                      AS scene_url\nFROM hit\nORDER BY acquired"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each dot is a scene that touches your area: up is cloudier, bigger covers more of the area. In grey, the scenes Cloud ≤ and Covers ≥ leave out. The orange dot is the scene the map draws. Click a coloured dot and the map flies to that scene and draws it, as a row of the contact sheet does; click it again to go back to the clearest.",
+          "id": 7,
+          "links": [],
+          "title": "Every scene over your area, by date and cloud · click one to draw it",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Every scene the catalogue has over your area, as a dot on the calendar: up\n// is cloudier, bigger covers more of the area. In colour, the scenes the\n// \"Cloud ≤\" and \"Covers ≥\" cuts keep; in grey, the ones they leave out, so the\n// chart shows what the cut costs. The dashed line is the cloud cut. The\n// orange dot is the scene the map draws: the one picked, or, before any pick,\n// the clearest one in range (the map's own default).\n//\n// Clicking a coloured dot picks that scene, as a row of the contact sheet\n// does: it writes the scene (SCENE) and the centre of what it sees of your area\n// (LAT, LNG), and the map flies there and draws it. Clicking the picked scene\n// again clears the three, and the clearest scene comes back.\n// The query frame has columns `acquired`, `scene_id`, `cloud_cover`,\n// `covers_pct`, `usable`, `centre_lat`, `centre_lng` and `scene_url`.\n// @constants begin\nconst SCENE = 'scene';\nconst LAT = 'lat';\nconst LNG = 'lng';\nconst CLOUD = 'cloud';\nconst SIZE = [7, 22];\nconst CONTEXT = 'rgba(128,128,128,0.45)';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst text = theme.colors.text.primary;\nconst PICKED = theme.visualization.getColorByName('orange');\nconst USABLE = theme.visualization.getColorByName('blue');\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A') ?? context.panel.data.series[0];\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst num = (v) =\u003e (v == null ? null : Number(v));\nconst urls = col('scene_url');\nconst scenes = col('acquired').map((t, i) =\u003e ({\n  time: Number(t),\n  id: col('scene_id')[i],\n  cloud: num(col('cloud_cover')[i]),\n  covers: num(col('covers_pct')[i]) ?? 0,\n  usable: col('usable')[i] === true || col('usable')[i] === 'true',\n  lat: col('centre_lat')[i],\n  lng: col('centre_lng')[i],\n  url: urls[i],\n}));\n// The map's default when nothing is picked: the clearest usable scene.\nconst clearest = scenes.filter((s) =\u003e s.usable).sort((a, b) =\u003e a.cloud - b.cloud)[0] ?? null;\n\nconst readScene = () =\u003e {\n  const fromUrl = new URLSearchParams(location.getLocation().search).get('var-' + SCENE);\n  return fromUrl ?? context.grafana.replaceVariables('${' + SCENE + '}');\n};\nconst shownBy = (picked) =\u003e (picked ? scenes.find((s) =\u003e s.url === picked) ?? null : clearest);\n\nconst size = (covers) =\u003e SIZE[0] + (SIZE[1] - SIZE[0]) * Math.sqrt(Math.max(0, Math.min(100, covers)) / 100);\nconst when = (ms) =\u003e new Date(ms).toISOString().slice(0, 16).replace('T', ' ') + ' UTC';\n\n// The nearest usable dot to the pointer, within its own radius and a margin.\nconst onClick = (event) =\u003e {\n  let best = null;\n  for (const s of scenes) {\n    if (!s.usable) continue;\n    const [x, y] = chart.convertToPixel({ gridIndex: 0 }, [s.time, s.cloud ?? 0]);\n    const d = Math.hypot(x - event.offsetX, y - event.offsetY);\n    if (d \u003c= size(s.covers) / 2 + 6 \u0026\u0026 (!best || d \u003c best.d)) best = { s, d };\n  }\n  if (!best) {\n    return;\n  }\n  const same = best.s.url === readScene();\n  location.partial(\n    {\n      ['var-' + SCENE]: same ? '' : best.s.url,\n      ['var-' + LAT]: same ? '' : String(best.s.lat),\n      ['var-' + LNG]: same ? '' : String(best.s.lng),\n    },\n    true\n  );\n};\nconst zr = chart.getZr();\nzr.on('click', onClick);\n\nconst cut = Number(context.grafana.replaceVariables('${' + CLOUD + '}'));\nconst span = scenes.length ? [scenes[0].time, scenes[scenes.length - 1].time] : null;\nconst pad = span ? Math.max((span[1] - span[0]) * 0.04, 86400000) : 0;\n\nconst build = (picked) =\u003e {\n  const shown = shownBy(picked);\n  const point = (s) =\u003e ({\n    value: [s.time, s.cloud, s.covers],\n    symbolSize: size(s.covers),\n    itemStyle: {\n      color: s === shown ? PICKED : s.usable ? USABLE : CONTEXT,\n      opacity: s === shown || !s.usable ? 1 : picked ? 0.55 : 0.85,\n      borderColor: s === shown ? text : 'transparent',\n      borderWidth: s === shown ? 1.5 : 0,\n    },\n    label:\n      s === shown\n        ? { show: true, position: 'top', color: text, fontSize: 11, formatter: () =\u003e (picked ? 'picked' : 'clearest') }\n        : { show: false },\n  });\n  return {\n    animation: false,\n    backgroundColor: 'transparent',\n    grid: { left: 8, right: 16, top: 30, bottom: 8, containLabel: true },\n    tooltip: {\n      trigger: 'item',\n      formatter: (p) =\u003e {\n        const s = scenes[p.dataIndex];\n        const state = !s.usable\n          ? 'left out by Cloud ≤ or Covers ≥'\n          : s.url === picked\n            ? 'on the map · click to clear'\n            : s === shown\n              ? 'on the map (clearest) · click to fly to it'\n              : 'click to draw it on the map';\n        return `\u003cb\u003e${when(s.time)}\u003c/b\u003e\u003cbr/\u003e${s.id}\u003cbr/\u003eCloud: \u003cb\u003e${s.cloud == null ? '?' : s.cloud.toFixed(1)} %\u003c/b\u003e · covers \u003cb\u003e${s.covers.toFixed(0)} %\u003c/b\u003e of your area\u003cbr/\u003e\u003cspan style=\"color:${muted}\"\u003e${state}\u003c/span\u003e`;\n      },\n    },\n    xAxis: {\n      type: 'time',\n      min: span ? span[0] - pad : undefined,\n      max: span ? span[1] + pad : undefined,\n      axisLabel: { color: muted, hideOverlap: true },\n      axisLine: { lineStyle: { color: muted } },\n      splitLine: { show: false },\n    },\n    yAxis: {\n      type: 'value',\n      name: 'cloud %',\n      min: 0,\n      max: 100,\n      interval: 25,\n      nameTextStyle: { color: muted },\n      axisLabel: { color: muted },\n      splitLine: { lineStyle: { opacity: 0.15 } },\n    },\n    series: [\n      {\n        type: 'scatter',\n        name: 'Scenes',\n        data: scenes.map(point),\n        markLine:\n          cut \u003c 100\n            ? {\n                silent: true,\n                symbol: 'none',\n                label: { formatter: `cloud ≤ ${cut} %`, color: muted, fontSize: 10, position: 'insideEndTop' },\n                lineStyle: { type: 'dashed', color: muted },\n                data: [{ yAxis: cut }],\n              }\n            : { data: [] },\n      },\n    ],\n  };\n};\n\n// A pick changes only the scene, which this panel's query does not read: the\n// orange dot is redrawn from the URL.\nlet drawn = readScene();\nconst stop = location.getHistory().listen(() =\u003e {\n  const picked = readScene();\n  if (picked !== drawn \u0026\u0026 !chart.isDisposed()) {\n    drawn = picked;\n    chart.setOption(build(picked), { replaceMerge: ['series'] });\n  }\n});\n\nreturn {\n  version: 2,\n  option: build(readScene()),\n  unsubscribe: () =\u003e {\n    stop();\n    zr.off('click', onClick);\n  },\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
       }
     },
     "layout": {
@@ -943,6 +1023,19 @@
               "x": 16,
               "y": 16
             }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-7"
+              },
+              "height": 9,
+              "width": 24,
+              "x": 0,
+              "y": 36
+            }
           }
         ]
       }
@@ -951,6 +1044,7 @@
     "liveNow": false,
     "preload": false,
     "tags": [
+      "business-charts",
       "duckdb",
       "kepler",
       "satellite"

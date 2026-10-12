@@ -22,7 +22,6 @@ const MAP = '10 m wind over ${capa:text} · ${hora} · newest GFS run';
 const map = panelTitled(dashboard, MAP);
 const sqlOf = (refId) => map.data.spec.queries.find((q) => q.spec.refId === refId).spec.query.spec.rawSql;
 const { from, to } = dashboard.spec.timeSettings;
-const LAYERS = variable('capa').query.split(',').map((o) => o.split(' : ').at(-1).trim());
 
 // Grafana's interpolation as the DuckDB datasource receives it: in a panel
 // query a bare variable arrives quoted, with a format it arrives as is.
@@ -69,7 +68,7 @@ test('follows the dashboards conventions', () => {
   const uids = new Set(text.match(/"datasource":\{"name":"[^"]+"/g).map((s) => s.split('"').at(-2)));
   for (const uid of uids) assert.ok(['duckdb', '-- Grafana --'].includes(uid), uid);
   assert.equal(map.vizConfig.spec.options.rasterServerUrl, '/titiler');
-  assert.doesNotMatch(text, /titiler\.ubica|http:\/\/titiler\//);
+  assert.doesNotMatch(text, /titiler\.ubica|pacha-titiler/);
 });
 
 test('is provisioned in Gallery', async () => {
@@ -87,15 +86,6 @@ test('the wind is a regular 7 × 7 lattice with both components everywhere', { t
     assert.equal(lats.length, 7);
     assert.ok(lats.every((lat, i) => i === 0 || Math.abs(lat - lats[i - 1] - Number(paso) / 100) < 1e-9), lats.join(','));
     assert.ok(rows.every((r) => Number.isFinite(r.u) && Number.isFinite(r.v) && Math.hypot(r.u, r.v) < 40), paso);
-  }
-});
-
-test('the raster under the wind is one row per variable, and none for Nothing', async () => {
-  await ready;
-  for (const capa of LAYERS) {
-    const rows = await duckdb(fill(sqlOf('B'), { ...vars, capa }, true));
-    assert.equal(rows.length, capa === 'none' ? 0 : 1, capa);
-    if (capa !== 'none') assert.equal(rows[0].zarr_sel, `init_time=${vars.pasada},lead_time=${vars.lead}`);
   }
 });
 

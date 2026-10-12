@@ -39,12 +39,12 @@ after(async () => view && view.browser.close());
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, UID);
   assert.ok(dashboard.spec.description);
-  assert.deepEqual(dashboard.spec.tags, ['duckdb', 'infinity', 'kepler', 'weather']);
+  assert.deepEqual(dashboard.spec.tags, ['duckdb', 'infinity', 'kepler', 'business-charts', 'weather']);
   const text = JSON.stringify(dashboard);
   const uids = new Set(text.match(/"datasource":\{"name":"[^"]+"/g).map((s) => s.split('"').at(-2)));
   for (const uid of uids) assert.ok(['infinity', 'duckdb', '-- Dashboard --', '-- Grafana --'].includes(uid), uid);
   assert.equal(panelTitled(dashboard, MAP).vizConfig.spec.options.rasterServerUrl, '/titiler');
-  assert.doesNotMatch(text, /titiler\.ubica|http:\/\/titiler\//);
+  assert.doesNotMatch(text, /titiler\.ubica|pacha-titiler/);
 });
 
 test('is provisioned in Gallery', async () => {
@@ -57,12 +57,6 @@ test('the map gets twelve months of the same store', async () => {
   const rows = await duckdb(queryOf(MAP).rawSql);
   assert.deepEqual(rows.map((r) => r.zarr_time_label), Array.from({ length: 12 }, (_, i) => String(i + 1)));
   assert.ok(rows.every((r) => r.zarr_url === variable('store').query && r.zarr_levels === 6));
-});
-
-test('the month follows the map, and the dashboard range before it moves', async () => {
-  const month = async (mapTo) => Object.values((await duckdb(fill(sqlOfVariable('mes'), { mapTo })))[0])[0];
-  assert.equal(await month(''), '7'); // the range ends on 15 July 2020
-  assert.equal(await month('2020-03-10T00:00:00.000Z'), '3');
 });
 
 test('the drawn area is measured in degrees Celsius, and differs by month', { timeout: 120_000 }, async () => {

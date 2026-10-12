@@ -61,7 +61,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "# Multitemporal: what was there, and when\n\nThe satellite passes over Cuenca every five days, come rain or shine. The time bar under the map is that calendar — **one bar per pass** — and dragging it shows you **the last image that falls inside the window**.\n\nAll of it comes from **a single query**: one row per pass, with its date and the link to its COG. The calendar and the imagery are the same table, so dragging asks the server nothing — the choice is made here, and something only changes when you cross a date that has an image. If the window falls between two passes there is nothing to show, and the raster is withdrawn.\n\nCheck the cloud cover in the table on the right before drawing conclusions: over the equatorial Andes **most passes come covered**, and that is exactly what makes walking the calendar useful rather than settling for the most recent one.\n\n**Cloud cover ≤** drops the covered passes from the catalogue, and because the calendar and the imagery are that one query, the bars leave the time bar at the same moment the rows leave the table. It starts at *All*, so nothing is hidden until you ask for it — and here it is worth being sparing with: when this board was written, the four months it opens on held **30 passes and only two under 60 %**, the clearest of them at 39 %. Below 40 % the calendar empties. Over the equatorial Andes the cut that separates anything is 60 % or 80 %, not 10 %.",
+                "content": "# Multitemporal: what was there, and when\n\nThe satellite passes over Cuenca every five days, come rain or shine. The time bar under the map is that calendar — **one bar per pass** — and dragging it shows you **the last image that falls inside the window**.\n\nAll of it comes from **a single query**: one row per pass, with its date and the link to its COG. The calendar and the imagery are the same table, so dragging asks the server nothing — the choice is made here, and something only changes when you cross a date that has an image. If the window falls between two passes there is nothing to show, and the raster is withdrawn.\n\nCheck the cloud cover in the table on the right before drawing conclusions: over the equatorial Andes **most passes come covered**, and that is exactly what makes walking the calendar useful rather than settling for the most recent one.\n\n**The bars above the map are the same calendar, one per pass, as tall as its cloud.** Click one and the map draws that pass; click it again and it goes back to the newest. The shaded band is the map's time window, and it moves when you drag the time bar under the map.\n\n**Cloud cover ≤** drops the covered passes from the catalogue, and because the calendar and the imagery are that one query, the bars leave the time bar at the same moment the rows leave the table. It starts at *All*, so nothing is hidden until you ask for it — and here it is worth being sparing with: when this board was written, the four months it opens on held **30 passes and only two under 60 %**, the clearest of them at 39 %. Below 40 % the calendar empties. Over the equatorial Andes the cut that separates anything is 60 % or 80 %, not 10 %.",
                 "mode": "markdown"
               }
             },
@@ -404,7 +404,11 @@
                 "rasterServerUrl": "/titiler",
                 "saveRequest": 1,
                 "showSidePanel": false,
-                "timeSync": "off",
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "pass_from",
+                  "to": "pass_to"
+                },
                 "tripLayerMode": "table"
               }
             },
@@ -502,6 +506,83 @@
             "version": "13.2.0"
           }
         }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
+                      "group": "datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "panelId": 2
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "One bar per pass, as tall as its cloud cover. The orange one is the pass the map draws; the shaded band is the map's time window. Click a pass and the map draws it; click it again and the map goes back to the newest. Dragging the map's own time bar moves the band.",
+          "id": 4,
+          "links": [],
+          "title": "Every pass, by its cloud · click one to draw it",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Every Sentinel-2 pass in the range as a bar as tall as its cloud cover, on\n// the calendar. The bar in colour is the pass the map is drawing; the shaded\n// band is the window of the map's time bar, and the passes inside it are the\n// ones it chooses from (it draws the newest). The dashed line is the\n// \"Cloud cover ≤\" cut, when there is one.\n//\n// Clicking a pass narrows the map's window to that pass alone, so the map draws\n// it; clicking the pass already drawn opens the window to the whole range\n// again, which draws the newest. The window lives in two hidden variables\n// (FROM, TO) the map reads and writes (`timeSync: variables`): dragging the\n// map's own time bar moves the band here too.\n// The frame is the map's own query (time, scene_id, cloud_cover, raster_url),\n// shared through the Dashboard datasource: no second catalogue search.\n// @constants begin\nconst FROM = 'pass_from';\nconst TO = 'pass_to';\nconst CLOUD = 'cloud';\nconst DAY = 86400000;\nconst CONTEXT = 'rgba(128,128,128,0.35)';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst text = theme.colors.text.primary;\nconst SHOWN = theme.visualization.getColorByName('orange');\nconst IN_WINDOW = theme.visualization.getColorByName('blue');\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A') ?? context.panel.data.series[0];\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst times = col('time').map(Number);\nconst ids = col('scene_id');\nconst clouds = col('cloud_cover').map((v) =\u003e (v == null ? null : Number(v)));\nconst order = times.map((_, i) =\u003e i).sort((a, b) =\u003e times[a] - times[b]);\nconst passes = order.map((i) =\u003e ({ time: times[i], id: ids[i], cloud: clouds[i] }));\nconst first = passes.length ? passes[0].time : null;\nconst last = passes.length ? passes[passes.length - 1].time : null;\n\nconst iso = (ms) =\u003e new Date(Math.round(ms)).toISOString();\nconst day = (ms) =\u003e new Date(ms).toISOString().slice(0, 10);\n\n// The map's window, from the URL (what the map or a click just wrote), else\n// from the variables. null until the map has published one.\nconst readWindow = () =\u003e {\n  const search = new URLSearchParams(location.getLocation().search);\n  const raw = (name) =\u003e search.get('var-' + name) ?? context.grafana.replaceVariables('${' + name + '}');\n  const from = Date.parse(raw(FROM));\n  const to = Date.parse(raw(TO));\n  return Number.isFinite(from) \u0026\u0026 Number.isFinite(to) \u0026\u0026 from \u003c= to ? { from, to } : null;\n};\n// The pass the map draws: the newest inside the window, the newest of all\n// when there is no window yet, none when the window falls between passes.\nconst shownIn = (w) =\u003e {\n  const inside = passes.filter((p) =\u003e !w || (p.time \u003e= w.from \u0026\u0026 p.time \u003c= w.to));\n  return inside.length ? inside[inside.length - 1] : null;\n};\nconst isWhole = (w) =\u003e !w || (w.from \u003c= first \u0026\u0026 w.to \u003e= last);\n\nconst publish = (from, to) =\u003e location.partial({ ['var-' + FROM]: iso(from), ['var-' + TO]: iso(to) }, true);\n\n// A click anywhere in a pass's column picks it: the nearest pass to the\n// pointer, within half a day either side of it on screen.\nconst onClick = (event) =\u003e {\n  const at = [event.offsetX, event.offsetY];\n  if (!passes.length || !chart.containPixel({ gridIndex: 0 }, at)) {\n    return;\n  }\n  const t = chart.convertFromPixel({ gridIndex: 0 }, at)[0];\n  const halfDayPx = Math.abs(chart.convertToPixel({ gridIndex: 0 }, [t + DAY / 2, 0])[0] - event.offsetX);\n  let k = 0;\n  passes.forEach((p, i) =\u003e {\n    if (Math.abs(p.time - t) \u003c Math.abs(passes[k].time - t)) k = i;\n  });\n  const px = chart.convertToPixel({ gridIndex: 0 }, [passes[k].time, 0])[0];\n  if (Math.abs(px - event.offsetX) \u003e Math.max(halfDayPx, 6)) {\n    return;\n  }\n  const w = readWindow();\n  const shown = shownIn(w);\n  if (shown \u0026\u0026 shown.time === passes[k].time \u0026\u0026 !isWhole(w)) {\n    publish(first, last);\n    return;\n  }\n  // From halfway to the pass before to halfway to the pass after: the window\n  // holds this pass and no other, and stays inside the data's own range.\n  const from = k === 0 ? passes[k].time : (passes[k - 1].time + passes[k].time) / 2;\n  const to = k === passes.length - 1 ? passes[k].time : (passes[k].time + passes[k + 1].time) / 2;\n  publish(from, to);\n};\nconst zr = chart.getZr();\nzr.on('click', onClick);\n\nconst cut = Number(context.grafana.replaceVariables('${' + CLOUD + '}'));\n\nconst build = (w) =\u003e {\n  const shown = shownIn(w);\n  const inside = (p) =\u003e !w || (p.time \u003e= w.from \u0026\u0026 p.time \u003c= w.to);\n  return {\n    animation: false,\n    backgroundColor: 'transparent',\n    grid: { left: 8, right: 16, top: 30, bottom: 8, containLabel: true },\n    tooltip: {\n      trigger: 'item',\n      formatter: (p) =\u003e {\n        const pass = passes[p.dataIndex];\n        const state = shown \u0026\u0026 pass.time === shown.time ? 'on the map · click to go back to the newest' : 'click to draw it';\n        return `\u003cb\u003e${day(pass.time)}\u003c/b\u003e ${new Date(pass.time).toISOString().slice(11, 16)} UTC\u003cbr/\u003e${pass.id}\u003cbr/\u003eCloud cover: \u003cb\u003e${pass.cloud == null ? 'unknown' : pass.cloud.toFixed(1) + ' %'}\u003c/b\u003e\u003cbr/\u003e\u003cspan style=\"color:${muted}\"\u003e${state}\u003c/span\u003e`;\n      },\n    },\n    xAxis: {\n      type: 'time',\n      min: first == null ? undefined : first - 2 * DAY,\n      max: last == null ? undefined : last + 2 * DAY,\n      axisLabel: { color: muted, hideOverlap: true },\n      axisLine: { lineStyle: { color: muted } },\n      splitLine: { show: false },\n    },\n    yAxis: {\n      type: 'value',\n      name: 'cloud %',\n      min: 0,\n      max: 100,\n      interval: 50,\n      nameTextStyle: { color: muted },\n      axisLabel: { color: muted },\n      splitLine: { lineStyle: { opacity: 0.15 } },\n    },\n    series: [\n      {\n        type: 'bar',\n        name: 'Passes',\n        barWidth: 7,\n        barMinHeight: 3,\n        data: passes.map((p) =\u003e ({\n          value: [p.time, p.cloud ?? 0],\n          itemStyle: {\n            color: shown \u0026\u0026 p.time === shown.time ? SHOWN : inside(p) ? IN_WINDOW : CONTEXT,\n            borderRadius: [2, 2, 0, 0],\n          },\n          label:\n            shown \u0026\u0026 p.time === shown.time\n              ? { show: true, position: 'top', color: text, fontSize: 11, formatter: () =\u003e day(p.time) }\n              : { show: false },\n        })),\n        markArea:\n          w \u0026\u0026 !isWhole(w)\n            ? {\n                silent: true,\n                itemStyle: { color: 'rgba(128,128,128,0.12)', borderColor: muted, borderWidth: 1, borderType: 'dashed' },\n                data: [[{ xAxis: w.from }, { xAxis: w.to }]],\n              }\n            : { data: [] },\n        markLine:\n          cut \u003c 100\n            ? {\n                silent: true,\n                symbol: 'none',\n                label: { formatter: `cloud ≤ ${cut} %`, color: muted, fontSize: 10, position: 'insideEndTop' },\n                lineStyle: { type: 'dashed', color: muted },\n                data: [{ yAxis: cut }],\n              }\n            : { data: [] },\n      },\n    ],\n  };\n};\n\n// The map writes its window as it is dragged; a click writes it here. Neither\n// re-runs this panel's query, so the band and the colours are redrawn from\n// the URL.\nlet drawn = JSON.stringify(readWindow());\nconst stop = location.getHistory().listen(() =\u003e {\n  const w = readWindow();\n  const key = JSON.stringify(w);\n  if (key !== drawn \u0026\u0026 !chart.isDisposed()) {\n    drawn = key;\n    chart.setOption(build(w), { replaceMerge: ['series'] });\n  }\n});\n\nreturn {\n  version: 2,\n  option: build(readWindow()),\n  unsubscribe: () =\u003e {\n    stop();\n    zr.off('click', onClick);\n  },\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
       }
     },
     "layout": {
@@ -515,10 +596,23 @@
                 "kind": "ElementReference",
                 "name": "panel-1"
               },
-              "height": 8,
+              "height": 10,
               "width": 24,
               "x": 0,
               "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 7,
+              "width": 24,
+              "x": 0,
+              "y": 10
             }
           },
           {
@@ -531,7 +625,7 @@
               "height": 19,
               "width": 17,
               "x": 0,
-              "y": 8
+              "y": 17
             }
           },
           {
@@ -544,7 +638,7 @@
               "height": 19,
               "width": 7,
               "x": 17,
-              "y": 8
+              "y": 17
             }
           }
         ]
@@ -554,6 +648,7 @@
     "liveNow": false,
     "preload": false,
     "tags": [
+      "business-charts",
       "duckdb",
       "kepler",
       "satellite"
@@ -632,6 +727,36 @@
             }
           ],
           "query": "10 % : 10,20 % : 20,30 % : 30,50 % : 50,60 % : 60,80 % : 80,All (100 %) : 100",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Start of the map's time window, UTC ISO 8601. The map writes it as its time bar moves, and follows it when the timeline above sets it.",
+          "hide": "hideVariable",
+          "label": "Window from (map)",
+          "name": "pass_from",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "End of the map's time window, UTC ISO 8601. The map draws the newest pass between the two.",
+          "hide": "hideVariable",
+          "label": "Window to (map)",
+          "name": "pass_to",
+          "query": "",
           "skipUrlSync": false
         }
       }

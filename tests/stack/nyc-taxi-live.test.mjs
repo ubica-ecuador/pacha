@@ -16,14 +16,19 @@ const queries = findAll(dashboard, (n) => n.kind === 'Panel').flatMap((p) =>
   (p.spec.data?.spec.queries ?? []).map((q) => ({ title: p.spec.title, ref: q.spec.refId, sql: q.spec.query.spec.rawSql })),
 );
 // The datasource quotes a plain $var itself: an empty text variable is ''.
-const fill = (sql) =>
-  sql.replaceAll('${cab_type:sqlstring}', "'yellow','green'").replaceAll('$from_zone', "''").replaceAll('$to_zone', "''");
+const fill = (sql, fare = ["''", "''"]) =>
+  sql
+    .replaceAll('${cab_type:sqlstring}', "'yellow','green'")
+    .replaceAll('$from_zone', "''")
+    .replaceAll('$to_zone', "''")
+    .replaceAll('$fare_lo', fare[0])
+    .replaceAll('$fare_hi', fare[1]);
 const sqlOf = (title) => fill(panelTitled(dashboard, title).data.spec.queries[0].spec.query.spec.rawSql);
 
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, 'nyc-taxi-live');
   assert.ok(dashboard.spec.description);
-  assert.deepEqual(dashboard.spec.tags, ['duckdb', 'kepler', 'mobility', 'live']);
+  assert.deepEqual(dashboard.spec.tags, ['duckdb', 'kepler', 'mobility', 'live', 'business-charts']);
   assert.doesNotMatch(JSON.stringify(dashboard), /\/testdata|sources-data|host\.docker\.internal/);
   assert.ok(queries.filter((q) => q.sql.includes('read_parquet')).every((q) => q.sql.includes(TRIPS)));
 });

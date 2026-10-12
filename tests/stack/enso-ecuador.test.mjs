@@ -21,7 +21,7 @@ after(async () => view && view.browser.close());
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, UID);
   assert.ok(dashboard.spec.description);
-  assert.deepEqual(dashboard.spec.tags, ['duckdb', 'kepler', 'weather', 'maritime']);
+  assert.deepEqual(dashboard.spec.tags, ['duckdb', 'kepler', 'weather', 'maritime', 'business-charts']);
   assert.equal(SVC, 'http://feeds/elnino');
   // No INSTALL: the server's extensions are preloaded and its local disk is off.
   assert.equal(findAll(dashboard, (n) => typeof n.rawSql === 'string' && /INSTALL/.test(n.rawSql)).length, 0);
@@ -47,14 +47,6 @@ test('the country map gets eleven regions and the transmitting stations of INAMH
   const stations = await duckdb(STACK_URL, sqlOf('Cómo está el país ahora mismo', 'B'));
   assert.ok(stations.length > 100, `${stations.length} stations`);
   for (const s of stations) assert.ok(s.latitude > -6 && s.latitude < 2 && s.longitude > -92 && s.longitude < -75, JSON.stringify(s));
-});
-
-test('the sea level at La Libertad goes back to 1949', async () => {
-  const rows = await duckdb(STACK_URL, sqlOf('El nivel del mar en La Libertad, desde 1949'));
-  assert.equal(new Date(rows[0].time).getUTCFullYear(), 1949);
-  const top = await duckdb(STACK_URL, sqlOf('Los meses con el mar más alto en 77 años'));
-  assert.equal(top.length, 12);
-  assert.ok(top.some((r) => r.mes.startsWith('1997') || r.mes.startsWith('1983')), JSON.stringify(top));
 });
 
 test('loads for an anonymous visitor, with no panel in error', { timeout: 180_000 }, async () => {

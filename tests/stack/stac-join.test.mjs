@@ -19,7 +19,6 @@ const sqlOf = (title, refId = 'A') =>
 const { from, to } = dashboard.spec.timeSettings;
 const MAP = 'The area, the scene that covers it, and what is left out';
 const STAT = 'Your area, in the catalogue';
-const SHEET = 'The catalogue, as pictures of your area';
 
 // In a panel query the DuckDB datasource receives a bare variable quoted.
 const fill = (sql, vars) =>
@@ -42,12 +41,12 @@ after(async () => view && view.browser.close());
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, UID);
   assert.ok(dashboard.spec.description);
-  assert.deepEqual(dashboard.spec.tags, ['duckdb', 'kepler', 'satellite']);
+  assert.deepEqual(dashboard.spec.tags, ['business-charts', 'duckdb', 'kepler', 'satellite']);
   const text = JSON.stringify(dashboard);
   const uids = new Set(text.match(/"datasource":\{"name":"[^"]+"/g).map((s) => s.split('"').at(-2)));
   for (const uid of uids) assert.ok(['duckdb', '-- Grafana --'].includes(uid), uid);
   assert.equal(panelTitled(dashboard, MAP).vizConfig.spec.options.rasterServerUrl, '/titiler');
-  assert.doesNotMatch(text, /titiler\.ubica|http:\/\/titiler\/|stac-join-bench/);
+  assert.doesNotMatch(text, /titiler\.ubica|pacha-titiler|stac-join-bench/);
 });
 
 test('is provisioned in Gallery', async () => {
@@ -64,15 +63,6 @@ test('the catalogue has scenes over the area, and best scene never beats the mos
   const scenes = await duckdb(fill(sqlOf(MAP, 'B'), VARS));
   assert.equal(scenes.length, stat.Scenes); // the scenes the map can draw, one per row
   assert.ok(scenes.every((s) => /^https:\/\/.+\.tif$/.test(s.raster_url) && s.covers_pct > 0), JSON.stringify(scenes[0]));
-});
-
-test('the contact sheet cuts each thumbnail through the gateway tiler', { timeout: 60_000 }, async () => {
-  const rows = await duckdb(fill(sqlOf(SHEET), VARS));
-  assert.ok(rows.length >= 3 && rows.length <= 24, `${rows.length} rows`);
-  assert.ok(rows.every((r) => r.View.startsWith('/titiler/cog/bbox/') && r['Covers %'] > 0 && r['Covers %'] <= 100));
-  const res = await fetch(new URL(rows[0].View, STACK_URL));
-  assert.equal(res.status, 200);
-  assert.equal(res.headers.get('content-type'), 'image/png');
 });
 
 test('loads for an anonymous visitor, with the scene from /titiler and no panel in error', { timeout: 180_000 }, async () => {

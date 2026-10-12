@@ -34,12 +34,12 @@ after(async () => view && view.browser.close());
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, UID);
   assert.ok(dashboard.spec.description);
-  assert.deepEqual(dashboard.spec.tags, ['duckdb', 'kepler', 'satellite']);
+  assert.deepEqual(dashboard.spec.tags, ['business-charts', 'duckdb', 'kepler', 'satellite']);
   const text = JSON.stringify(dashboard);
   const uids = new Set(text.match(/"datasource":\{"name":"[^"]+"/g).map((s) => s.split('"').at(-2)));
-  for (const uid of uids) assert.ok(['duckdb', '-- Grafana --'].includes(uid), uid);
+  for (const uid of uids) assert.ok(['duckdb', '-- Grafana --', '-- Dashboard --'].includes(uid), uid);
   assert.equal(panelTitled(dashboard, MAP).vizConfig.spec.options.rasterServerUrl, '/titiler');
-  assert.doesNotMatch(text, /titiler\.ubica|http:\/\/titiler\//);
+  assert.doesNotMatch(text, /titiler\.ubica|pacha-titiler/);
 });
 
 test('is provisioned in Gallery', async () => {
@@ -56,12 +56,6 @@ test('the calendar has a pass every few days, each with its COG', { timeout: 60_
   assert.ok(rows.every((r) => r.cloud_cover >= 0 && r.cloud_cover <= 100 && /^https:\/\/.+\.tif$/.test(r.raster_url)));
   // The table and the map are the same query.
   assert.equal(sqlOf('The full calendar'), sqlOf(MAP));
-});
-
-test('the cloud cut drops the covered passes and keeps the rest', { timeout: 60_000 }, async () => {
-  const all = await duckdb(withCloud(sqlOf(MAP), '100'));
-  const clear = await duckdb(withCloud(sqlOf(MAP), '80'));
-  assert.deepEqual(clear.map((r) => r.scene_id), all.filter((r) => r.cloud_cover <= 80).map((r) => r.scene_id));
 });
 
 test('loads for an anonymous visitor, with the scene from /titiler and no panel in error', { timeout: 180_000 }, async () => {

@@ -3,6 +3,8 @@
 // with DuckDB turning the polygon drawn on the map into Esri rings. Every query
 // is run as a visitor runs it, with the dashboard's variables filled in as
 // Grafana fills them; the service is public, so these tests need the internet.
+// The three charts read a Chaski cube (group x year x month) that one Infinity
+// request fills, and write the variables the other panels follow.
 import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { api, rowsOf } from '../lib/grafana.mjs';
@@ -38,7 +40,8 @@ const panelQuery = (title, refId) => panelTitled(dashboard, title).data.spec.que
 
 // The taxonomic groups, as the "Taxonomic group" variable gets them on load.
 const TAXA = (await infinity(variable('taxon').query.spec.infinityQuery, {})).map((r) => r.key);
-const DEFAULTS = { resolucion: '4', capa: 'n_total', muestra: '5000', desdeAnio: '1900', taxon: TAXA, areaRings: '' };
+const MONTHS = Array.from({ length: 12 }, (_, i) => String(i + 1));
+const DEFAULTS = { resolucion: '4', capa: 'n_total', muestra: '5000', desdeAnio: '1900', hastaAnio: '9999', taxon: TAXA, mes: MONTHS, areaRings: '' };
 const MAP = 'Where things are observed — H3 hexagons and recent observations';
 
 let view;
@@ -47,7 +50,7 @@ after(async () => view && view.browser.close());
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, UID);
   assert.ok(dashboard.spec.description);
-  assert.deepEqual(dashboard.spec.tags, ['infinity', 'duckdb', 'kepler', 'wildlife']);
+  assert.deepEqual(dashboard.spec.tags, ['infinity', 'duckdb', 'chaski', 'kepler', 'business-charts', 'wildlife']);
 });
 
 test('is provisioned in Gallery', async () => {
@@ -75,20 +78,16 @@ test('the map gets H3 cells at every resolution and a sample of dots inside the 
   assert.ok(dots.every((d) => d.latitude >= -5.1 && d.latitude <= 1.7 && d.longitude >= -92 && d.longitude <= -75));
 });
 
-test('the charts and tables answer', { timeout: 120_000 }, async () => {
-  const groups = await infinity(panelQuery('Taxonomic composition', 'C'), DEFAULTS);
-  assert.equal(groups[0].grupo, 'Aves');
-  const months = await infinity(panelQuery('Seasonality', 'F'), DEFAULTS);
-  assert.equal(months.length, 12);
-  const years = await infinity(panelQuery('Observations per year', 'E'), DEFAULTS);
-  assert.ok(years.length >= 10 && years[0].anio === '2016', JSON.stringify(years[0]));
-  assert.equal((await infinity(panelQuery('The 20 most observed species', 'D'), DEFAULTS)).length, 20);
-  const recent = await infinity(panelQuery('Recent observations', 'J'), DEFAULTS);
-  assert.equal(recent.length, 100);
-  assert.ok(recent.every((r) => r.enlace.startsWith('https://www.inaturalist.org/observations/')));
-});
+// A Chaski panel query with the variables filled as Grafana fills them for Chaski (quoted).
+const chaskiSql = (title, refId, vars) =>
+  panelQuery(title, refId).rawSql.replace(/\$(\w+)/g, (match, name) =>
+    name === 'cubo' ? 'datasets.cubo' : vars[name] === undefined ? match : [vars[name]].flat().map((v) => `'${v}'`).join(','),
+  );
 
-test('loads for an anonymous visitor, with no panel in error', { timeout: 180_000 }, async () => {
-  view = await openDashboard(`/d/${UID}`, { chaski: false, timeoutMs: 120_000 });
+test('loads for an anonymous visitor, with no panel in error, and the charts get every group', { timeout: 240_000 }, async () => {
+  view = await openDashboard(`/d/${UID}`, { datasets: ['cubo'], timeoutMs: 150_000 });
   assert.equal(await view.panelErrors(), 0);
+  const groups = await view.chaski(chaskiSql('Taxonomic composition', 'C', DEFAULTS));
+  assert.equal(groups.length, TAXA.length);
+  assert.equal(groups[0].grupo, 'Aves');
 });

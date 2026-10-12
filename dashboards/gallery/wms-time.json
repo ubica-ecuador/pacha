@@ -324,78 +324,50 @@
               "transformations": []
             }
           },
-          "description": "The seven days ending today, over the polygon you draw — and with none, over the map's viewport. That is seven WCS requests, one per day: RT_Read demands a literal path, and a time range in WCS returns a single image.",
+          "description": "The seven days ending today, over the polygon you draw — and with none, over the map’s viewport: bars for the mean, dots for the wettest cell. That is seven WCS requests, one per day: RT_Read demands a literal path, and a time range in WCS returns a single image. Click a day to draw it on the map; the outlined bar is the day the map is drawing.",
           "id": 5,
           "links": [],
           "title": "Seven days over the area · mean and maximum",
           "vizConfig": {
-            "group": "timeseries",
+            "group": "volkovlabs-echarts-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "custom": {
-                    "axisLabel": "media (mm)",
-                    "drawStyle": "line",
-                    "fillOpacity": 8,
-                    "lineWidth": 2,
-                    "pointSize": 6,
-                    "showPoints": "always",
-                    "spanNulls": true
-                  },
-                  "decimals": 2,
-                  "unit": "none"
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "máximo mm"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.fillOpacity",
-                        "value": 0
-                      },
-                      {
-                        "id": "custom.lineStyle",
-                        "value": {
-                          "dash": [
-                            8,
-                            4
-                          ],
-                          "fill": "dash"
-                        }
-                      },
-                      {
-                        "id": "custom.axisPlacement",
-                        "value": "right"
-                      },
-                      {
-                        "id": "custom.axisLabel",
-                        "value": "máximo (mm)"
-                      },
-                      {
-                        "id": "displayName",
-                        "value": "maximum mm"
-                      }
-                    ]
-                  }
-                ]
+                "defaults": {},
+                "overrides": []
               },
               "options": {
-                "legend": {
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
                 },
-                "tooltip": {
-                  "mode": "multi",
-                  "sort": "none"
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Seven days of rain over the area: one bar a day for the mean, a dot for the\n// wettest cell. The day the map is drawing is in full colour and outlined; the\n// others are dimmed behind it.\n//\n// Clicking a day moves the map to it: it writes the map's window\n// (mapFrom/mapTo), which is what the map's own time bar writes; the map draws\n// the newest date inside the window, and the one-day figure reads mapTo. There\n// is nothing to clear: the map always draws one day.\n\n// @constants begin\nconst FROM_VAR = 'mapFrom';\nconst TO_VAR = 'mapTo';\n// written out, not built from the name: a variable spelled in the code is what\n// makes Grafana redraw the chart when it changes, with no query re-run\nconst TO = '${mapTo}';\nconst WINDOW_MS = 12 * 3600 * 1000; // mapFrom = the day - 12 h: only that day falls inside\nconst MEAN_FIELD = 'media mm';\nconst MAX_FIELD = 'máximo mm';\nconst COLOR_MEAN = 'blue';\nconst COLOR_MAX = 'purple';\nconst UNIT = 'mm';\n// @constants end\n\nconst chart = context.panel.chart;\nconst grafana = context.grafana;\nconst theme = grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst color = (name) =\u003e theme.visualization.getColorByName(name);\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst num = (v) =\u003e (v == null || v === '' ? null : Number(v));\nconst times = col('time').map(Number);\nconst mean = col(MEAN_FIELD).map(num);\nconst max = col(MAX_FIELD).map(num);\n\n// The day the map draws: the newest one at or before the end of its window,\n// or the end of the dashboard's range before the map has published one.\nconst to = Date.parse(grafana.replaceVariables(TO));\nconst end = Number.isFinite(to) ? to : Number(grafana.replaceVariables('${__to}'));\nlet picked = -1;\ntimes.forEach((t, i) =\u003e {\n  if (t \u003c= end \u0026\u0026 (picked \u003c 0 || t \u003e times[picked])) {\n    picked = i;\n  }\n});\n\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const t = times[event.dataIndex];\n  if (!Number.isFinite(t)) {\n    return;\n  }\n  grafana.locationService.partial(\n    {\n      ['var-' + FROM_VAR]: new Date(t - WINDOW_MS).toISOString(),\n      ['var-' + TO_VAR]: new Date(t).toISOString(),\n    },\n    true\n  );\n});\n\nconst day = (ms) =\u003e new Date(ms).toISOString().slice(0, 10);\nconst label = (ms) =\u003e new Date(ms).toUTCString().slice(0, 11); // \"Mon, 12 Oct\"\nconst fmt = (v) =\u003e (v == null ? '–' : v.toFixed(1));\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 8, top: 34, bottom: 8, containLabel: true },\n  legend: { top: 0, right: 8, textStyle: { color: muted }, selectedMode: false },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e {\n      const i = items[0].dataIndex;\n      return (\n        `\u003cb\u003e${day(times[i])}\u003c/b\u003e\u003cbr/\u003emean \u003cb\u003e${fmt(mean[i])} ${UNIT}\u003c/b\u003e · wettest cell ${fmt(max[i])} ${UNIT}` +\n        `\u003cbr/\u003e\u003cspan style=\"opacity:.7\"\u003eclick to draw this day on the map\u003c/span\u003e`\n      );\n    },\n  },\n  xAxis: {\n    type: 'category',\n    data: times.map(label),\n    axisTick: { show: false },\n    axisLabel: {\n      color: muted,\n      formatter: (v, i) =\u003e (i === picked ? '{on|' + v + '}' : v),\n      rich: { on: { color: theme.colors.text.primary, fontWeight: 'bold' } },\n    },\n    axisLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  yAxis: [\n    {\n      type: 'value',\n      name: 'mean ' + UNIT,\n      nameTextStyle: { color: muted },\n      axisLabel: { color: muted },\n      splitLine: { lineStyle: { color: theme.colors.border.weak } },\n    },\n    {\n      type: 'value',\n      name: 'wettest cell ' + UNIT,\n      nameTextStyle: { color: muted },\n      axisLabel: { color: muted },\n      splitLine: { show: false },\n    },\n  ],\n  series: [\n    {\n      name: 'mean',\n      type: 'bar',\n      barWidth: '60%',\n      cursor: 'pointer',\n      itemStyle: { color: color(COLOR_MEAN) },\n      data: mean.map((v, i) =\u003e ({\n        value: v,\n        itemStyle: {\n          color: color(COLOR_MEAN),\n          opacity: picked \u003e= 0 \u0026\u0026 i !== picked ? 0.4 : 1,\n          borderColor: i === picked ? theme.colors.text.primary : 'transparent',\n          borderWidth: i === picked ? 2 : 0,\n          borderRadius: [3, 3, 0, 0],\n        },\n      })),\n      label: { show: true, position: 'top', color: muted, fontSize: 11, formatter: (p) =\u003e fmt(p.value) },\n    },\n    {\n      name: 'wettest cell',\n      type: 'line',\n      yAxisIndex: 1,\n      symbol: 'circle',\n      symbolSize: 7,\n      cursor: 'pointer',\n      lineStyle: { type: 'dashed', width: 1, color: color(COLOR_MAX) },\n      itemStyle: { color: color(COLOR_MAX) },\n      data: max,\n    },\n  ],\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
                 }
               }
             },
-            "version": ""
+            "version": "7.2.5"
           }
         }
       }
@@ -478,6 +450,7 @@
     "tags": [
       "duckdb",
       "kepler",
+      "business-charts",
       "weather"
     ],
     "timeSettings": {

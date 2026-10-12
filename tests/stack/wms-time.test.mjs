@@ -34,7 +34,7 @@ after(async () => view && view.browser.close());
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, UID);
   assert.ok(dashboard.spec.description);
-  assert.deepEqual(dashboard.spec.tags, ['duckdb', 'kepler', 'weather']);
+  assert.deepEqual(dashboard.spec.tags, ['duckdb', 'kepler', 'business-charts', 'weather']);
 });
 
 test('is provisioned in Gallery', async () => {

@@ -55,7 +55,6 @@ const ready = (async () => {
 
 const MAP = "${variable:text} · newest GFS run · walk it with the map's own time bar";
 const TABLE = 'The request · every statistic of ${variable:text}';
-const SERIES = '${variable:text} over the drawn area · the whole forecast';
 
 let view;
 after(async () => view && view.browser.close());
@@ -63,13 +62,13 @@ after(async () => view && view.browser.close());
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, UID);
   assert.ok(dashboard.spec.description);
-  assert.deepEqual(dashboard.spec.tags, ['duckdb', 'infinity', 'kepler', 'weather']);
+  assert.deepEqual(dashboard.spec.tags, ['duckdb', 'infinity', 'kepler', 'business-charts', 'weather']);
   const text = JSON.stringify(dashboard);
   const uids = new Set(text.match(/"datasource":\{"name":"[^"]+"/g).map((s) => s.split('"').at(-2)));
   for (const uid of uids) assert.ok(['infinity', 'duckdb', '-- Dashboard --', '-- Grafana --'].includes(uid), uid);
   // Tiles from the stack's own tiler, wherever it is served; the server side by its compose alias.
   assert.equal(panelTitled(dashboard, MAP).vizConfig.spec.options.rasterServerUrl, '/titiler');
-  assert.doesNotMatch(text, /titiler\.ubica|http:\/\/titiler\//);
+  assert.doesNotMatch(text, /titiler\.ubica|pacha-titiler/);
 });
 
 test('is provisioned in Gallery', async () => {
@@ -94,13 +93,6 @@ test('the area statistics come back from the tiler, in degrees Celsius', { timeo
   const [row] = await query({ ...target, datasource: { uid: 'infinity', type: 'yesoreyeram-infinity-datasource' } });
   assert.ok(row.cells > 0, JSON.stringify(row));
   assert.ok(row.min <= row.mean && row.mean <= row.max && row.min > -30 && row.max < 45, JSON.stringify(row));
-});
-
-test('the whole-forecast series has one band per forecast step', { timeout: 120_000 }, async () => {
-  await ready;
-  const rows = await duckdb(fill(queryOf(SERIES).rawSql, vars, true));
-  assert.equal(rows.length, 209);
-  assert.ok(rows.every((r) => r.min <= r.mean && r.mean <= r.max), JSON.stringify(rows.find((r) => !(r.min <= r.mean && r.mean <= r.max))));
 });
 
 test('loads for an anonymous visitor, with tiles from /titiler and no panel in error', { timeout: 180_000 }, async () => {

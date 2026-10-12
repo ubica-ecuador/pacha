@@ -90,7 +90,7 @@
                         "editorMode": "code",
                         "format": 1,
                         "rawQuery": true,
-                        "rawSql": "\n-- One LAMP file per service day in the dashboard range. Capped at 31 days and\n-- at yesterday in Boston: today's file may not exist yet, and a missing file\n-- fails the whole read. A range inside today still reads yesterday.\nWITH d AS (\n  -- Branch headways where the station is on a branch (Green-B/C/D/E), trunk\n  -- headways otherwise; comparing a branch stop against the trunk schedule\n  -- invents gaps. Intervals of an hour or more are the overnight break.\n  SELECT trunk_route_id AS line,\n         route_id,\n         parent_station,\n         direction_destination,\n         to_timestamp(stop_timestamp) AS t,\n         coalesce(headway_branch_seconds, headway_trunk_seconds)     AS h,\n         coalesce(scheduled_headway_branch, scheduled_headway_trunk) AS hs\n  FROM read_parquet([\n  'http://feeds/mbta/lamp/subway-on-time-performance-v1/' || strftime(d, '%Y-%m-%d') || '-subway-on-time-performance-v1.parquet'\n  FOR d IN generate_series(\n    least(greatest(CAST($__timeFrom() AS TIMESTAMPTZ)::DATE, CAST($__timeTo() AS TIMESTAMPTZ)::DATE - 30), (now() AT TIME ZONE 'America/New_York')::DATE - 1),\n    least(CAST($__timeTo() AS TIMESTAMPTZ)::DATE, (now() AT TIME ZONE 'America/New_York')::DATE - 1),\n    INTERVAL 1 DAY)\n])\n),\n-- Some rows carry headways but no stop timestamp; a null in the time column\n-- makes Grafana's time series report all of its data as out of range.\n-- The dashboard's mode and route filters reach the history too. LAMP's route_id\n-- uses the live feed's ids (Green-B…E, Red, Orange, Blue, Mattapan), so the same\n-- selection applies unchanged; a selection without Subway leaves it empty.\nok AS (\n  SELECT * FROM d\n  WHERE t IS NOT NULL AND h \u003e 0 AND hs \u003e 0 AND h \u003c 3600 AND hs \u003c 3600\n    AND 'Subway' IN ($mode)\n    AND ('__all__' IN ($route) OR route_id IN ($route))\n)\nSELECT line                                              AS \"Line\",\n       count(*)::BIGINT                                   AS \"Samples\",\n       round(median(h) / 60.0, 1)                         AS \"Actual\",\n       round(median(hs) / 60.0, 1)                        AS \"Scheduled\",\n       -- Excess wait time: a rider's expected wait, Σh²/2Σh, real minus scheduled.\n       round((sum(h ^ 2) / (2 * sum(h)) - sum(hs ^ 2) / (2 * sum(hs))) / 60.0, 2)                                    AS \"Excess wait\",\n       round(100.0 * avg((h \u003c 0.25 * hs)::INT), 1)        AS \"Bunched\",\n       round(100.0 * avg((h \u003e 1.5 * hs)::INT), 1)         AS \"Gaps\"\nFROM ok GROUP BY 1 ORDER BY 1\n"
+                        "rawSql": "\n-- One LAMP file per service day in the dashboard range. Capped at 31 days and\n-- at yesterday in Boston: today's file may not exist yet, and a missing file\n-- fails the whole read. A range inside today still reads yesterday.\nWITH d AS (\n  -- Branch headways where the station is on a branch (Green-B/C/D/E), trunk\n  -- headways otherwise; comparing a branch stop against the trunk schedule\n  -- invents gaps. Intervals of an hour or more are the overnight break.\n  SELECT trunk_route_id AS line,\n         route_id,\n         parent_station,\n         direction_destination,\n         to_timestamp(stop_timestamp) AS t,\n         coalesce(headway_branch_seconds, headway_trunk_seconds)     AS h,\n         coalesce(scheduled_headway_branch, scheduled_headway_trunk) AS hs\n  FROM read_parquet([\n  'http://feeds/mbta/lamp/subway-on-time-performance-v1/' || strftime(d, '%Y-%m-%d') || '-subway-on-time-performance-v1.parquet'\n  FOR d IN generate_series(\n    least(greatest(CAST($__timeFrom() AS TIMESTAMPTZ)::DATE, CAST($__timeTo() AS TIMESTAMPTZ)::DATE - 30), (now() AT TIME ZONE 'America/New_York')::DATE - 1),\n    least(CAST($__timeTo() AS TIMESTAMPTZ)::DATE, (now() AT TIME ZONE 'America/New_York')::DATE - 1),\n    INTERVAL 1 DAY)\n])\n),\n-- Some rows carry headways but no stop timestamp; a null in the time column\n-- makes Grafana's time series report all of its data as out of range.\n-- The dashboard's mode and route filters reach the history too. LAMP's route_id\n-- uses the live feed's ids (Green-B…E, Red, Orange, Blue, Mattapan), so the same\n-- selection applies unchanged; a selection without Subway leaves it empty.\nok AS (\n  SELECT * FROM d\n  WHERE t IS NOT NULL AND h \u003e 0 AND hs \u003e 0 AND h \u003c 3600 AND hs \u003c 3600\n    AND 'Subway' IN ($mode)\n    AND ('__all__' IN ($route) OR route_id IN ($route))\n)\n-- One row per line and one for all of them together, first. Clicking a line\n-- picks its routes in `route` (the four Green branches for Green) through the\n-- hidden `pick` column; clicking the first row goes back to all routes.\nSELECT CASE WHEN grouping(line) = 1\n            THEN CASE WHEN '__all__' IN ($route) THEN 'All' ELSE 'All · clear' END\n            ELSE line END                                 AS \"Line\",\n       CASE WHEN grouping(line) = 1 THEN 'var-route=$__all'\n            ELSE string_agg(DISTINCT 'var-route=' || route_id, '\u0026' ORDER BY 'var-route=' || route_id) END AS pick,\n       count(*)::BIGINT                                   AS \"Samples\",\n       round(median(h) / 60.0, 1)                         AS \"Actual\",\n       round(median(hs) / 60.0, 1)                        AS \"Scheduled\",\n       -- Excess wait time: a rider's expected wait, Σh²/2Σh, real minus scheduled.\n       round((sum(h ^ 2) / (2 * sum(h)) - sum(hs ^ 2) / (2 * sum(hs))) / 60.0, 2)                                    AS \"Excess wait\",\n       round(100.0 * avg((h \u003c 0.25 * hs)::INT), 1)        AS \"Bunched\",\n       round(100.0 * avg((h \u003e 1.5 * hs)::INT), 1)         AS \"Gaps\"\nFROM ok GROUP BY GROUPING SETS ((line), ())\nHAVING count(*) \u003e 0\nORDER BY grouping(line) DESC, line"
                       },
                       "version": "v0"
                     },
@@ -102,7 +102,7 @@
               "transformations": []
             }
           },
-          "description": "From the MBTA's LAMP archive: every time a train passes a station, with its actual and scheduled headway. Excess wait = expected wait, actual minus scheduled, where expected wait = Σh² / 2Σh (the metric used by the MBTA, TfL and the MTA). Gaps: headways over 1.5 times the schedule. Bunched: under a quarter of it. Minutes.",
+          "description": "From the MBTA's LAMP archive: every time a train passes a station, with its actual and scheduled headway. Excess wait = expected wait, actual minus scheduled, where expected wait = Σh² / 2Σh (the metric used by the MBTA, TfL and the MTA). Gaps: headways over 1.5 times the schedule. Bunched: under a quarter of it. Minutes. Click a line to pick its routes; the first row goes back to all.",
           "id": 11,
           "links": [],
           "title": "Headways by line",
@@ -145,7 +145,16 @@
                     "properties": [
                       {
                         "id": "custom.width",
-                        "value": 75
+                        "value": 85
+                      },
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Pick this line (the first row: all routes)",
+                            "url": "/d/${__dashboard.uid}?${__url_time_range}\u0026${mode:queryparam}\u0026${status:queryparam}\u0026${occupancy:queryparam}\u0026${__data.fields.pick}"
+                          }
+                        ]
                       }
                     ]
                   },
@@ -305,7 +314,19 @@
                       },
                       {
                         "id": "custom.width",
-                        "value": 105
+                        "value": 95
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "pick"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
                       }
                     ]
                   }
@@ -2313,7 +2334,7 @@
                         "editorMode": "code",
                         "format": 1,
                         "rawQuery": true,
-                        "rawSql": "SET force_download = true;\n\nWITH al AS (SELECT unnest(entity) AS e FROM read_json('http://feeds/mbta/realtime/Alerts_enhanced.json', maximum_object_size = 50000000))\nSELECT\n  CASE e.alert.effect\n    WHEN 'NO_SERVICE'          THEN 'No service'\n    WHEN 'REDUCED_SERVICE'     THEN 'Reduced service'\n    WHEN 'SIGNIFICANT_DELAYS'  THEN 'Significant delays'\n    WHEN 'DETOUR'              THEN 'Detour'\n    WHEN 'ADDITIONAL_SERVICE'  THEN 'Additional service'\n    WHEN 'MODIFIED_SERVICE'    THEN 'Modified service'\n    WHEN 'STOP_MOVED'          THEN 'Stop moved'\n    WHEN 'ACCESSIBILITY_ISSUE' THEN 'Accessibility'\n    WHEN 'OTHER_EFFECT'        THEN 'Other'\n    ELSE 'Unknown'\n  END AS \"Effect\",\n  count(*)::BIGINT AS \"Alerts\"\nFROM al\n-- Active now: some period has started and has not ended (no end = open).\nWHERE len(list_filter(e.alert.active_period,\n          p -\u003e p.start \u003c= epoch(now()) AND coalesce(p.\"end\", 9999999999) \u003e= epoch(now()))) \u003e 0\n  -- And it names at least one route inside the mode and route selection.\n  AND len(list_filter(e.alert.informed_entity,\n          x -\u003e x.route_id IS NOT NULL\n               AND CASE\n    WHEN x.route_id IN ('Red', 'Orange', 'Blue', 'Mattapan') OR x.route_id LIKE 'Green-%' THEN 'Subway'\n    WHEN x.route_id LIKE 'CR-%'   THEN 'Commuter rail'\n    WHEN x.route_id LIKE 'Boat-%' THEN 'Ferry'\n    ELSE 'Bus'\n  END IN ($mode)\n               AND ('__all__' IN ($route) OR x.route_id IN ($route)))) \u003e 0\nGROUP BY 1 ORDER BY 2 DESC\n"
+                        "rawSql": "SET force_download = true;\n\n-- Active alerts per route: an alert that names three routes counts once for\n-- each. Filtered by mode, NOT by route: the chart is how a route is picked, so\n-- it keeps showing the others (greyed) to pick another. The twelve routes with\n-- the most alerts, plus the picked ones; the effects grouped in four, as the\n-- chart colours them.\nWITH al AS (SELECT unnest(entity) AS e FROM read_json('http://feeds/mbta/realtime/Alerts_enhanced.json', maximum_object_size = 50000000)),\nactive AS (\n  SELECT e.id AS alert, e.alert.effect AS effect, e.alert.informed_entity AS ents\n  FROM al\n  -- Active now: some period has started and has not ended (no end = open).\n  WHERE len(list_filter(e.alert.active_period,\n          p -\u003e p.start \u003c= epoch(now()) AND coalesce(p.\"end\", 9999999999) \u003e= epoch(now()))) \u003e 0\n),\nper AS (\n  SELECT DISTINCT alert, effect, unnest(list_distinct(list_filter(list_transform(ents, x -\u003e x.route_id), r -\u003e r IS NOT NULL))) AS route\n  FROM active\n),\nm AS (\n  SELECT *, CASE\n    WHEN route IN ('Red', 'Orange', 'Blue', 'Mattapan') OR route LIKE 'Green-%' THEN 'Subway'\n    WHEN route LIKE 'CR-%'   THEN 'Commuter rail'\n    WHEN route LIKE 'Boat-%' THEN 'Ferry'\n    ELSE 'Bus'\n  END AS mode\n  FROM per\n),\ng AS (\n  SELECT route, mode,\n         count(*) FILTER (WHERE effect IN ('NO_SERVICE', 'REDUCED_SERVICE', 'SIGNIFICANT_DELAYS'))::INT AS \"Service cut or delayed\",\n         count(*) FILTER (WHERE effect IN ('DETOUR', 'STOP_MOVED', 'MODIFIED_SERVICE'))::INT          AS \"Detour or stop moved\",\n         count(*) FILTER (WHERE effect = 'ACCESSIBILITY_ISSUE')::INT                                  AS \"Accessibility\",\n         count(*) FILTER (WHERE effect NOT IN ('NO_SERVICE', 'REDUCED_SERVICE', 'SIGNIFICANT_DELAYS',\n                                               'DETOUR', 'STOP_MOVED', 'MODIFIED_SERVICE', 'ACCESSIBILITY_ISSUE')\n                                OR effect IS NULL)::INT                                               AS \"Other\",\n         count(*)::INT AS total\n  FROM m\n  WHERE mode IN ($mode)\n  GROUP BY 1, 2\n)\nSELECT * EXCLUDE (rn) FROM (SELECT *, row_number() OVER (ORDER BY total DESC, route) AS rn FROM g)\nWHERE rn \u003c= 12 OR route IN ($route)\nORDER BY total DESC, route"
                       },
                       "version": "v0"
                     },
@@ -2325,64 +2346,50 @@
               "transformations": []
             }
           },
-          "description": "Alerts feed: notices in effect right now, grouped by the effect the agency declares.",
+          "description": "Alerts feed: notices in effect right now, on the twelve routes with the most of them in the selected modes, split by what the alert does. Click a bar to pick that route (the map, the tables and the history follow); click it again for all routes.",
           "id": 9,
           "links": [],
           "title": "Active service alerts",
           "vizConfig": {
-            "group": "bargauge",
+            "group": "volkovlabs-echarts-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "fixedColor": "#d29922",
-                    "mode": "fixed"
-                  },
-                  "decimals": 0,
-                  "min": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  }
-                },
+                "defaults": {},
                 "overrides": []
               },
               "options": {
-                "displayMode": "basic",
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": false
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
                 },
-                "maxVizHeight": 300,
-                "minVizHeight": 10,
-                "minVizWidth": 8,
-                "namePlacement": "left",
-                "orientation": "horizontal",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "/^Alerts$/",
-                  "values": true
+                "editor": {
+                  "format": "auto"
                 },
-                "showUnfilled": true,
-                "sizing": "auto",
-                "valueMode": "color"
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Active service alerts by route: the twelve routes with the most alerts in\n// effect right now (and the picked routes, if they have any), in the selected modes, each bar split by what the alert\n// does (service cut or delayed, detour or stop moved, accessibility, other).\n// An alert that names three routes counts on each of them.\n//\n// Clicking a bar picks that route in the `route` variable, as the Route\n// dropdown does: the map, the bunching table and the subway history follow it.\n// Clicking it again goes back to all routes. The chart does not filter itself\n// by route, so the other routes stay in grey to pick another.\n// Columns: `route`, `mode`, `total`, and one per effect group (EFFECTS).\n// @constants begin\nconst VAR = 'route';\n// Written literally so that Grafana redraws the panel when it changes.\nconst PICKED = '${route}';\nconst ALL = '$__all';\nconst EFFECTS = [\n  { field: 'Service cut or delayed', color: 'red' },\n  { field: 'Detour or stop moved', color: 'orange' },\n  { field: 'Accessibility', color: 'blue' },\n  { field: 'Other', color: 'rgba(128, 128, 128, 0.7)' },\n];\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst text = theme.colors.text.primary;\nconst paint = (c) =\u003e (c.startsWith('rgba') ? c : theme.visualization.getColorByName(c));\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\n// ECharts draws a category axis bottom up: reversed, the most alerts on top.\nconst routes = col('route').map(String).reverse();\nconst modes = col('mode').reverse();\nconst totals = col('total').map(Number).reverse();\nconst counts = Object.fromEntries(EFFECTS.map((e) =\u003e [e.field, col(e.field).map(Number).reverse()]));\n\n// `${route}` is the all-value ('__all__') when nothing is picked, one route\n// when one is, `{a,b}` when several are picked in the dropdown.\nconst raw = context.grafana.replaceVariables(PICKED);\nconst picked = raw.replace(/^\\{|\\}$/g, '').split(',').filter((r) =\u003e r \u0026\u0026 !r.includes('__all__'));\nconst isPicked = (r) =\u003e picked.includes(r);\n\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const route = routes[event.dataIndex];\n  if (!route) return;\n  const same = picked.length === 1 \u0026\u0026 picked[0] === route;\n  location.partial({ ['var-' + VAR]: same ? ALL : route }, true);\n});\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 28, top: 26, bottom: 4, containLabel: true },\n  legend: {\n    top: 0,\n    selectedMode: false,\n    data: EFFECTS.map((e) =\u003e e.field),\n    textStyle: { color: muted, fontSize: 11 },\n    itemWidth: 10,\n    itemHeight: 10,\n  },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e {\n      const i = items[0].dataIndex;\n      const rows = EFFECTS.filter((e) =\u003e counts[e.field][i] \u003e 0)\n        .map((e) =\u003e `\u003cspan style=\"color:${paint(e.color)}\"\u003e●\u003c/span\u003e ${e.field}: \u003cb\u003e${counts[e.field][i]}\u003c/b\u003e`)\n        .join('\u003cbr/\u003e');\n      const hint = isPicked(routes[i]) \u0026\u0026 picked.length === 1 ? 'click to show all routes' : 'click to pick this route';\n      return `\u003cb\u003e${routes[i]}\u003c/b\u003e · ${modes[i]}\u003cbr/\u003e${totals[i]} active alerts\u003cbr/\u003e${rows}\u003cbr/\u003e\u003cspan style=\"opacity:.7\"\u003e${hint}\u003c/span\u003e`;\n    },\n  },\n  xAxis: {\n    type: 'value',\n    minInterval: 1,\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  yAxis: {\n    type: 'category',\n    data: routes.map((r) =\u003e ({ value: r, textStyle: isPicked(r) ? { color: text, fontWeight: 'bold' } : {} })),\n    axisTick: { show: false },\n    axisLabel: { color: muted, fontSize: 11, interval: 0 },\n  },\n  series: EFFECTS.map((e) =\u003e ({\n    name: e.field,\n    type: 'bar',\n    stack: 'alerts',\n    barWidth: '65%',\n    cursor: 'pointer',\n    color: paint(e.color),\n    data: counts[e.field].map((v, i) =\u003e ({\n      value: v || null,\n      itemStyle: { color: paint(e.color), opacity: picked.length \u0026\u0026 !isPicked(routes[i]) ? 0.3 : 1 },\n    })),\n  })).concat([\n    // The total at the end of each bar.\n    {\n      type: 'bar',\n      stack: 'alerts',\n      silent: true,\n      data: totals.map(() =\u003e 0),\n      label: { show: true, position: 'right', color: muted, fontSize: 11, formatter: (p) =\u003e totals[p.dataIndex] },\n      tooltip: { show: false },\n    },\n  ]),\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
               }
             },
-            "version": "13.2.1"
+            "version": "7.2.5"
           }
         }
       }
@@ -2601,7 +2608,8 @@
       "duckdb",
       "kepler",
       "transit",
-      "live"
+      "live",
+      "business-charts"
     ],
     "timeSettings": {
       "autoRefresh": "30s",
