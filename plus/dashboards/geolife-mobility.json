@@ -13,7 +13,7 @@
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations & Alerts",
+          "name": "Annotations \u0026 Alerts",
           "query": {
             "datasource": {
               "name": "-- Grafana --"
@@ -27,7 +27,7 @@
       }
     ],
     "cursorSync": "Off",
-    "description": "GeoLife, 182 people logging their GPS in Beijing from 2007 to 2012, explored the way Anita Graser does: DuckDB reads and cleans 24.9 million fixes into 50,000 trips, then speeds and stops, flows generalized after Andrienko & Andrienko, and any trip up close.",
+    "description": "GeoLife, 182 people logging their GPS in Beijing from 2007 to 2012, explored the way Anita Graser does: DuckDB reads and cleans 24.9 million fixes into 50,000 trips, then speeds and stops, flows generalized after Andrienko \u0026 Andrienko, and any trip up close.",
     "editable": true,
     "elements": {
       "about": {
@@ -60,7 +60,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### About the data and the method\n**Data.** [GeoLife GPS Trajectories 1.3](https://www.microsoft.com/en-us/download/details.aspx?id=52367), Microsoft Research Asia: 182 users, April 2007 to August 2012, 24.9 million fixes, mostly in Beijing; 69 users labelled spans of their trips with how they travelled. Released for **non-commercial research** under the Microsoft Research License Agreement. Please cite: Yu Zheng, Lizhu Zhang, Xing Xie, Wei-Ying Ma. *Mining interesting locations and travel sequences from GPS trajectories*, WWW 2009; Yu Zheng, Quannan Li, Yukun Chen, Xing Xie, Wei-Ying Ma. *Understanding Mobility Based on GPS Data*, UbiComp 2008; Yu Zheng, Xing Xie, Wei-Ying Ma. *GeoLife: A Collaborative Social Networking Service among User, location and trajectory*, IEEE Data Engineering Bulletin 2010.\n\n**Where it lives.** The dataset is not in git and not served to browsers. `datasets/geolife/build.sh` downloads it once per instance and runs `build.sql` with DuckDB 1.5.4 (about three minutes); the gateway serves the resulting Parquet to Grafana's DuckDB only, and each tab's figures are computed from it, on the server for the datasets and in the browser (Chaski) for the panels.\n\n**Method.** After Anita Graser's [Movement data in GIS](https://anitagraser.com/movement-data-in-gis/) series:\n- *Reading* — [Wrangling hundreds of GPS files with DuckDB, QGIS & Trajectools](https://anitagraser.com/2025/10/12/geolife-gps-track-collection-processing-with-duckdb-qgis-trajectools/) (2025): all the `.plt` files in one DuckDB `read_csv`, the folder as the user, the file as the trajectory.\n- *Cleaning* — [Trajectools tutorial: trajectory preprocessing](https://anitagraser.com/2024/09/21/trajectools-tutorial-trajectory-preprocessing/) (2024): one fix per user and second; trips split at 5-minute gaps and at jumps over 300 km/h for over 500 m; a fix that jumps away and back at over 100 km/h removed; trips under 10 fixes, a minute or 100 m dropped. Speed over five fixes. Times are UTC in the data; Beijing time is UTC+8.\n- *Stops* — after MovingPandas' stop detection ([2021](https://anitagraser.com/2021/03/28/movement-data-in-gis-35-stop-detection-analysis-with-movingpandas/)): five minutes within 100 m; plus pauses, where the GPS went silent and the next trip starts within 200 m.\n- *Flows* — [Visualizing massive trajectory datasets](https://anitagraser.com/2016/11/07/movement-data-in-gis-3-visualizing-massive-trajectory-datasets/) (2016), after G. Andrienko & N. Andrienko, *Spatial generalization and aggregation of massive movement data*, IEEE TVCG 17(2), 2011. Places from the characteristic points grouped on a square grid (no Voronoi step, as in Anita's version), moves counted between consecutive places.\n\n**Limits.** These are the people of one lab in one city, a decade and a half ago, logging when they chose to: the map shows where *they* went, not how Beijing moves. Labelled modes cover 17 % of trips. A mode in *Speed by mode* and on the maps is the label of the fix; on a trip, the label most of its fixes carry.",
+                "content": "### About the data and the method\n**Data.** [GeoLife GPS Trajectories 1.3](https://www.microsoft.com/en-us/download/details.aspx?id=52367), Microsoft Research Asia: 182 users, April 2007 to August 2012, 24.9 million fixes, mostly in Beijing; 69 users labelled spans of their trips with how they travelled. Released for **non-commercial research** under the Microsoft Research License Agreement. Please cite: Yu Zheng, Lizhu Zhang, Xing Xie, Wei-Ying Ma. *Mining interesting locations and travel sequences from GPS trajectories*, WWW 2009; Yu Zheng, Quannan Li, Yukun Chen, Xing Xie, Wei-Ying Ma. *Understanding Mobility Based on GPS Data*, UbiComp 2008; Yu Zheng, Xing Xie, Wei-Ying Ma. *GeoLife: A Collaborative Social Networking Service among User, location and trajectory*, IEEE Data Engineering Bulletin 2010.\n\n**Where it lives.** The dataset is not in git and not served to browsers. `datasets/geolife/build.sh` downloads it once per instance and runs `build.sql` with DuckDB 1.5.4 (about three minutes); the gateway serves the resulting Parquet to Grafana's DuckDB only, and each tab's figures are computed from it, on the server for the datasets and in the browser (Chaski) for the panels.\n\n**Method.** After Anita Graser's [Movement data in GIS](https://anitagraser.com/movement-data-in-gis/) series:\n- *Reading* — [Wrangling hundreds of GPS files with DuckDB, QGIS \u0026 Trajectools](https://anitagraser.com/2025/10/12/geolife-gps-track-collection-processing-with-duckdb-qgis-trajectools/) (2025): all the `.plt` files in one DuckDB `read_csv`, the folder as the user, the file as the trajectory.\n- *Cleaning* — [Trajectools tutorial: trajectory preprocessing](https://anitagraser.com/2024/09/21/trajectools-tutorial-trajectory-preprocessing/) (2024): one fix per user and second; trips split at 5-minute gaps and at jumps over 300 km/h for over 500 m; a fix that jumps away and back at over 100 km/h removed; trips under 10 fixes, a minute or 100 m dropped. Speed over five fixes. Times are UTC in the data; Beijing time is UTC+8.\n- *Stops* — after MovingPandas' stop detection ([2021](https://anitagraser.com/2021/03/28/movement-data-in-gis-35-stop-detection-analysis-with-movingpandas/)): five minutes within 100 m; plus pauses, where the GPS went silent and the next trip starts within 200 m.\n- *Flows* — [Visualizing massive trajectory datasets](https://anitagraser.com/2016/11/07/movement-data-in-gis-3-visualizing-massive-trajectory-datasets/) (2016), after G. Andrienko \u0026 N. Andrienko, *Spatial generalization and aggregation of massive movement data*, IEEE TVCG 17(2), 2011. Places from the characteristic points grouped on a square grid (no Voronoi step, as in Anita's version), moves counted between consecutive places.\n\n**Limits.** These are the people of one lab in one city, a decade and a half ago, logging when they chose to: the map shows where *they* went, not how Beijing moves. Labelled modes cover 17 % of trips. A mode in *Speed by mode* and on the maps is the label of the fix; on a trip, the label most of its fixes carry.",
                 "mode": "markdown"
               }
             },
@@ -98,7 +98,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### 1 · Cleaning — from GPS files to trips\n[GeoLife](https://www.microsoft.com/en-us/research/publication/geolife-gps-trajectory-dataset-user-guide/): 182 people in Beijing, most of them at Microsoft Research Asia, logged their GPS from 2007 to 2012 — **24.9 million fixes in 18,670 files**. Following [Anita Graser's protocol](https://anitagraser.com/movement-data-in-gis/), DuckDB reads every file and cleans them as her [Trajectools tutorial](https://anitagraser.com/2024/09/21/trajectools-tutorial-trajectory-preprocessing/) does: one fix a second, **split at gaps**, **remove speed outliers**, drop what is too short. Then *2 · Speed & stops* analyses what is left, and *3 · Generalized flows* and *4 · One trip up close* show the results.",
+                "content": "### 1 · Cleaning — from GPS files to trips\n[GeoLife](https://www.microsoft.com/en-us/research/publication/geolife-gps-trajectory-dataset-user-guide/): 182 people in Beijing, most of them at Microsoft Research Asia, logged their GPS from 2007 to 2012 — **24.9 million fixes in 18,670 files**. Following [Anita Graser's protocol](https://anitagraser.com/movement-data-in-gis/), DuckDB reads every file and cleans them as her [Trajectools tutorial](https://anitagraser.com/2024/09/21/trajectools-tutorial-trajectory-preprocessing/) does: one fix a second, **split at gaps**, **remove speed outliers**, drop what is too short. Then *2 · Speed \u0026 stops* analyses what is left, and *3 · Generalized flows* and *4 · One trip up close* show the results.",
                 "mode": "markdown"
               }
             },
@@ -136,7 +136,7 @@
               "transformations": []
             }
           },
-          "description": "The first fix of every trip after cleaning. *2 · Speed & stops* and *3 · Generalized flows* keep the trips that start and end in Beijing (lat 39.6–40.3, lon 115.9–116.9).",
+          "description": "The first fix of every trip after cleaning. *2 · Speed \u0026 stops* and *3 · Generalized flows* keep the trips that start and end in Beijing (lat 39.6–40.3, lon 115.9–116.9).",
           "id": 5,
           "links": [],
           "title": "Where the trips start",
@@ -617,7 +617,7 @@
                   "key": "",
                   "plugin": "AMap.Scale,AMap.ToolBar"
                 },
-                "getOption": "const MODES = [\n  { mode: 'walk', name: 'Walking', color: '#73BF69' },\n  { mode: 'bike', name: 'Cycling', color: '#FADE2A' },\n  { mode: 'bus', name: 'Bus', color: '#FF9830' },\n  { mode: 'car', name: 'Car and taxi', color: '#F2495C' },\n  { mode: 'subway', name: 'Subway', color: '#5794F2' },\n  { mode: 'train', name: 'Train', color: '#B877D9' },\n  { mode: 'other', name: 'Plane, boat, motorbike', color: '#8AB8FF' },\n  { mode: '', name: 'Not labelled', color: '#8E8E8E' },\n];\n\n// Trips a month, stacked by mode, on a time axis; modes in the dashboard's\n// colours, the unlabelled ones last, in grey.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst column = (name) => Array.from(frame?.fields.find((f) => f.name === name)?.values ?? []);\nconst months = column('month').map(Number);\nconst modes = column('mode');\nconst trips = column('trips').map(Number);\n\nconst series = MODES.map((m) => ({\n  name: m.name,\n  type: 'bar',\n  stack: 'trips',\n  itemStyle: { color: m.color },\n  barMaxWidth: 14,\n  data: months.flatMap((t, i) => (modes[i] === m.mode ? [[t, trips[i]]] : [])),\n})).filter((s) => s.data.length > 0);\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12, type: 'scroll' },\n  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'time', axisLabel: { color: muted }, axisLine: { lineStyle: { color: theme.colors.border.medium } } },\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series,\n};\n",
+                "getOption": "const MODES = [\n  { mode: 'walk', name: 'Walking', color: '#73BF69' },\n  { mode: 'bike', name: 'Cycling', color: '#FADE2A' },\n  { mode: 'bus', name: 'Bus', color: '#FF9830' },\n  { mode: 'car', name: 'Car and taxi', color: '#F2495C' },\n  { mode: 'subway', name: 'Subway', color: '#5794F2' },\n  { mode: 'train', name: 'Train', color: '#B877D9' },\n  { mode: 'other', name: 'Plane, boat, motorbike', color: '#8AB8FF' },\n  { mode: '', name: 'Not labelled', color: '#8E8E8E' },\n];\n\n// Trips a month, stacked by mode, on a time axis; modes in the dashboard's\n// colours, the unlabelled ones last, in grey.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst months = column('month').map(Number);\nconst modes = column('mode');\nconst trips = column('trips').map(Number);\n\nconst series = MODES.map((m) =\u003e ({\n  name: m.name,\n  type: 'bar',\n  stack: 'trips',\n  itemStyle: { color: m.color },\n  barMaxWidth: 14,\n  data: months.flatMap((t, i) =\u003e (modes[i] === m.mode ? [[t, trips[i]]] : [])),\n})).filter((s) =\u003e s.data.length \u003e 0);\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12, type: 'scroll' },\n  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'time', axisLabel: { color: muted }, axisLine: { lineStyle: { color: theme.colors.border.medium } } },\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series,\n};\n",
                 "google": {
                   "callback": "gmapReady",
                   "key": ""
@@ -694,7 +694,7 @@
                   "key": "",
                   "plugin": "AMap.Scale,AMap.ToolBar"
                 },
-                "getOption": "// Fixes by the seconds since the previous one, in the bins build.sql made; the\n// bins past five minutes, where a trip is split, in the warning colour.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst LABELS = ['≤ 1 s', '2 s', '3–5 s', '6–10 s', '11–60 s', '1–5 min', '5–60 min', '> 1 h'];\nconst frame = context.panel.data.series[0];\nconst column = (name) => Array.from(frame?.fields.find((f) => f.name === name)?.values ?? []);\nconst bins = column('bin').map(Number);\nconst fixes = column('fixes').map(Number);\nconst total = fixes.reduce((a, b) => a + b, 0) || 1;\nconst data = bins.map((b, i) => ({\n  value: fixes[i],\n  itemStyle: { color: b >= 7 ? '#F2495C' : b >= 5 ? '#FF9830' : '#5794F2' },\n}));\n\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) => `${items[0].name}: <b>${items[0].value.toLocaleString()}</b> fixes, ${(100 * items[0].value / total).toFixed(1)} %`,\n  },\n  grid: { left: 8, right: 16, top: 16, bottom: 8, containLabel: true },\n  xAxis: { type: 'category', data: bins.map((b) => LABELS[b - 1]), axisLabel: { color: muted },\n           axisLine: { lineStyle: { color: theme.colors.border.medium } } },\n  yAxis: { type: 'log', min: 1000, axisLabel: { color: muted, formatter: (v) => (v >= 1e6 ? v / 1e6 + ' M' : v / 1e3 + ' k') },\n           splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series: [{ type: 'bar', data, barWidth: '60%',\n             label: { show: true, position: 'top', color: muted, formatter: (p) => (100 * p.value / total).toFixed(1) + ' %' } }],\n};\n",
+                "getOption": "// Fixes by the seconds since the previous one, in the bins build.sql made; the\n// bins past five minutes, where a trip is split, in the warning colour.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst LABELS = ['≤ 1 s', '2 s', '3–5 s', '6–10 s', '11–60 s', '1–5 min', '5–60 min', '\u003e 1 h'];\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst bins = column('bin').map(Number);\nconst fixes = column('fixes').map(Number);\nconst total = fixes.reduce((a, b) =\u003e a + b, 0) || 1;\nconst data = bins.map((b, i) =\u003e ({\n  value: fixes[i],\n  itemStyle: { color: b \u003e= 7 ? '#F2495C' : b \u003e= 5 ? '#FF9830' : '#5794F2' },\n}));\n\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e `${items[0].name}: \u003cb\u003e${items[0].value.toLocaleString()}\u003c/b\u003e fixes, ${(100 * items[0].value / total).toFixed(1)} %`,\n  },\n  grid: { left: 8, right: 16, top: 16, bottom: 8, containLabel: true },\n  xAxis: { type: 'category', data: bins.map((b) =\u003e LABELS[b - 1]), axisLabel: { color: muted },\n           axisLine: { lineStyle: { color: theme.colors.border.medium } } },\n  yAxis: { type: 'log', min: 1000, axisLabel: { color: muted, formatter: (v) =\u003e (v \u003e= 1e6 ? v / 1e6 + ' M' : v / 1e3 + ' k') },\n           splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series: [{ type: 'bar', data, barWidth: '60%',\n             label: { show: true, position: 'top', color: muted, formatter: (p) =\u003e (100 * p.value / total).toFixed(1) + ' %' } }],\n};\n",
                 "google": {
                   "callback": "gmapReady",
                   "key": ""
@@ -734,7 +734,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT max(trips) FILTER (step = 1) AS \"GPS files\",\n       max(fixes) FILTER (step = 1) AS \"Fixes read\",\n       round(100.0 * max(fixes) FILTER (step = 5) / max(fixes) FILTER (step = 1), 1) AS \"Fixes kept\",\n       max(trips) FILTER (step = 5) AS \"Trips\",\n       max(trips) FILTER (step = 6) AS \"Trips in Beijing\",\n       (SELECT count(DISTINCT uid) FROM $trips) AS \"People\",\n       (SELECT count(*) FROM $trips WHERE mode <> '') AS \"Trips labelled\"\nFROM $cleaning"
+                        "rawSql": "SELECT max(trips) FILTER (step = 1) AS \"GPS files\",\n       max(fixes) FILTER (step = 1) AS \"Fixes read\",\n       round(100.0 * max(fixes) FILTER (step = 5) / max(fixes) FILTER (step = 1), 1) AS \"Fixes kept\",\n       max(trips) FILTER (step = 5) AS \"Trips\",\n       max(trips) FILTER (step = 6) AS \"Trips in Beijing\",\n       (SELECT count(DISTINCT uid) FROM $trips) AS \"People\",\n       (SELECT count(*) FROM $trips WHERE mode \u003c\u003e '') AS \"Trips labelled\"\nFROM $cleaning"
                       },
                       "version": "v0"
                     },
@@ -872,7 +872,7 @@
                   "key": "",
                   "plugin": "AMap.Scale,AMap.ToolBar"
                 },
-                "getOption": "// The cleaning steps, top to bottom: fixes left as bars, labelled with the\n// trips left where the step counts them.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst column = (name) => Array.from(frame?.fields.find((f) => f.name === name)?.values ?? []);\nconst what = column('what');\nconst fixes = column('fixes').map(Number);\nconst trips = column('trips').map((v) => (v === null || v === undefined ? null : Number(v)));\nconst millions = (v) => (v / 1e6).toFixed(2) + ' M';\n\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) => {\n      const i = items[0].dataIndex;\n      const prev = i > 0 ? fixes[i - 1] - fixes[i] : 0;\n      return `<b>${what[i]}</b><br/>${fixes[i].toLocaleString()} fixes` +\n        (prev > 0 ? ` (${prev.toLocaleString()} fewer)` : '') +\n        (trips[i] !== null ? `<br/>${trips[i].toLocaleString()} trips` : '');\n    },\n  },\n  grid: { left: 8, right: 16, top: 8, bottom: 8, containLabel: true },\n  yAxis: { type: 'category', inverse: true, data: what, axisLabel: { color: muted, width: 190, overflow: 'truncate' },\n           axisLine: { lineStyle: { color: theme.colors.border.medium } } },\n  xAxis: { type: 'value', min: 0, axisLabel: { color: muted, formatter: millions }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series: [\n    { name: 'Fixes', type: 'bar', data: fixes, itemStyle: { color: '#5794F2' }, barWidth: '55%',\n      label: { show: true, position: 'insideRight', color: '#fff',\n               formatter: (p) => millions(p.value) + (trips[p.dataIndex] !== null ? ` · ${trips[p.dataIndex].toLocaleString()} trips` : '') } },\n  ],\n};\n",
+                "getOption": "// The cleaning steps, top to bottom: fixes left as bars, labelled with the\n// trips left where the step counts them.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst what = column('what');\nconst fixes = column('fixes').map(Number);\nconst trips = column('trips').map((v) =\u003e (v === null || v === undefined ? null : Number(v)));\nconst millions = (v) =\u003e (v / 1e6).toFixed(2) + ' M';\n\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e {\n      const i = items[0].dataIndex;\n      const prev = i \u003e 0 ? fixes[i - 1] - fixes[i] : 0;\n      return `\u003cb\u003e${what[i]}\u003c/b\u003e\u003cbr/\u003e${fixes[i].toLocaleString()} fixes` +\n        (prev \u003e 0 ? ` (${prev.toLocaleString()} fewer)` : '') +\n        (trips[i] !== null ? `\u003cbr/\u003e${trips[i].toLocaleString()} trips` : '');\n    },\n  },\n  grid: { left: 8, right: 16, top: 8, bottom: 8, containLabel: true },\n  yAxis: { type: 'category', inverse: true, data: what, axisLabel: { color: muted, width: 190, overflow: 'truncate' },\n           axisLine: { lineStyle: { color: theme.colors.border.medium } } },\n  xAxis: { type: 'value', min: 0, axisLabel: { color: muted, formatter: millions }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series: [\n    { name: 'Fixes', type: 'bar', data: fixes, itemStyle: { color: '#5794F2' }, barWidth: '55%',\n      label: { show: true, position: 'insideRight', color: '#fff',\n               formatter: (p) =\u003e millions(p.value) + (trips[p.dataIndex] !== null ? ` · ${trips[p.dataIndex].toLocaleString()} trips` : '') } },\n  ],\n};\n",
                 "google": {
                   "callback": "gmapReady",
                   "key": ""
@@ -924,7 +924,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### 3 · Results — generalized flows\nMillions of fixes are unreadable as lines; Anita Graser [showed in 2016](https://anitagraser.com/2016/11/07/movement-data-in-gis-3-visualizing-massive-trajectory-datasets/) how [Andrienko & Andrienko's generalization](https://doi.org/10.1109/TVCG.2010.44) turns GeoLife into a map of flows. Here it runs live in DuckDB: the points where trips **start, end, stop or turn** are grouped on a grid of the **place size** picked above, each group's centroid becomes a place, and every move of a trip from one place to the next adds to a link. Links fewer trips than the **fewest trips** picked are left out. Bigger places, fewer and stronger links; arrows show the direction, and the circles each place's total.",
+                "content": "### 3 · Results — generalized flows\nMillions of fixes are unreadable as lines; Anita Graser [showed in 2016](https://anitagraser.com/2016/11/07/movement-data-in-gis-3-visualizing-massive-trajectory-datasets/) how [Andrienko \u0026 Andrienko's generalization](https://doi.org/10.1109/TVCG.2010.44) turns GeoLife into a map of flows. Here it runs live in DuckDB: the points where trips **start, end, stop or turn** are grouped on a grid of the **place size** picked above, each group's centroid becomes a place, and every move of a trip from one place to the next adds to a link. Links fewer trips than the **fewest trips** picked are left out. Bigger places, fewer and stronger links; arrows show the direction, and the circles each place's total.",
                 "mode": "markdown"
               }
             },
@@ -1528,7 +1528,7 @@
                   "key": "",
                   "plugin": "AMap.Scale,AMap.ToolBar"
                 },
-                "getOption": "const MODES = [\n  { mode: 'walk', name: 'Walking', color: '#73BF69' },\n  { mode: 'bike', name: 'Cycling', color: '#FADE2A' },\n  { mode: 'bus', name: 'Bus', color: '#FF9830' },\n  { mode: 'car', name: 'Car and taxi', color: '#F2495C' },\n  { mode: 'subway', name: 'Subway', color: '#5794F2' },\n  { mode: 'train', name: 'Train', color: '#B877D9' },\n  { mode: 'other', name: 'Plane, boat, motorbike', color: '#8AB8FF' },\n  { mode: '', name: 'Not labelled', color: '#8E8E8E' },\n];\n\n// Trips by the hour they start, Beijing time, each mode as a share of its own\n// trips so that walking and the train read on one scale.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst column = (name) => Array.from(frame?.fields.find((f) => f.name === name)?.values ?? []);\nconst modes = column('mode');\nconst hours = column('hour').map(Number);\nconst trips = column('trips').map(Number);\nconst HOURS = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0'));\n\nconst series = MODES.filter((m) => m.mode !== 'other').map((m) => {\n  const raw = new Array(24).fill(0);\n  modes.forEach((mode, i) => { if (mode === m.mode) raw[hours[i]] += trips[i]; });\n  const total = raw.reduce((a, b) => a + b, 0);\n  return { name: m.name, type: 'line', smooth: true, showSymbol: false, itemStyle: { color: m.color },\n           lineStyle: { width: m.mode === '' ? 1.5 : 2, type: m.mode === '' ? 'dashed' : 'solid' },\n           data: total ? raw.map((v) => (100 * v) / total) : [] };\n}).filter((s) => s.data.length > 0);\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12, type: 'scroll' },\n  tooltip: { trigger: 'axis', valueFormatter: (v) => v.toFixed(1) + ' %' },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'category', data: HOURS, boundaryGap: false, axisLabel: { color: muted } },\n  yAxis: { type: 'value', axisLabel: { color: muted, formatter: '{value} %' }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series,\n};\n",
+                "getOption": "const MODES = [\n  { mode: 'walk', name: 'Walking', color: '#73BF69' },\n  { mode: 'bike', name: 'Cycling', color: '#FADE2A' },\n  { mode: 'bus', name: 'Bus', color: '#FF9830' },\n  { mode: 'car', name: 'Car and taxi', color: '#F2495C' },\n  { mode: 'subway', name: 'Subway', color: '#5794F2' },\n  { mode: 'train', name: 'Train', color: '#B877D9' },\n  { mode: 'other', name: 'Plane, boat, motorbike', color: '#8AB8FF' },\n  { mode: '', name: 'Not labelled', color: '#8E8E8E' },\n];\n\n// Trips by the hour they start, Beijing time, each mode as a share of its own\n// trips so that walking and the train read on one scale.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst modes = column('mode');\nconst hours = column('hour').map(Number);\nconst trips = column('trips').map(Number);\nconst HOURS = Array.from({ length: 24 }, (_, h) =\u003e String(h).padStart(2, '0'));\n\nconst series = MODES.filter((m) =\u003e m.mode !== 'other').map((m) =\u003e {\n  const raw = new Array(24).fill(0);\n  modes.forEach((mode, i) =\u003e { if (mode === m.mode) raw[hours[i]] += trips[i]; });\n  const total = raw.reduce((a, b) =\u003e a + b, 0);\n  return { name: m.name, type: 'line', smooth: true, showSymbol: false, itemStyle: { color: m.color },\n           lineStyle: { width: m.mode === '' ? 1.5 : 2, type: m.mode === '' ? 'dashed' : 'solid' },\n           data: total ? raw.map((v) =\u003e (100 * v) / total) : [] };\n}).filter((s) =\u003e s.data.length \u003e 0);\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12, type: 'scroll' },\n  tooltip: { trigger: 'axis', valueFormatter: (v) =\u003e v.toFixed(1) + ' %' },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'category', data: HOURS, boundaryGap: false, axisLabel: { color: muted } },\n  yAxis: { type: 'value', axisLabel: { color: muted, formatter: '{value} %' }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series,\n};\n",
                 "google": {
                   "callback": "gmapReady",
                   "key": ""
@@ -1834,7 +1834,7 @@
                   "key": "",
                   "plugin": "AMap.Scale,AMap.ToolBar"
                 },
-                "getOption": "const MODES = [\n  { mode: 'walk', name: 'Walking', color: '#73BF69' },\n  { mode: 'bike', name: 'Cycling', color: '#FADE2A' },\n  { mode: 'bus', name: 'Bus', color: '#FF9830' },\n  { mode: 'car', name: 'Car and taxi', color: '#F2495C' },\n  { mode: 'subway', name: 'Subway', color: '#5794F2' },\n  { mode: 'train', name: 'Train', color: '#B877D9' },\n  { mode: 'other', name: 'Plane, boat, motorbike', color: '#8AB8FF' },\n  { mode: '', name: 'Not labelled', color: '#8E8E8E' },\n];\n\n// One line per labelled mode: the share of its fixes in each 2 km/h bin, up\n// to 120 km/h; unlabelled fixes left out.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst column = (name) => Array.from(frame?.fields.find((f) => f.name === name)?.values ?? []);\nconst modes = column('mode');\nconst kmh = column('kmh').map(Number);\nconst fixes = column('fixes').map(Number);\n\nconst series = MODES.filter((m) => m.mode !== '' && m.mode !== 'other').map((m) => {\n  const rows = kmh.flatMap((k, i) => (modes[i] === m.mode ? [[k, fixes[i]]] : []));\n  const total = rows.reduce((a, r) => a + r[1], 0) || 1;\n  return {\n    name: m.name, type: 'line', smooth: true, showSymbol: false, itemStyle: { color: m.color }, lineStyle: { width: 2 },\n    data: rows.filter((r) => r[0] <= 120).map((r) => [r[0] + 1, (100 * r[1]) / total]),\n  };\n}).filter((s) => s.data.length > 0);\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12, type: 'scroll' },\n  tooltip: { trigger: 'axis', valueFormatter: (v) => v.toFixed(1) + ' %' },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'value', min: 0, max: 120, name: 'km/h', nameLocation: 'end', nameTextStyle: { color: muted },\n           axisLabel: { color: muted }, splitLine: { show: false } },\n  yAxis: { type: 'value', axisLabel: { color: muted, formatter: '{value} %' }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series,\n};\n",
+                "getOption": "const MODES = [\n  { mode: 'walk', name: 'Walking', color: '#73BF69' },\n  { mode: 'bike', name: 'Cycling', color: '#FADE2A' },\n  { mode: 'bus', name: 'Bus', color: '#FF9830' },\n  { mode: 'car', name: 'Car and taxi', color: '#F2495C' },\n  { mode: 'subway', name: 'Subway', color: '#5794F2' },\n  { mode: 'train', name: 'Train', color: '#B877D9' },\n  { mode: 'other', name: 'Plane, boat, motorbike', color: '#8AB8FF' },\n  { mode: '', name: 'Not labelled', color: '#8E8E8E' },\n];\n\n// One line per labelled mode: the share of its fixes in each 2 km/h bin, up\n// to 120 km/h; unlabelled fixes left out.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst modes = column('mode');\nconst kmh = column('kmh').map(Number);\nconst fixes = column('fixes').map(Number);\n\nconst series = MODES.filter((m) =\u003e m.mode !== '' \u0026\u0026 m.mode !== 'other').map((m) =\u003e {\n  const rows = kmh.flatMap((k, i) =\u003e (modes[i] === m.mode ? [[k, fixes[i]]] : []));\n  const total = rows.reduce((a, r) =\u003e a + r[1], 0) || 1;\n  return {\n    name: m.name, type: 'line', smooth: true, showSymbol: false, itemStyle: { color: m.color }, lineStyle: { width: 2 },\n    data: rows.filter((r) =\u003e r[0] \u003c= 120).map((r) =\u003e [r[0] + 1, (100 * r[1]) / total]),\n  };\n}).filter((s) =\u003e s.data.length \u003e 0);\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12, type: 'scroll' },\n  tooltip: { trigger: 'axis', valueFormatter: (v) =\u003e v.toFixed(1) + ' %' },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'value', min: 0, max: 120, name: 'km/h', nameLocation: 'end', nameTextStyle: { color: muted },\n           axisLabel: { color: muted }, splitLine: { show: false } },\n  yAxis: { type: 'value', axisLabel: { color: muted, formatter: '{value} %' }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series,\n};\n",
                 "google": {
                   "callback": "gmapReady",
                   "key": ""
@@ -1911,7 +1911,7 @@
                   "key": "",
                   "plugin": "AMap.Scale,AMap.ToolBar"
                 },
-                "getOption": "// Stops by duration, in doubling bins from five minutes, dwell and pause side\n// by side.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst LABELS = ['5–10 min', '10–20', '20–40', '40–80', '80–160', '2.7–5.3 h', '5.3–10.7 h', '> 10.7 h'];\nconst frame = context.panel.data.series[0];\nconst column = (name) => Array.from(frame?.fields.find((f) => f.name === name)?.values ?? []);\nconst kinds = column('kind');\nconst bins = column('bin').map(Number);\nconst stops = column('stops').map(Number);\nconst of = (kind) => LABELS.map((_, b) => kinds.reduce((a, k, i) => a + (k === kind && bins[i] === b ? stops[i] : 0), 0));\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12 },\n  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'category', data: LABELS, axisLabel: { color: muted, interval: 0, rotate: 30 } },\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series: [\n    { name: 'Dwell, inside a trip', type: 'bar', data: of('dwell'), itemStyle: { color: '#4cc9f0' } },\n    { name: 'Pause, between trips', type: 'bar', data: of('pause'), itemStyle: { color: '#f72585' } },\n  ],\n};\n",
+                "getOption": "// Stops by duration, in doubling bins from five minutes, dwell and pause side\n// by side.\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst LABELS = ['5–10 min', '10–20', '20–40', '40–80', '80–160', '2.7–5.3 h', '5.3–10.7 h', '\u003e 10.7 h'];\nconst frame = context.panel.data.series[0];\nconst column = (name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst kinds = column('kind');\nconst bins = column('bin').map(Number);\nconst stops = column('stops').map(Number);\nconst of = (kind) =\u003e LABELS.map((_, b) =\u003e kinds.reduce((a, k, i) =\u003e a + (k === kind \u0026\u0026 bins[i] === b ? stops[i] : 0), 0));\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12 },\n  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'category', data: LABELS, axisLabel: { color: muted, interval: 0, rotate: 30 } },\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series: [\n    { name: 'Dwell, inside a trip', type: 'bar', data: of('dwell'), itemStyle: { color: '#4cc9f0' } },\n    { name: 'Pause, between trips', type: 'bar', data: of('pause'), itemStyle: { color: '#f72585' } },\n  ],\n};\n",
                 "google": {
                   "callback": "gmapReady",
                   "key": ""
@@ -1951,7 +1951,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT CASE WHEN sqrt(((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))) * ((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))) + ((median(lat) - 39.9087) * 110574) * ((median(lat) - 39.9087) * 110574)) < 750 THEN 'Tiananmen'\n            ELSE printf('%.1f km %s', sqrt(((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))) * ((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))) + ((median(lat) - 39.9087) * 110574) * ((median(lat) - 39.9087) * 110574)) / 1000,\n                        ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][floor(((degrees(atan2(((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))), ((median(lat) - 39.9087) * 110574))) + 382.5) % 360) / 45)::INTEGER + 1]) END AS \"Where, from Tiananmen\",\n       count(*) AS \"Stops\", count(DISTINCT uid) AS \"People\",\n       count(*) FILTER (kind = 'pause') AS \"Pauses\",\n       round(median(minutes)) AS \"Median minutes\",\n       round(median(lat), 4) AS \"Lat\", round(median(lon), 4) AS \"Lon\"\nFROM $stops WHERE $mode IN ('all', mode)\nGROUP BY cell\nORDER BY count(DISTINCT uid) DESC, count(*) DESC\nLIMIT 25"
+                        "rawSql": "SELECT CASE WHEN sqrt(((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))) * ((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))) + ((median(lat) - 39.9087) * 110574) * ((median(lat) - 39.9087) * 110574)) \u003c 750 THEN 'Tiananmen'\n            ELSE printf('%.1f km %s', sqrt(((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))) * ((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))) + ((median(lat) - 39.9087) * 110574) * ((median(lat) - 39.9087) * 110574)) / 1000,\n                        ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][floor(((degrees(atan2(((median(lon) - 116.3975) * 111320 * cos(radians(39.9087))), ((median(lat) - 39.9087) * 110574))) + 382.5) % 360) / 45)::INTEGER + 1]) END AS \"Where, from Tiananmen\",\n       count(*) AS \"Stops\", count(DISTINCT uid) AS \"People\",\n       count(*) FILTER (kind = 'pause') AS \"Pauses\",\n       round(median(minutes)) AS \"Median minutes\",\n       round(median(lat), 4) AS \"Lat\", round(median(lon), 4) AS \"Lon\"\nFROM $stops WHERE $mode IN ('all', mode)\nGROUP BY cell\nORDER BY count(DISTINCT uid) DESC, count(*) DESC\nLIMIT 25"
                       },
                       "version": "v0"
                     },
@@ -2374,6 +2374,7 @@
           "id": 18,
           "links": [],
           "title": "",
+          "transparent": true,
           "vizConfig": {
             "group": "text",
             "kind": "VizConfig",
@@ -2393,8 +2394,7 @@
               }
             },
             "version": "13.2.1"
-          },
-          "transparent": true
+          }
         }
       },
       "trip-list": {
@@ -2415,7 +2415,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT CASE WHEN trip = try_cast($trip AS INTEGER) THEN '▶ ' ELSE '' END\n       || strftime(t0 + INTERVAL 8 HOUR, '%Y-%m-%d %H:%M') AS \"Start\",\n       CASE WHEN mode = '' THEN '–' ELSE mode END AS \"Mode\",\n       km AS \"Km\", minutes AS \"Min\", avg_kmh AS \"Avg km/h\",\n       trip AS trip_id, round((lat0 + lat1) / 2, 4) AS lat, round((lon0 + lon1) / 2, 4) AS lng\nFROM $trips WHERE uid = try_cast($user AS INTEGER)\nORDER BY trip = try_cast($trip AS INTEGER) DESC, mode <> '' DESC, t0 DESC"
+                        "rawSql": "SELECT CASE WHEN trip = try_cast($trip AS INTEGER) THEN '▶ ' ELSE '' END\n       || strftime(t0 + INTERVAL 8 HOUR, '%Y-%m-%d %H:%M') AS \"Start\",\n       CASE WHEN mode = '' THEN '–' ELSE mode END AS \"Mode\",\n       km AS \"Km\", minutes AS \"Min\", avg_kmh AS \"Avg km/h\",\n       trip AS trip_id, round((lat0 + lat1) / 2, 4) AS lat, round((lon0 + lon1) / 2, 4) AS lng\nFROM $trips WHERE uid = try_cast($user AS INTEGER)\nORDER BY trip = try_cast($trip AS INTEGER) DESC, mode \u003c\u003e '' DESC, t0 DESC"
                       },
                       "version": "v0"
                     },
@@ -2470,7 +2470,7 @@
                         "value": [
                           {
                             "title": "Follow this trip",
-                            "url": "/d/geolife-mobility${__url.params:exclude:var-trip,var-tlat,var-tlng,var-t_from,var-t_to}&var-trip=${__data.fields.trip_id}&var-tlat=${__data.fields.lat}&var-tlng=${__data.fields.lng}"
+                            "url": "/d/geolife-mobility${__url.params:exclude:var-trip,var-tlat,var-tlng,var-t_from,var-t_to}\u0026var-trip=${__data.fields.trip_id}\u0026var-tlat=${__data.fields.lat}\u0026var-tlng=${__data.fields.lng}"
                           }
                         ]
                       }
@@ -2610,39 +2610,170 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
                 "alerts": {},
                 "basemap": "dark-matter",
                 "clickArea": false,
+                "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
+                "flowRenderMode": "straight",
                 "followGrafanaTheme": false,
                 "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
                 "hoverSync": false,
                 "mapConfig": {
                   "config": {
                     "mapState": {
-                      "bearing": 0,
-                      "dragRotate": false,
-                      "latitude": 39.9843,
-                      "longitude": 116.3618,
-                      "pitch": 0,
-                      "zoom": 12.2
+                      "bearing": -107.46792674675726,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 39.98711354535451,
+                      "longitude": 116.39733670692404,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 60,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 16
                     },
                     "mapStyle": {
-                      "styleType": "dark-matter"
-                    },
-                    "uiState": {
-                      "mapControls": {
-                        "mapLegend": {
-                          "active": true
-                        }
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-liberty",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": true,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "road": true,
+                        "water": true
                       }
                     },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
                     "visState": {
-                      "filters": [],
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "incremental",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "twlv9ak0m",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "defaultTimeFormat": "L  LTS",
+                            "interval": "30-second",
+                            "type": "histogram"
+                          },
+                          "speed": 0.455,
+                          "syncTimelineMode": 1,
+                          "type": "timeRange",
+                          "value": [
+                            1211119555000,
+                            1211119755587.753
+                          ],
+                          "view": "minified"
+                        }
+                      ],
                       "interactionConfig": {
                         "brush": {
                           "enabled": false,
@@ -2652,9 +2783,12 @@
                           "enabled": false
                         },
                         "geocoder": {
-                          "enabled": false
+                          "enabled": false,
+                          "limitSearch": false
                         },
                         "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
                           "config": {
                             "compareMode": false,
                             "compareType": "absolute",
@@ -2694,69 +2828,57 @@
                               ]
                             }
                           },
-                          "enabled": true
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "traveller"
+                              },
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              },
+                              {
+                                "name": "speed"
+                              },
+                              {
+                                "name": "kmh"
+                              },
+                              {
+                                "name": "heading"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "time (Beijing)"
+                              },
+                              {
+                                "name": "removed"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "name": "minutes"
+                              },
+                              {
+                                "format": "L LTS",
+                                "name": "from (Beijing)"
+                              }
+                            ]
+                          }
                         }
                       },
+                      "layerBlending": "normal",
                       "layerOrder": [
-                        "route",
                         "traveller",
+                        "route",
                         "removed",
-                        "stops"
+                        "b7qaiwo"
                       ],
                       "layers": [
-                        {
-                          "config": {
-                            "color": [
-                              255,
-                              255,
-                              255
-                            ],
-                            "columns": {
-                              "lat": "latitude",
-                              "lng": "longitude"
-                            },
-                            "columnMode": "points",
-                            "dataId": "grafana-A",
-                            "hidden": false,
-                            "isVisible": true,
-                            "label": "Route, km/h",
-                            "visConfig": {
-                              "allowHover": true,
-                              "filled": true,
-                              "opacity": 0.45,
-                              "outline": false,
-                              "radius": 2.5,
-                              "radiusRange": [
-                                0,
-                                50
-                              ],
-                              "colorRange": {
-                                "category": "Custom",
-                                "colors": [
-                                  "#4cc9f0",
-                                  "#80ed99",
-                                  "#e9ff70",
-                                  "#ffb703",
-                                  "#fb8500",
-                                  "#f72585"
-                                ],
-                                "name": "Route, km/h",
-                                "type": "sequential"
-                              }
-                            }
-                          },
-                          "id": "route",
-                          "type": "point",
-                          "visualChannels": {
-                            "colorField": {
-                              "name": "speed",
-                              "type": "real"
-                            },
-                            "colorScale": "quantize",
-                            "sizeField": null,
-                            "sizeScale": "sqrt"
-                          }
-                        },
                         {
                           "config": {
                             "color": [
@@ -2883,15 +3005,18 @@
                               "fleetStopSpeed": 2,
                               "fleetTimeField": "time",
                               "fleetTimeRef": "history",
-                              "fleetTrail": 1,
-                              "fleetTrailAnimate": true,
+                              "fleetTrail": 5,
+                              "fleetTrailAnimate": false,
                               "fleetTrailDashLength": 0.5,
                               "fleetTrailFade": true,
+                              "fleetTrailMode": "fleet",
                               "fleetTrailOpacity": 1,
                               "fleetTrailShow": true,
                               "fleetTrailSpacing": 18,
-                              "fleetTrailStyle": "dashes",
+                              "fleetTrailStyle": "pulse",
                               "fleetTrailWidth": 3.5,
+                              "fleetTripsGap": 0,
+                              "fleetTripsTrail": 24,
                               "fleetTypeField": "mode",
                               "fleetZoomRate": 0.35,
                               "fleetZoomRef": 12.8,
@@ -2937,21 +3062,183 @@
                           "config": {
                             "color": [
                               255,
-                              0,
-                              0
+                              255,
+                              255
                             ],
+                            "columnMode": "points",
                             "columns": {
                               "lat": "latitude",
                               "lng": "longitude"
                             },
-                            "columnMode": "points",
-                            "dataId": "grafana-B",
+                            "dataId": "grafana-A",
                             "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
                             "isVisible": true,
-                            "label": "Removed outliers",
+                            "label": "Route, km/h",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
                             "visConfig": {
                               "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "ColorBlind",
+                                "colors": [
+                                  "#77AADD",
+                                  "#EE8866",
+                                  "#EEDD88",
+                                  "#FFAABB",
+                                  "#99DDFF",
+                                  "#44BB99"
+                                ],
+                                "name": "Tol Light",
+                                "type": "qualitative"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.14,
+                              "outline": false,
+                              "radius": 4.1,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "route",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "mode",
+                              "type": "string"
+                            },
+                            "colorScale": "ordinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              0,
+                              0
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Removed outliers",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
                               "filled": false,
+                              "fixedRadius": false,
                               "opacity": 1,
                               "outline": true,
                               "radius": 10,
@@ -2959,61 +3246,160 @@
                                 0,
                                 50
                               ],
-                              "thickness": 2,
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
                               "strokeColor": [
                                 255,
                                 0,
                                 0
-                              ]
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
                             }
                           },
                           "id": "removed",
                           "type": "point",
                           "visualChannels": {
-                            "colorField": null,
-                            "colorScale": "quantize",
-                            "sizeField": null,
-                            "sizeScale": "sqrt"
+                            "colorScale": "quantile",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
                           }
                         },
                         {
                           "config": {
                             "color": [
-                              255,
-                              255,
-                              255
+                              250,
+                              116,
+                              0
                             ],
                             "columns": {
                               "lat": "latitude",
                               "lng": "longitude"
                             },
-                            "columnMode": "points",
                             "dataId": "grafana-C",
                             "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
                             "isVisible": true,
                             "label": "Stops",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
                             "visConfig": {
-                              "allowHover": true,
-                              "filled": true,
+                              "angleDegrees": 0,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "declutter": false,
+                              "declutterSpacingPx": 40,
+                              "directionConvention": "towards",
+                              "fixedAngle": true,
+                              "fixedSize": false,
+                              "flowContext": {
+                                "camera": {
+                                  "bearing": -110.89092674675749,
+                                  "height": 459,
+                                  "latitude": 39.98717476670629,
+                                  "longitude": 116.39764599078376,
+                                  "pitch": 60,
+                                  "width": 1019,
+                                  "zoom": 16
+                                },
+                                "tallest": 0
+                              },
+                              "gradient": false,
+                              "gradientTail": 0.7,
                               "opacity": 0.5,
                               "outline": false,
-                              "radius": 14,
-                              "radiusRange": [
-                                0,
-                                50
-                              ]
+                              "outlineColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "outlineThickness": 3,
+                              "pictureAnchor": "center",
+                              "pictureUrl": "",
+                              "shadow": false,
+                              "shadowDistance": 4,
+                              "shadowOpacity": 0.5,
+                              "sizeRange": [
+                                12,
+                                48
+                              ],
+                              "symbol": "circle-stroked",
+                              "symbolSize": 41,
+                              "symbolSource": "shape",
+                              "symbolZoomRate": 0.5,
+                              "symbolZoomRef": 10,
+                              "symbolZoomScale": false,
+                              "upright": false
                             }
                           },
-                          "id": "stops",
-                          "type": "point",
+                          "id": "b7qaiwo",
+                          "type": "symbol",
                           "visualChannels": {
-                            "colorField": null,
-                            "colorScale": "quantize",
-                            "sizeField": null,
-                            "sizeScale": "sqrt"
+                            "colorScale": "quantile",
+                            "sizeScale": "linear"
                           }
                         }
-                      ]
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
                     }
                   },
                   "version": "v1"
@@ -3021,8 +3407,17 @@
                 "peerTimeSync": false,
                 "places": {},
                 "publishIntervalMs": 250,
+                "publishWhilePlaying": true,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 7,
                 "showSidePanel": false,
                 "timeSync": "variables",
+                "timeVariables": {
+                  "from": "t_from",
+                  "to": "t_to"
+                },
                 "tripLayerMode": "table",
                 "variableMappings": [
                   {
@@ -3032,15 +3427,10 @@
                     "variableTo": "tlng",
                     "zoom": 12.5
                   }
-                ],
-                "timeVariables": {
-                  "from": "t_from",
-                  "to": "t_to"
-                },
-                "publishWhilePlaying": true
+                ]
               }
             },
-            "version": "0.1.0"
+            "version": "1.0.0"
           }
         }
       },
@@ -3062,7 +3452,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH p AS (\n  SELECT uid, count(*) AS trips, count(*) FILTER (mode <> '') AS labelled, sum(km) AS km,\n         min(t0) AS t0, max(t1) AS t1,\n         coalesce(arg_max(trip, km) FILTER (beijing AND mode <> ''), arg_max(trip, km)) AS show\n  FROM $trips GROUP BY uid\n)\nSELECT lpad(p.uid::INTEGER::VARCHAR, 3, '0') AS \"Person\", p.labelled AS \"Labelled\", p.trips AS \"Trips\",\n       round(p.km) AS \"Km\", strftime(p.t0, '%Y') || '–' || strftime(p.t1, '%y') AS \"Years\",\n       p.uid, p.show AS trip_id, round((t.lat0 + t.lat1) / 2, 4) AS lat, round((t.lon0 + t.lon1) / 2, 4) AS lng\nFROM p JOIN $trips t ON t.trip = p.show\nORDER BY (p.uid = try_cast($user AS INTEGER)) DESC, p.labelled DESC, p.trips DESC"
+                        "rawSql": "WITH p AS (\n  SELECT uid, count(*) AS trips, count(*) FILTER (mode \u003c\u003e '') AS labelled, sum(km) AS km,\n         min(t0) AS t0, max(t1) AS t1,\n         coalesce(arg_max(trip, km) FILTER (beijing AND mode \u003c\u003e ''), arg_max(trip, km)) AS show\n  FROM $trips GROUP BY uid\n)\nSELECT lpad(p.uid::INTEGER::VARCHAR, 3, '0') AS \"Person\", p.labelled AS \"Labelled\", p.trips AS \"Trips\",\n       round(p.km) AS \"Km\", strftime(p.t0, '%Y') || '–' || strftime(p.t1, '%y') AS \"Years\",\n       p.uid, p.show AS trip_id, round((t.lat0 + t.lat1) / 2, 4) AS lat, round((t.lon0 + t.lon1) / 2, 4) AS lng\nFROM p JOIN $trips t ON t.trip = p.show\nORDER BY (p.uid = try_cast($user AS INTEGER)) DESC, p.labelled DESC, p.trips DESC"
                       },
                       "version": "v0"
                     },
@@ -3117,7 +3507,7 @@
                         "value": [
                           {
                             "title": "Show this person’s trips",
-                            "url": "/d/geolife-mobility${__url.params:exclude:var-user,var-trip,var-tlat,var-tlng,var-t_from,var-t_to}&var-user=${__data.fields.uid}&var-trip=${__data.fields.trip_id}&var-tlat=${__data.fields.lat}&var-tlng=${__data.fields.lng}"
+                            "url": "/d/geolife-mobility${__url.params:exclude:var-user,var-trip,var-tlat,var-tlng,var-t_from,var-t_to}\u0026var-user=${__data.fields.uid}\u0026var-trip=${__data.fields.trip_id}\u0026var-tlat=${__data.fields.lat}\u0026var-tlng=${__data.fields.lng}"
                           }
                         ]
                       }
@@ -3273,6 +3663,7 @@
                   "key": "",
                   "plugin": "AMap.Scale,AMap.ToolBar"
                 },
+                "getOption": "const MODES = [\n  { mode: 'walk', name: 'Walking', color: '#73BF69' },\n  { mode: 'bike', name: 'Cycling', color: '#FADE2A' },\n  { mode: 'bus', name: 'Bus', color: '#FF9830' },\n  { mode: 'car', name: 'Car and taxi', color: '#F2495C' },\n  { mode: 'subway', name: 'Subway', color: '#5794F2' },\n  { mode: 'train', name: 'Train', color: '#B877D9' },\n  { mode: 'other', name: 'Plane, boat, motorbike', color: '#8AB8FF' },\n  { mode: '', name: 'Not labelled', color: '#8E8E8E' },\n];\n\n// The trip's speed over time, one series per mode so the line takes the\n// mode's colour where the user labelled it; stops as shaded spans; the map's\n// clock, while it plays, as a line across (its query re-runs on t_to).\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst series0 = context.panel.data.series[0];\nconst series1 = context.panel.data.series[1];\nconst column = (frame, name) =\u003e Array.from(frame?.fields.find((f) =\u003e f.name === name)?.values ?? []);\nconst times = column(series0, 'time').map(Number);\nconst kmh = column(series0, 'kmh').map(Number);\nconst modes = column(series0, 'mode');\nconst stopsFrom = column(series1, 't0').map(Number);\nconst stopsMin = column(series1, 'minutes').map(Number);\nconst BEIJING = 8 * 3600 * 1000;\nconst at = column(context.panel.data.series[2], 'at').map(Number).find(Number.isFinite);\n\nconst series = MODES.map((m) =\u003e ({\n  name: m.name, type: 'line', showSymbol: false, connectNulls: false, itemStyle: { color: m.color }, lineStyle: { width: 1.5 },\n  // A point either side of a change of mode, so the line has no gaps.\n  data: times.map((t, i) =\u003e [t + BEIJING,\n    modes[i] === m.mode || modes[i - 1] === m.mode ? kmh[i] : null]),\n})).filter((s) =\u003e s.data.some((d) =\u003e d[1] !== null));\nif (series.length) {\n  series[0].markArea = {\n    silent: true, itemStyle: { color: 'rgba(255, 255, 255, 0.08)' },\n    data: stopsFrom.map((t, i) =\u003e [{ xAxis: t + BEIJING }, { xAxis: t + BEIJING + stopsMin[i] * 60000 }]),\n  };\n  if (at !== undefined \u0026\u0026 times.length \u0026\u0026 at \u003e= times[0] \u0026\u0026 at \u003c= times[times.length - 1]) {\n    series[0].markLine = {\n      silent: true, symbol: 'none', label: { show: false },\n      lineStyle: { color: theme.colors.text.primary, type: 'solid', width: 1 },\n      data: [{ xAxis: at + BEIJING }],\n    };\n  }\n}\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12 },\n  tooltip: { trigger: 'axis', valueFormatter: (v) =\u003e (v === null || v === undefined ? '–' : v.toFixed(1) + ' km/h') },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'time', axisLabel: { color: muted, formatter: '{HH}:{mm}' } },\n  yAxis: { type: 'value', name: 'km/h', nameTextStyle: { color: muted }, axisLabel: { color: muted },\n           splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series,\n};\n",
                 "google": {
                   "callback": "gmapReady",
                   "key": ""
@@ -3287,8 +3678,7 @@
                   "code": "",
                   "dataset": [],
                   "series": []
-                },
-                "getOption": "const MODES = [\n  { mode: 'walk', name: 'Walking', color: '#73BF69' },\n  { mode: 'bike', name: 'Cycling', color: '#FADE2A' },\n  { mode: 'bus', name: 'Bus', color: '#FF9830' },\n  { mode: 'car', name: 'Car and taxi', color: '#F2495C' },\n  { mode: 'subway', name: 'Subway', color: '#5794F2' },\n  { mode: 'train', name: 'Train', color: '#B877D9' },\n  { mode: 'other', name: 'Plane, boat, motorbike', color: '#8AB8FF' },\n  { mode: '', name: 'Not labelled', color: '#8E8E8E' },\n];\n\n// The trip's speed over time, one series per mode so the line takes the\n// mode's colour where the user labelled it; stops as shaded spans; the map's\n// clock, while it plays, as a line across (its query re-runs on t_to).\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst series0 = context.panel.data.series[0];\nconst series1 = context.panel.data.series[1];\nconst column = (frame, name) => Array.from(frame?.fields.find((f) => f.name === name)?.values ?? []);\nconst times = column(series0, 'time').map(Number);\nconst kmh = column(series0, 'kmh').map(Number);\nconst modes = column(series0, 'mode');\nconst stopsFrom = column(series1, 't0').map(Number);\nconst stopsMin = column(series1, 'minutes').map(Number);\nconst BEIJING = 8 * 3600 * 1000;\nconst at = column(context.panel.data.series[2], 'at').map(Number).find(Number.isFinite);\n\nconst series = MODES.map((m) => ({\n  name: m.name, type: 'line', showSymbol: false, connectNulls: false, itemStyle: { color: m.color }, lineStyle: { width: 1.5 },\n  // A point either side of a change of mode, so the line has no gaps.\n  data: times.map((t, i) => [t + BEIJING,\n    modes[i] === m.mode || modes[i - 1] === m.mode ? kmh[i] : null]),\n})).filter((s) => s.data.some((d) => d[1] !== null));\nif (series.length) {\n  series[0].markArea = {\n    silent: true, itemStyle: { color: 'rgba(255, 255, 255, 0.08)' },\n    data: stopsFrom.map((t, i) => [{ xAxis: t + BEIJING }, { xAxis: t + BEIJING + stopsMin[i] * 60000 }]),\n  };\n  if (at !== undefined && times.length && at >= times[0] && at <= times[times.length - 1]) {\n    series[0].markLine = {\n      silent: true, symbol: 'none', label: { show: false },\n      lineStyle: { color: theme.colors.text.primary, type: 'solid', width: 1 },\n      data: [{ xAxis: at + BEIJING }],\n    };\n  }\n}\n\nreturn {\n  backgroundColor: 'transparent',\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 12 },\n  tooltip: { trigger: 'axis', valueFormatter: (v) => (v === null || v === undefined ? '–' : v.toFixed(1) + ' km/h') },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  xAxis: { type: 'time', axisLabel: { color: muted, formatter: '{HH}:{mm}' } },\n  yAxis: { type: 'value', name: 'km/h', nameTextStyle: { color: muted }, axisLabel: { color: muted },\n           splitLine: { lineStyle: { color: theme.colors.border.weak } } },\n  series,\n};\n"
+                }
               }
             },
             "version": "7.2.5"
@@ -3340,6 +3730,19 @@
                     "mode": "fixed"
                   },
                   "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "locale"
                 },
                 "overrides": []
@@ -3597,7 +4000,7 @@
                   ]
                 }
               },
-              "title": "2 · Speed & stops"
+              "title": "2 · Speed \u0026 stops"
             }
           },
           {
@@ -4113,7 +4516,7 @@
                   "editorMode": "code",
                   "format": 1,
                   "rawQuery": true,
-                  "rawSql": "-- Beijing in H3 cells of resolution 9 (about 0.1 km2): the median speed of the\n-- fixes in each, every 15 s of every trip, for all of them and for each mode\n-- the users labelled. A cell needs three trips, so one person's walk is not a\n-- street.\nSELECT h3_latlng_to_cell_string(lat, lon, 9) AS hex, coalesce(mode, 'all') AS mode,\n       count(*) AS fixes, count(DISTINCT trip) AS trips, round(median(kmh), 1) AS kmh\nFROM 'http://feeds/datasets/geolife/track.parquet'\nGROUP BY GROUPING SETS ((hex), (hex, mode))\nHAVING count(DISTINCT trip) >= 3 AND coalesce(mode, 'all') <> ''",
+                  "rawSql": "-- Beijing in H3 cells of resolution 9 (about 0.1 km2): the median speed of the\n-- fixes in each, every 15 s of every trip, for all of them and for each mode\n-- the users labelled. A cell needs three trips, so one person's walk is not a\n-- street.\nSELECT h3_latlng_to_cell_string(lat, lon, 9) AS hex, coalesce(mode, 'all') AS mode,\n       count(*) AS fixes, count(DISTINCT trip) AS trips, round(median(kmh), 1) AS kmh\nFROM 'http://feeds/datasets/geolife/track.parquet'\nGROUP BY GROUPING SETS ((hex), (hex, mode))\nHAVING count(DISTINCT trip) \u003e= 3 AND coalesce(mode, 'all') \u003c\u003e ''",
                   "refId": "speed"
                 },
                 "type": "datasource"
@@ -4266,7 +4669,7 @@
                   "editorMode": "code",
                   "format": 1,
                   "rawQuery": true,
-                  "rawSql": "-- Generalized flows, after Andrienko & Andrienko (2011) as Anita Graser built\n-- them for GeoLife in QGIS (2016), live on the place size picked:\n-- 1. characteristic points: where trips start, end, stop or turn over 45 deg;\n-- 2. grouped on a grid of the size picked, each group's centroid a place;\n-- 3. every trip, fix by fix (every 15 s), from place to place: consecutive\n--    fixes in one place are one visit, and a move is two visits in a row;\n-- 4. a link is every move from one place to another, if enough trips made it.\nWITH t AS (\n  SELECT trip, t, lat, lon, x, y, keypoint, floor(x / ${cell:raw})::INTEGER AS gx, floor(y / ${cell:raw})::INTEGER AS gy\n  FROM 'http://feeds/datasets/geolife/track.parquet'\n  WHERE ${mode:sqlstring} IN ('all', mode)\n),\nplaces AS (\n  SELECT gx, gy, avg(lat) AS lat, avg(lon) AS lon, avg(x) AS x, avg(y) AS y, count(*) AS points\n  FROM t WHERE keypoint GROUP BY gx, gy HAVING count(*) >= 3\n),\nseq AS (\n  SELECT trip, gx, gy, lag(gx) OVER w AS px, lag(gy) OVER w AS py\n  FROM t SEMI JOIN places USING (gx, gy)\n  WINDOW w AS (PARTITION BY trip ORDER BY t)\n),\nmoves AS (\n  SELECT px, py, gx, gy, count(*) AS moves, count(DISTINCT trip) AS trips\n  FROM seq WHERE px IS NOT NULL AND (gx <> px OR gy <> py)\n  GROUP BY ALL HAVING count(DISTINCT trip) >= ${min_trips:raw}\n)\nSELECT a.lat AS lat0, a.lon AS lng0, b.lat AS lat1, b.lon AS lng1, m.trips, m.moves,\n       CASE WHEN sqrt(a.x * a.x + a.y * a.y) < 750 THEN 'Tiananmen'\n            ELSE printf('%.1f km %s', sqrt(a.x * a.x + a.y * a.y) / 1000,\n                        ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][floor(((degrees(atan2(a.x, a.y)) + 382.5) % 360) / 45)::INTEGER + 1]) END AS place0,\n       CASE WHEN sqrt(b.x * b.x + b.y * b.y) < 750 THEN 'Tiananmen'\n            ELSE printf('%.1f km %s', sqrt(b.x * b.x + b.y * b.y) / 1000,\n                        ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][floor(((degrees(atan2(b.x, b.y)) + 382.5) % 360) / 45)::INTEGER + 1]) END AS place1,\n       a.points AS points0, b.points AS points1\nFROM moves m\nJOIN places a ON a.gx = m.px AND a.gy = m.py\nJOIN places b ON b.gx = m.gx AND b.gy = m.gy",
+                  "rawSql": "-- Generalized flows, after Andrienko \u0026 Andrienko (2011) as Anita Graser built\n-- them for GeoLife in QGIS (2016), live on the place size picked:\n-- 1. characteristic points: where trips start, end, stop or turn over 45 deg;\n-- 2. grouped on a grid of the size picked, each group's centroid a place;\n-- 3. every trip, fix by fix (every 15 s), from place to place: consecutive\n--    fixes in one place are one visit, and a move is two visits in a row;\n-- 4. a link is every move from one place to another, if enough trips made it.\nWITH t AS (\n  SELECT trip, t, lat, lon, x, y, keypoint, floor(x / ${cell:raw})::INTEGER AS gx, floor(y / ${cell:raw})::INTEGER AS gy\n  FROM 'http://feeds/datasets/geolife/track.parquet'\n  WHERE ${mode:sqlstring} IN ('all', mode)\n),\nplaces AS (\n  SELECT gx, gy, avg(lat) AS lat, avg(lon) AS lon, avg(x) AS x, avg(y) AS y, count(*) AS points\n  FROM t WHERE keypoint GROUP BY gx, gy HAVING count(*) \u003e= 3\n),\nseq AS (\n  SELECT trip, gx, gy, lag(gx) OVER w AS px, lag(gy) OVER w AS py\n  FROM t SEMI JOIN places USING (gx, gy)\n  WINDOW w AS (PARTITION BY trip ORDER BY t)\n),\nmoves AS (\n  SELECT px, py, gx, gy, count(*) AS moves, count(DISTINCT trip) AS trips\n  FROM seq WHERE px IS NOT NULL AND (gx \u003c\u003e px OR gy \u003c\u003e py)\n  GROUP BY ALL HAVING count(DISTINCT trip) \u003e= ${min_trips:raw}\n)\nSELECT a.lat AS lat0, a.lon AS lng0, b.lat AS lat1, b.lon AS lng1, m.trips, m.moves,\n       CASE WHEN sqrt(a.x * a.x + a.y * a.y) \u003c 750 THEN 'Tiananmen'\n            ELSE printf('%.1f km %s', sqrt(a.x * a.x + a.y * a.y) / 1000,\n                        ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][floor(((degrees(atan2(a.x, a.y)) + 382.5) % 360) / 45)::INTEGER + 1]) END AS place0,\n       CASE WHEN sqrt(b.x * b.x + b.y * b.y) \u003c 750 THEN 'Tiananmen'\n            ELSE printf('%.1f km %s', sqrt(b.x * b.x + b.y * b.y) / 1000,\n                        ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][floor(((degrees(atan2(b.x, b.y)) + 382.5) % 360) / 45)::INTEGER + 1]) END AS place1,\n       a.points AS points0, b.points AS points1\nFROM moves m\nJOIN places a ON a.gx = m.px AND a.gy = m.py\nJOIN places b ON b.gx = m.gx AND b.gy = m.gy",
                   "refId": "flows"
                 },
                 "type": "datasource"
