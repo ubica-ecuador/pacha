@@ -476,6 +476,66 @@
                 "hoverSync": true,
                 "mapConfig": {
                   "config": {
+                    "mapState": {
+                      "bearing": 46.99962707427346,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 1.2890387185354604,
+                      "longitude": 103.86133741037779,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 60,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 18.02444302217294
+                    },
                     "mapStyle": {
                       "backgroundColor": [
                         0,
@@ -508,7 +568,7 @@
                           "active": false
                         },
                         "mapLegend": {
-                          "active": true
+                          "active": false
                         }
                       },
                       "theme": "dark"
@@ -545,6 +605,10 @@
                           "syncTimelineMode": 1,
                           "timezone": "UTC",
                           "type": "timeRange",
+                          "value": [
+                            1791721615709,
+                            1791721703109
+                          ],
                           "view": "minified",
                           "yAxis": {
                             "name": "speed_kmh",
@@ -585,7 +649,8 @@
                               {
                                 "name": "brake"
                               }
-                            ]
+                            ],
+                            "grafana-B": []
                           }
                         }
                       },
@@ -650,7 +715,7 @@
                               }
                             ],
                             "visConfig": {
-                              "allowHover": true,
+                              "allowHover": false,
                               "billboard": false,
                               "colorRange": {
                                 "category": "Custom",
@@ -675,7 +740,7 @@
                               "fixedRadius": false,
                               "fleetAltitudeField": "none",
                               "fleetAssetField": "car",
-                              "fleetCard": false,
+                              "fleetCard": true,
                               "fleetCardMinutes": 3,
                               "fleetCardOpacity": 0.9,
                               "fleetCardSize": "M",
@@ -702,7 +767,9 @@
                               "fleetMarker": "silhouette",
                               "fleetModelColours": "original",
                               "fleetOrbitSecs": 60,
-                              "fleetPinned": [],
+                              "fleetPinned": [
+                                "VER"
+                              ],
                               "fleetPublishCrosshair": true,
                               "fleetPulseBy": "auto",
                               "fleetPulseCycle": 3,
@@ -714,7 +781,7 @@
                               "fleetRemember": "off",
                               "fleetRememberMin": 10,
                               "fleetShadow": false,
-                              "fleetSize": 38,
+                              "fleetSize": 46,
                               "fleetSmooth": true,
                               "fleetSmoothMs": 300,
                               "fleetSpeedField": "speed_kmh",
@@ -781,7 +848,7 @@
                             },
                             "colorScale": "customOrdinal",
                             "sizeScale": "linear",
-                            "strokeColorScale": "customOrdinal"
+                            "strokeColorScale": "quantile"
                           }
                         },
                         {
@@ -888,7 +955,7 @@
                                 "name": "Global Warming",
                                 "type": "sequential"
                               },
-                              "strokeOpacity": 0.18,
+                              "strokeOpacity": 0.03,
                               "stroked": true,
                               "thickness": 6,
                               "wireframe": false
@@ -918,7 +985,7 @@
                 "rasterBands": "",
                 "rasterColormap": "",
                 "rasterPainted": false,
-                "saveRequest": 9,
+                "saveRequest": 12,
                 "showSidePanel": false,
                 "timeSync": "variables",
                 "timeVariables": {
@@ -2953,7 +3020,8 @@
                               }
                             ]
                           }
-                        }
+                        },
+                        "title": "New row"
                       }
                     }
                   ]
@@ -3071,7 +3139,8 @@
                               }
                             ]
                           }
-                        }
+                        },
+                        "title": "New row"
                       }
                     }
                   ]
