@@ -87,8 +87,10 @@ straight|lanes|split, `trafficLaneBend`, `trafficShape` flat|arc, `trafficArcHei
 - Trail: `fleetTrail` (min), `fleetTrailShow|Width|Opacity|Fade|Animate|Style`,
   `fleetTrailMode` fleet|trips (`fleetTripsTrail` h, `fleetTripsGap` h).
 - Marker: `fleetMarker` silhouette|arrow|icon, `fleetDisplay` flat|3d, `fleetModelColours`,
-  `fleetSize`, `fleetSmooth`, `fleetLabel` none|name|name+age. `fleetIcons` is a JSON
-  **string** keyed by the type column (`"{\"bus\":{\"silhouette\":\"bus\"}}"`).
+  `fleetSize`, `fleetSmooth`, `fleetReckon` (live: a moving asset keeps going between refreshes
+  at its last course, climb and speed; aircraft, ships), `fleetLabel` none|name|name+age.
+  `fleetIcons` is a JSON **string** keyed by the type column
+  (`"{\"bus\":{\"silhouette\":\"bus\"}}"`).
 - Card: `fleetCard`, `fleetCardWindow`, `fleetCardSize`, `fleetSpeedUnit`, `fleetCrosshair`,
   `fleetCardField` + `fleetCardUnit`. A card's chart needs ≥ 2 readings in its window.
 - Camera: `fleetFollow` (id, name or `"$variable"`), `fleetFollowMode`

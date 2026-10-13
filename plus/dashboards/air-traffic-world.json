@@ -807,6 +807,7 @@
                                 1,
                                 4
                               ],
+                              "fleetReckon": true,
                               "fleetRemember": "auto",
                               "fleetRememberMin": 30,
                               "fleetShadow": true,
@@ -1874,7 +1875,7 @@
           "multi": false,
           "name": "zscale",
           "options": [],
-          "query": "1,10,20,50,100",
+          "query": "1,2,5,10,20,50,100",
           "skipUrlSync": false,
           "valuesFormat": "csv"
         }
