@@ -54,7 +54,10 @@ Examples: `caltrans-la-cameras`, `agi-hq-grid-cameras`.
 `colorField`) | count (assets within `surfaceRadius` m); `surfaceReduce` last|mean|min|max,
 `surfaceBands`, `surfaceIsolines*`, `surfaceLabels*`, `surfaceResolution`, `surfacePower` (2),
 `surfaceMaxDistance`, `surfaceExtent` hull|rectangle, `surfaceMargin`, `surfaceBreaks`
-("2, 5, 10": fixed breaks keep frames comparable while playing). Example: `air-quality-amsterdam`.
+("2, 5, 10": fixed breaks keep frames comparable while playing), `surfaceUnderBuildings` (true:
+drawn inside the base map under its 3D buildings, on styles that have them such as
+`openfreemap-liberty` or MapTiler's; not with Relief), `surfaceAltitude` (metres above the ground,
+0). Example: `air-quality-amsterdam`.
 
 **sparkline**: a card per place with its series. Needs time (`sparkTimeField` auto);
 `colorField` is the plotted value. `sparkScale` common|perSite, `sparkMin|Max`, `sparkUnit`,
