@@ -603,7 +603,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Every reading of every station over the range, one row each: the time filter\n-- picks the moment. Surface takes each station's last reading inside its window;\n-- the cards chart the whole series and read the value at the window's end.\nSELECT station, place, time, temperature, humidity, wind, noise, pm25,\n       printf('%.1f °C', temperature) || coalesce(printf(' · %.0f dB', noise), '') AS reading,\n       latitude, longitude\nFROM $climate WHERE temperature IS NOT NULL ORDER BY station, time"
+                        "rawSql": "-- The last day of readings, one row each: the time filter picks the moment, and\n-- the Measure picker the column drawn as \"value\" (Chaski quotes a variable's\n-- value; :raw gives the bare column name). A day, not the whole range: the colour\n-- scale spans the rows it gets, and a week of temperatures (5 to 28 °C) would\n-- paint the degree or two between stations at one moment in a single band. A\n-- station that lacks the measure (Royal Park has no noise or particles) drops out.\nSELECT station, place, time, temperature, humidity, wind, noise, pm25,\n       ${metric:raw} AS value,\n       printf('%.1f', ${metric:raw})\n         || CASE ${metric} WHEN 'temperature' THEN ' °C' WHEN 'humidity' THEN ' %' WHEN 'noise' THEN ' dB'\n                           WHEN 'pm25' THEN ' µg/m³' ELSE '' END AS reading,\n       latitude, longitude\nFROM $climate\nWHERE ${metric:raw} IS NOT NULL AND time > (SELECT max(time) FROM $climate) - INTERVAL 24 HOUR\nORDER BY station, time"
                       },
                       "version": "v0"
                     },
@@ -827,6 +827,9 @@
                                 "name": "place"
                               },
                               {
+                                "name": "reading"
+                              },
+                              {
                                 "name": "temperature"
                               },
                               {
@@ -883,28 +886,17 @@
                               "allowHover": true,
                               "billboard": false,
                               "colorRange": {
+                                "name": "Cool to warm",
+                                "type": "diverging",
                                 "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    8.68,
-                                    "#5794F2"
-                                  ],
-                                  [
-                                    11.16,
-                                    "#FF9830"
-                                  ],
-                                  [
-                                    null,
-                                    "#E02F44"
-                                  ]
-                                ],
                                 "colors": [
                                   "#5794F2",
+                                  "#8AB8FF",
+                                  "#FADE2A",
                                   "#FF9830",
+                                  "#F2495C",
                                   "#E02F44"
-                                ],
-                                "name": "Plus gauge",
-                                "type": "custom"
+                                ]
                               },
                               "filled": true,
                               "fixedRadius": false,
@@ -953,10 +945,10 @@
                           "type": "surface",
                           "visualChannels": {
                             "colorField": {
-                              "name": "temperature",
+                              "name": "value",
                               "type": "real"
                             },
-                            "colorScale": "custom",
+                            "colorScale": "quantile",
                             "sizeScale": "linear",
                             "strokeColorScale": "quantile"
                           }
@@ -988,28 +980,17 @@
                               "allowHover": true,
                               "billboard": false,
                               "colorRange": {
+                                "name": "Cool to warm",
+                                "type": "diverging",
                                 "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    8.68,
-                                    "#5794F2"
-                                  ],
-                                  [
-                                    11.16,
-                                    "#FF9830"
-                                  ],
-                                  [
-                                    null,
-                                    "#E02F44"
-                                  ]
-                                ],
                                 "colors": [
                                   "#5794F2",
+                                  "#8AB8FF",
+                                  "#FADE2A",
                                   "#FF9830",
+                                  "#F2495C",
                                   "#E02F44"
-                                ],
-                                "name": "Plus gauge",
-                                "type": "custom"
+                                ]
                               },
                               "filled": true,
                               "fixedRadius": false,
@@ -1064,10 +1045,10 @@
                           "type": "sparkline",
                           "visualChannels": {
                             "colorField": {
-                              "name": "temperature",
+                              "name": "value",
                               "type": "real"
                             },
-                            "colorScale": "custom",
+                            "colorScale": "quantile",
                             "sizeScale": "linear",
                             "strokeColorScale": "quantile"
                           }
@@ -2736,6 +2717,25 @@
     },
     "title": "Melbourne street sensors: parking, pedestrians and microclimate",
     "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "name": "metric",
+          "label": "Measure",
+          "description": "The microclimate measure the stations and the surface draw.",
+          "query": "Temperature (°C) : temperature,Humidity (%) : humidity,Wind speed : wind,Street noise (dB) : noise,Fine particles PM2.5 (µg/m³) : pm25",
+          "current": {
+            "text": "Temperature (°C)",
+            "value": "temperature"
+          },
+          "options": [],
+          "hide": "dontHide",
+          "includeAll": false,
+          "multi": false,
+          "allowCustomValue": false,
+          "skipUrlSync": false
+        }
+      },
       {
         "kind": "TextVariable",
         "spec": {
