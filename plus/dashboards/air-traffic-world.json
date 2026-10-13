@@ -565,10 +565,10 @@
                       "visibleLayerGroups": {
                         "border": false,
                         "building": true,
-                        "label": true,
+                        "label": false,
                         "land": true,
                         "poi": true,
-                        "road": true,
+                        "road": false,
                         "water": true
                       }
                     },
@@ -616,8 +616,8 @@
                           "timezone": "UTC",
                           "type": "timeRange",
                           "value": [
-                            1791862214662,
-                            1791862381814.3523
+                            1791862214413,
+                            1791864014413
                           ],
                           "view": "minified"
                         }
@@ -976,7 +976,7 @@
                 "rasterBands": "",
                 "rasterColormap": "",
                 "rasterPainted": false,
-                "saveRequest": 2,
+                "saveRequest": 3,
                 "showSidePanel": false,
                 "timeSync": "toMap",
                 "tripLayerMode": "table",
