@@ -13,7 +13,7 @@
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations & Alerts",
+          "name": "Annotations \u0026 Alerts",
           "query": {
             "datasource": {
               "name": "-- Grafana --"
@@ -603,7 +603,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- The last day of readings, one row each: the time filter picks the moment, and\n-- the Measure picker the column drawn as \"value\" (Chaski quotes a variable's\n-- value; :raw gives the bare column name). A day, not the whole range: the colour\n-- scale spans the rows it gets, and a week of temperatures (5 to 28 °C) would\n-- paint the degree or two between stations at one moment in a single band. A\n-- station that lacks the measure (Royal Park has no noise or particles) drops out.\nSELECT station, place, time, temperature, humidity, wind, noise, pm25,\n       ${metric:raw} AS value,\n       printf('%.1f', ${metric:raw})\n         || CASE ${metric} WHEN 'temperature' THEN ' °C' WHEN 'humidity' THEN ' %' WHEN 'noise' THEN ' dB'\n                           WHEN 'pm25' THEN ' µg/m³' ELSE '' END AS reading,\n       latitude, longitude\nFROM $climate\nWHERE ${metric:raw} IS NOT NULL AND time > (SELECT max(time) FROM $climate) - INTERVAL 24 HOUR\nORDER BY station, time"
+                        "rawSql": "-- The last day of readings, one row each: the time filter picks the moment, and\n-- the Measure picker the column drawn as \"value\" (Chaski quotes a variable's\n-- value; :raw gives the bare column name). A day, not the whole range: the colour\n-- scale spans the rows it gets, and a week of temperatures (5 to 28 °C) would\n-- paint the degree or two between stations at one moment in a single band. A\n-- station that lacks the measure (Royal Park has no noise or particles) drops out.\nSELECT station, place, time, temperature, humidity, wind, noise, pm25,\n       ${metric:raw} AS value,\n       printf('%.1f', ${metric:raw})\n         || CASE ${metric} WHEN 'temperature' THEN ' °C' WHEN 'humidity' THEN ' %' WHEN 'noise' THEN ' dB'\n                           WHEN 'pm25' THEN ' µg/m³' ELSE '' END AS reading,\n       latitude, longitude\nFROM $climate\nWHERE ${metric:raw} IS NOT NULL AND time \u003e (SELECT max(time) FROM $climate) - INTERVAL 24 HOUR\nORDER BY station, time"
                       },
                       "version": "v0"
                     },
@@ -624,7 +624,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -643,7 +657,7 @@
                 "mapConfig": {
                   "config": {
                     "mapState": {
-                      "bearing": -42.5648854961832,
+                      "bearing": -72.94513899851809,
                       "dragRotate": true,
                       "globe": {
                         "config": {
@@ -692,15 +706,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": -37.814026384185716,
-                      "longitude": 144.96473922128186,
+                      "latitude": -37.81862083086372,
+                      "longitude": 144.96771102978227,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_3D",
                       "maxPitch": 85,
-                      "pitch": 55.6390036627284,
+                      "pitch": 44.122858083774474,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 14.378218117914779
+                      "zoom": 14.740248042512574
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -754,30 +768,34 @@
                       "effects": [],
                       "filters": [
                         {
+                          "animationWindow": "free",
                           "dataId": [
                             "grafana-C",
                             "grafana-B"
                           ],
+                          "enabled": true,
+                          "id": "time-window",
                           "name": [
                             "time",
                             "time"
                           ],
-                          "type": "timeRange",
-                          "id": "time-window",
-                          "enabled": true,
-                          "animationWindow": "free",
-                          "speed": 1,
-                          "view": "enlarged",
                           "plotType": {
-                            "type": "histogram",
-                            "interval": "15-minute",
                             "aggregation": "average",
-                            "defaultTimeFormat": "L LT"
+                            "colorsByDataId": {
+                              "grafana-B": "#547A82",
+                              "grafana-C": "#3EACA8"
+                            },
+                            "defaultTimeFormat": "L LT",
+                            "interval": "15-minute",
+                            "type": "histogram"
                           },
+                          "speed": 1,
+                          "type": "timeRange",
                           "value": [
-                            1791888222000,
-                            1791891822000
-                          ]
+                            1791786406000,
+                            1791927747000
+                          ],
+                          "view": "enlarged"
                         }
                       ],
                       "interactionConfig": {
@@ -853,106 +871,12 @@
                       },
                       "layerBlending": "normal",
                       "layerOrder": [
-                        "5mbuxz",
                         "677pwig",
                         "35yfvll",
-                        "be94l7"
+                        "be94l7",
+                        "5mbuxz"
                       ],
                       "layers": [
-                        {
-                          "config": {
-                            "color": [
-                              242,
-                              242,
-                              242
-                            ],
-                            "columnMode": "points",
-                            "columns": {
-                              "lat": "latitude",
-                              "lng": "longitude"
-                            },
-                            "dataId": "grafana-C",
-                            "hidden": false,
-                            "highlightColor": [
-                              252,
-                              242,
-                              26,
-                              255
-                            ],
-                            "isVisible": true,
-                            "label": "Copy of Microclimate stations, latest reading",
-                            "textLabel": [],
-                            "visConfig": {
-                              "allowHover": true,
-                              "billboard": false,
-                              "colorRange": {
-                                "name": "Cool to warm",
-                                "type": "diverging",
-                                "category": "Custom",
-                                "colors": [
-                                  "#5794F2",
-                                  "#8AB8FF",
-                                  "#FADE2A",
-                                  "#FF9830",
-                                  "#F2495C",
-                                  "#E02F44"
-                                ]
-                              },
-                              "filled": true,
-                              "fixedRadius": false,
-                              "opacity": 0.78,
-                              "outline": true,
-                              "radius": 7,
-                              "radiusRange": [
-                                0,
-                                50
-                              ],
-                              "showHighlightColor": true,
-                              "showNeighborOnHover": false,
-                              "strokeColorRange": {
-                                "category": "Uber",
-                                "colors": [
-                                  "#4C0035",
-                                  "#880030",
-                                  "#B72F15",
-                                  "#D6610A",
-                                  "#EF9100",
-                                  "#FFC300"
-                                ],
-                                "name": "Global Warming",
-                                "type": "sequential"
-                              },
-                              "surfaceBands": true,
-                              "surfaceBreaks": "",
-                              "surfaceExtent": "rectangle",
-                              "surfaceFade": true,
-                              "surfaceIsolineWidth": 1,
-                              "surfaceIsolines": true,
-                              "surfaceLabelSize": 11,
-                              "surfaceLabels": true,
-                              "surfaceMargin": 0,
-                              "surfaceMode": "interpolate",
-                              "surfaceNeighbours": "auto",
-                              "surfacePower": 2,
-                              "surfaceRadius": 500,
-                              "surfaceReduce": "last",
-                              "surfaceResolution": "medium",
-                              "surfaceVehicle": ":auto",
-                              "thickness": 2
-                            }
-                          },
-                          "id": "5mbuxz",
-                          "type": "surface",
-                          "visualChannels": {
-                            "colorField": {
-                              "name": "value",
-                              "type": "real"
-                            },
-                            "colorScale": "quantile",
-                            "sizeScale": "linear",
-                            "strokeColorScale": "quantile"
-                          }
-                        },
                         {
                           "config": {
                             "color": [
@@ -980,8 +904,6 @@
                               "allowHover": true,
                               "billboard": false,
                               "colorRange": {
-                                "name": "Cool to warm",
-                                "type": "diverging",
                                 "category": "Custom",
                                 "colors": [
                                   "#5794F2",
@@ -990,7 +912,9 @@
                                   "#FF9830",
                                   "#F2495C",
                                   "#E02F44"
-                                ]
+                                ],
+                                "name": "Cool to warm",
+                                "type": "diverging"
                               },
                               "filled": true,
                               "fixedRadius": false,
@@ -1006,12 +930,12 @@
                               "showNeighborOnHover": false,
                               "sparkAlertWorst": false,
                               "sparkAlerts": false,
-                              "sparkCardOpacity": 0.9,
+                              "sparkCardOpacity": 1,
                               "sparkCards": "auto",
                               "sparkChangeColours": "risingBad",
                               "sparkCrossValue": true,
                               "sparkCrosshair": true,
-                              "sparkDotRadius": 5,
+                              "sparkDotRadius": 8,
                               "sparkDots": true,
                               "sparkFill": true,
                               "sparkMax": "auto",
@@ -1072,7 +996,7 @@
                               26,
                               255
                             ],
-                            "isVisible": false,
+                            "isVisible": true,
                             "label": "Pedestrians, hourly",
                             "textLabel": [],
                             "visConfig": {
@@ -1118,13 +1042,13 @@
                               "fixedSize": false,
                               "flowContext": {
                                 "camera": {
-                                  "bearing": -42.5648854961832,
-                                  "height": 777,
-                                  "latitude": -37.814026384185716,
-                                  "longitude": 144.96473922128186,
-                                  "pitch": 55.6390036627284,
-                                  "width": 1179,
-                                  "zoom": 14.378218117914779
+                                  "bearing": -72.94513899851809,
+                                  "height": 756,
+                                  "latitude": -37.81862083086372,
+                                  "longitude": 144.96771102978227,
+                                  "pitch": 44.122858083774474,
+                                  "width": 1499,
+                                  "zoom": 14.740248042512574
                                 },
                                 "tallest": 0
                               },
@@ -1186,7 +1110,7 @@
                               26,
                               255
                             ],
-                            "isVisible": false,
+                            "isVisible": true,
                             "label": "Parking bays, now",
                             "textLabel": [
                               {
@@ -1253,13 +1177,13 @@
                               "fixedSize": false,
                               "flowContext": {
                                 "camera": {
-                                  "bearing": -42.5648854961832,
-                                  "height": 777,
-                                  "latitude": -37.814026384185716,
-                                  "longitude": 144.96473922128186,
-                                  "pitch": 55.6390036627284,
-                                  "width": 1179,
-                                  "zoom": 14.378218117914779
+                                  "bearing": -72.94513899851809,
+                                  "height": 756,
+                                  "latitude": -37.81862083086372,
+                                  "longitude": 144.96771102978227,
+                                  "pitch": 44.122858083774474,
+                                  "width": 1499,
+                                  "zoom": 14.740248042512574
                                 },
                                 "tallest": 0
                               },
@@ -1301,6 +1225,102 @@
                             "colorScale": "customOrdinal",
                             "sizeScale": "linear"
                           }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              242,
+                              242,
+                              242
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Surface - Microclimate stations, latest reading",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": false,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#5794F2",
+                                  "#8AB8FF",
+                                  "#FADE2A",
+                                  "#FF9830",
+                                  "#F2495C",
+                                  "#E02F44"
+                                ],
+                                "name": "Cool to warm",
+                                "type": "diverging"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.16,
+                              "outline": true,
+                              "radius": 7,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "surfaceAltitude": 0,
+                              "surfaceBands": true,
+                              "surfaceBreaks": "",
+                              "surfaceExtent": "rectangle",
+                              "surfaceFade": true,
+                              "surfaceIsolineWidth": 1,
+                              "surfaceIsolines": true,
+                              "surfaceLabelSize": 11,
+                              "surfaceLabels": true,
+                              "surfaceMargin": 10,
+                              "surfaceMode": "interpolate",
+                              "surfaceNeighbours": "auto",
+                              "surfacePower": 2,
+                              "surfaceRadius": 500,
+                              "surfaceReduce": "last",
+                              "surfaceResolution": "medium",
+                              "surfaceUnderBuildings": true,
+                              "surfaceVehicle": ":auto",
+                              "thickness": 2
+                            }
+                          },
+                          "id": "5mbuxz",
+                          "type": "surface",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "value",
+                              "type": "real"
+                            },
+                            "colorScale": "quantile",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
                         }
                       ],
                       "overlayBlending": "normal",
@@ -1316,7 +1336,7 @@
                 "rasterBands": "",
                 "rasterColormap": "",
                 "rasterPainted": false,
-                "saveRequest": 9,
+                "saveRequest": 13,
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table",
@@ -1351,7 +1371,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH latest AS (SELECT station, max(time) AS t, arg_max(noise, time) AS v FROM $climate\n                WHERE noise IS NOT NULL GROUP BY station)\nSELECT median(v) AS \"Noise\" FROM latest WHERE t > (SELECT max(t) FROM latest) - INTERVAL 1 HOUR"
+                        "rawSql": "WITH latest AS (SELECT station, max(time) AS t, arg_max(noise, time) AS v FROM $climate\n                WHERE noise IS NOT NULL GROUP BY station)\nSELECT median(v) AS \"Noise\" FROM latest WHERE t \u003e (SELECT max(t) FROM latest) - INTERVAL 1 HOUR"
                       },
                       "version": "v0"
                     },
@@ -1431,7 +1451,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT 100.0 * count(*) FILTER (WHERE status = 'Occupied') / nullif(count(*), 0) AS \"Occupancy\"\nFROM $bays WHERE status <> 'Silent for a week'"
+                        "rawSql": "SELECT 100.0 * count(*) FILTER (WHERE status = 'Occupied') / nullif(count(*), 0) AS \"Occupancy\"\nFROM $bays WHERE status \u003c\u003e 'Silent for a week'"
                       },
                       "version": "v0"
                     },
@@ -2036,7 +2056,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT street AS \"Street\",\n       count(*) FILTER (WHERE status = 'Occupied') AS \"Taken\",\n       100.0 * count(*) FILTER (WHERE status = 'Occupied') / count(*) AS \"Occupancy\"\nFROM $bays WHERE status <> 'Silent for a week' AND street <> 'Unknown'\nGROUP BY street HAVING count(*) >= 10\nORDER BY \"Occupancy\" DESC"
+                        "rawSql": "SELECT street AS \"Street\",\n       count(*) FILTER (WHERE status = 'Occupied') AS \"Taken\",\n       100.0 * count(*) FILTER (WHERE status = 'Occupied') / count(*) AS \"Occupancy\"\nFROM $bays WHERE status \u003c\u003e 'Silent for a week' AND street \u003c\u003e 'Unknown'\nGROUP BY street HAVING count(*) \u003e= 10\nORDER BY \"Occupancy\" DESC"
                       },
                       "version": "v0"
                     },
@@ -2182,7 +2202,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH latest AS (SELECT station, max(time) AS t, arg_max(temperature, time) AS v FROM $climate GROUP BY station)\nSELECT median(v) AS \"Temperature\" FROM latest WHERE t > (SELECT max(t) FROM latest) - INTERVAL 1 HOUR"
+                        "rawSql": "WITH latest AS (SELECT station, max(time) AS t, arg_max(temperature, time) AS v FROM $climate GROUP BY station)\nSELECT median(v) AS \"Temperature\" FROM latest WHERE t \u003e (SELECT max(t) FROM latest) - INTERVAL 1 HOUR"
                       },
                       "version": "v0"
                     },
@@ -2720,20 +2740,21 @@
       {
         "kind": "CustomVariable",
         "spec": {
-          "name": "metric",
-          "label": "Measure",
-          "description": "The microclimate measure the stations and the surface draw.",
-          "query": "Temperature (°C) : temperature,Humidity (%) : humidity,Wind speed : wind,Street noise (dB) : noise,Fine particles PM2.5 (µg/m³) : pm25",
+          "allowCustomValue": false,
           "current": {
-            "text": "Temperature (°C)",
-            "value": "temperature"
+            "text": "Street noise (dB)",
+            "value": "noise"
           },
-          "options": [],
+          "description": "The microclimate measure the stations and the surface draw.",
           "hide": "dontHide",
           "includeAll": false,
+          "label": "Measure",
           "multi": false,
-          "allowCustomValue": false,
-          "skipUrlSync": false
+          "name": "metric",
+          "options": [],
+          "query": "Temperature (°C) : temperature,Humidity (%) : humidity,Wind speed : wind,Street noise (dB) : noise,Fine particles PM2.5 (µg/m³) : pm25",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
         }
       },
       {
@@ -2754,8 +2775,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "d83208b7a_bays_v7",
+            "value": "d83208b7a_bays_v7"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -2786,7 +2807,7 @@
                   "editorMode": "code",
                   "format": 1,
                   "rawQuery": true,
-                  "rawSql": "-- Server side: every parking bay sensor the City of Melbourne runs, and what\n-- it says now, through the gateway, which keeps the list two minutes (see\n-- gateway/feeds.conf). Each bay's street comes from the bays' register, by\n-- kerbside id. The timestamp is when the bay last changed: a bay that has not\n-- changed in a week is taken as a sensor gone quiet, not a car parked for it.\nWITH sensors AS (\n  SELECT kerbsideid, zone_number, status_description, status_timestamp,\n         ST_Y(location) AS latitude, ST_X(location) AS longitude\n  FROM read_parquet('http://feeds/melbourne/on-street-parking-bay-sensors.parquet')\n),\nstreets AS (\n  SELECT TRY_CAST(kerbsideid AS BIGINT) AS kerbsideid, any_value(roadsegmentdescription) AS segment\n  FROM read_parquet('http://feeds/melbourne/on-street-parking-bays.parquet?select=kerbsideid,roadsegmentdescription&where=kerbsideid%20is%20not%20null')\n  GROUP BY 1\n),\nzones AS (\n  SELECT parkingzone AS zone_number, any_value(onstreet) AS onstreet,\n         any_value(onstreet || ' between ' || streetfrom || ' and ' || streetto) AS zsegment\n  FROM read_parquet('http://feeds/melbourne/parking-zones-linked-to-street-segments.parquet')\n  GROUP BY 1\n)\nSELECT s.kerbsideid::VARCHAR                                  AS bay,\n       s.zone_number                                         AS zone,\n       coalesce(t.segment, z.zsegment, 'Unknown')            AS segment,\n       coalesce(nullif(regexp_extract(t.segment, '^(.*?) between ', 1), ''), t.segment, z.onstreet, 'Unknown') AS street,\n       CASE WHEN s.status_timestamp < now() - INTERVAL 7 DAY THEN 'Silent for a week'\n            WHEN s.status_description = 'Present'           THEN 'Occupied'\n            ELSE 'Free' END                                  AS status,\n       s.status_timestamp                                    AS since,\n       date_diff('minute', s.status_timestamp, now())        AS minutes,\n       s.latitude, s.longitude\nFROM sensors AS s\nLEFT JOIN streets AS t USING (kerbsideid)\nLEFT JOIN zones AS z USING (zone_number)",
+                  "rawSql": "-- Server side: every parking bay sensor the City of Melbourne runs, and what\n-- it says now, through the gateway, which keeps the list two minutes (see\n-- gateway/feeds.conf). Each bay's street comes from the bays' register, by\n-- kerbside id. The timestamp is when the bay last changed: a bay that has not\n-- changed in a week is taken as a sensor gone quiet, not a car parked for it.\nWITH sensors AS (\n  SELECT kerbsideid, zone_number, status_description, status_timestamp,\n         ST_Y(location) AS latitude, ST_X(location) AS longitude\n  FROM read_parquet('http://feeds/melbourne/on-street-parking-bay-sensors.parquet')\n),\nstreets AS (\n  SELECT TRY_CAST(kerbsideid AS BIGINT) AS kerbsideid, any_value(roadsegmentdescription) AS segment\n  FROM read_parquet('http://feeds/melbourne/on-street-parking-bays.parquet?select=kerbsideid,roadsegmentdescription\u0026where=kerbsideid%20is%20not%20null')\n  GROUP BY 1\n),\nzones AS (\n  SELECT parkingzone AS zone_number, any_value(onstreet) AS onstreet,\n         any_value(onstreet || ' between ' || streetfrom || ' and ' || streetto) AS zsegment\n  FROM read_parquet('http://feeds/melbourne/parking-zones-linked-to-street-segments.parquet')\n  GROUP BY 1\n)\nSELECT s.kerbsideid::VARCHAR                                  AS bay,\n       s.zone_number                                         AS zone,\n       coalesce(t.segment, z.zsegment, 'Unknown')            AS segment,\n       coalesce(nullif(regexp_extract(t.segment, '^(.*?) between ', 1), ''), t.segment, z.onstreet, 'Unknown') AS street,\n       CASE WHEN s.status_timestamp \u003c now() - INTERVAL 7 DAY THEN 'Silent for a week'\n            WHEN s.status_description = 'Present'           THEN 'Occupied'\n            ELSE 'Free' END                                  AS status,\n       s.status_timestamp                                    AS since,\n       date_diff('minute', s.status_timestamp, now())        AS minutes,\n       s.latitude, s.longitude\nFROM sensors AS s\nLEFT JOIN streets AS t USING (kerbsideid)\nLEFT JOIN zones AS z USING (zone_number)",
                   "refId": "bays"
                 },
                 "type": "datasource"
@@ -2806,8 +2827,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "d83208b7a_peds_v8",
+            "value": "d83208b7a_peds_v8"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -2838,7 +2859,7 @@
                   "editorMode": "code",
                   "format": 1,
                   "rawQuery": true,
-                  "rawSql": "-- Server side: every pedestrian counter's hourly count over the time range,\n-- through the gateway (see gateway/feeds.conf). The city loads the counts\n-- once a day, so the latest hours are a day or two old. Whole days in\n-- Melbourne, at most the last 31, so one URL stands for a day and the cache\n-- can answer it. (A table function takes no subquery, so the dates are\n-- written out in place.) A row's time is the start of its hour; day and hour\n-- are Melbourne's. dir_1 and dir_2 are the two ways past the counter, named by\n-- way_1 and way_2.\nWITH counts AS (\n  SELECT * FROM read_parquet('http://feeds/melbourne/pedestrian-counting-system-monthly-counts-per-hour.parquet?select=location_id,sensing_date,hourday,direction_1,direction_2,pedestriancount&where=sensing_date%3E%3D%22'\n                             || strftime(greatest(timezone('Australia/Melbourne', make_timestamptz(CAST(${__from} AS BIGINT) * 1000)), timezone('Australia/Melbourne', make_timestamptz(CAST(${__to} AS BIGINT) * 1000)) - INTERVAL 31 DAY), '%Y-%m-%d')\n                             || '%22%20and%20sensing_date%3C%3D%22' || strftime(timezone('Australia/Melbourne', make_timestamptz(CAST(${__to} AS BIGINT) * 1000)), '%Y-%m-%d') || '%22')\n),\nplaces AS (\n  SELECT location_id, sensor_description, direction_1 AS way_1, direction_2 AS way_2, latitude, longitude\n  FROM read_parquet('http://feeds/melbourne/pedestrian-counting-system-sensor-locations.parquet')\n)\nSELECT c.location_id::VARCHAR                                                   AS sensor,\n       coalesce(p.sensor_description, 'Sensor ' || c.location_id)            AS name,\n       timezone('Australia/Melbourne', c.sensing_date + to_hours(c.hourday))  AS time,\n       strftime(c.sensing_date, '%Y-%m-%d')                                   AS day,\n       c.hourday                                                              AS hour,\n       c.pedestriancount                                                      AS people,\n       c.direction_1 AS dir_1, c.direction_2 AS dir_2, p.way_1, p.way_2,\n       p.latitude, p.longitude\nFROM counts AS c LEFT JOIN places AS p USING (location_id)\nWHERE p.latitude IS NOT NULL",
+                  "rawSql": "-- Server side: every pedestrian counter's hourly count over the time range,\n-- through the gateway (see gateway/feeds.conf). The city loads the counts\n-- once a day, so the latest hours are a day or two old. Whole days in\n-- Melbourne, at most the last 31, so one URL stands for a day and the cache\n-- can answer it. (A table function takes no subquery, so the dates are\n-- written out in place.) A row's time is the start of its hour; day and hour\n-- are Melbourne's. dir_1 and dir_2 are the two ways past the counter, named by\n-- way_1 and way_2.\nWITH counts AS (\n  SELECT * FROM read_parquet('http://feeds/melbourne/pedestrian-counting-system-monthly-counts-per-hour.parquet?select=location_id,sensing_date,hourday,direction_1,direction_2,pedestriancount\u0026where=sensing_date%3E%3D%22'\n                             || strftime(greatest(timezone('Australia/Melbourne', make_timestamptz(CAST(${__from} AS BIGINT) * 1000)), timezone('Australia/Melbourne', make_timestamptz(CAST(${__to} AS BIGINT) * 1000)) - INTERVAL 31 DAY), '%Y-%m-%d')\n                             || '%22%20and%20sensing_date%3C%3D%22' || strftime(timezone('Australia/Melbourne', make_timestamptz(CAST(${__to} AS BIGINT) * 1000)), '%Y-%m-%d') || '%22')\n),\nplaces AS (\n  SELECT location_id, sensor_description, direction_1 AS way_1, direction_2 AS way_2, latitude, longitude\n  FROM read_parquet('http://feeds/melbourne/pedestrian-counting-system-sensor-locations.parquet')\n)\nSELECT c.location_id::VARCHAR                                                   AS sensor,\n       coalesce(p.sensor_description, 'Sensor ' || c.location_id)            AS name,\n       timezone('Australia/Melbourne', c.sensing_date + to_hours(c.hourday))  AS time,\n       strftime(c.sensing_date, '%Y-%m-%d')                                   AS day,\n       c.hourday                                                              AS hour,\n       c.pedestriancount                                                      AS people,\n       c.direction_1 AS dir_1, c.direction_2 AS dir_2, p.way_1, p.way_2,\n       p.latitude, p.longitude\nFROM counts AS c LEFT JOIN places AS p USING (location_id)\nWHERE p.latitude IS NOT NULL",
                   "refId": "peds"
                 },
                 "type": "datasource"
@@ -2858,8 +2879,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "d83208b7a_climate_v9",
+            "value": "d83208b7a_climate_v9"
           },
           "hide": "hideVariable",
           "includeAll": false,
