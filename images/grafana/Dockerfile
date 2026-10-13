@@ -16,8 +16,8 @@
 
 ARG GRAFANA_EDITION=grafana-enterprise
 ARG GRAFANA_VERSION=13.2.1
-ARG KEPLER_PANEL_VERSION=1.1.0
-ARG KEPLER_PANEL_SHA256=67a7a96130272b51c3e11b5ca0ca4cdec45fc9d1aca0040be31738f47f792824
+ARG KEPLER_PANEL_VERSION=1.2.0
+ARG KEPLER_PANEL_SHA256=64a2c0087acb9615019570039d51b7cba69136db571c5ffd65d3891128ec7e27
 # release: the version above. edge: main of the Kepler repo, as its CI last
 # published it; not pinned, see the kepler-edge stage.
 ARG KEPLER_PANEL_CHANNEL=release
