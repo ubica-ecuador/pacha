@@ -1,11 +1,31 @@
 {
-  "apiVersion": "dashboard.grafana.app/v2beta1",
+  "apiVersion": "dashboard.grafana.app/v2",
   "kind": "Dashboard",
   "metadata": {
     "name": "melbourne-city-sensors"
   },
   "spec": {
-    "annotations": [],
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
     "cursorSync": "Crosshair",
     "description": "The City of Melbourne's street sensors: some 6,300 parking bays as they are now, about 100 pedestrian counters hour by hour, and the microclimate stations' temperature, noise and particles; reloaded every 5 minutes.",
     "editable": true,
@@ -21,6 +41,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 17,
           "links": [],
           "title": "About the data",
@@ -70,9 +91,9 @@
               "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "prepareTimeSeries",
+                  "group": "prepareTimeSeries",
+                  "kind": "Transformation",
                   "spec": {
-                    "id": "prepareTimeSeries",
                     "options": {
                       "format": "multi"
                     }
@@ -541,26 +562,152 @@
                   "show": false
                 },
                 "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
                 "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
                 "mapConfig": {
                   "config": {
                     "mapState": {
-                      "bearing": 0,
-                      "dragRotate": false,
-                      "latitude": -37.8125,
-                      "longitude": 144.958,
-                      "pitch": 0,
-                      "zoom": 13.4
+                      "bearing": -37.06870229007633,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": -37.820018535861536,
+                      "longitude": 144.9611845367905,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 65.1183280804014,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 15.274888329932033
                     },
                     "mapStyle": {
-                      "styleType": "dark-matter"
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "plus-maptiler-streets-dark",
+                      "threeDBuildingColor": [
+                        224.45365307122788,
+                        221.23183029987055,
+                        213.7142438333701
+                      ],
+                      "topLayerGroups": {
+                        "3d building": true
+                      },
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": false,
+                        "label": false,
+                        "land": true,
+                        "poi": false,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
                     },
                     "visState": {
                       "animationConfig": {
-                        "currentTime": null,
                         "speed": 1
                       },
-                      "filters": [],
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-C"
+                          ],
+                          "enabled": true,
+                          "id": "cmaonrrqd",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "defaultTimeFormat": "L  LTS",
+                            "interval": "5-second",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            1791891415000,
+                            1791891822000
+                          ],
+                          "view": "minified"
+                        }
+                      ],
                       "interactionConfig": {
                         "brush": {
                           "enabled": false,
@@ -570,7 +717,8 @@
                           "enabled": false
                         },
                         "geocoder": {
-                          "enabled": false
+                          "enabled": false,
+                          "limitSearch": false
                         },
                         "tooltip": {
                           "compareMode": false,
@@ -579,67 +727,49 @@
                           "fieldsToShow": {
                             "grafana-A": [
                               {
-                                "format": null,
                                 "name": "status"
                               },
                               {
-                                "format": null,
                                 "name": "segment"
                               },
                               {
-                                "format": null,
-                                "name": "since"
-                              },
-                              {
-                                "format": null,
                                 "name": "bay"
                               },
                               {
-                                "format": null,
                                 "name": "zone"
                               }
                             ],
                             "grafana-B": [
                               {
-                                "format": null,
                                 "name": "name"
                               },
                               {
-                                "format": null,
                                 "name": "people"
                               },
                               {
-                                "format": null,
                                 "name": "time"
                               }
                             ],
                             "grafana-C": [
                               {
-                                "format": null,
                                 "name": "place"
                               },
                               {
-                                "format": null,
                                 "name": "temperature"
                               },
                               {
-                                "format": null,
                                 "name": "humidity"
                               },
                               {
-                                "format": null,
                                 "name": "wind"
                               },
                               {
-                                "format": null,
                                 "name": "noise"
                               },
                               {
-                                "format": null,
                                 "name": "pm25"
                               },
                               {
-                                "format": null,
                                 "name": "time"
                               }
                             ]
@@ -648,89 +778,12 @@
                       },
                       "layerBlending": "normal",
                       "layerOrder": [
-                        "pedestrians",
-                        "climate",
-                        "bays"
+                        "677pwig",
+                        "35yfvll",
+                        "aoofwcj",
+                        "be94l7"
                       ],
                       "layers": [
-                        {
-                          "config": {
-                            "columnMode": "points",
-                            "columns": {
-                              "lat": "latitude",
-                              "lng": "longitude"
-                            },
-                            "dataId": "grafana-B",
-                            "isVisible": true,
-                            "label": "Pedestrians, hourly",
-                            "textLabel": [
-                              {
-                                "alignment": "center",
-                                "anchor": "middle",
-                                "field": {
-                                  "name": "name",
-                                  "type": "string"
-                                },
-                                "size": 18
-                              }
-                            ],
-                            "visConfig": {
-                              "colorRange": {
-                                "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    100,
-                                    "#1F4E79"
-                                  ],
-                                  [
-                                    300,
-                                    "#2766A3"
-                                  ],
-                                  [
-                                    700,
-                                    "#3D8FE0"
-                                  ],
-                                  [
-                                    1500,
-                                    "#6FB0EE"
-                                  ],
-                                  [
-                                    null,
-                                    "#A8D1F7"
-                                  ]
-                                ],
-                                "colors": [
-                                  "#1F4E79",
-                                  "#2766A3",
-                                  "#3D8FE0",
-                                  "#6FB0EE",
-                                  "#A8D1F7"
-                                ],
-                                "name": "People an hour",
-                                "type": "custom"
-                              },
-                              "sparkAlerts": false,
-                              "sparkCards": "hover",
-                              "sparkDotRadius": 6,
-                              "sparkFill": true,
-                              "sparkMin": 0,
-                              "sparkOverlap": "none",
-                              "sparkPublishCrosshair": true,
-                              "sparkScale": "common",
-                              "sparkSize": "S",
-                              "sparkUnit": " people/h"
-                            }
-                          },
-                          "id": "pedestrians",
-                          "type": "sparkline",
-                          "visualChannels": {
-                            "colorField": {
-                              "name": "people",
-                              "type": "integer"
-                            },
-                            "colorScale": "custom"
-                          }
-                        },
                         {
                           "config": {
                             "color": [
@@ -791,24 +844,203 @@
                             ],
                             "visConfig": {
                               "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    8.68,
+                                    "#5794F2"
+                                  ],
+                                  [
+                                    11.16,
+                                    "#FF9830"
+                                  ],
+                                  [
+                                    null,
+                                    "#E02F44"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#5794F2",
+                                  "#FF9830",
+                                  "#E02F44"
+                                ],
+                                "name": "Plus gauge",
+                                "type": "custom"
+                              },
                               "filled": true,
                               "fixedRadius": false,
-                              "opacity": 1,
+                              "opacity": 0.78,
                               "outline": true,
                               "radius": 7,
                               "radiusRange": [
                                 0,
                                 50
                               ],
+                              "rowsAsset": "auto",
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "sparkAlertWorst": false,
+                              "sparkAlerts": false,
+                              "sparkCardOpacity": 0.9,
+                              "sparkCards": "auto",
+                              "sparkChangeColours": "risingBad",
+                              "sparkCrossValue": true,
+                              "sparkCrosshair": true,
+                              "sparkDotRadius": 5,
+                              "sparkDots": true,
+                              "sparkFill": true,
+                              "sparkMax": "auto",
+                              "sparkMin": "auto",
+                              "sparkNoDataAfter": "auto",
+                              "sparkOverlap": "none",
+                              "sparkPinned": [],
+                              "sparkPublishCrosshair": true,
+                              "sparkScale": "common",
+                              "sparkSize": "S",
+                              "sparkTimeField": "auto",
+                              "sparkTooltip": false,
+                              "sparkUnit": "",
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
                               "thickness": 2
                             }
                           },
-                          "id": "climate",
-                          "type": "point",
+                          "id": "677pwig",
+                          "type": "sparkline",
                           "visualChannels": {
-                            "colorField": null,
-                            "colorScale": "quantile",
-                            "sizeField": null,
+                            "colorField": {
+                              "name": "temperature",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              30,
+                              150,
+                              190
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Pedestrians, hourly",
+                            "textLabel": [],
+                            "visConfig": {
+                              "angleDegrees": 0,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    1,
+                                    "#11439F"
+                                  ],
+                                  [
+                                    5,
+                                    "#297EE8"
+                                  ],
+                                  [
+                                    15,
+                                    "#95C6C9"
+                                  ],
+                                  [
+                                    20,
+                                    "#FECE5A"
+                                  ],
+                                  [
+                                    null,
+                                    "#FFDDBF"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#11439F",
+                                  "#297EE8",
+                                  "#95C6C9",
+                                  "#FECE5A",
+                                  "#FFDDBF"
+                                ],
+                                "name": "color.customPalette.custom.people",
+                                "type": "custom"
+                              },
+                              "declutter": false,
+                              "declutterSpacingPx": 40,
+                              "directionConvention": "towards",
+                              "fixedAngle": true,
+                              "fixedSize": false,
+                              "flowContext": {
+                                "camera": {
+                                  "bearing": -37.06870229007633,
+                                  "height": 629,
+                                  "latitude": -37.820018535861536,
+                                  "longitude": 144.9611845367905,
+                                  "pitch": 65.1183280804014,
+                                  "width": 1179,
+                                  "zoom": 15.274888329932033
+                                },
+                                "tallest": 0
+                              },
+                              "gradient": false,
+                              "gradientTail": 0.7,
+                              "opacity": 0.8,
+                              "outline": true,
+                              "outlineColor": [
+                                255,
+                                254,
+                                230
+                              ],
+                              "outlineThickness": 2,
+                              "pictureAnchor": "center",
+                              "pictureUrl": "",
+                              "shadow": false,
+                              "shadowDistance": 4,
+                              "shadowOpacity": 0.5,
+                              "sizeRange": [
+                                12,
+                                48
+                              ],
+                              "symbol": "ocha:person-1",
+                              "symbolSize": 30,
+                              "symbolSource": "shape",
+                              "symbolZoomRate": 0.5,
+                              "symbolZoomRef": 15.5,
+                              "symbolZoomScale": true,
+                              "upright": true
+                            }
+                          },
+                          "id": "35yfvll",
+                          "type": "symbol",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "people",
+                              "type": "integer"
+                            },
+                            "colorScale": "custom",
                             "sizeScale": "linear"
                           }
                         },
@@ -820,6 +1052,125 @@
                               224
                             ],
                             "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": false,
+                            "label": "Copy of Parking bays, now",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Free",
+                                    "#3D8FE0"
+                                  ],
+                                  [
+                                    "Occupied",
+                                    "#D0782A"
+                                  ],
+                                  [
+                                    "Silent for a week",
+                                    "#4B5563"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#3D8FE0",
+                                  "#D0782A",
+                                  "#4B5563"
+                                ],
+                                "name": "Bay",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.9,
+                              "outline": false,
+                              "radius": 4,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "aoofwcj",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "status",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              61,
+                              143,
+                              224
+                            ],
                             "columns": {
                               "lat": "latitude",
                               "lng": "longitude"
@@ -867,7 +1218,7 @@
                               }
                             ],
                             "visConfig": {
-                              "allowHover": true,
+                              "angleDegrees": 0,
                               "colorRange": {
                                 "category": "Custom",
                                 "colorMap": [
@@ -892,38 +1243,80 @@
                                 "name": "Bay",
                                 "type": "customOrdinal"
                               },
-                              "filled": true,
-                              "fixedRadius": false,
+                              "declutter": false,
+                              "declutterSpacingPx": 40,
+                              "directionConvention": "towards",
+                              "fixedAngle": true,
+                              "fixedSize": false,
+                              "flowContext": {
+                                "camera": {
+                                  "bearing": -37.06870229007633,
+                                  "height": 629,
+                                  "latitude": -37.820018535861536,
+                                  "longitude": 144.9611845367905,
+                                  "pitch": 65.1183280804014,
+                                  "width": 1179,
+                                  "zoom": 15.274888329932033
+                                },
+                                "tallest": 0
+                              },
+                              "gradient": false,
+                              "gradientTail": 0.7,
                               "opacity": 0.9,
                               "outline": false,
-                              "radius": 4,
-                              "radiusRange": [
-                                0,
-                                50
+                              "outlineColor": [
+                                255,
+                                255,
+                                255
                               ],
-                              "thickness": 1
+                              "outlineThickness": 3,
+                              "pictureAnchor": "center",
+                              "pictureUrl": "",
+                              "shadow": true,
+                              "shadowDistance": 4,
+                              "shadowOpacity": 0.5,
+                              "sizeRange": [
+                                12,
+                                48
+                              ],
+                              "symbol": "temaki:bicycle_parked",
+                              "symbolSize": 15,
+                              "symbolSource": "shape",
+                              "symbolZoomRate": 0.15,
+                              "symbolZoomRef": 19.5,
+                              "symbolZoomScale": true,
+                              "upright": true
                             }
                           },
-                          "id": "bays",
-                          "type": "point",
+                          "id": "be94l7",
+                          "type": "symbol",
                           "visualChannels": {
                             "colorField": {
                               "name": "status",
                               "type": "string"
                             },
                             "colorScale": "customOrdinal",
-                            "sizeField": null,
                             "sizeScale": "linear"
                           }
                         }
                       ],
+                      "overlayBlending": "normal",
                       "splitMaps": []
                     }
                   },
                   "version": "v1"
                 },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 8,
                 "showSidePanel": false,
                 "timeSync": "off",
+                "tripLayerMode": "table",
                 "variableMappings": [
                   {
                     "field": "sensor",
@@ -933,7 +1326,7 @@
                 ]
               }
             },
-            "version": ""
+            "version": "1.0.0"
           }
         }
       },
@@ -1263,9 +1656,9 @@
               "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "prepareTimeSeries",
+                  "group": "prepareTimeSeries",
+                  "kind": "Transformation",
                   "spec": {
-                    "id": "prepareTimeSeries",
                     "options": {
                       "format": "multi"
                     }
@@ -1436,9 +1829,9 @@
               "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "prepareTimeSeries",
+                  "group": "prepareTimeSeries",
+                  "kind": "Transformation",
                   "spec": {
-                    "id": "prepareTimeSeries",
                     "options": {
                       "format": "multi"
                     }
@@ -1740,9 +2133,9 @@
               "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "prepareTimeSeries",
+                  "group": "prepareTimeSeries",
+                  "kind": "Transformation",
                   "spec": {
-                    "id": "prepareTimeSeries",
                     "options": {
                       "format": "multi"
                     }
