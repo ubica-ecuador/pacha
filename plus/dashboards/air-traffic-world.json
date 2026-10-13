@@ -13,9 +13,6 @@
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "legacyOptions": {
-            "type": "dashboard"
-          },
           "name": "Annotations \u0026 Alerts",
           "query": {
             "datasource": {
@@ -76,6 +73,19 @@
               "fieldConfig": {
                 "defaults": {
                   "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "short"
                 },
                 "overrides": []
@@ -382,6 +392,19 @@
               "fieldConfig": {
                 "defaults": {
                   "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "short"
                 },
                 "overrides": []
@@ -466,20 +489,111 @@
                 "mapConfig": {
                   "config": {
                     "mapState": {
-                      "bearing": 0,
+                      "bearing": 36.893778252114316,
                       "dragRotate": true,
-                      "latitude": 38,
-                      "longitude": -25,
-                      "pitch": 50,
-                      "zoom": 2.4
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 32.739986810725625,
+                      "longitude": -117.2036270536995,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 60,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 15.885202961439253
                     },
                     "mapStyle": {
-                      "styleType": "dark-matter"
+                      "backgroundColor": [
+                        14,
+                        14,
+                        14
+                      ],
+                      "mapStyles": {},
+                      "styleType": "grafana-satellite-terrain",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
                     },
                     "visState": {
                       "animationConfig": {
                         "speed": 1
                       },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
                       "filters": [
                         {
                           "animationWindow": "incremental",
@@ -497,10 +611,14 @@
                             "interval": "1-minute",
                             "type": "histogram"
                           },
-                          "speed": 1,
+                          "speed": 0.227,
                           "syncTimelineMode": 1,
                           "timezone": "UTC",
                           "type": "timeRange",
+                          "value": [
+                            1791862214662,
+                            1791862381814.3523
+                          ],
                           "view": "minified"
                         }
                       ],
@@ -513,9 +631,12 @@
                           "enabled": false
                         },
                         "geocoder": {
-                          "enabled": false
+                          "enabled": false,
+                          "limitSearch": false
                         },
                         "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
                           "config": {
                             "compareMode": false,
                             "compareType": "absolute",
@@ -539,12 +660,34 @@
                               ]
                             }
                           },
-                          "enabled": true
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "4sz5qoyt": [],
+                            "grafana-A": [
+                              {
+                                "name": "icao24"
+                              },
+                              {
+                                "name": "flight"
+                              },
+                              {
+                                "name": "model"
+                              },
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              }
+                            ]
+                          }
                         }
                       },
                       "layerBlending": "normal",
                       "layerOrder": [
-                        "aircraft"
+                        "aircraft",
+                        "5w4zj37"
                       ],
                       "layers": [
                         {
@@ -569,22 +712,54 @@
                             ],
                             "isVisible": true,
                             "label": "Aircraft",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
                             "visConfig": {
                               "allowHover": true,
                               "billboard": false,
                               "colorRange": {
                                 "category": "Uber",
                                 "colors": [
-                                  "#2C7BB6",
-                                  "#00A6CA",
-                                  "#00CCBC",
-                                  "#90EB9D",
-                                  "#FFFF8C",
-                                  "#F9D057",
-                                  "#F29E2E",
-                                  "#E76818"
+                                  "#37535E",
+                                  "#396A76",
+                                  "#38828C",
+                                  "#3A9B9E",
+                                  "#52B3A8",
+                                  "#86C8A9",
+                                  "#B7DBB1",
+                                  "#E5EEC1"
                                 ],
-                                "name": "Altitude",
+                                "name": "Ocean Green",
                                 "type": "sequential"
                               },
                               "filled": true,
@@ -592,9 +767,11 @@
                               "fleetAltitudeField": "altitude_m",
                               "fleetAssetField": "icao24",
                               "fleetCard": true,
+                              "fleetCardField": "speed",
                               "fleetCardMinutes": 60,
                               "fleetCardOpacity": 0.9,
                               "fleetCardSize": "M",
+                              "fleetCardUnit": "",
                               "fleetCardWindow": "auto",
                               "fleetChangeColours": "neutral",
                               "fleetCrossValue": true,
@@ -605,7 +782,7 @@
                               "fleetGhost": false,
                               "fleetHeadingField": "track",
                               "fleetHeadingFrom": "auto",
-                              "fleetIcons": "{\"\": {\"preset\": \"plane\"}}",
+                              "fleetIcons": "{\"\":{\"silhouette\":\"plane\",\"preset\":\"none\"}}",
                               "fleetLabel": "none",
                               "fleetLabelColor": [
                                 255,
@@ -616,9 +793,12 @@
                               "fleetLabelOutline": true,
                               "fleetLabelSize": 12,
                               "fleetMarker": "silhouette",
-                              "fleetModelColours": "status",
+                              "fleetModelColours": "beacon",
                               "fleetOrbitSecs": 60,
-                              "fleetPinned": [],
+                              "fleetPinned": [
+                                "a0a8da",
+                                "a577d4"
+                              ],
                               "fleetPublishCrosshair": false,
                               "fleetPulseBy": "auto",
                               "fleetPulseCycle": 3,
@@ -630,13 +810,13 @@
                               "fleetRemember": "auto",
                               "fleetRememberMin": 30,
                               "fleetShadow": true,
-                              "fleetSize": 22,
+                              "fleetSize": 30,
                               "fleetSmooth": true,
                               "fleetSmoothMs": 1000,
                               "fleetSpeedField": "ground_speed",
                               "fleetSpeedUnit": "kt",
                               "fleetStaleAfter": 5,
-                              "fleetStatusFrom": "column",
+                              "fleetStatusFrom": "derived",
                               "fleetStem": true,
                               "fleetStopSpeed": 30,
                               "fleetTimeField": "time",
@@ -645,22 +825,27 @@
                               "fleetTrailAnimate": false,
                               "fleetTrailDashLength": 0.5,
                               "fleetTrailFade": true,
+                              "fleetTrailMode": "fleet",
                               "fleetTrailOpacity": 0.8,
-                              "fleetTrailShow": true,
+                              "fleetTrailShow": false,
                               "fleetTrailSpacing": 18,
                               "fleetTrailStyle": "comets",
                               "fleetTrailWidth": 2,
+                              "fleetTripsGap": 0,
+                              "fleetTripsTrail": 24,
                               "fleetTypeField": "none",
                               "fleetZoomRate": 0.35,
                               "fleetZoomRef": 6,
                               "fleetZoomScale": true,
-                              "opacity": 0.9,
+                              "opacity": 1,
                               "outline": false,
                               "radius": 10,
                               "radiusRange": [
                                 0,
                                 50
                               ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
                               "strokeColorRange": {
                                 "category": "Uber",
                                 "colors": [
@@ -690,11 +875,98 @@
                             "sizeScale": "linear",
                             "strokeColorScale": "quantile"
                           }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {},
+                            "dataId": "4sz5qoyt",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": false,
+                            "label": "Google Photorealistic 3D",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "altitudeOffset": 0,
+                              "groundTileset": false,
+                              "opacity": 1,
+                              "pointSize": 2
+                            }
+                          },
+                          "id": "5w4zj37",
+                          "type": "tile3d",
+                          "visualChannels": {}
                         }
                       ],
+                      "overlayBlending": "normal",
                       "splitMaps": []
                     }
                   },
+                  "datasets": [
+                    {
+                      "data": {
+                        "allData": [],
+                        "color": [
+                          0,
+                          92,
+                          255
+                        ],
+                        "disableDataOperation": true,
+                        "fields": [],
+                        "id": "4sz5qoyt",
+                        "label": "Google Photorealistic 3D",
+                        "metadata": {
+                          "format": "rows",
+                          "id": "4sz5qoyt",
+                          "label": "Google Photorealistic 3D",
+                          "tile3dProvider": "google",
+                          "tile3dUrl": "https://tile.googleapis.com/v1/3dtiles/root.json"
+                        },
+                        "type": "tile-3d"
+                      },
+                      "version": "v1"
+                    }
+                  ],
                   "version": "v1"
                 },
                 "peerTimeSync": false,
@@ -704,6 +976,7 @@
                 "rasterBands": "",
                 "rasterColormap": "",
                 "rasterPainted": false,
+                "saveRequest": 2,
                 "showSidePanel": false,
                 "timeSync": "toMap",
                 "tripLayerMode": "table",
@@ -716,7 +989,7 @@
                 ]
               }
             },
-            "version": "0.1.0"
+            "version": "1.0.0"
           }
         }
       },
@@ -888,7 +1161,7 @@
                 "variableMappings": []
               }
             },
-            "version": "0.1.0"
+            "version": "1.0.0"
           }
         }
       },
@@ -1023,7 +1296,7 @@
                 ]
               }
             },
-            "version": "0.1.0"
+            "version": "1.0.0"
           }
         }
       },
@@ -1602,7 +1875,8 @@
           "name": "zscale",
           "options": [],
           "query": "1,10,20,50,100",
-          "skipUrlSync": false
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
         }
       },
       {
