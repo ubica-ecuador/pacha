@@ -54,11 +54,16 @@
                 "overrides": []
               },
               "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
                 "content": "### Where the data comes from\n\nThe City of Melbourne publishes what its sensors measure as open data, on [its portal](https://data.melbourne.vic.gov.au/), with no key. This dashboard reads three of its networks, in the city centre and around it:\n\n- **[On-street parking bay sensors](https://data.melbourne.vic.gov.au/explore/dataset/on-street-parking-bay-sensors/)**: a sensor in the road surface under each of some 6,300 bays says whether a car is over it. The portal holds each bay's latest state and when it last changed, refreshed every few minutes. The streets come from the [bays' register](https://data.melbourne.vic.gov.au/explore/dataset/on-street-parking-bays/) and, failing that, from the [bay's parking zone](https://data.melbourne.vic.gov.au/explore/dataset/parking-zones-linked-to-street-segments/).\n- **[Pedestrian counting system](https://data.melbourne.vic.gov.au/explore/dataset/pedestrian-counting-system-monthly-counts-per-hour/)**: about 100 counters (laser and thermal sensors on poles and awnings) count the people walking past each way, hour by hour, around the clock since 2009. The counts are loaded once a day, so the latest hours are a day or two old.\n- **[Microclimate sensors](https://data.melbourne.vic.gov.au/explore/dataset/microclimate-sensors-data/)**: a dozen stations on poles and rooftops measure temperature, humidity, wind, fine particles and noise about every 15 minutes. Only some still report: those silent in the time range do not show.\n\n### How to read it\n\n- A bay's state is now; the time range does not change it. A sensor that has not changed in a week is shown grey and left out of the counts: in the city centre a bay is not taken, or free, that long, so the sensor is taken as broken or switched off. A bay with no sensor does not show at all.\n- The pedestrian counts are the time range's, up to its last 31 days; the microclimate readings, up to its last 14.\n- Noise is in decibels (dB): 55 dB is a quiet street, 70 dB a busy one with traffic.\n\n### How it works\n\nGrafana's DuckDB reads the three datasets through the stack's gateway, which keeps each a while (the bays and the microclimate two minutes, the counts an hour), so the portal is asked once whoever is looking. DuckDB running in your browser (the Chaski data source) then answers every panel and every click. The map is the Kepler Geospatial Maps Plus panel, with its Sparkline layer. The dashboard reloads every five minutes.",
                 "mode": "markdown"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -218,7 +223,23 @@
                     "cellOptions": {
                       "type": "auto"
                     },
+                    "footer": {
+                      "reducers": []
+                    },
                     "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -328,6 +349,19 @@
               "fieldConfig": {
                 "defaults": {
                   "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "locale"
                 },
                 "overrides": []
@@ -337,6 +371,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -344,10 +379,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -390,7 +427,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -398,6 +449,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -405,10 +457,12 @@
                   "fields": "/^Day$/",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -456,7 +510,20 @@
                     "fixedColor": "#3D8FE0",
                     "mode": "fixed"
                   },
-                  "decimals": 0
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
                 },
                 "overrides": []
               },
@@ -465,6 +532,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -472,10 +540,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -573,7 +643,7 @@
                 "mapConfig": {
                   "config": {
                     "mapState": {
-                      "bearing": -37.06870229007633,
+                      "bearing": -42.5648854961832,
                       "dragRotate": true,
                       "globe": {
                         "config": {
@@ -622,15 +692,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": -37.820018535861536,
-                      "longitude": 144.9611845367905,
+                      "latitude": -37.814026384185716,
+                      "longitude": 144.96473922128186,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_3D",
                       "maxPitch": 85,
-                      "pitch": 65.1183280804014,
+                      "pitch": 55.6390036627284,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 15.274888329932033
+                      "zoom": 14.378218117914779
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -649,7 +719,7 @@
                         "3d building": true
                       },
                       "visibleLayerGroups": {
-                        "3d building": false,
+                        "3d building": true,
                         "border": false,
                         "building": false,
                         "label": false,
@@ -778,12 +848,152 @@
                       },
                       "layerBlending": "normal",
                       "layerOrder": [
+                        "5mbuxz",
                         "677pwig",
                         "35yfvll",
-                        "aoofwcj",
                         "be94l7"
                       ],
                       "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              242,
+                              242,
+                              242
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Copy of Microclimate stations, latest reading",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "reading",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  10,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 14,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    8.68,
+                                    "#5794F2"
+                                  ],
+                                  [
+                                    11.16,
+                                    "#FF9830"
+                                  ],
+                                  [
+                                    null,
+                                    "#E02F44"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#5794F2",
+                                  "#FF9830",
+                                  "#E02F44"
+                                ],
+                                "name": "Plus gauge",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.78,
+                              "outline": true,
+                              "radius": 7,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "surfaceBands": true,
+                              "surfaceBreaks": "",
+                              "surfaceExtent": "rectangle",
+                              "surfaceFade": true,
+                              "surfaceIsolineWidth": 1,
+                              "surfaceIsolines": true,
+                              "surfaceLabelSize": 11,
+                              "surfaceLabels": true,
+                              "surfaceMargin": 0,
+                              "surfaceMode": "interpolate",
+                              "surfaceNeighbours": "auto",
+                              "surfacePower": 2,
+                              "surfaceRadius": 500,
+                              "surfaceReduce": "last",
+                              "surfaceResolution": "medium",
+                              "surfaceVehicle": ":auto",
+                              "thickness": 2
+                            }
+                          },
+                          "id": "5mbuxz",
+                          "type": "surface",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "temperature",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
                         {
                           "config": {
                             "color": [
@@ -949,7 +1159,7 @@
                               26,
                               255
                             ],
-                            "isVisible": true,
+                            "isVisible": false,
                             "label": "Pedestrians, hourly",
                             "textLabel": [],
                             "visConfig": {
@@ -995,13 +1205,13 @@
                               "fixedSize": false,
                               "flowContext": {
                                 "camera": {
-                                  "bearing": -37.06870229007633,
-                                  "height": 629,
-                                  "latitude": -37.820018535861536,
-                                  "longitude": 144.9611845367905,
-                                  "pitch": 65.1183280804014,
+                                  "bearing": -42.5648854961832,
+                                  "height": 777,
+                                  "latitude": -37.814026384185716,
+                                  "longitude": 144.96473922128186,
+                                  "pitch": 55.6390036627284,
                                   "width": 1179,
-                                  "zoom": 15.274888329932033
+                                  "zoom": 14.378218117914779
                                 },
                                 "tallest": 0
                               },
@@ -1051,7 +1261,6 @@
                               143,
                               224
                             ],
-                            "columnMode": "points",
                             "columns": {
                               "lat": "latitude",
                               "lng": "longitude"
@@ -1065,125 +1274,6 @@
                               255
                             ],
                             "isVisible": false,
-                            "label": "Copy of Parking bays, now",
-                            "textLabel": [
-                              {
-                                "alignment": "center",
-                                "anchor": "start",
-                                "background": false,
-                                "backgroundColor": [
-                                  0,
-                                  0,
-                                  200,
-                                  255
-                                ],
-                                "collisionEnabled": false,
-                                "color": [
-                                  255,
-                                  255,
-                                  255
-                                ],
-                                "offset": [
-                                  0,
-                                  0
-                                ],
-                                "outlineColor": [
-                                  255,
-                                  0,
-                                  0,
-                                  255
-                                ],
-                                "outlineWidth": 0,
-                                "size": 18,
-                                "weight": 400
-                              }
-                            ],
-                            "visConfig": {
-                              "allowHover": true,
-                              "billboard": false,
-                              "colorRange": {
-                                "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    "Free",
-                                    "#3D8FE0"
-                                  ],
-                                  [
-                                    "Occupied",
-                                    "#D0782A"
-                                  ],
-                                  [
-                                    "Silent for a week",
-                                    "#4B5563"
-                                  ]
-                                ],
-                                "colors": [
-                                  "#3D8FE0",
-                                  "#D0782A",
-                                  "#4B5563"
-                                ],
-                                "name": "Bay",
-                                "type": "customOrdinal"
-                              },
-                              "filled": true,
-                              "fixedRadius": false,
-                              "opacity": 0.9,
-                              "outline": false,
-                              "radius": 4,
-                              "radiusRange": [
-                                0,
-                                50
-                              ],
-                              "showHighlightColor": true,
-                              "showNeighborOnHover": false,
-                              "strokeColorRange": {
-                                "category": "Uber",
-                                "colors": [
-                                  "#4C0035",
-                                  "#880030",
-                                  "#B72F15",
-                                  "#D6610A",
-                                  "#EF9100",
-                                  "#FFC300"
-                                ],
-                                "name": "Global Warming",
-                                "type": "sequential"
-                              },
-                              "thickness": 1
-                            }
-                          },
-                          "id": "aoofwcj",
-                          "type": "point",
-                          "visualChannels": {
-                            "colorField": {
-                              "name": "status",
-                              "type": "string"
-                            },
-                            "colorScale": "customOrdinal",
-                            "sizeScale": "linear",
-                            "strokeColorScale": "quantile"
-                          }
-                        },
-                        {
-                          "config": {
-                            "color": [
-                              61,
-                              143,
-                              224
-                            ],
-                            "columns": {
-                              "lat": "latitude",
-                              "lng": "longitude"
-                            },
-                            "dataId": "grafana-A",
-                            "hidden": false,
-                            "highlightColor": [
-                              252,
-                              242,
-                              26,
-                              255
-                            ],
-                            "isVisible": true,
                             "label": "Parking bays, now",
                             "textLabel": [
                               {
@@ -1250,13 +1340,13 @@
                               "fixedSize": false,
                               "flowContext": {
                                 "camera": {
-                                  "bearing": -37.06870229007633,
-                                  "height": 629,
-                                  "latitude": -37.820018535861536,
-                                  "longitude": 144.9611845367905,
-                                  "pitch": 65.1183280804014,
+                                  "bearing": -42.5648854961832,
+                                  "height": 777,
+                                  "latitude": -37.814026384185716,
+                                  "longitude": 144.96473922128186,
+                                  "pitch": 55.6390036627284,
                                   "width": 1179,
-                                  "zoom": 15.274888329932033
+                                  "zoom": 14.378218117914779
                                 },
                                 "tallest": 0
                               },
@@ -1313,7 +1403,7 @@
                 "rasterBands": "",
                 "rasterColormap": "",
                 "rasterPainted": false,
-                "saveRequest": 8,
+                "saveRequest": 9,
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table",
@@ -1371,6 +1461,19 @@
               "fieldConfig": {
                 "defaults": {
                   "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "dB"
                 },
                 "overrides": []
@@ -1380,6 +1483,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -1387,10 +1491,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -1435,6 +1541,21 @@
               "fieldConfig": {
                 "defaults": {
                   "decimals": 0,
+                  "max": 100,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "percent"
                 },
                 "overrides": []
@@ -1444,6 +1565,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -1451,10 +1573,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -1502,7 +1626,20 @@
                     "fixedColor": "#D0782A",
                     "mode": "fixed"
                   },
-                  "decimals": 0
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
                 },
                 "overrides": []
               },
@@ -1511,6 +1648,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -1518,10 +1656,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -1605,6 +1745,19 @@
                   },
                   "displayName": "Every counter",
                   "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "short"
                 },
                 "overrides": []
@@ -1715,6 +1868,19 @@
                     }
                   },
                   "displayName": "${__field.labels.place}",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "conμgm3"
                 },
                 "overrides": []
@@ -1777,7 +1943,20 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
-                  "decimals": 0
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
                 },
                 "overrides": []
               },
@@ -1786,6 +1965,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -1793,10 +1973,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -1888,6 +2070,19 @@
                     }
                   },
                   "displayName": "${__field.labels.place}",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "dB"
                 },
                 "overrides": []
@@ -1955,7 +2150,23 @@
                     "cellOptions": {
                       "type": "auto"
                     },
+                    "footer": {
+                      "reducers": []
+                    },
                     "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -2081,6 +2292,19 @@
               "fieldConfig": {
                 "defaults": {
                   "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "celsius"
                 },
                 "overrides": []
@@ -2090,6 +2314,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -2097,10 +2322,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -2192,6 +2419,19 @@
                     }
                   },
                   "displayName": "${__field.labels.place}",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "celsius"
                 },
                 "overrides": []
