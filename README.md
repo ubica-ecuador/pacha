@@ -2,16 +2,34 @@
 
 *Pacha* is Quechua for the world and time as one.
 
-Spatiotemporal visualization in Grafana, in one command. The stack bakes in:
+Spatiotemporal visualization in Grafana, in one command: maps of moving things, sensors and
+imagery, queried with DuckDB on the server or in the browser, from data read where it is
+published.
 
-- the [Kepler map panel](https://github.com/ubica-ecuador/keplergl-grafana-panel);
-- [Chaski](https://github.com/ubica-ecuador/chaski), DuckDB in the browser;
-- DuckDB and Infinity on the server;
-- Business Charts, Business Table, Business Text and Business Variable.
-
-A TiTiler serves the imagery.
+**🌍 [Live gallery](https://pacha.ubica.dev)**: every dashboard in this repository, running.
+No account needed.
 
 > Not affiliated with Grafana Labs.
+
+## The plugins
+
+Pacha is the showcase and the test bench of three Grafana plugins made by
+[Ubica](https://github.com/ubica-ecuador):
+
+| Plugin | What it is | License |
+|--------|------------|---------|
+| [Kepler Geospatial Maps](https://github.com/ubica-ecuador/keplergl-grafana-panel) | [kepler.gl](https://kepler.gl) maps in a Grafana panel, fed by any data source: points, trips, origin–destination flows, H3, cloud-native imagery. [Documentation](https://docs.ubica.dev) | Apache-2.0, baked into the image |
+| [Chaski](https://github.com/ubica-ecuador/chaski) | DuckDB in the browser (DuckDB-WASM) as a Grafana data source: load a dashboard's data once, then filter, group and join it in milliseconds. | Apache-2.0, baked into the image |
+| [Kepler Geospatial Maps Plus](https://docs.ubica.dev/plus/) | The commercial edition of the Kepler panel, for operations maps: gauges, sparkline cards, live fleets, network links and 3D tiles, each drawn with its own time series. | Commercial, closed source; **not** in this repository or its images |
+
+Around them the image bakes in the
+[DuckDB data source](https://github.com/motherduckdb/grafana-duckdb-datasource) for queries on
+the server, [Infinity](https://github.com/grafana/grafana-infinity-datasource), and
+[Business Charts](https://grafana.com/grafana/plugins/volkovlabs-echarts-panel/), Table, Text and Variable. A
+[TiTiler](https://developmentseed.org/titiler/) serves the imagery.
+
+The free stack runs every dashboard in `dashboards/`. The dashboards in `plus/dashboards/` need
+Kepler Plus; without it they are not loaded (see [Kepler Plus](#kepler-plus)).
 
 ## Run it
 
@@ -50,11 +68,18 @@ docker run --rm --network host --shm-size=2g -u "$(id -u):$(id -g)" -e HOME=/tmp
   node scripts/screenshots.mjs --base http://127.0.0.1:3000 [uid ...]
 ```
 
+### Building dashboards with an AI agent
+
+[AGENTS.md](AGENTS.md) holds the rules for agents working in this repository, and the
+[build-dashboard skill](.claude/skills/build-dashboard/SKILL.md) the recipes and known
+pitfalls of every engine and panel. The `mcp` service lets an agent read dashboards and run
+panel queries.
+
 ## What runs
 
 | Service   | What it does                                     | Reached at                        |
 |-----------|--------------------------------------------------|-----------------------------------|
-| `gateway` | nginx; the only published port                   | `:3000`                           |
+| `gateway` | nginx; the only published port. Caches the public feeds and adds their keys | `:3000`                           |
 | `grafana` | Grafana 13.2.1 with the plugins baked in         | `/`                               |
 | `titiler` | Tiles for COG, Zarr and Icechunk                 | `/titiler/`                       |
 | `mcp`     | [mcp-grafana](https://github.com/grafana/mcp-grafana) for AI agents | `http://127.0.0.1:8000/mcp`, `Authorization: Bearer $PACHA_MCP_TOKEN` |
@@ -76,10 +101,23 @@ Grafana's DuckDB only (`http://feeds/datasets/`). geolife-mobility needs
 about three minutes (313 MB download, 8 GB of memory for DuckDB). Until it runs, that
 dashboard's panels show errors.
 
+## Kepler Plus
+
+Kepler Plus is not part of this repository or of the images it builds. `compose.plus.yaml` is
+an overlay that mounts a copy of the Plus app you already have beside the baked plugins, and
+turns on the `plus` Git Sync repository, which loads `plus/dashboards/` into a Plus folder:
+
+```bash
+PLUS_DIST=/path/to/ubica-keplerplus-app docker compose -f compose.yaml -f compose.plus.yaml up --wait
+```
+
+Without the overlay the Plus folder is not created and the free stack is complete on its own.
+To get Plus, see [docs.ubica.dev/plus](https://docs.ubica.dev/plus/).
+
 ## Working on the Kepler panel
 
 ```bash
-KEPLER_DIST=../kepler-grafana/dist docker compose -f compose.yaml -f compose.dev.yaml up --wait
+KEPLER_DIST=../keplergl-grafana-panel/dist docker compose -f compose.yaml -f compose.dev.yaml up --wait
 ```
 
 To bake main of the Kepler repo into the image instead of its pinned release,
@@ -101,8 +139,10 @@ docker compose up --wait && npm run test:stack
 ```
 
 The image tests expect the release channel; unset `KEPLER_PANEL_CHANNEL` (or remove it from `.env`)
-before running them.
+before running them. The Plus dashboards' tests skip when Plus is not mounted.
 
 ## License
 
-Apache-2.0 ([LICENSE](LICENSE)). The images bundle Grafana, its plugins, DuckDB and TiTiler, each under its own license.
+Apache-2.0 ([LICENSE](LICENSE)), for the code and the dashboards in this repository. The images
+bundle Grafana, its plugins, DuckDB and TiTiler, each under its own license. Kepler Geospatial
+Maps Plus is not covered: it is a separate, commercial product.

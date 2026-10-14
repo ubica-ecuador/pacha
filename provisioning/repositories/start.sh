@@ -12,7 +12,6 @@
 # The healthcheck asks for MARKER as well as /api/health, so `docker compose
 # up --wait` fails when the repositories were not applied. Why goes to
 # Grafana's log, prefixed "pacha-repositories:".
-# See docs/superpowers/specs/2026-10-07-dashboards-git-sync-design.md.
 set -u
 
 HERE=/etc/grafana/provisioning/repositories
