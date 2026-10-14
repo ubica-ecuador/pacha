@@ -57,8 +57,9 @@ Examples: `caltrans-la-cameras`, `agi-hq-grid-cameras`.
 `surfaceMaxDistance`, `surfaceExtent` hull|rectangle, `surfaceMargin`, `surfaceBreaks`
 ("2, 5, 10": fixed breaks keep frames comparable while playing), `surfaceUnderBuildings` (true:
 drawn inside the base map under its 3D buildings, on styles that have them such as
-`openfreemap-liberty` or MapTiler's; not with Relief), `surfaceAltitude` (metres above the ground,
-0). Example: `air-quality-amsterdam`.
+`openfreemap-liberty` or MapTiler's; not with Relief), `surfaceDrape` (true: with a `tile3d` layer
+on the map, laid over the ground of its tiles, buildings standing through it; flat otherwise),
+`surfaceAltitude` (metres above the ground, 0). Example: `air-quality-amsterdam`.
 
 **sparkline**: a card per place with its series. Needs time (`sparkTimeField` auto);
 `colorField` is the plotted value. `sparkScale` common|perSite, `sparkMin|Max`, `sparkUnit`,
