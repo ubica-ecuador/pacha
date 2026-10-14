@@ -2936,7 +2936,7 @@
                           "kind": "ElementReference",
                           "name": "panel-map"
                         },
-                        "height": 24,
+                        "height": 19,
                         "width": 16,
                         "x": 0,
                         "y": 0
@@ -3027,7 +3027,7 @@
                           "kind": "ElementReference",
                           "name": "panel-states"
                         },
-                        "height": 7,
+                        "height": 5,
                         "width": 8,
                         "x": 16,
                         "y": 9
@@ -3040,10 +3040,10 @@
                           "kind": "ElementReference",
                           "name": "panel-jam"
                         },
-                        "height": 8,
+                        "height": 5,
                         "width": 8,
                         "x": 16,
-                        "y": 16
+                        "y": 14
                       }
                     }
                   ]
