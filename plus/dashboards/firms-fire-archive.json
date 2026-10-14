@@ -1,0 +1,1283 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "firms-fire-archive"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "Every active fire NASA satellites detected since 2000, as the A5 cells of the Portolan FIRMS mirror read in the browser: a time brush over years or days, a map of cells, countries and a fire calendar that filter one another.",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 10,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**NASA FIRMS active fire detections** since November 2000, from the\n[Portolan mirror](https://portolan-mirrors.github.io/firms-catalog/) on\n[Source Cooperative](https://source.coop/portolan-mirrors/firms-catalog) (CC0-1.0; NASA LANCE FIRMS is the producer and\nthe authority). This dashboard reads the aggregates the mirror builds beside the 630 million detections: each A5 cell of\nresolution 5 with its count per day for the current year (`year=YYYY/aggregate-r5.parquet`) and per month for the whole\nrecord (`alltime-r5.parquet`), the same grid and buckets the\n[Portolan FIRMS explorer](https://portolan-mirrors.github.io/firms-catalog/) draws from its PMTiles. Your browser reads\nthem with Chaski; the server only turns the cell outlines into GeoJSON and gives each cell a country\n([Natural Earth](https://www.naturalearthdata.com/) 1:110m, the one covering most of it).\n\n- **Counts depend on the fleet.** MODIS on Terra (2000) and Aqua (2002), then VIIRS on Suomi-NPP (2012), NOAA-20 (2018)\n  and NOAA-21 (2024): each adds overpasses, and the count of 2012 is 5.5 times that of 2011 with no change in fire.\n  The calendar shows shares within each year for that reason.\n- **The aggregates hold counts only**, per cell and bucket: no satellite, day or night, or fire radiative power per\n  day. Those need the detections themselves.\n- **The all-time file is rebuilt less often** than the year files, so the current year comes from its own file, by\n  day and rolled up to months.\n\n**Credits.** The mirror, its A5 aggregates and the explorer that inspired this dashboard are the work of **Chris Holmes** ([Portolan](https://www.portolan-sdi.org)), who tells how he built them in [Building Portolan: FIRMS](https://www.portolan-sdi.org/es/blog/building-portolan-firms).",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-brush": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Detections per bucket of the chosen archive (days of this year, or months\n-- since 2000) in the picked country or drawn area; in grey behind, every\n-- detection on Earth. On the monthly archive, a tick marks each VIIRS\n-- satellite joining the fleet: counts jump there with no change in fire.\nWITH sel AS (\n  SELECT CASE WHEN w.t1 \u003e r.lo AND w.t0 \u003c= r.hi THEN w.t0 END AS t0,\n         CASE WHEN w.t1 \u003e r.lo AND w.t0 \u003c= r.hi THEN w.t1 END AS t1\n  FROM (SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1) AS w,\n       (SELECT min(time) AS lo, max(time) AS hi FROM $counts WHERE level = $archive) AS r\n),\narea AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n),\nx AS (\n  SELECT time, n, (($country = '' OR country = $country)\n    AND (len(area.xs) = 0 OR (longitude BETWEEN list_min(area.xs) AND list_max(area.xs)\n      AND latitude BETWEEN list_min(area.ys) AND list_max(area.ys)\n      AND list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n        CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n              AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n             THEN 1 ELSE 0 END)) % 2 = 1))) AS keep\n  FROM $counts AS b JOIN $cells AS c USING (a5), area\n  WHERE level = $archive\n)\nSELECT time, sum(n) FILTER (WHERE keep)::DOUBLE AS \"Detections\", sum(n)::DOUBLE AS \"Everywhere\",\n       NULL::DOUBLE AS \"A VIIRS satellite joins\"\nFROM x\nGROUP BY time\nUNION ALL\nSELECT t, NULL, NULL, 1\nFROM (VALUES (TIMESTAMP '2012-01-20'), (TIMESTAMP '2018-04-01'), (TIMESTAMP '2024-01-17')) AS v(t)\nWHERE $archive = 'month'\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Detections in each bucket of the chosen archive, in the picked country or drawn area; in grey behind, every detection on Earth. On the monthly archive the ticks under the track mark the three VIIRS satellites joining (2012, 2018, 2024): each one multiplies the count with no change in fire. Drag across the track to pick a window; the map, the ranking and the figures keep that window. The bar stays pinned at the top once the panel scrolls away.",
+          "id": 1,
+          "links": [],
+          "title": "Detections, ${archive:text}",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Everywhere"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.context",
+                        "value": true
+                      },
+                      {
+                        "id": "custom.aggregation",
+                        "value": "sum"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "rgba(128, 128, 128, 0.35)",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Detections"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "bars"
+                      },
+                      {
+                        "id": "custom.aggregation",
+                        "value": "sum"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#F08C00",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "A VIIRS satellite joins"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "marks"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#8AB8FF",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "bucket": "auto",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "domain": "data",
+                "hatchGaps": true,
+                "loop": false,
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "scrolled",
+                "pinnedHeight": 52,
+                "pinnedPosition": "top",
+                "publishIntervalMs": 1200,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showReadout": true,
+                "snapTo": "buckets",
+                "stepMs": 600,
+                "variables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "windowMode": "free"
+              }
+            },
+            "version": "1.1.0"
+          }
+        }
+      },
+      "panel-calendar": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every month since November 2000 in the picked country and the drawn area,\n-- with its share of the detections of its year. Always the monthly archive,\n-- never the brushed window.\nWITH sel AS (\n  SELECT CASE WHEN w.t1 \u003e r.lo AND w.t0 \u003c= r.hi THEN w.t0 END AS t0,\n         CASE WHEN w.t1 \u003e r.lo AND w.t0 \u003c= r.hi THEN w.t1 END AS t1\n  FROM (SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1) AS w,\n       (SELECT min(time) AS lo, max(time) AS hi FROM $counts WHERE level = $archive) AS r\n),\narea AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n),\nx AS (\n  SELECT b.level, b.time, b.n, b.a5, c.country, c.continent, c.latitude, c.longitude\n  FROM $counts AS b JOIN $cells AS c USING (a5), sel, area\n  WHERE ($country = '' OR country = $country)\n  AND (len(area.xs) = 0 OR (longitude BETWEEN list_min(area.xs) AND list_max(area.xs)\n    AND latitude BETWEEN list_min(area.ys) AND list_max(area.ys)\n    AND list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n      CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n            AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n           THEN 1 ELSE 0 END)) % 2 = 1))\n),\nm AS (\n  SELECT year(time) AS year, month(time) AS month, sum(n)::DOUBLE AS detections\n  FROM x\n  WHERE level = 'month'\n  GROUP BY ALL\n)\nSELECT year::DOUBLE AS year, month::DOUBLE AS month, detections,\n       detections / sum(detections) OVER (PARTITION BY year) AS share\nFROM m\nORDER BY year, month"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each row is a year since 2000 and each cell the share of that year falling in that month, in the picked country or drawn area: the fire season, comparable across years although the satellite fleet grew. 2000 starts in November and the current year is partial. Months in the brushed window are outlined. Click a cell to brush that month.",
+          "id": 8,
+          "links": [],
+          "title": "Fire calendar: share of each year by month",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// The fire calendar: one row per year, one column per month, each cell the\n// share of that year's detections that fell in that month. Shares rather than\n// counts, because the counts grow with every satellite NASA adds (VIIRS joined\n// in 2012, 2018 and 2024); a share compares seasons across the whole record.\n// It follows the country pick and the drawn area, not the time window, whose\n// months are outlined.\n//\n// Click a cell: the time brush moves to that month, on the daily archive for\n// the current year and the monthly one before it.\n// @constants begin\nconst T0 = 't0';\nconst T1 = 't1';\nconst ARCHIVE = 'archive';\nconst COLORS = ['#1F1F24', '#5C0A0A', '#9B1C1C', '#D9480F', '#F08C00', '#FCC419', '#FFF3BF'];\nconst MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];\n// @constants end\n\nconst chart = context.panel.chart;\nconst theme = context.grafana.theme;\nconst location = context.grafana.locationService;\nconst muted = theme.colors.text.secondary;\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst years = col('year').map(Number);\nconst months = col('month').map(Number);\nconst counts = col('detections').map(Number);\nconst shares = col('share').map(Number);\n\nconst first = years.length ? Math.min(...years) : 2000;\nconst last = years.length ? Math.max(...years) : 2000;\nconst rows = [];\nfor (let y = last; y \u003e= first; y--) { // newest first, drawn at the top by inverse\n  rows.push(String(y));\n}\nconst data = years.map((y, i) =\u003e [months[i] - 1, String(y), shares[i], counts[i]]);\n// The scale tops out at the largest share of a whole year: 2000 has only two\n// months, so its shares would flatten every other row. Larger ones clamp.\nconst monthsIn = {};\nyears.forEach((y) =\u003e (monthsIn[y] = (monthsIn[y] || 0) + 1));\nconst top = Math.max(0.0001, ...shares.filter((s, i) =\u003e monthsIn[years[i]] === 12));\n\n// ${t0} ${t1}: named literally so the outline follows the brush.\nconst t0 = Date.parse(context.grafana.replaceVariables('${' + T0 + '}'));\nconst t1 = Date.parse(context.grafana.replaceVariables('${' + T1 + '}'));\nconst inWindow = (y, m) =\u003e {\n  if (!Number.isFinite(t0) || !Number.isFinite(t1)) {\n    return false;\n  }\n  const start = Date.UTC(y, m, 1);\n  const end = Date.UTC(y, m + 1, 1);\n  return start \u003c t1 \u0026\u0026 end \u003e t0;\n};\nconst cells = data.map((v) =\u003e\n  inWindow(Number(v[1]), v[0]) ? { value: v, itemStyle: { borderColor: theme.colors.text.primary, borderWidth: 2 } } : v\n);\n\nconst thisYear = new Date().getUTCFullYear();\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const [m, y] = event.value;\n  const year = Number(y);\n  location.partial(\n    {\n      ['var-' + T0]: new Date(Date.UTC(year, m, 1)).toISOString(),\n      ['var-' + T1]: new Date(Date.UTC(year, m + 1, 1)).toISOString(),\n      ['var-' + ARCHIVE]: year === thisYear ? 'day' : 'month',\n    },\n    true\n  );\n});\n\nconst big = (v) =\u003e (v \u003e= 1e6 ? `${(v / 1e6).toFixed(1)} M` : v \u003e= 1e3 ? `${Math.round(v / 1e3)} k` : String(v));\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 16, top: 8, bottom: 48, containLabel: true },\n  tooltip: {\n    formatter: (p) =\u003e\n      `\u003cb\u003e${MONTHS[p.value[0]]} ${p.value[1]}\u003c/b\u003e\u003cbr/\u003e${(p.value[2] * 100).toFixed(1)} % of the year\u003cbr/\u003e${big(p.value[3])} detections`,\n  },\n  xAxis: { type: 'category', data: MONTHS, axisLabel: { color: muted }, axisTick: { show: false }, splitArea: { show: false } },\n  yAxis: { type: 'category', data: rows, inverse: true, axisLabel: { color: muted, fontSize: 10 }, axisTick: { show: false } },\n  visualMap: {\n    min: 0,\n    max: top,\n    calculable: false,\n    orient: 'horizontal',\n    left: 'center',\n    bottom: 0,\n    itemHeight: 160,\n    itemWidth: 10,\n    text: [`${(top * 100).toFixed(0)} % of the year`, '0'],\n    textStyle: { color: muted },\n    inRange: { color: COLORS },\n    dimension: 2, // the share; dimension 3 is the count\n  },\n  series: [\n    { type: 'heatmap', data: cells, cursor: 'pointer', itemStyle: { borderColor: 'rgba(0, 0, 0, 0.5)', borderWidth: 1 } },\n  ],\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-cells": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- A5 cells with at least one detection in the window, the picked country and the drawn area.\nWITH sel AS (\n  SELECT CASE WHEN w.t1 \u003e r.lo AND w.t0 \u003c= r.hi THEN w.t0 END AS t0,\n         CASE WHEN w.t1 \u003e r.lo AND w.t0 \u003c= r.hi THEN w.t1 END AS t1\n  FROM (SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1) AS w,\n       (SELECT min(time) AS lo, max(time) AS hi FROM $counts WHERE level = $archive) AS r\n),\narea AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n),\nx AS (\n  SELECT b.level, b.time, b.n, b.a5, c.country, c.continent, c.latitude, c.longitude\n  FROM $counts AS b JOIN $cells AS c USING (a5), sel, area\n  WHERE level = $archive\n  AND (sel.t0 IS NULL OR time \u003e= sel.t0) AND (sel.t1 IS NULL OR time \u003c sel.t1)\n  AND ($country = '' OR country = $country)\n  AND (len(area.xs) = 0 OR (longitude BETWEEN list_min(area.xs) AND list_max(area.xs)\n    AND latitude BETWEEN list_min(area.ys) AND list_max(area.ys)\n    AND list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n      CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n            AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n           THEN 1 ELSE 0 END)) % 2 = 1))\n)\nSELECT count(DISTINCT a5)::DOUBLE AS cells FROM x"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "A5 cells of about 200 km with at least one detection in the window, the picked country and the drawn area.",
+          "id": 5,
+          "links": [],
+          "title": "A5 cells burning",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FADE2A",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-countries": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Countries by detections in the window and the drawn area, with every filter\n-- but the country pick; the fifteen largest, and the picked one even when it\n-- is not. latitude/longitude: the middle of its fire, weighted by detections.\nWITH sel AS (\n  SELECT CASE WHEN w.t1 \u003e r.lo AND w.t0 \u003c= r.hi THEN w.t0 END AS t0,\n         CASE WHEN w.t1 \u003e r.lo AND w.t0 \u003c= r.hi THEN w.t1 END AS t1\n  FROM (SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1) AS w,\n       (SELECT min(time) AS lo, max(time) AS hi FROM $counts WHERE level = $archive) AS r\n),\narea AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n),\nx AS (\n  SELECT b.level, b.time, b.n, b.a5, c.country, c.continent, c.latitude, c.longitude\n  FROM $counts AS b JOIN $cells AS c USING (a5), sel, area\n  WHERE level = $archive\n  AND (sel.t0 IS NULL OR time \u003e= sel.t0) AND (sel.t1 IS NULL OR time \u003c sel.t1)\n  AND (len(area.xs) = 0 OR (longitude BETWEEN list_min(area.xs) AND list_max(area.xs)\n    AND latitude BETWEEN list_min(area.ys) AND list_max(area.ys)\n    AND list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n      CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n            AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n           THEN 1 ELSE 0 END)) % 2 = 1))\n),\nagg AS (\n  SELECT country, continent, sum(n)::DOUBLE AS detections,\n         round(sum(latitude * n) / sum(n), 3) AS latitude,\n         round(sum(longitude * n) / sum(n), 3) AS longitude\n  FROM x\n  GROUP BY ALL\n)\nSELECT * FROM (SELECT *, row_number() OVER (ORDER BY detections DESC) AS rank FROM agg)\nWHERE rank \u003c= 15 OR country = $country\nORDER BY rank"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The fifteen countries with the most detections in the window and the drawn area, coloured by continent (orange Africa, green South America, blue North America, red Asia, purple Europe, yellow Oceania). Each A5 cell counts for the country that covers most of it, so border regions and small countries are approximate. Click a bar to keep that country and fly the map to it; click it again to clear.",
+          "id": 7,
+          "links": [],
+          "title": "Countries by detections",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// The countries where most fire burned in the window, the fifteen largest,\n// coloured by continent. The query hands one row per country with the measure\n// in column VALUE; it follows every other filter but not its own pick, so the\n// alternatives stay in sight.\n//\n// Click a bar: the other panels keep that country only and the map flies to\n// the middle of its fire (weighted by the measure). Click it again to clear.\n// @constants begin\nconst VALUE = 'detections';\nconst SCALE = 1;\nconst AXIS = 'detections';\nconst TIP = (v) =\u003e `Detections: \u003cb\u003e${v.toLocaleString()}\u003c/b\u003e`;\nconst VAR = 'country';\nconst LAT = 'clat';\nconst LNG = 'clng';\nconst CONTINENTS = {\n  Africa: 'orange',\n  'South America': 'green',\n  'North America': 'blue',\n  Asia: 'red',\n  Europe: 'purple',\n  Oceania: 'yellow',\n  Ocean: 'text',\n};\n// @constants end\n\n// Short numbers: 3786, 12.5, 0.48; thousands and millions as k and M.\nconst fmt = (v) =\u003e\n  v === 0 ? '0' : v \u003e= 1e6 ? `${(v / 1e6).toFixed(1)}M` : v \u003e= 1e4 ? `${Math.round(v / 1e3)}k` : v \u003e= 10 ? v.toFixed(0) : v \u003e= 1 ? v.toFixed(1) : v.toFixed(2);\n\nconst chart = context.panel.chart;\nconst theme = context.grafana.theme;\nconst location = context.grafana.locationService;\nconst muted = theme.colors.text.secondary;\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst countries = col('country');\nconst continents = col('continent');\nconst values = col(VALUE).map((v) =\u003e Number(v) * SCALE);\nconst detections = col('detections').map(Number);\nconst lats = col('latitude').map(Number);\nconst lngs = col('longitude').map(Number);\n\n// ${country}: named literally so the panel redraws when the pick changes.\nconst picked = context.grafana.replaceVariables('${' + VAR + '}');\nconst colorOf = (continent) =\u003e theme.visualization.getColorByName(CONTINENTS[continent] || 'text');\n\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const i = event.dataIndex;\n  const name = countries[i];\n  const same = name === picked;\n  location.partial(\n    {\n      ['var-' + VAR]: same ? '' : name,\n      ['var-' + LAT]: same || !Number.isFinite(lats[i]) ? '' : lats[i].toFixed(3),\n      ['var-' + LNG]: same || !Number.isFinite(lngs[i]) ? '' : lngs[i].toFixed(3),\n    },\n    true\n  );\n});\n\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 48, top: 8, bottom: 24, containLabel: true },\n  tooltip: {\n    trigger: 'item',\n    formatter: (p) =\u003e\n      `\u003cb\u003e${countries[p.dataIndex]}\u003c/b\u003e · ${continents[p.dataIndex]}\u003cbr/\u003e` + TIP(values[p.dataIndex], p.dataIndex),\n  },\n  xAxis: {\n    type: 'value',\n    name: AXIS,\n    nameLocation: 'middle',\n    nameGap: 22,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted, formatter: fmt },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  yAxis: {\n    type: 'category',\n    inverse: true,\n    data: countries,\n    axisLabel: { color: theme.colors.text.primary, width: 120, overflow: 'truncate' },\n    axisTick: { show: false },\n  },\n  series: [\n    {\n      type: 'bar',\n      barWidth: '70%',\n      cursor: 'pointer',\n      data: values.map((v, i) =\u003e ({\n        value: v,\n        itemStyle: {\n          color: colorOf(continents[i]),\n          opacity: picked === '' || countries[i] === picked ? 1 : 0.3,\n          borderColor: countries[i] === picked ? theme.colors.text.primary : undefined,\n          borderWidth: countries[i] === picked ? 1.5 : 0,\n        },\n      })),\n      label: { show: true, position: 'right', color: muted, formatter: (p) =\u003e fmt(p.value) },\n    },\n  ],\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-countries-count": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Countries with at least one detection in the window and the drawn area.\nWITH sel AS (\n  SELECT CASE WHEN w.t1 \u003e r.lo AND w.t0 \u003c= r.hi THEN w.t0 END AS t0,\n         CASE WHEN w.t1 \u003e r.lo AND w.t0 \u003c= r.hi THEN w.t1 END AS t1\n  FROM (SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1) AS w,\n       (SELECT min(time) AS lo, max(time) AS hi FROM $counts WHERE level = $archive) AS r\n),\narea AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n),\nx AS (\n  SELECT b.level, b.time, b.n, b.a5, c.country, c.continent, c.latitude, c.longitude\n  FROM $counts AS b JOIN $cells AS c USING (a5), sel, area\n  WHERE level = $archive\n  AND (sel.t0 IS NULL OR time \u003e= sel.t0) AND (sel.t1 IS NULL OR time \u003c sel.t1)\n  AND (len(area.xs) = 0 OR (longitude BETWEEN list_min(area.xs) AND list_max(area.xs)\n    AND latitude BETWEEN list_min(area.ys) AND list_max(area.ys)\n    AND list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n      CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n            AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n           THEN 1 ELSE 0 END)) % 2 = 1))\n)\nSELECT count(DISTINCT country) FILTER (WHERE country \u003c\u003e 'Ocean or unassigned')::DOUBLE AS countries FROM x"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Countries with at least one detection in the window and the drawn area. Each A5 cell counts for the country that covers most of it.",
+          "id": 6,
+          "links": [],
+          "title": "Countries",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-detections": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Detections in the window, the picked country and the drawn area.\nWITH sel AS (\n  SELECT CASE WHEN w.t1 \u003e r.lo AND w.t0 \u003c= r.hi THEN w.t0 END AS t0,\n         CASE WHEN w.t1 \u003e r.lo AND w.t0 \u003c= r.hi THEN w.t1 END AS t1\n  FROM (SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1) AS w,\n       (SELECT min(time) AS lo, max(time) AS hi FROM $counts WHERE level = $archive) AS r\n),\narea AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n),\nx AS (\n  SELECT b.level, b.time, b.n, b.a5, c.country, c.continent, c.latitude, c.longitude\n  FROM $counts AS b JOIN $cells AS c USING (a5), sel, area\n  WHERE level = $archive\n  AND (sel.t0 IS NULL OR time \u003e= sel.t0) AND (sel.t1 IS NULL OR time \u003c sel.t1)\n  AND ($country = '' OR country = $country)\n  AND (len(area.xs) = 0 OR (longitude BETWEEN list_min(area.xs) AND list_max(area.xs)\n    AND latitude BETWEEN list_min(area.ys) AND list_max(area.ys)\n    AND list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n      CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n            AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n           THEN 1 ELSE 0 END)) % 2 = 1))\n)\nSELECT coalesce(sum(n), 0)::DOUBLE AS detections FROM x"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Detections in the brushed window, the picked country and the drawn area, from the A5 aggregates. A detection is one hot pixel on one overpass, not one fire.",
+          "id": 4,
+          "links": [],
+          "title": "Detections",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "orange",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-how": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 9,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**How to read it.** This is the long view: the A5 aggregates the Portolan mirror publishes, about 5 MB, so it\nloads in seconds. *Archive* switches between this year by day and every month since 2000. Drag across the time brush to\npick a window, click a country to keep it, draw an area on the map, or click a month in the calendar.\n\nFor single detections, satellites, day and night, and fire radiative power, open\n[the last eight days, every detection](/d/firms-active-fires).",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The A5 cells with a detection in the brushed window, in the picked\n-- country, with how many. Not filtered by the area drawn on the map itself,\n-- so the map keeps its context.\nWITH sel AS (\n  SELECT CASE WHEN w.t1 \u003e r.lo AND w.t0 \u003c= r.hi THEN w.t0 END AS t0,\n         CASE WHEN w.t1 \u003e r.lo AND w.t0 \u003c= r.hi THEN w.t1 END AS t1\n  FROM (SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1) AS w,\n       (SELECT min(time) AS lo, max(time) AS hi FROM $counts WHERE level = $archive) AS r\n),\nx AS (\n  SELECT b.level, b.time, b.n, b.a5, c.country, c.continent, c.latitude, c.longitude\n  FROM $counts AS b JOIN $cells AS c USING (a5), sel\n  WHERE level = $archive\n  AND (sel.t0 IS NULL OR time \u003e= sel.t0) AND (sel.t1 IS NULL OR time \u003c sel.t1)\n  AND ($country = '' OR country = $country)\n),\nagg AS (\n  SELECT a5, sum(n)::DOUBLE AS detections FROM x GROUP BY a5\n)\nSELECT c.country, agg.detections, round(log10(agg.detections), 2) AS log_detections, c.geojson\nFROM agg JOIN $cells AS c USING (a5)\nORDER BY agg.detections"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each pentagon is an A5 cell of resolution 5 (about 200 km across, the grid the Portolan explorer draws) coloured by its detections in the brushed window, on a log scale from dark red (a handful) to pale yellow (the most). It follows the country pick. Draw a polygon or rectangle to keep that area in the other panels; the map itself keeps showing everything.",
+          "id": 2,
+          "links": [],
+          "title": "Where: detections per A5 cell in the window",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "areaVariable": "area",
+                "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "latitude": 12,
+                      "longitude": 15,
+                      "pitch": 0,
+                      "zoom": 1.15
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "format": null,
+                                "name": "country"
+                              },
+                              {
+                                "format": null,
+                                "name": "detections"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layers": [
+                        {
+                          "config": {
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Detections per A5 cell",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#5C0A0A",
+                                  "#9B1C1C",
+                                  "#D9480F",
+                                  "#F08C00",
+                                  "#FCC419",
+                                  "#FFF3BF"
+                                ],
+                                "name": "Fire",
+                                "type": "sequential"
+                              },
+                              "enable3d": false,
+                              "filled": true,
+                              "opacity": 0.85,
+                              "strokeColor": [
+                                20,
+                                20,
+                                22
+                              ],
+                              "strokeOpacity": 0.6,
+                              "stroked": true,
+                              "thickness": 0.3,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "a5-cells",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "log_detections",
+                              "type": "real"
+                            },
+                            "colorScale": "quantize",
+                            "sizeScale": "linear"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "",
+                    "source": "center",
+                    "variable": "clat",
+                    "variableTo": "clng",
+                    "zoom": 3.6
+                  }
+                ],
+                "viewportVariables": {}
+              }
+            },
+            "version": "1.0.0"
+          }
+        }
+      },
+      "panel-newest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The newest day in the year file, before any filter.\nSELECT max(time) AS time FROM $counts WHERE level = 'day'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The newest day in the year file of the mirror, before any filter. The mirror folds the near-real-time detections into it as they age out of its rolling window.",
+          "id": 3,
+          "links": [],
+          "title": "Newest day",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "time:MMM D, YYYY"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-brush"
+              },
+              "height": 6,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-newest"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-detections"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-cells"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 12,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-countries-count"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 18,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 16,
+              "width": 16,
+              "x": 0,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-countries"
+              },
+              "height": 16,
+              "width": 8,
+              "x": 16,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-calendar"
+              },
+              "height": 16,
+              "width": 12,
+              "x": 0,
+              "y": 25
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-how"
+              },
+              "height": 6,
+              "width": 12,
+              "x": 12,
+              "y": 25
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 10,
+              "width": 12,
+              "x": 12,
+              "y": 31
+            }
+          }
+        ]
+      }
+    },
+    "links": [
+      {
+        "asDropdown": false,
+        "icon": "dashboard",
+        "includeVars": false,
+        "keepTime": false,
+        "tags": [],
+        "targetBlank": false,
+        "title": "The last eight days, every detection",
+        "tooltip": "Single detections with satellite, day or night and fire radiative power",
+        "type": "link",
+        "url": "/d/firms-active-fires"
+      }
+    ],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "plus",
+      "kepler",
+      "business-charts",
+      "satellite"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "1h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "2000-11-01T00:00:00.000Z",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Active fires from space: the archive since 2000",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "A5 cells with country and outline (server)",
+          "multi": false,
+          "name": "cells",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "cells",
+              "refId": "cells",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: every A5 cell of resolution 5 (about 200 km across) that has\n-- had a fire since 2000, with its outline as GeoJSON, its centre, and the\n-- country that covers most of it (Natural Earth 1:110m). Cells first burning\n-- this year come from the year file, which is rebuilt more often than the\n-- all-time one. The A5 id is a 64-bit integer, sent as text so it survives\n-- JSON. The two polar caps are left out: no fire there, and their outlines\n-- span the globe.\nWITH alltime AS (\n  SELECT a5_cell, geometry FROM read_parquet('https://data.source.coop/portolan-mirrors/firms-catalog/detections/alltime-r5.parquet')\n),\nfresh AS (\n  SELECT a5_cell, geometry FROM read_parquet('https://data.source.coop/portolan-mirrors/firms-catalog/detections/year=' || year(current_date)::VARCHAR || '/aggregate-r5.parquet')\n  WHERE a5_cell NOT IN (SELECT a5_cell FROM alltime)\n),\ncells AS (\n  -- The cells say OGC:CRS84 and Natural Earth EPSG:4326, the same axes here:\n  -- the plain GEOMETRY type drops the label so the two can be compared.\n  SELECT a5_cell, geometry::GEOMETRY AS geom FROM (SELECT * FROM alltime UNION ALL SELECT * FROM fresh)\n  WHERE ST_YMax(geometry) \u003c 89 AND ST_YMin(geometry) \u003e -89\n),\ncountries AS (\n  SELECT name, continent, geom::GEOMETRY AS g FROM ST_Read('https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_110m_admin_0_countries.geojson')\n),\nhits AS (\n  SELECT cells.a5_cell, n.name, n.continent, ST_Area(ST_Intersection(n.g, cells.geom)) AS overlap\n  FROM cells JOIN countries AS n ON ST_Intersects(n.g, cells.geom)\n),\nbest AS (\n  SELECT a5_cell, arg_max(name, overlap) AS country, arg_max(continent, overlap) AS continent\n  FROM hits GROUP BY a5_cell\n)\nSELECT cells.a5_cell::VARCHAR AS a5,\n       coalesce(best.country, 'Ocean or unassigned') AS country,\n       coalesce(best.continent, 'Ocean') AS continent,\n       round(ST_Y(ST_Centroid(cells.geom)), 3) AS latitude,\n       round(ST_X(ST_Centroid(cells.geom)), 3) AS longitude,\n       ST_AsGeoJSON(ST_ReducePrecision(cells.geom, 0.001))::VARCHAR AS geojson\nFROM cells LEFT JOIN best USING (a5_cell)",
+                  "refId": "cells"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Detections per A5 cell and day or month (browser)",
+          "multi": false,
+          "name": "counts",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "counts",
+              "refId": "counts",
+              "source": {
+                "sql": "-- In the browser: the A5 aggregates the Portolan mirror publishes beside the\n-- detections, read straight from Source Cooperative (CORS open, about 5 MB):\n-- the current year with one column per day (count_YYYYMMDD) and the whole\n-- record with one per month (count_YYYYMM). UNPIVOT turns those columns into\n-- rows, one per cell and bucket with a fire. level day is this year by day;\n-- level month is every month since November 2000, this year rolled up from\n-- its days because the all-time file is rebuilt less often. The panels join\n-- the cells for country and centre, so this loads beside them, not after.\nWITH year_file AS (\n  SELECT * EXCLUDE (geometry, bbox) FROM read_parquet('https://data.source.coop/portolan-mirrors/firms-catalog/detections/year=' || year(current_date)::VARCHAR || '/aggregate-r5.parquet')\n),\ndays AS (\n  SELECT a5_cell::VARCHAR AS a5, strptime(substr(bucket, 7), '%Y%m%d') AS time, n::DOUBLE AS n\n  FROM year_file UNPIVOT (n FOR bucket IN (COLUMNS('^count_20')))\n  WHERE n \u003e 0\n),\nmonths AS (\n  SELECT a5_cell::VARCHAR AS a5, strptime(substr(bucket, 7) || '01', '%Y%m%d') AS time, n::DOUBLE AS n\n  FROM (SELECT * EXCLUDE (geometry, bbox) FROM read_parquet('https://data.source.coop/portolan-mirrors/firms-catalog/detections/alltime-r5.parquet'))\n    UNPIVOT (n FOR bucket IN (COLUMNS('^count_[0-9]{6}$')))\n  WHERE n \u003e 0 AND bucket \u003c 'count_' || year(current_date)::VARCHAR\n),\nbuckets AS (\n  SELECT 'day' AS level, time, n, a5 FROM days\n  UNION ALL SELECT 'month', time, n, a5 FROM months\n  UNION ALL SELECT 'month', date_trunc('month', time), sum(n), a5 FROM days GROUP BY date_trunc('month', time), a5\n)\nSELECT level, time, n, a5 FROM buckets",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "every month since 2000",
+            "value": "month"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Archive",
+          "multi": false,
+          "name": "archive",
+          "options": [],
+          "query": "every month since 2000 : month,this year by day : day",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "t0",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "t1",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "area",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "country",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "clat",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "clng",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}

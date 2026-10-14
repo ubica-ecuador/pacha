@@ -29,6 +29,7 @@ here, in the same shape: symptom, cause, fix.
 | Raster colours like confetti | kepler's default ramp is for NDVI | set `rasterColormap`, or `rasterPainted` for classified rasters |
 | CARTO base map watermarked | `dark-matter`/`positron`/`voyager` need a key since 2026-09 | use `openfreemap-*` |
 | Plus panels show ChunkLoadError after a plugin deploy | Grafana registers plugin files at start | restart grafana; users hard-reload (chunks are cached 1 h) |
+| "charts follow the map view" leaves out part of the world on load | Kepler writes `viewportVariables` as soon as it draws, and a world view in a 16-column panel spans about -106..136 longitude | default to the whole Earth and offer the view as a choice (`firms-active-fires`, variable `scope`) |
 
 ## SQL and engines
 
@@ -58,6 +59,8 @@ here, in the same shape: symptom, cause, fix.
 | `http_get` times out | `http_client` gives up after about 10 s | batch; cache in the gateway |
 | A gateway 404 rewritten by `error_page` comes back raw | nginx does not apply `proxy_intercept_errors` to a 404 served from cache | don't cache the status you rewrite |
 | A geolife-style dashboard errors on one instance only | its `datasets/<name>/build.sh` has not run there | run it (GeoLife needs `GEOLIFE_MEMORY` ≥ 8 GB) |
+| A GeoParquet `geometry` read by Chaski is a `BLOB` | no `spatial` in the browser: the native GEOMETRY type arrives as WKB | decode a point by hand: hex → `UBIGINT` → byte swap by shifts → IEEE 754 arithmetic, about 1 s per million rows (`firms-active-fires`, dataset `fires`) |
+| `ST_Intersects` binder error: geometries of different CRS | GeoParquet 2.0 says `OGC:CRS84`, Natural Earth `EPSG:4326` | cast both to plain `GEOMETRY` (same axes), or `ST_SetCRS` |
 
 ## Grafana
 
@@ -70,3 +73,4 @@ here, in the same shape: symptom, cause, fix.
 | Admin login refused for minutes | failed logins from helpers without `.env` | always `--env-file=.env` |
 | `localhost` refused from Node | Node resolves it to `::1` | `127.0.0.1` |
 | Chromium crashes on a heavy map | default `/dev/shm` | `--shm-size=2g` |
+| A table column hidden with `custom.hidden` still shows | Grafana 13.2's table reads `custom.hideFrom.viz` | override `custom.hideFrom.viz: true`; a data link can still use the hidden field (`firms-active-fires`, largest fires) |
