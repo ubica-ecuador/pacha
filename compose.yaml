@@ -135,6 +135,9 @@ services:
       - ./gateway/recordings:/srv/fallback/recordings:ro
       # Built here, not in git: datasets/<name>/build.sh. See feeds.conf.
       - ./datasets:/srv/datasets:ro
+      # The home dashboard's screenshots and brand assets, at /home/; see
+      # default.conf and scripts/screenshots.mjs.
+      - ./home:/srv/home:ro
     networks:
       default:
         # DuckDB calls http://feeds/...; see gateway/feeds.conf.

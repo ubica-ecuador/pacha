@@ -38,6 +38,18 @@ On a public instance, set `PACHA_REPO_TYPE=github` and `PACHA_GIT_TOKEN` in
 `.env` (see `.env.example`): Grafana then follows `main` on GitHub and commits
 each save to it. Folders, tags and conventions: [dashboards/README.md](dashboards/README.md).
 
+The home page is a dashboard too, `dashboards/home.json`: every dashboard of the Gallery and
+of Plus as a card, read from Grafana's search when the page opens, so a new dashboard shows
+up on its own. The cards' screenshots and the page's assets live in `home/`, served by the
+gateway at `/home/`; a card without a screenshot shows a plain background. To take or refresh
+the screenshots (Chromium, in the Playwright container):
+
+```bash
+docker run --rm --network host --shm-size=2g -u "$(id -u):$(id -g)" -e HOME=/tmp \
+  -v "$PWD:/repo" -w /repo mcr.microsoft.com/playwright:v1.63.0-noble \
+  node scripts/screenshots.mjs --base http://127.0.0.1:3000 [uid ...]
+```
+
 ## What runs
 
 | Service   | What it does                                     | Reached at                        |

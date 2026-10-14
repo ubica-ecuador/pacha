@@ -124,6 +124,30 @@ apply_repositories() {
   done
 }
 
+# dashboards/home.json (uid "home") is the organisation's home page, once Git
+# Sync has brought it in. PATCH touches only that preference, so a theme or
+# time zone set in the UI stays. Not fatal: a fork that dropped the file keeps
+# Grafana's own home page.
+set_home_dashboard() {
+  tries=0
+  while :; do
+    status=$(curl -s -o /dev/null -w '%{http_code}' -u "$GF_SECURITY_ADMIN_USER:$GF_SECURITY_ADMIN_PASSWORD" \
+      "$GRAFANA/api/dashboards/uid/home")
+    [ "$status" = 200 ] && break
+    tries=$((tries + 1))
+    if [ "$tries" -ge 30 ]; then
+      log "no dashboard with uid home after a minute (HTTP $status); Grafana keeps its own home page"
+      return 0
+    fi
+    sleep 2
+  done
+  out=$(grafana PATCH /api/org/preferences -H 'Content-Type: application/json' -d '{"homeDashboardUID":"home"}') || {
+    log "setting the home dashboard failed: $out"
+    return 0
+  }
+  log "home dashboard set"
+}
+
 # A local repository needs Grafana (uid 472) to write the mounted folder.
 warn_unwritable() {
   [ "$PACHA_REPO_TYPE" = local ] || return 0
@@ -154,6 +178,7 @@ main() {
     attempt=$((attempt + 1))
     sleep 5
   done
+  set_home_dashboard
   touch "$MARKER"
   log "repositories applied"
 }

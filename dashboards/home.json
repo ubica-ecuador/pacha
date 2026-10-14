@@ -1,0 +1,849 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "home"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "This instance's home page: every dashboard of the Gallery and of Plus as a card with its screenshot, read live from Grafana's search; what runs, where the code and the documentation are, and what Kepler Plus adds.",
+    "editable": true,
+    "elements": {
+      "panel-card-gallery": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "infinity"
+                      },
+                      "group": "yesoreyeram-infinity-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "columns": [
+                          {
+                            "selector": "uid",
+                            "text": "uid",
+                            "type": "string"
+                          },
+                          {
+                            "selector": "title",
+                            "text": "title",
+                            "type": "string"
+                          },
+                          {
+                            "selector": "description",
+                            "text": "description",
+                            "type": "string"
+                          },
+                          {
+                            "selector": "tags",
+                            "text": "tags",
+                            "type": "string"
+                          },
+                          {
+                            "selector": "url",
+                            "text": "url",
+                            "type": "string"
+                          },
+                          {
+                            "selector": "folderUid",
+                            "text": "folderUid",
+                            "type": "string"
+                          }
+                        ],
+                        "format": "table",
+                        "parser": "backend",
+                        "root_selector": "",
+                        "source": "url",
+                        "type": "json",
+                        "url": "http://localhost:3000/api/search?dashboardUIDs=$gallery",
+                        "url_options": {
+                          "method": "GET"
+                        }
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "One dashboard of the Gallery, from Grafana's search: its title, description and tags, and its screenshot from /home/screenshots/.",
+          "id": 2,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "marcusolsson-dynamictext-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "afterRender": "// The row fills the panel, and a card whose screenshot is missing shows the\n// plain background instead of a broken image.\ncontext.element.style.height = '100%';\ncontext.element.querySelectorAll('.shot img').forEach((img) =\u003e {\n  const missing = () =\u003e img.closest('.shot').classList.add('missing');\n  if (img.complete \u0026\u0026 img.naturalWidth === 0) missing();\n  img.addEventListener('error', missing);\n});",
+                "content": "\u003cdiv class=\"pacha card-panel\"\u003e\u003ca class=\"card\" href=\"{{url}}\"\u003e\n\u003cdiv class=\"shot\"\u003e\u003cimg src=\"/home/screenshots/{{uid}}.jpg\" alt=\"\"\u003e\u003c/div\u003e\n\u003cdiv class=\"body\"\u003e\n\u003cdiv class=\"head\"\u003e\u003ch3\u003e{{title}}\u003c/h3\u003e{{#if (has tags \"live\")}}\u003cspan class=\"live\"\u003e\u003ci\u003e\u003c/i\u003elive\u003c/span\u003e{{/if}}\u003c/div\u003e\n\u003cp\u003e{{description}}\u003c/p\u003e\n\u003cdiv class=\"tags\"\u003e{{#each (chips tags)}}\u003cspan\u003e{{this}}\u003c/span\u003e{{/each}}\u003c/div\u003e\n\u003c/div\u003e\n\u003c/a\u003e\u003c/div\u003e",
+                "contentPartials": [],
+                "defaultContent": "",
+                "editor": {
+                  "format": "auto",
+                  "language": "html"
+                },
+                "editors": [
+                  "styles",
+                  "afterRender",
+                  "helpers"
+                ],
+                "externalStyles": [],
+                "helpers": "// `tags` arrives from the search API as a JSON array in a string.\nconst tagsOf = (value) =\u003e {\n  if (Array.isArray(value)) return value;\n  try { return JSON.parse(value || '[]'); } catch { return []; }\n};\ncontext.handlebars.registerHelper('has', (tags, tag) =\u003e tagsOf(tags).includes(tag));\n// The chips of a card: its theme and engine tags; `kepler` is every card and\n// `plus` is the section, and the Business plugins are not what a visitor picks by.\ncontext.handlebars.registerHelper('chips', (tags) =\u003e tagsOf(tags).filter((t) =\u003e !['kepler', 'plus', 'business-charts', 'business-table', 'business-text', 'business-variable'].includes(t)));\ncontext.handlebars.registerHelper('tagged', (rows, tag) =\u003e (rows || []).filter((r) =\u003e tagsOf(r.tags).includes(tag)).length);\ncontext.handlebars.registerHelper('inFolder', (rows, uid) =\u003e (rows || []).filter((r) =\u003e r.folderUid === uid).length);\n",
+                "renderMode": "everyRow",
+                "status": "",
+                "styles": "@font-face { font-family: Outfit; src: url(/home/assets/outfit.woff2) format('woff2'); font-weight: 400 700; font-style: normal; font-display: swap; }\n.pacha { --ink: #0F2327; --ink-2: #132C31; --ink-3: #0C1E22; --teal: #0B8278; --teal-hi: #10A396; --mint: #9FE3D7; --moss: #5FA39A; --text: #FFFFFF; --text-2: #C5D9D5; --muted: #8FB3AD; --line: rgba(159, 227, 215, .14); color: var(--text); background: var(--ink); border-radius: 2px; height: 100%; overflow: hidden; }\n.pacha h1, .pacha h2, .pacha h3 { font-family: Outfit, Inter, ui-sans-serif, system-ui, sans-serif; margin: 0; color: var(--text); }\n.pacha p { margin: 0; }\n.pacha a { color: var(--mint); text-decoration: none; }\n.pacha a:hover { color: var(--text); }\n.pacha .wrap { max-width: 1240px; margin: 0 auto; padding: 0 32px; }\n.pacha .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--mint); }\n.pacha .go { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 18px; border-radius: 8px; border: 1px solid rgba(159, 227, 215, .3); background: rgba(255, 255, 255, .04); color: var(--text); font-weight: 500; font-size: 15px; transition: background .15s ease, border-color .15s ease; }\n.pacha .go:hover { background: rgba(159, 227, 215, .12); border-color: rgba(159, 227, 215, .55); color: var(--text); }\n.pacha .go.primary { background: var(--teal); border-color: var(--teal); }\n.pacha .go.primary:hover { background: var(--teal-hi); border-color: var(--teal-hi); }\n.pacha .go-row { display: flex; flex-wrap: wrap; gap: 10px; }\n.pacha .chips { display: flex; flex-wrap: wrap; gap: 6px; }\n.pacha .chip { display: inline-flex; align-items: center; font-size: 13px; line-height: 1; padding: 7px 11px; border-radius: 999px; border: 1px solid rgba(159, 227, 215, .25); color: var(--text-2); background: rgba(255, 255, 255, .03); }\n.pacha .chip:hover { border-color: rgba(159, 227, 215, .6); color: var(--text); }\n.pacha .chip.on { background: var(--teal); border-color: var(--teal); color: var(--text); }\n.pacha .section-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }\n.pacha .section-head h2 { font-size: 30px; font-weight: 600; letter-spacing: -.015em; line-height: 1.1; }\n.pacha .section-head p { font-size: 15px; color: var(--text-2); margin-top: 4px; }\n.pacha .section-head .more { font-size: 15px; font-weight: 500; }\n@media (max-width: 640px) { .pacha .wrap { padding: 0 16px; } }\n.pacha.card-panel { background: var(--ink-2); border: 1px solid var(--line); border-radius: 10px; transition: border-color .15s ease; }\n.pacha.card-panel:hover { border-color: rgba(159, 227, 215, .45); }\n.card { display: flex; flex-direction: column; height: 100%; color: var(--text); }\n.card:hover { color: var(--text); }\n.shot { flex: none; height: 176px; overflow: hidden; background: #0B1C1F url(/home/assets/contours.svg) center / cover no-repeat; border-bottom: 1px solid var(--line); position: relative; }\n.shot img { width: 100%; height: 100%; object-fit: cover; display: block; }\n.shot.missing img { display: none; }\n.shot.missing::after { content: \"\"; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -14px 0 0 -11px; border: 2px solid var(--moss); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); opacity: .7; }\n.card .body { display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 0; padding: 12px 14px 12px; }\n.card .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }\n.card h3 { font-size: 16px; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }\n.card .live { display: inline-flex; align-items: center; gap: 5px; flex: none; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--mint); padding-top: 3px; }\n.card .live i { width: 7px; height: 7px; border-radius: 50%; background: var(--teal-hi); box-shadow: 0 0 0 3px rgba(16, 163, 150, .25); }\n.card p { font-size: 13px; line-height: 1.45; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }\n.card .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto; padding-top: 6px; overflow: hidden; max-height: 24px; }\n.card .tags span { font-size: 11px; line-height: 1; padding: 4px 7px; border-radius: 999px; border: 1px solid rgba(159, 227, 215, .22); color: var(--mint); white-space: nowrap; }\n",
+                "wrap": false
+              }
+            },
+            "version": "6.3.0"
+          }
+        }
+      },
+      "panel-card-plus": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "infinity"
+                      },
+                      "group": "yesoreyeram-infinity-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "columns": [
+                          {
+                            "selector": "uid",
+                            "text": "uid",
+                            "type": "string"
+                          },
+                          {
+                            "selector": "title",
+                            "text": "title",
+                            "type": "string"
+                          },
+                          {
+                            "selector": "description",
+                            "text": "description",
+                            "type": "string"
+                          },
+                          {
+                            "selector": "tags",
+                            "text": "tags",
+                            "type": "string"
+                          },
+                          {
+                            "selector": "url",
+                            "text": "url",
+                            "type": "string"
+                          },
+                          {
+                            "selector": "folderUid",
+                            "text": "folderUid",
+                            "type": "string"
+                          }
+                        ],
+                        "format": "table",
+                        "parser": "backend",
+                        "root_selector": "",
+                        "source": "url",
+                        "type": "json",
+                        "url": "http://localhost:3000/api/search?dashboardUIDs=$plus",
+                        "url_options": {
+                          "method": "GET"
+                        }
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "One dashboard built with Plus, from Grafana's search: its title, description and tags, and its screenshot from /home/screenshots/.",
+          "id": 4,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "marcusolsson-dynamictext-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "afterRender": "// The row fills the panel, and a card whose screenshot is missing shows the\n// plain background instead of a broken image.\ncontext.element.style.height = '100%';\ncontext.element.querySelectorAll('.shot img').forEach((img) =\u003e {\n  const missing = () =\u003e img.closest('.shot').classList.add('missing');\n  if (img.complete \u0026\u0026 img.naturalWidth === 0) missing();\n  img.addEventListener('error', missing);\n});",
+                "content": "\u003cdiv class=\"pacha card-panel\"\u003e\u003ca class=\"card\" href=\"{{url}}\"\u003e\n\u003cdiv class=\"shot\"\u003e\u003cimg src=\"/home/screenshots/{{uid}}.jpg\" alt=\"\"\u003e\u003c/div\u003e\n\u003cdiv class=\"body\"\u003e\n\u003cdiv class=\"head\"\u003e\u003ch3\u003e{{title}}\u003c/h3\u003e{{#if (has tags \"live\")}}\u003cspan class=\"live\"\u003e\u003ci\u003e\u003c/i\u003elive\u003c/span\u003e{{/if}}\u003c/div\u003e\n\u003cp\u003e{{description}}\u003c/p\u003e\n\u003cdiv class=\"tags\"\u003e{{#each (chips tags)}}\u003cspan\u003e{{this}}\u003c/span\u003e{{/each}}\u003c/div\u003e\n\u003c/div\u003e\n\u003c/a\u003e\u003c/div\u003e",
+                "contentPartials": [],
+                "defaultContent": "",
+                "editor": {
+                  "format": "auto",
+                  "language": "html"
+                },
+                "editors": [
+                  "styles",
+                  "afterRender",
+                  "helpers"
+                ],
+                "externalStyles": [],
+                "helpers": "// `tags` arrives from the search API as a JSON array in a string.\nconst tagsOf = (value) =\u003e {\n  if (Array.isArray(value)) return value;\n  try { return JSON.parse(value || '[]'); } catch { return []; }\n};\ncontext.handlebars.registerHelper('has', (tags, tag) =\u003e tagsOf(tags).includes(tag));\n// The chips of a card: its theme and engine tags; `kepler` is every card and\n// `plus` is the section, and the Business plugins are not what a visitor picks by.\ncontext.handlebars.registerHelper('chips', (tags) =\u003e tagsOf(tags).filter((t) =\u003e !['kepler', 'plus', 'business-charts', 'business-table', 'business-text', 'business-variable'].includes(t)));\ncontext.handlebars.registerHelper('tagged', (rows, tag) =\u003e (rows || []).filter((r) =\u003e tagsOf(r.tags).includes(tag)).length);\ncontext.handlebars.registerHelper('inFolder', (rows, uid) =\u003e (rows || []).filter((r) =\u003e r.folderUid === uid).length);\n",
+                "renderMode": "everyRow",
+                "status": "",
+                "styles": "@font-face { font-family: Outfit; src: url(/home/assets/outfit.woff2) format('woff2'); font-weight: 400 700; font-style: normal; font-display: swap; }\n.pacha { --ink: #0F2327; --ink-2: #132C31; --ink-3: #0C1E22; --teal: #0B8278; --teal-hi: #10A396; --mint: #9FE3D7; --moss: #5FA39A; --text: #FFFFFF; --text-2: #C5D9D5; --muted: #8FB3AD; --line: rgba(159, 227, 215, .14); color: var(--text); background: var(--ink); border-radius: 2px; height: 100%; overflow: hidden; }\n.pacha h1, .pacha h2, .pacha h3 { font-family: Outfit, Inter, ui-sans-serif, system-ui, sans-serif; margin: 0; color: var(--text); }\n.pacha p { margin: 0; }\n.pacha a { color: var(--mint); text-decoration: none; }\n.pacha a:hover { color: var(--text); }\n.pacha .wrap { max-width: 1240px; margin: 0 auto; padding: 0 32px; }\n.pacha .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--mint); }\n.pacha .go { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 18px; border-radius: 8px; border: 1px solid rgba(159, 227, 215, .3); background: rgba(255, 255, 255, .04); color: var(--text); font-weight: 500; font-size: 15px; transition: background .15s ease, border-color .15s ease; }\n.pacha .go:hover { background: rgba(159, 227, 215, .12); border-color: rgba(159, 227, 215, .55); color: var(--text); }\n.pacha .go.primary { background: var(--teal); border-color: var(--teal); }\n.pacha .go.primary:hover { background: var(--teal-hi); border-color: var(--teal-hi); }\n.pacha .go-row { display: flex; flex-wrap: wrap; gap: 10px; }\n.pacha .chips { display: flex; flex-wrap: wrap; gap: 6px; }\n.pacha .chip { display: inline-flex; align-items: center; font-size: 13px; line-height: 1; padding: 7px 11px; border-radius: 999px; border: 1px solid rgba(159, 227, 215, .25); color: var(--text-2); background: rgba(255, 255, 255, .03); }\n.pacha .chip:hover { border-color: rgba(159, 227, 215, .6); color: var(--text); }\n.pacha .chip.on { background: var(--teal); border-color: var(--teal); color: var(--text); }\n.pacha .section-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }\n.pacha .section-head h2 { font-size: 30px; font-weight: 600; letter-spacing: -.015em; line-height: 1.1; }\n.pacha .section-head p { font-size: 15px; color: var(--text-2); margin-top: 4px; }\n.pacha .section-head .more { font-size: 15px; font-weight: 500; }\n@media (max-width: 640px) { .pacha .wrap { padding: 0 16px; } }\n.pacha.card-panel { background: var(--ink-2); border: 1px solid var(--line); border-radius: 10px; transition: border-color .15s ease; }\n.pacha.card-panel:hover { border-color: rgba(159, 227, 215, .45); }\n.card { display: flex; flex-direction: column; height: 100%; color: var(--text); }\n.card:hover { color: var(--text); }\n.shot { flex: none; height: 176px; overflow: hidden; background: #0B1C1F url(/home/assets/contours.svg) center / cover no-repeat; border-bottom: 1px solid var(--line); position: relative; }\n.shot img { width: 100%; height: 100%; object-fit: cover; display: block; }\n.shot.missing img { display: none; }\n.shot.missing::after { content: \"\"; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -14px 0 0 -11px; border: 2px solid var(--moss); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); opacity: .7; }\n.card .body { display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 0; padding: 12px 14px 12px; }\n.card .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }\n.card h3 { font-size: 16px; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }\n.card .live { display: inline-flex; align-items: center; gap: 5px; flex: none; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--mint); padding-top: 3px; }\n.card .live i { width: 7px; height: 7px; border-radius: 50%; background: var(--teal-hi); box-shadow: 0 0 0 3px rgba(16, 163, 150, .25); }\n.card p { font-size: 13px; line-height: 1.45; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }\n.card .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto; padding-top: 6px; overflow: hidden; max-height: 24px; }\n.card .tags span { font-size: 11px; line-height: 1; padding: 4px 7px; border-radius: 999px; border: 1px solid rgba(159, 227, 215, .22); color: var(--mint); white-space: nowrap; }\n",
+                "wrap": false
+              }
+            },
+            "version": "6.3.0"
+          }
+        }
+      },
+      "panel-foot": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "infinity"
+                      },
+                      "group": "yesoreyeram-infinity-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "columns": [],
+                        "data": "[{\"ok\": true}]",
+                        "format": "table",
+                        "parser": "backend",
+                        "root_selector": "",
+                        "source": "inline",
+                        "type": "json",
+                        "url": "",
+                        "url_options": {
+                          "method": "GET"
+                        }
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Links: the repositories, the documentation, what agents get, who builds this, the licence.",
+          "id": 5,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "marcusolsson-dynamictext-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "afterRender": "context.element.style.height = '100%';",
+                "content": "\u003cdiv class=\"pacha foot-panel\"\u003e\u003cfooter class=\"foot wrap\"\u003e\n\u003cdiv class=\"cols\"\u003e\n\u003cdiv\u003e\u003ch3\u003eOpen source\u003c/h3\u003e\u003ca href=\"https://github.com/ubica-ecuador/pacha\"\u003ePacha, this stack\u003c/a\u003e\u003ca href=\"https://github.com/ubica-ecuador/keplergl-grafana-panel\"\u003eKepler Geospatial Maps, the panel\u003c/a\u003e\u003ca href=\"https://github.com/ubica-ecuador/chaski\"\u003eChaski, DuckDB in the browser\u003c/a\u003e\u003ca href=\"https://docs.ubica.dev/\"\u003eDocumentation\u003c/a\u003e\u003c/div\u003e\n\u003cdiv\u003e\u003ch3\u003eFor agents\u003c/h3\u003e\u003cp\u003eEvery instance ships an MCP server and a build-dashboard skill: an agent reads the dashboards, runs their queries and builds new ones from the same recipes.\u003c/p\u003e\u003ca href=\"https://github.com/ubica-ecuador/pacha/blob/main/AGENTS.md\"\u003eAGENTS.md\u003c/a\u003e\u003c/div\u003e\n\u003cdiv\u003e\u003ch3\u003eUBICA Geospatial\u003c/h3\u003e\u003cp\u003eCloud-native geospatial, from Cuenca, Ecuador. Pacha is Quechua for the world and time as one.\u003c/p\u003e\u003ca href=\"https://ubica.dev/\"\u003eubica.dev\u003c/a\u003e\u003ca href=\"https://www.linkedin.com/company/ubica-geospatial\"\u003eLinkedIn\u003c/a\u003e\u003c/div\u003e\n\u003c/div\u003e\n\u003cdiv class=\"legal\"\u003e\u003cspan\u003eApache-2.0. The images bundle Grafana, its plugins, DuckDB and TiTiler, each under its own licence.\u003c/span\u003e\u003cspan\u003eNot affiliated with Grafana Labs.\u003c/span\u003e\u003c/div\u003e\n\u003c/footer\u003e\u003c/div\u003e",
+                "contentPartials": [],
+                "defaultContent": "\u003cdiv class=\"pacha foot-panel\"\u003e\u003cfooter class=\"foot wrap\"\u003e\n\u003cdiv class=\"cols\"\u003e\n\u003cdiv\u003e\u003ch3\u003eOpen source\u003c/h3\u003e\u003ca href=\"https://github.com/ubica-ecuador/pacha\"\u003ePacha, this stack\u003c/a\u003e\u003ca href=\"https://github.com/ubica-ecuador/keplergl-grafana-panel\"\u003eKepler Geospatial Maps, the panel\u003c/a\u003e\u003ca href=\"https://github.com/ubica-ecuador/chaski\"\u003eChaski, DuckDB in the browser\u003c/a\u003e\u003ca href=\"https://docs.ubica.dev/\"\u003eDocumentation\u003c/a\u003e\u003c/div\u003e\n\u003cdiv\u003e\u003ch3\u003eFor agents\u003c/h3\u003e\u003cp\u003eEvery instance ships an MCP server and a build-dashboard skill: an agent reads the dashboards, runs their queries and builds new ones from the same recipes.\u003c/p\u003e\u003ca href=\"https://github.com/ubica-ecuador/pacha/blob/main/AGENTS.md\"\u003eAGENTS.md\u003c/a\u003e\u003c/div\u003e\n\u003cdiv\u003e\u003ch3\u003eUBICA Geospatial\u003c/h3\u003e\u003cp\u003eCloud-native geospatial, from Cuenca, Ecuador. Pacha is Quechua for the world and time as one.\u003c/p\u003e\u003ca href=\"https://ubica.dev/\"\u003eubica.dev\u003c/a\u003e\u003ca href=\"https://www.linkedin.com/company/ubica-geospatial\"\u003eLinkedIn\u003c/a\u003e\u003c/div\u003e\n\u003c/div\u003e\n\u003cdiv class=\"legal\"\u003e\u003cspan\u003eApache-2.0. The images bundle Grafana, its plugins, DuckDB and TiTiler, each under its own licence.\u003c/span\u003e\u003cspan\u003eNot affiliated with Grafana Labs.\u003c/span\u003e\u003c/div\u003e\n\u003c/footer\u003e\u003c/div\u003e",
+                "editor": {
+                  "format": "auto",
+                  "language": "html"
+                },
+                "editors": [
+                  "styles",
+                  "afterRender",
+                  "helpers"
+                ],
+                "externalStyles": [],
+                "helpers": "",
+                "renderMode": "allRows",
+                "status": "",
+                "styles": "@font-face { font-family: Outfit; src: url(/home/assets/outfit.woff2) format('woff2'); font-weight: 400 700; font-style: normal; font-display: swap; }\n.pacha { --ink: #0F2327; --ink-2: #132C31; --ink-3: #0C1E22; --teal: #0B8278; --teal-hi: #10A396; --mint: #9FE3D7; --moss: #5FA39A; --text: #FFFFFF; --text-2: #C5D9D5; --muted: #8FB3AD; --line: rgba(159, 227, 215, .14); color: var(--text); background: var(--ink); border-radius: 2px; height: 100%; overflow: hidden; }\n.pacha h1, .pacha h2, .pacha h3 { font-family: Outfit, Inter, ui-sans-serif, system-ui, sans-serif; margin: 0; color: var(--text); }\n.pacha p { margin: 0; }\n.pacha a { color: var(--mint); text-decoration: none; }\n.pacha a:hover { color: var(--text); }\n.pacha .wrap { max-width: 1240px; margin: 0 auto; padding: 0 32px; }\n.pacha .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--mint); }\n.pacha .go { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 18px; border-radius: 8px; border: 1px solid rgba(159, 227, 215, .3); background: rgba(255, 255, 255, .04); color: var(--text); font-weight: 500; font-size: 15px; transition: background .15s ease, border-color .15s ease; }\n.pacha .go:hover { background: rgba(159, 227, 215, .12); border-color: rgba(159, 227, 215, .55); color: var(--text); }\n.pacha .go.primary { background: var(--teal); border-color: var(--teal); }\n.pacha .go.primary:hover { background: var(--teal-hi); border-color: var(--teal-hi); }\n.pacha .go-row { display: flex; flex-wrap: wrap; gap: 10px; }\n.pacha .chips { display: flex; flex-wrap: wrap; gap: 6px; }\n.pacha .chip { display: inline-flex; align-items: center; font-size: 13px; line-height: 1; padding: 7px 11px; border-radius: 999px; border: 1px solid rgba(159, 227, 215, .25); color: var(--text-2); background: rgba(255, 255, 255, .03); }\n.pacha .chip:hover { border-color: rgba(159, 227, 215, .6); color: var(--text); }\n.pacha .chip.on { background: var(--teal); border-color: var(--teal); color: var(--text); }\n.pacha .section-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }\n.pacha .section-head h2 { font-size: 30px; font-weight: 600; letter-spacing: -.015em; line-height: 1.1; }\n.pacha .section-head p { font-size: 15px; color: var(--text-2); margin-top: 4px; }\n.pacha .section-head .more { font-size: 15px; font-weight: 500; }\n@media (max-width: 640px) { .pacha .wrap { padding: 0 16px; } }\n.pacha.foot-panel { background: var(--ink-3); border-top: 1px solid var(--line); }\n.foot { display: flex; flex-direction: column; gap: 22px; padding: 28px 0 20px; }\n.foot .cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }\n.foot .cols \u003e div { display: flex; flex-direction: column; gap: 8px; min-width: 0; }\n.foot h3 { font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--mint); }\n.foot p { font-size: 13px; line-height: 1.5; color: var(--text-2); }\n.foot .cols a { color: var(--text-2); border-bottom: 1px solid rgba(159, 227, 215, .25); align-self: flex-start; font-size: 14px; }\n.foot .cols a:hover { color: var(--text); border-bottom-color: var(--mint); }\n.foot .legal { display: flex; flex-wrap: wrap; gap: 6px 22px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }\n@media (max-width: 760px) { .foot .cols { grid-template-columns: repeat(1, minmax(0, 1fr)); } }\n",
+                "wrap": false
+              }
+            },
+            "version": "6.3.0"
+          }
+        }
+      },
+      "panel-hero": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "infinity"
+                      },
+                      "group": "yesoreyeram-infinity-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "columns": [
+                          {
+                            "selector": "uid",
+                            "text": "uid",
+                            "type": "string"
+                          },
+                          {
+                            "selector": "tags",
+                            "text": "tags",
+                            "type": "string"
+                          },
+                          {
+                            "selector": "folderUid",
+                            "text": "folderUid",
+                            "type": "string"
+                          }
+                        ],
+                        "format": "table",
+                        "parser": "backend",
+                        "root_selector": "",
+                        "source": "url",
+                        "type": "json",
+                        "url": "http://localhost:3000/api/search?type=dash-db\u0026folderUIDs=gallery\u0026folderUIDs=plus\u0026limit=500",
+                        "url_options": {
+                          "method": "GET"
+                        }
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Who this is, what runs, and how many dashboards there are: every dashboard Grafana's search knows, counted by tag.",
+          "id": 1,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "marcusolsson-dynamictext-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "afterRender": "context.element.style.height = '100%';\n// The chip of the tag the page is filtered by, read from the URL Grafana keeps\n// the variable in; none set means All.\nconst current = new URLSearchParams(location.search).get('var-tag') || 'type=dash-db';\ncontext.element.querySelectorAll('.chips .chip').forEach((chip) =\u003e {\n  const value = new URL(chip.getAttribute('href'), location.origin).searchParams.get('var-tag');\n  chip.classList.toggle('on', value === current);\n});",
+                "content": "\u003cdiv class=\"pacha hero-panel\"\u003e\u003csection class=\"hero\"\u003e\u003cdiv class=\"wrap\"\u003e\n\u003cdiv class=\"hero-main\"\u003e\n\u003cimg class=\"logo\" src=\"/home/assets/logo.svg\" alt=\"UBICA Geospatial\"\u003e\n\u003ch1\u003ePacha\u003c/h1\u003e\n\u003cp class=\"lede\"\u003eSpatiotemporal visualization in Grafana, in one command.\u003c/p\u003e\n\u003cp class=\"sub\"\u003eKepler maps, DuckDB on the server and in the browser, cloud-native rasters and live feeds, behind one gateway. Open any dashboard below and pan, filter and play it: no account, no key, nothing to install.\u003c/p\u003e\n\u003cdiv class=\"go-row\"\u003e\u003ca class=\"go primary\" href=\"https://docs.ubica.dev/\"\u003eDocumentation\u003c/a\u003e\u003ca class=\"go\" href=\"https://github.com/ubica-ecuador/pacha\"\u003eGitHub\u003c/a\u003e\u003ca class=\"go\" href=\"https://docs.ubica.dev/plus/\"\u003eKepler Plus\u003c/a\u003e\u003c/div\u003e\n\u003c/div\u003e\n\u003caside class=\"hero-side\"\u003e\n\u003cdiv class=\"stats\"\u003e\u003cdiv\u003e\u003cb\u003e{{data.length}}\u003c/b\u003e\u003cspan\u003edashboards\u003c/span\u003e\u003c/div\u003e\u003cdiv\u003e\u003cb\u003e{{tagged data \"live\"}}\u003c/b\u003e\u003cspan\u003elive feeds\u003c/span\u003e\u003c/div\u003e\u003cdiv\u003e\u003cb\u003e{{inFolder data \"plus\"}}\u003c/b\u003e\u003cspan\u003ewith Plus\u003c/span\u003e\u003c/div\u003e\u003c/div\u003e\n\u003chr\u003e\n\u003cp\u003eRun the same stack on your machine. Plugins, DuckDB's extensions and the tiler are baked into the images: nothing is downloaded when it starts.\u003c/p\u003e\n\u003cdiv class=\"cmd\"\u003e\u003ccode\u003edocker compose up --wait\u003c/code\u003e\u003ca href=\"https://github.com/ubica-ecuador/pacha#run-it\"\u003eHow \u0026rarr;\u003c/a\u003e\u003c/div\u003e\n\u003c/aside\u003e\n\u003c/div\u003e\u003c/section\u003e\n\u003cdiv class=\"stack\"\u003e\u003cdiv class=\"wrap\"\u003e\u003cspan class=\"eyebrow\"\u003eWhat runs\u003c/span\u003e\u003ca href=\"https://grafana.com/oss/grafana/\"\u003eGrafana\u003c/a\u003e\u003ca href=\"https://github.com/ubica-ecuador/keplergl-grafana-panel\"\u003eKepler Geospatial Maps\u003c/a\u003e\u003ca href=\"https://github.com/ubica-ecuador/chaski\"\u003eChaski \u003cspan\u003eDuckDB in the browser\u003c/span\u003e\u003c/a\u003e\u003ca href=\"https://duckdb.org/\"\u003eDuckDB \u003cspan\u003eon the server\u003c/span\u003e\u003c/a\u003e\u003ca href=\"https://grafana.com/grafana/plugins/yesoreyeram-infinity-datasource/\"\u003eInfinity\u003c/a\u003e\u003ca href=\"https://grafana.com/grafana/plugins/volkovlabs-echarts-panel/\"\u003eBusiness Charts\u003c/a\u003e\u003ca href=\"https://developmentseed.org/titiler/\"\u003eTiTiler\u003c/a\u003e\u003c/div\u003e\u003c/div\u003e\n\u003cdiv class=\"wrap gallery-head\"\u003e\n\u003cdiv class=\"section-head\"\u003e\u003cdiv\u003e\u003ch2\u003eGallery\u003c/h2\u003e\u003cp\u003e{{inFolder data \"gallery\"}} dashboards on the free stack. Every map is the panel drawing the rows a query returned.\u003c/p\u003e\u003c/div\u003e\u003ca class=\"more\" href=\"/dashboards/f/gallery/\"\u003eAll of the Gallery \u0026rarr;\u003c/a\u003e\u003c/div\u003e\n\u003cdiv class=\"chips\"\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=type%3Ddash-db\"\u003eAll\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dlive\"\u003eLive\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dchaski\"\u003eIn the browser\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dduckdb\"\u003eOn the server\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dweather\"\u003eWeather\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dmobility\"\u003eMobility\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dtransit\"\u003eTransit\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dsatellite\"\u003eSatellite\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dmaritime\"\u003eMaritime\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Denergy\"\u003eEnergy\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dair-quality\"\u003eAir quality\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dwildlife\"\u003eWildlife\u003c/a\u003e\u003c/div\u003e\n\u003c/div\u003e\u003c/div\u003e",
+                "contentPartials": [],
+                "defaultContent": "",
+                "editor": {
+                  "format": "auto",
+                  "language": "html"
+                },
+                "editors": [
+                  "styles",
+                  "afterRender",
+                  "helpers"
+                ],
+                "externalStyles": [],
+                "helpers": "// `tags` arrives from the search API as a JSON array in a string.\nconst tagsOf = (value) =\u003e {\n  if (Array.isArray(value)) return value;\n  try { return JSON.parse(value || '[]'); } catch { return []; }\n};\ncontext.handlebars.registerHelper('has', (tags, tag) =\u003e tagsOf(tags).includes(tag));\n// The chips of a card: its theme and engine tags; `kepler` is every card and\n// `plus` is the section, and the Business plugins are not what a visitor picks by.\ncontext.handlebars.registerHelper('chips', (tags) =\u003e tagsOf(tags).filter((t) =\u003e !['kepler', 'plus', 'business-charts', 'business-table', 'business-text', 'business-variable'].includes(t)));\ncontext.handlebars.registerHelper('tagged', (rows, tag) =\u003e (rows || []).filter((r) =\u003e tagsOf(r.tags).includes(tag)).length);\ncontext.handlebars.registerHelper('inFolder', (rows, uid) =\u003e (rows || []).filter((r) =\u003e r.folderUid === uid).length);\n",
+                "renderMode": "allRows",
+                "status": "",
+                "styles": "@font-face { font-family: Outfit; src: url(/home/assets/outfit.woff2) format('woff2'); font-weight: 400 700; font-style: normal; font-display: swap; }\n.pacha { --ink: #0F2327; --ink-2: #132C31; --ink-3: #0C1E22; --teal: #0B8278; --teal-hi: #10A396; --mint: #9FE3D7; --moss: #5FA39A; --text: #FFFFFF; --text-2: #C5D9D5; --muted: #8FB3AD; --line: rgba(159, 227, 215, .14); color: var(--text); background: var(--ink); border-radius: 2px; height: 100%; overflow: hidden; }\n.pacha h1, .pacha h2, .pacha h3 { font-family: Outfit, Inter, ui-sans-serif, system-ui, sans-serif; margin: 0; color: var(--text); }\n.pacha p { margin: 0; }\n.pacha a { color: var(--mint); text-decoration: none; }\n.pacha a:hover { color: var(--text); }\n.pacha .wrap { max-width: 1240px; margin: 0 auto; padding: 0 32px; }\n.pacha .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--mint); }\n.pacha .go { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 18px; border-radius: 8px; border: 1px solid rgba(159, 227, 215, .3); background: rgba(255, 255, 255, .04); color: var(--text); font-weight: 500; font-size: 15px; transition: background .15s ease, border-color .15s ease; }\n.pacha .go:hover { background: rgba(159, 227, 215, .12); border-color: rgba(159, 227, 215, .55); color: var(--text); }\n.pacha .go.primary { background: var(--teal); border-color: var(--teal); }\n.pacha .go.primary:hover { background: var(--teal-hi); border-color: var(--teal-hi); }\n.pacha .go-row { display: flex; flex-wrap: wrap; gap: 10px; }\n.pacha .chips { display: flex; flex-wrap: wrap; gap: 6px; }\n.pacha .chip { display: inline-flex; align-items: center; font-size: 13px; line-height: 1; padding: 7px 11px; border-radius: 999px; border: 1px solid rgba(159, 227, 215, .25); color: var(--text-2); background: rgba(255, 255, 255, .03); }\n.pacha .chip:hover { border-color: rgba(159, 227, 215, .6); color: var(--text); }\n.pacha .chip.on { background: var(--teal); border-color: var(--teal); color: var(--text); }\n.pacha .section-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }\n.pacha .section-head h2 { font-size: 30px; font-weight: 600; letter-spacing: -.015em; line-height: 1.1; }\n.pacha .section-head p { font-size: 15px; color: var(--text-2); margin-top: 4px; }\n.pacha .section-head .more { font-size: 15px; font-weight: 500; }\n@media (max-width: 640px) { .pacha .wrap { padding: 0 16px; } }\n.pacha.hero-panel { display: flex; flex-direction: column; }\n.hero { position: relative; isolation: isolate; padding: 44px 0 36px; }\n.hero::before { content: \"\"; position: absolute; inset: 0; background: url(/home/assets/contours.svg) center / cover no-repeat; opacity: .5; z-index: -2; }\n.hero::after { content: \"\"; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 90% at 30% 50%, rgba(15, 35, 39, .96) 0%, rgba(15, 35, 39, .9) 45%, rgba(15, 35, 39, .55) 75%, rgba(15, 35, 39, .25) 100%); z-index: -1; }\n.hero .wrap { display: flex; flex-wrap: wrap; gap: 28px 48px; align-items: flex-start; }\n.hero-main { flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }\n.hero-main .logo { width: 170px; height: auto; display: block; }\n.hero-main h1 { font-size: 52px; font-weight: 600; line-height: 1; letter-spacing: -.025em; }\n.hero-main .lede { font-size: 24px; font-weight: 500; line-height: 1.2; letter-spacing: -.01em; color: var(--text); }\n.hero-main .sub { max-width: 62ch; font-size: 16px; line-height: 1.5; color: var(--mint); }\n.hero-side { flex: 0 1 340px; min-width: 260px; display: flex; flex-direction: column; gap: 12px; padding: 20px 22px; border-radius: 12px; background: rgba(15, 35, 39, .75); border: 1px solid rgba(159, 227, 215, .18); }\n.hero-side .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }\n.hero-side .stats div { display: flex; flex-direction: column; gap: 2px; }\n.hero-side .stats b { font-family: Outfit, Inter, sans-serif; font-size: 28px; font-weight: 600; line-height: 1; }\n.hero-side .stats span { font-size: 12px; color: var(--mint); }\n.hero-side hr { border: 0; border-top: 1px solid var(--line); margin: 2px 0; }\n.hero-side p { font-size: 13px; line-height: 1.5; color: var(--text-2); }\n.hero-side .cmd { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 12px; border-radius: 8px; background: #0B1C1F; border: 1px solid var(--line); }\n.hero-side code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; color: var(--mint); }\n.stack { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--ink-3); }\n.stack .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 11px; padding-bottom: 11px; }\n.stack .eyebrow { color: var(--moss); margin-right: 4px; }\n.stack a { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: rgba(255, 255, 255, .02); }\n.stack a:hover { border-color: rgba(159, 227, 215, .45); color: var(--text); }\n.stack a span { color: var(--moss); }\n.gallery-head { padding: 26px 0 8px; display: flex; flex-direction: column; gap: 14px; }\n",
+                "wrap": false
+              }
+            },
+            "version": "6.3.0"
+          }
+        }
+      },
+      "panel-promo": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "infinity"
+                      },
+                      "group": "yesoreyeram-infinity-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "columns": [
+                          {
+                            "selector": "uid",
+                            "text": "uid",
+                            "type": "string"
+                          },
+                          {
+                            "selector": "tags",
+                            "text": "tags",
+                            "type": "string"
+                          }
+                        ],
+                        "format": "table",
+                        "parser": "backend",
+                        "root_selector": "",
+                        "source": "url",
+                        "type": "json",
+                        "url": "http://localhost:3000/api/search?type=dash-db\u0026folderUIDs=plus\u0026limit=500",
+                        "url_options": {
+                          "method": "GET"
+                        }
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "What Kepler Geospatial Maps Plus adds, and how many dashboards here need it (the Plus folder, from Grafana's search).",
+          "id": 3,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "marcusolsson-dynamictext-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "afterRender": "context.element.style.height = '100%';",
+                "content": "\u003cdiv class=\"pacha promo-panel\"\u003e\u003cdiv class=\"wrap\"\u003e\u003csection class=\"promo\"\u003e\n\u003cdiv class=\"promo-text\"\u003e\n\u003cspan class=\"eyebrow\"\u003eKepler Geospatial Maps Plus\u003c/span\u003e\n\u003ch2\u003eEvery sensor, site and vehicle on the map, each with its own time series.\u003c/h2\u003e\n\u003cp\u003ePlus draws each one where it is, together with its series: a sparkline card over the station, a gauge that fills over the substation, a bus that moves with its trail. Press play and the whole map walks through the time range, in step with the rest of the dashboard. It runs the free panel with everything it does, and adds to it.\u003c/p\u003e\n\u003cdiv class=\"chips\"\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/layers/gauge\"\u003eGauge\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/layers/shape-3d\"\u003e3D Shape\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/layers/coverage\"\u003eCoverage\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/layers/surface\"\u003eSurface\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/layers/sparkline\"\u003eSparkline\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/layers/traffic\"\u003eTraffic\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/layers/pipeline\"\u003ePipeline\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/layers/fleet\"\u003eFleet\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/data/places\"\u003ePlaces without coordinates\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/maps/3d-tiles\"\u003eGoogle 3D Tiles\u003c/a\u003e\u003c/div\u003e\n\u003cdiv class=\"go-row\"\u003e\u003ca class=\"go primary\" href=\"https://docs.ubica.dev/plus/\"\u003eWhat Plus adds\u003c/a\u003e\u003ca class=\"go\" href=\"https://docs.ubica.dev/plus/start/install\"\u003eInstall from the Grafana catalogue\u003c/a\u003e\u003c/div\u003e\n\u003c/div\u003e\n\u003ca class=\"promo-shot\" href=\"https://docs.ubica.dev/plus/\"\u003e\u003cimg src=\"/home/assets/plus.jpg\" alt=\"European power grid on one map: renewable share as gauges, demand as 3D bars, interconnector flows as animated Traffic links\"\u003e\u003c/a\u003e\n\u003c/section\u003e\n\u003cdiv class=\"plus-head section-head\"\u003e\u003cdiv\u003e\u003ch2\u003eBuilt with Plus\u003c/h2\u003e{{#if data.length}}\u003cp\u003e{{data.length}} dashboards that need the Plus app.\u003c/p\u003e{{else}}\u003cp\u003eThis instance runs the free stack. The Plus dashboards are on \u003ca href=\"https://pacha.ubica.dev/\"\u003epacha.ubica.dev\u003c/a\u003e.\u003c/p\u003e{{/if}}\u003c/div\u003e{{#if data.length}}\u003ca class=\"more\" href=\"/dashboards/f/plus/\"\u003eAll of Plus \u0026rarr;\u003c/a\u003e{{/if}}\u003c/div\u003e\n\u003c/div\u003e\u003c/div\u003e",
+                "contentPartials": [],
+                "defaultContent": "\u003cdiv class=\"pacha promo-panel\"\u003e\u003cdiv class=\"wrap\"\u003e\u003csection class=\"promo\"\u003e\n\u003cdiv class=\"promo-text\"\u003e\n\u003cspan class=\"eyebrow\"\u003eKepler Geospatial Maps Plus\u003c/span\u003e\n\u003ch2\u003eEvery sensor, site and vehicle on the map, each with its own time series.\u003c/h2\u003e\n\u003cp\u003ePlus draws each one where it is, together with its series: a sparkline card over the station, a gauge that fills over the substation, a bus that moves with its trail. Press play and the whole map walks through the time range, in step with the rest of the dashboard. It runs the free panel with everything it does, and adds to it.\u003c/p\u003e\n\u003cdiv class=\"chips\"\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/layers/gauge\"\u003eGauge\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/layers/shape-3d\"\u003e3D Shape\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/layers/coverage\"\u003eCoverage\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/layers/surface\"\u003eSurface\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/layers/sparkline\"\u003eSparkline\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/layers/traffic\"\u003eTraffic\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/layers/pipeline\"\u003ePipeline\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/layers/fleet\"\u003eFleet\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/data/places\"\u003ePlaces without coordinates\u003c/a\u003e\u003ca class=\"chip\" href=\"https://docs.ubica.dev/plus/maps/3d-tiles\"\u003eGoogle 3D Tiles\u003c/a\u003e\u003c/div\u003e\n\u003cdiv class=\"go-row\"\u003e\u003ca class=\"go primary\" href=\"https://docs.ubica.dev/plus/\"\u003eWhat Plus adds\u003c/a\u003e\u003ca class=\"go\" href=\"https://docs.ubica.dev/plus/start/install\"\u003eInstall from the Grafana catalogue\u003c/a\u003e\u003c/div\u003e\n\u003c/div\u003e\n\u003ca class=\"promo-shot\" href=\"https://docs.ubica.dev/plus/\"\u003e\u003cimg src=\"/home/assets/plus.jpg\" alt=\"European power grid on one map: renewable share as gauges, demand as 3D bars, interconnector flows as animated Traffic links\"\u003e\u003c/a\u003e\n\u003c/section\u003e\n\u003cdiv class=\"plus-head section-head\"\u003e\u003cdiv\u003e\u003ch2\u003eBuilt with Plus\u003c/h2\u003e{{#if false}}\u003cp\u003e{{data.length}} dashboards that need the Plus app.\u003c/p\u003e{{else}}\u003cp\u003eThis instance runs the free stack. The Plus dashboards are on \u003ca href=\"https://pacha.ubica.dev/\"\u003epacha.ubica.dev\u003c/a\u003e.\u003c/p\u003e{{/if}}\u003c/div\u003e{{#if false}}\u003ca class=\"more\" href=\"/dashboards/f/plus/\"\u003eAll of Plus \u0026rarr;\u003c/a\u003e{{/if}}\u003c/div\u003e\n\u003c/div\u003e\u003c/div\u003e",
+                "editor": {
+                  "format": "auto",
+                  "language": "html"
+                },
+                "editors": [
+                  "styles",
+                  "afterRender",
+                  "helpers"
+                ],
+                "externalStyles": [],
+                "helpers": "// `tags` arrives from the search API as a JSON array in a string.\nconst tagsOf = (value) =\u003e {\n  if (Array.isArray(value)) return value;\n  try { return JSON.parse(value || '[]'); } catch { return []; }\n};\ncontext.handlebars.registerHelper('has', (tags, tag) =\u003e tagsOf(tags).includes(tag));\n// The chips of a card: its theme and engine tags; `kepler` is every card and\n// `plus` is the section, and the Business plugins are not what a visitor picks by.\ncontext.handlebars.registerHelper('chips', (tags) =\u003e tagsOf(tags).filter((t) =\u003e !['kepler', 'plus', 'business-charts', 'business-table', 'business-text', 'business-variable'].includes(t)));\ncontext.handlebars.registerHelper('tagged', (rows, tag) =\u003e (rows || []).filter((r) =\u003e tagsOf(r.tags).includes(tag)).length);\ncontext.handlebars.registerHelper('inFolder', (rows, uid) =\u003e (rows || []).filter((r) =\u003e r.folderUid === uid).length);\n",
+                "renderMode": "allRows",
+                "status": "",
+                "styles": "@font-face { font-family: Outfit; src: url(/home/assets/outfit.woff2) format('woff2'); font-weight: 400 700; font-style: normal; font-display: swap; }\n.pacha { --ink: #0F2327; --ink-2: #132C31; --ink-3: #0C1E22; --teal: #0B8278; --teal-hi: #10A396; --mint: #9FE3D7; --moss: #5FA39A; --text: #FFFFFF; --text-2: #C5D9D5; --muted: #8FB3AD; --line: rgba(159, 227, 215, .14); color: var(--text); background: var(--ink); border-radius: 2px; height: 100%; overflow: hidden; }\n.pacha h1, .pacha h2, .pacha h3 { font-family: Outfit, Inter, ui-sans-serif, system-ui, sans-serif; margin: 0; color: var(--text); }\n.pacha p { margin: 0; }\n.pacha a { color: var(--mint); text-decoration: none; }\n.pacha a:hover { color: var(--text); }\n.pacha .wrap { max-width: 1240px; margin: 0 auto; padding: 0 32px; }\n.pacha .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--mint); }\n.pacha .go { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 18px; border-radius: 8px; border: 1px solid rgba(159, 227, 215, .3); background: rgba(255, 255, 255, .04); color: var(--text); font-weight: 500; font-size: 15px; transition: background .15s ease, border-color .15s ease; }\n.pacha .go:hover { background: rgba(159, 227, 215, .12); border-color: rgba(159, 227, 215, .55); color: var(--text); }\n.pacha .go.primary { background: var(--teal); border-color: var(--teal); }\n.pacha .go.primary:hover { background: var(--teal-hi); border-color: var(--teal-hi); }\n.pacha .go-row { display: flex; flex-wrap: wrap; gap: 10px; }\n.pacha .chips { display: flex; flex-wrap: wrap; gap: 6px; }\n.pacha .chip { display: inline-flex; align-items: center; font-size: 13px; line-height: 1; padding: 7px 11px; border-radius: 999px; border: 1px solid rgba(159, 227, 215, .25); color: var(--text-2); background: rgba(255, 255, 255, .03); }\n.pacha .chip:hover { border-color: rgba(159, 227, 215, .6); color: var(--text); }\n.pacha .chip.on { background: var(--teal); border-color: var(--teal); color: var(--text); }\n.pacha .section-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }\n.pacha .section-head h2 { font-size: 30px; font-weight: 600; letter-spacing: -.015em; line-height: 1.1; }\n.pacha .section-head p { font-size: 15px; color: var(--text-2); margin-top: 4px; }\n.pacha .section-head .more { font-size: 15px; font-weight: 500; }\n@media (max-width: 640px) { .pacha .wrap { padding: 0 16px; } }\n.pacha.promo-panel { background: transparent; }\n.promo { display: flex; flex-wrap: wrap; gap: 24px 40px; align-items: center; padding: 28px 32px; border-radius: 14px; background: var(--ink-2); border: 1px solid rgba(159, 227, 215, .2); }\n.promo-text { flex: 1 1 440px; min-width: 0; display: flex; flex-direction: column; gap: 14px; }\n.promo-text h2 { font-size: 30px; font-weight: 600; letter-spacing: -.015em; line-height: 1.15; }\n.promo-text p { font-size: 15px; line-height: 1.5; color: var(--text-2); }\n.promo-shot { flex: 1 1 380px; min-width: 0; display: block; border-radius: 10px; overflow: hidden; border: 1px solid rgba(159, 227, 215, .18); }\n.promo-shot img { width: 100%; height: auto; display: block; }\n.plus-head { padding: 26px 0 0; }\n.pacha.promo-panel .wrap { padding: 0; }\n",
+                "wrap": false
+              }
+            },
+            "version": "6.3.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "RowsLayout",
+      "spec": {
+        "rows": [
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-hero"
+                        },
+                        "height": 18,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": ""
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "AutoGridLayout",
+                "spec": {
+                  "columnWidth": 320,
+                  "columnWidthMode": "custom",
+                  "fillScreen": false,
+                  "items": [
+                    {
+                      "kind": "AutoGridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-card-gallery"
+                        },
+                        "repeat": {
+                          "mode": "variable",
+                          "value": "gallery"
+                        }
+                      }
+                    }
+                  ],
+                  "maxColumnCount": 4,
+                  "rowHeight": 372,
+                  "rowHeightMode": "custom"
+                }
+              },
+              "title": ""
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-promo"
+                        },
+                        "height": 14,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": ""
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "AutoGridLayout",
+                "spec": {
+                  "columnWidth": 320,
+                  "columnWidthMode": "custom",
+                  "fillScreen": false,
+                  "items": [
+                    {
+                      "kind": "AutoGridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-card-plus"
+                        },
+                        "repeat": {
+                          "mode": "variable",
+                          "value": "plus"
+                        }
+                      }
+                    }
+                  ],
+                  "maxColumnCount": 4,
+                  "rowHeight": 372,
+                  "rowHeightMode": "custom"
+                }
+              },
+              "title": ""
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-foot"
+                        },
+                        "height": 8,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": ""
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "business-text",
+      "infinity"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-6h",
+      "hideTimepicker": true,
+      "timezone": "browser",
+      "to": "now"
+    },
+    "title": "Pacha",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "All",
+            "value": "type=dash-db"
+          },
+          "description": "Only the dashboards with this tag, in both sections. Each value is the query parameter the search takes; All repeats one it already has.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Show",
+          "multi": false,
+          "name": "tag",
+          "options": [],
+          "query": "All : type=dash-db,Live : tag=live,In the browser : tag=chaski,On the server : tag=duckdb,Weather : tag=weather,Mobility : tag=mobility,Transit : tag=transit,Satellite : tag=satellite,Maritime : tag=maritime,Energy : tag=energy,Air quality : tag=air-quality,Wildlife : tag=wildlife,Space : tag=space,Seismic : tag=seismic,Water : tag=water,Aviation : tag=aviation,Sport : tag=sport,Demographics : tag=demographics,Buildings : tag=buildings,Migration : tag=migration,Network : tag=network,GPS : tag=gps",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "description": "The uids of the Gallery folder, one card each. Hidden: the cards repeat over it.",
+          "hide": "hideVariable",
+          "includeAll": true,
+          "multi": true,
+          "name": "gallery",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "infinity"
+            },
+            "group": "yesoreyeram-infinity-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "infinityQuery": {
+                "columns": [
+                  {
+                    "selector": "uid",
+                    "text": "__value",
+                    "type": "string"
+                  },
+                  {
+                    "selector": "title",
+                    "text": "__text",
+                    "type": "string"
+                  }
+                ],
+                "format": "table",
+                "parser": "backend",
+                "refId": "variable",
+                "root_selector": "",
+                "source": "url",
+                "type": "json",
+                "url": "http://localhost:3000/api/search?type=dash-db\u0026folderUIDs=gallery\u0026limit=500\u0026sort=alpha-asc\u0026$tag",
+                "url_options": {
+                  "method": "GET"
+                }
+              },
+              "queryType": "infinity",
+              "refId": "variable"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "description": "The uids of the Plus folder, one card each. Hidden: the cards repeat over it. Empty on an instance without Plus.",
+          "hide": "hideVariable",
+          "includeAll": true,
+          "multi": true,
+          "name": "plus",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "infinity"
+            },
+            "group": "yesoreyeram-infinity-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "infinityQuery": {
+                "columns": [
+                  {
+                    "selector": "uid",
+                    "text": "__value",
+                    "type": "string"
+                  },
+                  {
+                    "selector": "title",
+                    "text": "__text",
+                    "type": "string"
+                  }
+                ],
+                "format": "table",
+                "parser": "backend",
+                "refId": "variable",
+                "root_selector": "",
+                "source": "url",
+                "type": "json",
+                "url": "http://localhost:3000/api/search?type=dash-db\u0026folderUIDs=plus\u0026limit=500\u0026sort=alpha-asc\u0026$tag",
+                "url_options": {
+                  "method": "GET"
+                }
+              },
+              "queryType": "infinity",
+              "refId": "variable"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
