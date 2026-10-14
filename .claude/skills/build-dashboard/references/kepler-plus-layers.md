@@ -34,7 +34,8 @@ kepler never adds these types by itself.
 `gaugeMax` (`auto` = 1 if every value ≤ 1, else 100), `gaugeTextMode` percent|value,
 `gaugeUnit`, `gaugeCentreText`, `gaugeTextSize`, `gaugeTextColor`, `radius` (22),
 `gaugeThickness` (4), `gaugePosition` center|above|right|below|left with `gaugeDistance`,
-`gaugeUpright`, `gaugeBackground*`, `gaugeZoomScale`/`gaugeZoomRef`/`gaugeZoomRate`.
+`gaugeUpright`, `gaugeOnTop` (true: over the base map groups moved to the top, roads and labels,
+and over the other layers), `gaugeBackground*`, `gaugeZoomScale`/`gaugeZoomRef`/`gaugeZoomRate`.
 For: utilisation, levels, temperatures, renewable share. Example: `germany-power-borders`.
 
 **prism** (3D Shape): a solid per point. `heightField`/`widthField`/`lengthField` (with
@@ -61,7 +62,8 @@ drawn inside the base map under its 3D buildings, on styles that have them such 
 
 **sparkline**: a card per place with its series. Needs time (`sparkTimeField` auto);
 `colorField` is the plotted value. `sparkScale` common|perSite, `sparkMin|Max`, `sparkUnit`,
-`sparkSize` S|M|L, `sparkCards` auto|hover, `sparkOverlap`, `sparkDots`, `sparkAlerts` +
+`sparkSize` S|M|L, `sparkCards` auto|hover, `sparkOverlap`, `sparkDots`, `sparkDotsOnTop` (true:
+the dots over the base map's top groups, as the cards always are), `sparkAlerts` +
 `sparkNoDataAfter`, `sparkCrosshair` (follows `cursorSync`). Example: `germany-power-borders`,
 `melbourne-city-sensors`.
 
