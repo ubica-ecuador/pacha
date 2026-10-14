@@ -13,9 +13,6 @@
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "legacyOptions": {
-            "type": "dashboard"
-          },
           "name": "Annotations \u0026 Alerts",
           "query": {
             "datasource": {
@@ -113,7 +110,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -222,7 +233,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -301,7 +326,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -395,12 +434,26 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
                 "afterRender": "context.element.style.height = '100%';\n// The chip of the tag the page is filtered by, read from the URL Grafana keeps\n// the variable in; none set means All.\nconst current = new URLSearchParams(location.search).get('var-tag') || 'type=dash-db';\ncontext.element.querySelectorAll('.chips .chip').forEach((chip) =\u003e {\n  const value = new URL(chip.getAttribute('href'), location.origin).searchParams.get('var-tag');\n  chip.classList.toggle('on', value === current);\n});",
-                "content": "\u003cdiv class=\"pacha hero-panel\"\u003e\u003csection class=\"hero\"\u003e\u003cdiv class=\"wrap\"\u003e\n\u003cdiv class=\"hero-main\"\u003e\n\u003cimg class=\"logo\" src=\"/home/assets/logo.svg\" alt=\"UBICA Geospatial\"\u003e\n\u003ch1\u003ePacha\u003c/h1\u003e\n\u003cp class=\"lede\"\u003eSpatiotemporal visualization in Grafana, in one command.\u003c/p\u003e\n\u003cp class=\"sub\"\u003eKepler maps, DuckDB on the server and in the browser, cloud-native rasters and live feeds, behind one gateway. Open any dashboard below and pan, filter and play it: no account, no key, nothing to install.\u003c/p\u003e\n\u003cdiv class=\"go-row\"\u003e\u003ca class=\"go primary\" href=\"https://docs.ubica.dev/\"\u003eDocumentation\u003c/a\u003e\u003ca class=\"go\" href=\"https://github.com/ubica-ecuador/pacha\"\u003eGitHub\u003c/a\u003e\u003ca class=\"go\" href=\"https://docs.ubica.dev/plus/\"\u003eKepler Plus\u003c/a\u003e\u003c/div\u003e\n\u003c/div\u003e\n\u003caside class=\"hero-side\"\u003e\n\u003cdiv class=\"stats\"\u003e\u003cdiv\u003e\u003cb\u003e{{data.length}}\u003c/b\u003e\u003cspan\u003edashboards\u003c/span\u003e\u003c/div\u003e\u003cdiv\u003e\u003cb\u003e{{tagged data \"live\"}}\u003c/b\u003e\u003cspan\u003elive feeds\u003c/span\u003e\u003c/div\u003e\u003cdiv\u003e\u003cb\u003e{{inFolder data \"plus\"}}\u003c/b\u003e\u003cspan\u003ewith Plus\u003c/span\u003e\u003c/div\u003e\u003c/div\u003e\n\u003chr\u003e\n\u003cp\u003eRun the same stack on your machine. Plugins, DuckDB's extensions and the tiler are baked into the images: nothing is downloaded when it starts.\u003c/p\u003e\n\u003cdiv class=\"cmd\"\u003e\u003ccode\u003edocker compose up --wait\u003c/code\u003e\u003ca href=\"https://github.com/ubica-ecuador/pacha#run-it\"\u003eHow \u0026rarr;\u003c/a\u003e\u003c/div\u003e\n\u003c/aside\u003e\n\u003c/div\u003e\u003c/section\u003e\n\u003cdiv class=\"stack\"\u003e\u003cdiv class=\"wrap\"\u003e\u003cspan class=\"eyebrow\"\u003eWhat runs\u003c/span\u003e\u003ca href=\"https://grafana.com/oss/grafana/\"\u003eGrafana\u003c/a\u003e\u003ca href=\"https://github.com/ubica-ecuador/keplergl-grafana-panel\"\u003eKepler Geospatial Maps\u003c/a\u003e\u003ca href=\"https://github.com/ubica-ecuador/chaski\"\u003eChaski \u003cspan\u003eDuckDB in the browser\u003c/span\u003e\u003c/a\u003e\u003ca href=\"https://duckdb.org/\"\u003eDuckDB \u003cspan\u003eon the server\u003c/span\u003e\u003c/a\u003e\u003ca href=\"https://grafana.com/grafana/plugins/yesoreyeram-infinity-datasource/\"\u003eInfinity\u003c/a\u003e\u003ca href=\"https://grafana.com/grafana/plugins/volkovlabs-echarts-panel/\"\u003eBusiness Charts\u003c/a\u003e\u003ca href=\"https://developmentseed.org/titiler/\"\u003eTiTiler\u003c/a\u003e\u003c/div\u003e\u003c/div\u003e\n\u003cdiv class=\"wrap gallery-head\"\u003e\n\u003cdiv class=\"section-head\"\u003e\u003cdiv\u003e\u003ch2\u003eGallery\u003c/h2\u003e\u003cp\u003e{{inFolder data \"gallery\"}} dashboards on the free stack. Every map is the panel drawing the rows a query returned.\u003c/p\u003e\u003c/div\u003e\u003ca class=\"more\" href=\"/dashboards/f/gallery/\"\u003eAll of the Gallery \u0026rarr;\u003c/a\u003e\u003c/div\u003e\n\u003cdiv class=\"chips\"\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=type%3Ddash-db\"\u003eAll\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dlive\"\u003eLive\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dchaski\"\u003eIn the browser\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dduckdb\"\u003eOn the server\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dweather\"\u003eWeather\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dmobility\"\u003eMobility\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dtransit\"\u003eTransit\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dsatellite\"\u003eSatellite\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dmaritime\"\u003eMaritime\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Denergy\"\u003eEnergy\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dair-quality\"\u003eAir quality\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dwildlife\"\u003eWildlife\u003c/a\u003e\u003c/div\u003e\n\u003c/div\u003e\u003c/div\u003e",
+                "content": "\u003cdiv class=\"pacha hero-panel\"\u003e\n  \u003csection class=\"hero\"\u003e\n    \u003cdiv class=\"wrap\"\u003e\n      \u003cdiv class=\"hero-main\"\u003e\n        \u003cimg class=\"logo\" src=\"/home/assets/logo.svg\" alt=\"UBICA Geospatial\"\u003e\n        \u003ch1\u003ePacha\u003c/h1\u003e\n        \u003cp class=\"lede\"\u003eSpatiotemporal visualization in Grafana, in one command.\u003c/p\u003e\n        \u003cp class=\"sub\"\u003eKepler maps, DuckDB on the server and in the browser, cloud-native rasters and live feeds, behind\n          one gateway. Open any dashboard below and pan, filter and play it: no account, no key, nothing to install.\u003c/p\u003e\n        \u003cdiv class=\"go-row\"\u003e\u003ca class=\"go primary\" href=\"https://docs.ubica.dev/\"\u003eDocumentation\u003c/a\u003e\u003ca class=\"go\"\n            href=\"https://github.com/ubica-ecuador/pacha\"\u003eGitHub\u003c/a\u003e\u003ca class=\"go\"\n            href=\"https://docs.ubica.dev/plus/\"\u003eKepler Plus\u003c/a\u003e\u003c/div\u003e\n      \u003c/div\u003e\n      \u003caside class=\"hero-side\"\u003e\n        \u003cdiv class=\"stats\"\u003e\n          \u003cdiv\u003e\u003cb\u003e{{data.length}}\u003c/b\u003e\u003cspan\u003edashboards\u003c/span\u003e\u003c/div\u003e\n          \u003cdiv\u003e\u003cb\u003e{{tagged data \"live\"}}\u003c/b\u003e\u003cspan\u003elive feeds\u003c/span\u003e\u003c/div\u003e\n          \u003cdiv\u003e\u003cb\u003e{{inFolder data \"plus\"}}\u003c/b\u003e\u003cspan\u003ewith Plus\u003c/span\u003e\u003c/div\u003e\n        \u003c/div\u003e\n        \u003chr\u003e\n        \u003cp\u003eRun the same stack on your machine. Plugins, DuckDB's extensions and the tiler are baked into the images:\n          nothing is downloaded when it starts.\u003c/p\u003e\n        \u003cdiv class=\"cmd\"\u003e\u003ccode\u003edocker compose up --wait\u003c/code\u003e\u003ca\n            href=\"https://github.com/ubica-ecuador/pacha#run-it\"\u003eHow \u0026rarr;\u003c/a\u003e\u003c/div\u003e\n      \u003c/aside\u003e\n    \u003c/div\u003e\n  \u003c/section\u003e\n  \u003cdiv class=\"stack\"\u003e\n    \u003cdiv class=\"wrap\"\u003e\u003cspan class=\"eyebrow\"\u003eWhat runs\u003c/span\u003e\u003ca href=\"https://grafana.com/oss/grafana/\"\u003eGrafana\u003c/a\u003e\u003ca\n        href=\"https://github.com/ubica-ecuador/keplergl-grafana-panel\"\u003eKepler Geospatial Maps\u003c/a\u003e\u003ca\n        href=\"https://github.com/ubica-ecuador/chaski\"\u003eChaski \u003cspan\u003eDuckDB in the browser\u003c/span\u003e\u003c/a\u003e\u003ca\n        href=\"https://duckdb.org/\"\u003eDuckDB \u003cspan\u003eon the server\u003c/span\u003e\u003c/a\u003e\u003ca\n        href=\"https://grafana.com/grafana/plugins/yesoreyeram-infinity-datasource/\"\u003eInfinity\u003c/a\u003e\u003ca\n        href=\"https://grafana.com/grafana/plugins/volkovlabs-echarts-panel/\"\u003eBusiness Charts\u003c/a\u003e\u003ca\n        href=\"https://developmentseed.org/titiler/\"\u003eTiTiler\u003c/a\u003e\u003c/div\u003e\n  \u003c/div\u003e\n  \u003cdiv class=\"wrap gallery-head\"\u003e\n    \u003cdiv class=\"section-head\"\u003e\n      \u003cdiv\u003e\n        \u003ch2\u003eGallery (community panel)\u003c/h2\u003e\n        \u003cp\u003e{{inFolder data \"gallery\"}} dashboards on the free stack. Every map is the panel drawing the rows a query\n          returned.\u003c/p\u003e\n      \u003c/div\u003e\u003ca class=\"more\" href=\"/dashboards/f/gallery/\"\u003eAll of the Gallery \u0026rarr;\u003c/a\u003e\n    \u003c/div\u003e\n    \u003cdiv class=\"chips\"\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=type%3Ddash-db\"\u003eAll\u003c/a\u003e\u003ca class=\"chip\"\n        href=\"/d/home?var-tag=tag%3Dlive\"\u003eLive\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dchaski\"\u003eIn the\n        browser\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dduckdb\"\u003eOn the server\u003c/a\u003e\u003ca class=\"chip\"\n        href=\"/d/home?var-tag=tag%3Dweather\"\u003eWeather\u003c/a\u003e\u003ca class=\"chip\"\n        href=\"/d/home?var-tag=tag%3Dmobility\"\u003eMobility\u003c/a\u003e\u003ca class=\"chip\"\n        href=\"/d/home?var-tag=tag%3Dtransit\"\u003eTransit\u003c/a\u003e\u003ca class=\"chip\"\n        href=\"/d/home?var-tag=tag%3Dsatellite\"\u003eSatellite\u003c/a\u003e\u003ca class=\"chip\"\n        href=\"/d/home?var-tag=tag%3Dmaritime\"\u003eMaritime\u003c/a\u003e\u003ca class=\"chip\"\n        href=\"/d/home?var-tag=tag%3Denergy\"\u003eEnergy\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dair-quality\"\u003eAir\n        quality\u003c/a\u003e\u003ca class=\"chip\" href=\"/d/home?var-tag=tag%3Dwildlife\"\u003eWildlife\u003c/a\u003e\u003c/div\u003e\n  \u003c/div\u003e\n\u003c/div\u003e",
                 "contentPartials": [],
                 "defaultContent": "",
                 "editor": {
@@ -484,7 +537,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -556,7 +623,6 @@
                 "spec": {
                   "columnWidth": 320,
                   "columnWidthMode": "custom",
-                  "fillScreen": false,
                   "items": [
                     {
                       "kind": "AutoGridLayoutItem",
@@ -618,7 +684,6 @@
                 "spec": {
                   "columnWidth": 320,
                   "columnWidthMode": "custom",
-                  "fillScreen": false,
                   "items": [
                     {
                       "kind": "AutoGridLayoutItem",
@@ -760,6 +825,7 @@
                     "type": "string"
                   }
                 ],
+                "filters": [],
                 "format": "table",
                 "parser": "backend",
                 "refId": "variable",
@@ -768,6 +834,7 @@
                 "type": "json",
                 "url": "http://localhost:3000/api/search?type=dash-db\u0026folderUIDs=gallery\u0026limit=500\u0026sort=alpha-asc\u0026$tag",
                 "url_options": {
+                  "data": "",
                   "method": "GET"
                 }
               },
@@ -821,6 +888,7 @@
                     "type": "string"
                   }
                 ],
+                "filters": [],
                 "format": "table",
                 "parser": "backend",
                 "refId": "variable",
@@ -829,6 +897,7 @@
                 "type": "json",
                 "url": "http://localhost:3000/api/search?type=dash-db\u0026folderUIDs=plus\u0026limit=500\u0026sort=alpha-asc\u0026$tag",
                 "url_options": {
+                  "data": "",
                   "method": "GET"
                 }
               },
