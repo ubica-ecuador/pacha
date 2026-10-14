@@ -13,9 +13,6 @@
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "legacyOptions": {
-            "type": "dashboard"
-          },
           "name": "Annotations \u0026 Alerts",
           "query": {
             "datasource": {
@@ -192,7 +189,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -449,7 +460,7 @@
                 }
               }
             },
-            "version": "13.2.1"
+            "version": "7.2.5"
           }
         }
       },
@@ -743,7 +754,7 @@
                 }
               }
             },
-            "version": "13.2.1"
+            "version": "7.2.5"
           }
         }
       },
@@ -916,7 +927,7 @@
                 }
               }
             },
-            "version": "13.2.1"
+            "version": "7.2.5"
           }
         }
       },
@@ -1028,17 +1039,115 @@
                 "mapConfig": {
                   "config": {
                     "mapState": {
-                      "bearing": 0,
-                      "dragRotate": false,
-                      "latitude": 39.4699,
-                      "longitude": -0.3763,
-                      "pitch": 0,
-                      "zoom": 12.6
+                      "bearing": 24,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 39.45745103919292,
+                      "longitude": -0.40603353562847466,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 50,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 11.988975101908029
                     },
                     "mapStyle": {
-                      "styleType": "openfreemap-dark"
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "plus-maptiler-dataviz",
+                      "threeDBuildingColor": [
+                        12.887291085429352,
+                        12.887291085429352,
+                        12.887291085429352
+                      ],
+                      "topLayerGroups": {
+                        "label": true,
+                        "poi": true,
+                        "road": true
+                      },
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
                     },
                     "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
                       "filters": [
                         {
                           "animationWindow": "free",
@@ -1046,7 +1155,6 @@
                             "grafana-C"
                           ],
                           "enabled": true,
-                          "enlarged": false,
                           "id": "time-window",
                           "name": [
                             "time"
@@ -1064,8 +1172,8 @@
                           "timezone": "Europe/Madrid",
                           "type": "timeRange",
                           "value": [
-                            1791851439509,
-                            1791937839509
+                            1791871200000,
+                            1791950400000
                           ],
                           "view": "minified"
                         }
@@ -1162,239 +1270,14 @@
                           }
                         }
                       },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "bikes",
+                        "stations",
+                        "traffic",
+                        "surface"
+                      ],
                       "layers": [
-                        {
-                          "config": {
-                            "color": [
-                              242,
-                              242,
-                              242
-                            ],
-                            "columnMode": "points",
-                            "columns": {
-                              "lat": "latitude",
-                              "lng": "longitude"
-                            },
-                            "dataId": "grafana-C",
-                            "hidden": false,
-                            "highlightColor": [
-                              252,
-                              242,
-                              26,
-                              255
-                            ],
-                            "isVisible": true,
-                            "label": "Superficie · medida elegida",
-                            "textLabel": [],
-                            "visConfig": {
-                              "allowHover": false,
-                              "billboard": false,
-                              "colorRange": {
-                                "category": "Custom",
-                                "colors": [
-                                  "#5794F2",
-                                  "#8AB8FF",
-                                  "#FADE2A",
-                                  "#FF9830",
-                                  "#F2495C",
-                                  "#E02F44"
-                                ],
-                                "name": "Frío a cálido",
-                                "type": "diverging"
-                              },
-                              "filled": true,
-                              "fixedRadius": false,
-                              "opacity": 0.16,
-                              "outline": true,
-                              "radius": 7,
-                              "radiusRange": [
-                                0,
-                                50
-                              ],
-                              "showHighlightColor": true,
-                              "showNeighborOnHover": false,
-                              "strokeColorRange": {
-                                "category": "Uber",
-                                "colors": [
-                                  "#4C0035",
-                                  "#880030",
-                                  "#B72F15",
-                                  "#D6610A",
-                                  "#EF9100",
-                                  "#FFC300"
-                                ],
-                                "name": "Global Warming",
-                                "type": "sequential"
-                              },
-                              "surfaceAltitude": 0,
-                              "surfaceBands": true,
-                              "surfaceBreaks": "",
-                              "surfaceExtent": "hull",
-                              "surfaceFade": true,
-                              "surfaceIsolineWidth": 1,
-                              "surfaceIsolines": true,
-                              "surfaceLabelSize": 11,
-                              "surfaceLabels": true,
-                              "surfaceMargin": 1500,
-                              "surfaceMode": "interpolate",
-                              "surfaceNeighbours": "auto",
-                              "surfacePower": 2,
-                              "surfaceRadius": 500,
-                              "surfaceReduce": "last",
-                              "surfaceResolution": "medium",
-                              "surfaceUnderBuildings": false,
-                              "surfaceVehicle": ":auto",
-                              "thickness": 2
-                            }
-                          },
-                          "id": "surface",
-                          "type": "surface",
-                          "visualChannels": {
-                            "colorField": {
-                              "name": "value",
-                              "type": "real"
-                            },
-                            "colorScale": "quantile",
-                            "sizeScale": "linear",
-                            "strokeColorScale": "quantile"
-                          }
-                        },
-                        {
-                          "config": {
-                            "color": [
-                              26,
-                              152,
-                              80
-                            ],
-                            "columnMode": "geojson",
-                            "columns": {
-                              "geojson": "_geojson"
-                            },
-                            "dataId": "grafana-A",
-                            "hidden": false,
-                            "highlightColor": [
-                              252,
-                              242,
-                              26,
-                              255
-                            ],
-                            "isVisible": true,
-                            "label": "Tráfico por tramo",
-                            "textLabel": [],
-                            "visConfig": {
-                              "colorRange": {
-                                "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    "Fluido",
-                                    "#1a9850"
-                                  ],
-                                  [
-                                    "Denso",
-                                    "#fdae61"
-                                  ],
-                                  [
-                                    "Congestionado",
-                                    "#d73027"
-                                  ],
-                                  [
-                                    "Cortado",
-                                    "#7b0d1e"
-                                  ],
-                                  [
-                                    "Sin datos",
-                                    "#9e9e9e"
-                                  ]
-                                ],
-                                "colors": [
-                                  "#1a9850",
-                                  "#fdae61",
-                                  "#d73027",
-                                  "#7b0d1e",
-                                  "#9e9e9e"
-                                ],
-                                "name": "Estado del tráfico",
-                                "type": "customOrdinal"
-                              },
-                              "elevationScale": 1,
-                              "enable3d": false,
-                              "filled": false,
-                              "opacity": 0.95,
-                              "pipelineAltitude": 0,
-                              "pipelineLaneGap": 1,
-                              "pipelineReverse": false,
-                              "pipelineSignedSpeed": false,
-                              "sizeRange": [
-                                0,
-                                10
-                              ],
-                              "strokeColorRange": {
-                                "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    "Fluido",
-                                    "#1a9850"
-                                  ],
-                                  [
-                                    "Denso",
-                                    "#fdae61"
-                                  ],
-                                  [
-                                    "Congestionado",
-                                    "#d73027"
-                                  ],
-                                  [
-                                    "Cortado",
-                                    "#7b0d1e"
-                                  ],
-                                  [
-                                    "Sin datos",
-                                    "#9e9e9e"
-                                  ]
-                                ],
-                                "colors": [
-                                  "#1a9850",
-                                  "#fdae61",
-                                  "#d73027",
-                                  "#7b0d1e",
-                                  "#9e9e9e"
-                                ],
-                                "name": "Estado del tráfico",
-                                "type": "customOrdinal"
-                              },
-                              "strokeOpacity": 0.95,
-                              "stroked": true,
-                              "thickness": 3,
-                              "trafficAnimate": true,
-                              "trafficCycle": 6,
-                              "trafficDashLength": 0.5,
-                              "trafficDirectionMode": "straight",
-                              "trafficGlow": true,
-                              "trafficLapsRange": [
-                                1,
-                                4
-                              ],
-                              "trafficSpacing": 60,
-                              "trafficStyle": "comets",
-                              "trafficTrail": 0.3
-                            }
-                          },
-                          "id": "traffic",
-                          "type": "pipeline",
-                          "visualChannels": {
-                            "sizeScale": "linear",
-                            "speedField": {
-                              "name": "speed",
-                              "type": "real"
-                            },
-                            "speedScale": "linear",
-                            "strokeColorField": {
-                              "name": "state_label",
-                              "type": "string"
-                            },
-                            "strokeColorScale": "customOrdinal"
-                          }
-                        },
                         {
                           "config": {
                             "color": [
@@ -1426,28 +1309,29 @@
                                 "colorMap": [
                                   [
                                     10,
-                                    "#E02F44"
+                                    "#5794F2"
                                   ],
                                   [
                                     30,
-                                    "#FF9830"
-                                  ],
-                                  [
-                                    90,
                                     "#73BF69"
                                   ],
                                   [
+                                    90,
+                                    "#FF9830"
+                                  ],
+                                  [
                                     null,
-                                    "#5794F2"
+                                    "#E02F44"
                                   ]
                                 ],
                                 "colors": [
-                                  "#E02F44",
-                                  "#FF9830",
+                                  "#5794F2",
                                   "#73BF69",
-                                  "#5794F2"
+                                  "#FF9830",
+                                  "#E02F44"
                                 ],
                                 "name": "Anclajes con bici",
+                                "reversed": true,
                                 "type": "custom"
                               },
                               "filled": true,
@@ -1477,7 +1361,7 @@
                               "historyField": "off",
                               "opacity": 0.9,
                               "outline": false,
-                              "radius": 9,
+                              "radius": 4.8,
                               "radiusRange": [
                                 0,
                                 50
@@ -1507,7 +1391,7 @@
                           "visualChannels": {
                             "colorField": {
                               "name": "pct",
-                              "type": "real"
+                              "type": "integer"
                             },
                             "colorScale": "custom",
                             "sizeScale": "linear",
@@ -1607,7 +1491,236 @@
                           "visualChannels": {
                             "colorField": {
                               "name": "value",
+                              "type": "integer"
+                            },
+                            "colorScale": "quantile",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              26,
+                              152,
+                              80
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Tráfico por tramo",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Fluido",
+                                    "#1a9850"
+                                  ],
+                                  [
+                                    "Denso",
+                                    "#fdae61"
+                                  ],
+                                  [
+                                    "Congestionado",
+                                    "#d73027"
+                                  ],
+                                  [
+                                    "Cortado",
+                                    "#7b0d1e"
+                                  ],
+                                  [
+                                    "Sin datos",
+                                    "#9e9e9e"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#1a9850",
+                                  "#fdae61",
+                                  "#d73027",
+                                  "#7b0d1e",
+                                  "#9e9e9e"
+                                ],
+                                "name": "Estado del tráfico",
+                                "type": "customOrdinal"
+                              },
+                              "elevationScale": 0,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "historyField": "color",
+                              "opacity": 0.95,
+                              "pipelineAltitude": 0,
+                              "pipelineLaneGap": 1,
+                              "pipelineReverse": false,
+                              "pipelineSignedSpeed": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColorRange": {
+                                "category": "ColorBrewer",
+                                "colors": [
+                                  "#006837",
+                                  "#85CB67",
+                                  "#F9F7AE",
+                                  "#F88D52",
+                                  "#A50026"
+                                ],
+                                "name": "RdYlGn",
+                                "reversed": true,
+                                "type": "diverging"
+                              },
+                              "strokeOpacity": 0.95,
+                              "stroked": true,
+                              "thickness": 17.1,
+                              "trafficAnimate": true,
+                              "trafficCycle": 12.5,
+                              "trafficDashLength": 0.5,
+                              "trafficDirectionMode": "straight",
+                              "trafficGlow": false,
+                              "trafficLapsRange": [
+                                1,
+                                6
+                              ],
+                              "trafficSpacing": 21,
+                              "trafficStyle": "pulse",
+                              "trafficTiming": "random",
+                              "trafficTrail": 0.3,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "traffic",
+                          "type": "pipeline",
+                          "visualChannels": {
+                            "altitudeScale": "linear",
+                            "reverseColorScale": "quantile",
+                            "reverseSizeScale": "linear",
+                            "reverseSpeedScale": "linear",
+                            "sizeScale": "linear",
+                            "speedField": {
+                              "name": "speed",
+                              "type": "integer"
+                            },
+                            "speedScale": "linear",
+                            "strokeColorField": {
+                              "name": "pct",
                               "type": "real"
+                            },
+                            "strokeColorScale": "quantize"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              242,
+                              242,
+                              242
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Superficie · medida elegida",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": false,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#00939C",
+                                  "#6BB5B9",
+                                  "#AAD7D9",
+                                  "#F4B198",
+                                  "#DF744E",
+                                  "#C22E00"
+                                ],
+                                "name": "Uber Viz Diverging",
+                                "type": "diverging"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.29,
+                              "outline": true,
+                              "radius": 7,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "surfaceAltitude": 0,
+                              "surfaceBands": true,
+                              "surfaceBreaks": "",
+                              "surfaceExtent": "hull",
+                              "surfaceFade": true,
+                              "surfaceIsolineWidth": 1,
+                              "surfaceIsolines": false,
+                              "surfaceLabelSize": 11,
+                              "surfaceLabels": true,
+                              "surfaceMargin": 1500,
+                              "surfaceMode": "interpolate",
+                              "surfaceNeighbours": "auto",
+                              "surfacePower": 2,
+                              "surfaceRadius": 500,
+                              "surfaceReduce": "last",
+                              "surfaceResolution": "medium",
+                              "surfaceUnderBuildings": true,
+                              "surfaceVehicle": ":auto",
+                              "thickness": 2
+                            }
+                          },
+                          "id": "surface",
+                          "type": "surface",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "value",
+                              "type": "integer"
                             },
                             "colorScale": "quantile",
                             "sizeScale": "linear",
@@ -1615,6 +1728,7 @@
                           }
                         }
                       ],
+                      "overlayBlending": "normal",
                       "splitMaps": []
                     }
                   },
@@ -1627,7 +1741,7 @@
                 "rasterBands": "",
                 "rasterColormap": "",
                 "rasterPainted": false,
-                "saveRequest": 0,
+                "saveRequest": 3,
                 "showSidePanel": false,
                 "timeSync": "toMap",
                 "tripLayerMode": "table",
@@ -1650,7 +1764,7 @@
                 ]
               }
             },
-            "version": "13.2.1"
+            "version": "1.0.0"
           }
         }
       },
@@ -1895,7 +2009,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -1966,6 +2094,7 @@
                     "mode": "thresholds"
                   },
                   "custom": {
+                    "axisPlacement": "auto",
                     "fillOpacity": 80,
                     "hideFrom": {
                       "legend": false,
@@ -2303,7 +2432,7 @@
                 }
               }
             },
-            "version": "13.2.1"
+            "version": "7.2.5"
           }
         }
       },
@@ -2346,7 +2475,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -2605,7 +2748,7 @@
                 }
               }
             },
-            "version": "13.2.1"
+            "version": "7.2.5"
           }
         }
       },
