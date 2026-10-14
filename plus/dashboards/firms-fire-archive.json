@@ -106,7 +106,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "aggregation": "auto",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  }
+                },
                 "overrides": [
                   {
                     "matcher": {
@@ -176,29 +190,48 @@
                 ]
               },
               "options": {
-                "bucket": "auto",
+                "accentColor": "",
+                "backgroundColor": "#192534",
+                "backgroundTransparency": 5,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "1y",
+                "cursorColor": "",
                 "cursorFollow": true,
                 "cursorPublish": true,
+                "density": "comfortable",
                 "domain": "data",
+                "followLatest": false,
                 "hatchGaps": true,
+                "hoverTooltip": false,
+                "instantVariable": "t",
                 "loop": false,
                 "output": "variables",
                 "outsideOpacity": 30,
                 "pinned": "scrolled",
+                "pinnedControls": "all",
                 "pinnedHeight": 52,
                 "pinnedPosition": "top",
+                "pinnedStyle": "solid",
                 "publishIntervalMs": 1200,
                 "publishWhilePlaying": true,
                 "scale": "linear",
                 "selection": "range",
                 "showAxis": true,
                 "showHistogram": true,
+                "showPickers": true,
                 "showReadout": true,
                 "snapTo": "buckets",
                 "stepMs": 600,
+                "stickyOffset": 0,
                 "variables": {
                   "from": "t0",
                   "to": "t1"
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
                 },
                 "windowMode": "free"
               }
@@ -740,11 +773,9 @@
                           "fieldsToShow": {
                             "grafana-A": [
                               {
-                                "format": null,
                                 "name": "country"
                               },
                               {
-                                "format": null,
                                 "name": "detections"
                               }
                             ]
@@ -828,7 +859,7 @@
                 "viewportVariables": {}
               }
             },
-            "version": "1.0.0"
+            "version": "1.1.0"
           }
         }
       },
@@ -927,7 +958,7 @@
                 "kind": "ElementReference",
                 "name": "panel-brush"
               },
-              "height": 6,
+              "height": 4,
               "width": 24,
               "x": 0,
               "y": 0
@@ -943,7 +974,7 @@
               "height": 3,
               "width": 6,
               "x": 0,
-              "y": 6
+              "y": 4
             }
           },
           {
@@ -956,7 +987,7 @@
               "height": 3,
               "width": 6,
               "x": 6,
-              "y": 6
+              "y": 4
             }
           },
           {
@@ -969,7 +1000,7 @@
               "height": 3,
               "width": 6,
               "x": 12,
-              "y": 6
+              "y": 4
             }
           },
           {
@@ -982,7 +1013,7 @@
               "height": 3,
               "width": 6,
               "x": 18,
-              "y": 6
+              "y": 4
             }
           },
           {
@@ -995,7 +1026,7 @@
               "height": 16,
               "width": 16,
               "x": 0,
-              "y": 9
+              "y": 7
             }
           },
           {
@@ -1008,7 +1039,7 @@
               "height": 16,
               "width": 8,
               "x": 16,
-              "y": 9
+              "y": 7
             }
           },
           {
@@ -1021,7 +1052,7 @@
               "height": 16,
               "width": 12,
               "x": 0,
-              "y": 25
+              "y": 23
             }
           },
           {
@@ -1034,7 +1065,7 @@
               "height": 6,
               "width": 12,
               "x": 12,
-              "y": 25
+              "y": 23
             }
           },
           {
@@ -1047,7 +1078,7 @@
               "height": 10,
               "width": 12,
               "x": 12,
-              "y": 31
+              "y": 29
             }
           }
         ]
