@@ -1,0 +1,3683 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "fiware-valencia"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "València en tiempo real sobre una plataforma FIWARE: tráfico por tramo, calidad del aire, meteorología y Valenbisi como entidades NGSI-LD en Stellio, leídas por su API y por exportes Parquet; el mapa Kepler Plus y las gráficas se filtran entre sí en el navegador.",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 22,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### València en tiempo real, sobre una plataforma FIWARE\n\nPrueba de concepto de una plataforma urbana **FIWARE** con datos abiertos reales. Cada 3 minutos un *harvester* lee el\nGeoportal del **Ajuntament de València** (cuya plataforma VLCi también es FIWARE), convierte cada tramo de tráfico,\nestación de calidad del aire, estación meteorológica y estación Valenbisi a un **Smart Data Model**\n(`TrafficFlowObserved`, `AirQualityObserved`, `WeatherObserved`, `BikeHireDockingStation`) y lo publica en\n**Stellio**, un Context Broker **NGSI-LD** del catálogo FIWARE. Stellio guarda cada observación con su fecha\n(PostgreSQL + PostGIS + TimescaleDB) y la sirve por la API temporal NGSI-LD; unos exportes **Parquet** abren esa\nhistoria para análisis masivo.\n\n### Cómo usarlo\n\n- **El mapa** (Kepler Geospatial Maps Plus): cada tramo de tráfico es una línea animada (capa *Pipeline*) que corre a la velocidad de su estado y se para si está cortado; cada estación Valenbisi es un anillo (capa *Gauge*) con su parte de anclajes con bici; las estaciones de aire y meteorológicas llevan una tarjeta con su serie del último día (capa *Sparkline*) de la **medida** elegida arriba, y la superficie entre ellas la interpola (capa *Surface*).\n- **Las gráficas se filtran entre sí.** Un clic en *Tramos por estado* deja en el mapa y en la tabla solo ese estado. Arrastrar sobre *Incidencias por cuarto de hora* elige un tramo de tiempo: el mapa pasa a pintar el peor estado de cada tramo en ese tiempo en vez del de ahora. Arrastrar sobre los histogramas filtra los tramos por su parte del tiempo con incidencia, y las estaciones Valenbisi por su llenado. La goma de cada gráfica quita su filtro.\n- **Un clic en un tramo, una estación Valenbisi o una estación de aire o meteorológica**, en el mapa, en la tabla o en la gráfica de estaciones, abre su historia debajo; otro clic en el mismo la cierra.\n\n### De dónde salen los datos\n\nEl estado de **ahora** (tramos y estaciones Valenbisi) lo lee DuckDB en el servidor de la API NGSI-LD de Stellio, pública y de solo lectura; la **historia** (tráfico, aire, meteorología y Valenbisi) sale de los exportes Parquet, que guardan 7 días. DuckDB en tu navegador (Chaski) recibe esas tablas y responde cada panel y cada clic sin volver al servidor; el tablero se recarga cada 5 minutos.\n[API NGSI-LD](https://fiware.ubica.dev/ngsi-ld/v1/entities?type=AirQualityObserved\u0026options=keyValues) ·\n[API temporal](https://fiware.ubica.dev/ngsi-ld/v1/temporal/entities/urn:ngsi-ld:BikeHireDockingStation:valencia-1?attrs=availableBikeNumber\u0026options=temporalValues) ·\n[exportes](https://fiware.ubica.dev/exports/) · [@context](https://fiware.ubica.dev/context/ngsi-context.jsonld).\n\n- **Tráfico**: 410 tramos con estado fluido, denso, congestionado o cortado cada 3 minutos, sin fecha de origen (se usa la hora de lectura). La historia se resume aquí por cuarto de hora: el peor estado del cuarto, y la parte de las lecturas con incidencia. Los pasos inferiores cuentan como su estado en superficie.\n- **Calidad del aire**: 11 estaciones, cada hora: NO₂, PM10, PM2.5 y O₃ en µg/m³ (no todas miden todo).\n- **Meteorología**: 5 estaciones, cada 10 minutos: temperatura, humedad relativa y velocidad del viento.\n- **Valenbisi**: unas 270 estaciones, cada ~10 minutos: bicis disponibles y anclajes libres.\n\n\u003csmall\u003eDatos: © Ajuntament de València, Geoportal de datos abiertos, CC BY 4.0. Prueba de concepto independiente de CIMA,\nno afiliada al Ajuntament de València.\u003c/small\u003e",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-air-latest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT max(time) AS time FROM $readings WHERE kind = 'Aire'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "La hora de la última observación de calidad del aire en los exportes Parquet. Las estaciones publican cada hora.",
+          "id": 3,
+          "links": [],
+          "title": "Aire leído",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-bike-name": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT name, bikes, free_slots, slots, pct,\n       CASE status WHEN 'working' THEN 'en servicio' ELSE status END AS status,\n       CASE WHEN age_min \u003c 90 THEN age_min::INTEGER || ' min' ELSE round(age_min / 60.0)::INTEGER || ' h' END AS ago\nFROM $bikes WHERE bike = $bike"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "La estación elegida en el mapa: sus bicis y anclajes libres ahora, y cuándo informó por última vez.",
+          "id": 16,
+          "links": [],
+          "title": "Estación Valenbisi elegida",
+          "vizConfig": {
+            "group": "marcusolsson-dynamictext-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "afterRender": "",
+                "content": "\u003cdiv class=\"pick\"\u003e\u003cdiv class=\"pick-name\"\u003e{{name}}\u003c/div\u003e\u003cdiv class=\"pick-meta\"\u003e\u003cspan class=\"pick-big\"\u003e{{bikes}}\u003c/span\u003e bicis · \u003cspan class=\"pick-big\"\u003e{{free_slots}}\u003c/span\u003e anclajes libres de {{slots}}\u003c/div\u003e\u003cdiv class=\"pick-meta\"\u003e{{status}} · última lectura hace {{ago}}\u003c/div\u003e\u003c/div\u003e",
+                "contentPartials": [],
+                "defaultContent": "Elige una estación Valenbisi en el mapa.",
+                "editor": {
+                  "format": "auto",
+                  "language": "html"
+                },
+                "editors": [
+                  "styles"
+                ],
+                "externalStyles": [],
+                "helpers": "",
+                "renderMode": "everyRow",
+                "status": "",
+                "styles": ".pick { display: flex; flex-direction: column; gap: 8px; height: 100%; justify-content: center; }\n.pick-name { font-size: 17px; font-weight: 500; line-height: 1.3; }\n.pick-meta { font-size: 13px; line-height: 1.5; opacity: 0.8; }\n.pick-big { font-size: 26px; font-weight: 500; line-height: 1.2; }\n.s-fluido { color: #1a9850; } .s-denso { color: #fdae61; } .s-congestionado { color: #d73027; } .s-cortado { color: #e05a6a; } .s-sindatos { color: #9e9e9e; }",
+                "wrap": false
+              }
+            },
+            "version": "6.3.0"
+          }
+        }
+      },
+      "panel-bike-series": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT t AS time, bikes AS \"Bicis disponibles\", slots AS \"Anclajes\" FROM $bikes_hist WHERE bike = $bike ORDER BY t"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Las bicis disponibles en la estación por cuarto de hora (última lectura del cuarto), y sus anclajes en total.",
+          "id": 17,
+          "links": [],
+          "title": "Bicis en la estación elegida",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": 1800000,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Anclajes"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#8AB8FF",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "custom.lineStyle",
+                        "value": {
+                          "dash": [
+                            4,
+                            4
+                          ],
+                          "fill": "dash"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-bikes-hist": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT floor(least(pct, 99.9) / 10) * 10 AS bin, count(*) AS n FROM $bikes WHERE pct IS NOT NULL GROUP BY 1 ORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "all"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT floor(least(pct, 99.9) / 10) * 10 AS bin, count(*) AS n FROM $bikes WHERE pct IS NOT NULL GROUP BY 1 ORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "selected"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Las estaciones Valenbisi repartidas por su parte de anclajes con bici ahora, en cajas de 10 puntos: a la izquierda las vacías, a la derecha las llenas. Arrastrar sobre las barras filtra los anillos del mapa a ese rango; la goma lo quita.",
+          "id": 14,
+          "links": [],
+          "title": "Estaciones por anclajes con bici",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// A histogram whose brush filters the rest of the dashboard.\n//\n// Dragging across it writes the selected range to two dashboard variables\n// (LO and HI); the other panels filter on them, and this one does not, so it\n// keeps showing the whole distribution the other filters leave. Two query\n// frames feed it: `all` (grey, the context) and `selected` (colour, what the\n// other filters leave). Each has columns `bin` (the bin's lower edge) and `n`.\n//\n// A dashboard changes only the constants block below.\n// @constants begin\nconst LO = 'bikes_lo';\nconst HI = 'bikes_hi';\nconst STEP = 10;\nconst DOMAIN = [0, 100];\nconst UNIT = '% de anclajes con bici';\nconst COLOR = 'green';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\n\nconst points = (refId) =\u003e {\n  const frame = context.panel.data.series.find((f) =\u003e f.refId === refId);\n  if (!frame) {\n    return [];\n  }\n  const bins = frame.fields.find((f) =\u003e f.name === 'bin').values;\n  const counts = frame.fields.find((f) =\u003e f.name === 'n').values;\n  return Array.from(bins, (b, i) =\u003e [Number(b) + STEP / 2, Number(counts[i])]);\n};\nconst all = points('all');\nconst selected = points('selected');\nconst domain = DOMAIN || [Math.min(...all.map((p) =\u003e p[0] - STEP / 2)), Math.max(...all.map((p) =\u003e p[0] + STEP / 2))];\n\n// Whole bins only: a range that cuts a bar in two would count half of it.\nconst snap = (range) =\u003e {\n  const lo = Math.floor(range[0] / STEP) * STEP;\n  const hi = Math.max(Math.ceil(range[1] / STEP) * STEP, lo + STEP);\n  return [lo, hi];\n};\nconst drawBrush = (range) =\u003e\n  chart.dispatchAction({ type: 'brush', areas: range ? [{ brushType: 'lineX', xAxisIndex: 0, coordRange: range }] : [] });\nconst publish = (range) =\u003e {\n  location.partial({ ['var-' + LO]: range ? String(range[0]) : '', ['var-' + HI]: range ? String(range[1]) : '' }, true);\n};\n\nchart.off('brushEnd');\nchart.off('brush');\nchart.on('brushEnd', (event) =\u003e {\n  const area = event.areas[0];\n  if (!area || !area.coordRange) {\n    publish(undefined);\n    return;\n  }\n  const range = snap(area.coordRange);\n  publish(range);\n  setTimeout(() =\u003e drawBrush(range), 0);\n});\nchart.on('brush', (event) =\u003e {\n  if (event.command === 'clear') {\n    publish(undefined);\n  }\n});\n\n// Every redraw (setOption without merge) wipes the brush: draw it back from\n// the variables, which is also how a shared link arrives with its range.\nconst current = [\n  parseFloat(context.grafana.replaceVariables('${' + LO + '}')),\n  parseFloat(context.grafana.replaceVariables('${' + HI + '}')),\n];\nsetTimeout(() =\u003e {\n  chart.dispatchAction({ type: 'takeGlobalCursor', key: 'brush', brushOption: { brushType: 'lineX', brushMode: 'single' } });\n  if (current.every(Number.isFinite)) {\n    drawBrush(current);\n  }\n}, 0);\n\nconst accent = theme.visualization.getColorByName(COLOR);\nconst muted = theme.colors.text.secondary;\n\nreturn {\n  animation: false,\n  // The axis name sits under the axis labels, centred: at the end of the axis\n  // it ran past the grid's right edge and was clipped (\"ma\" for magnitude).\n  // `containLabel` leaves the name out, so `bottom` makes room for it.\n  grid: { left: 8, right: 16, top: 30, bottom: 22, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'none' },\n    formatter: (items) =\u003e {\n      const x = items[0].value[0] - STEP / 2;\n      const rows = items.map((it) =\u003e `${it.marker}${it.seriesName}: \u003cb\u003e${it.value[1]}\u003c/b\u003e`).join('\u003cbr/\u003e');\n      return `${x}–${x + STEP} ${UNIT}\u003cbr/\u003e${rows}`;\n    },\n  },\n  toolbox: {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: { brush: { type: ['lineX', 'clear'], title: { lineX: 'Select a range', clear: 'Clear the filter' } } },\n  },\n  brush: {\n    xAxisIndex: 0,\n    seriesIndex: [1],\n    brushType: 'lineX',\n    brushMode: 'single',\n    transformable: true,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.12)', borderColor: muted, borderWidth: 1 },\n    outOfBrush: { colorAlpha: 0.25 },\n  },\n  xAxis: { type: 'value', min: domain[0], max: domain[1], name: UNIT, nameLocation: 'middle', nameGap: 24, nameTextStyle: { color: muted }, axisLabel: { color: muted }, splitLine: { show: false } },\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { opacity: 0.15 } } },\n  series: [\n    { name: 'All', type: 'bar', data: all, barWidth: '94%', silent: true, itemStyle: { color: 'rgba(128, 128, 128, 0.22)' } },\n    { name: 'Filtered', type: 'bar', data: selected, barWidth: '94%', barGap: '-100%', itemStyle: { color: accent } },\n  ],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-bikes-line": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT t AS time,\n       (100.0 * sum(bikes) / nullif(sum(slots), 0))::DOUBLE AS \"Anclajes con bici\",\n       count(*) FILTER (WHERE bikes = 0)::DOUBLE AS \"Estaciones sin bici\"\nFROM $bikes_hist GROUP BY t HAVING count(*) \u003e= 100 ORDER BY t"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Por cuarto de hora, la parte de anclajes con bici en toda la red (última lectura de cada estación en el cuarto) y cuántas estaciones estaban sin ninguna bici. Solo cuartos con al menos 100 estaciones leídas.",
+          "id": 15,
+          "links": [],
+          "title": "Valenbisi en el rango",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": 1800000,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Estaciones sin bici"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "short"
+                      },
+                      {
+                        "id": "custom.axisPlacement",
+                        "value": "right"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#E02F44",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-bikes-now": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT (100.0 * sum(bikes) / nullif(sum(slots), 0))::DOUBLE AS \"Bicis\" FROM $bikes"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Bicis disponibles ahora en toda la red Valenbisi, como parte de los anclajes.",
+          "id": 5,
+          "links": [],
+          "title": "Bicis en red",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-incidents": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH f AS (\n  -- Cada tramo con su estado: el de ahora o, si la gráfica de incidencias\n  -- tiene un tramo de tiempo elegido, el peor estado en ese tramo; y su parte\n  -- del tiempo con incidencia en el rango. Filtrado por el estado elegido en\n  -- la gráfica de estados y por el rango del histograma de tiempo con\n  -- incidencia.\n  WITH w AS (SELECT try_cast($slot_from AS TIMESTAMP) AS t0, try_cast($slot_to AS TIMESTAMP) AS t1),\n  share AS (\n    SELECT segment_id, 100.0 * sum(incidents) / sum(n) AS pct, (sum(incidents) * 3)::DOUBLE AS minutes\n    FROM $traffic GROUP BY 1\n  ),\n  picked AS (\n    SELECT segment_id, max(worst) AS worst\n    FROM $traffic, w WHERE w.t0 IS NOT NULL AND t \u003e= w.t0 AND t \u003c w.t1 GROUP BY 1\n  ),\n  labelled AS (\n    SELECT s.segment_id, s.name, s.underpass, s.geojson, s.state_label AS state_now,\n           CASE WHEN w.t0 IS NULL THEN s.state_label\n                ELSE ['Fluido', 'Denso', 'Congestionado', 'Cortado', 'Sin datos'][(coalesce(p.worst, 4) + 1)::BIGINT] END AS state_label,\n           coalesce(h.pct, 0) AS pct, coalesce(h.minutes, 0) AS minutes\n    FROM $segments AS s\n    CROSS JOIN w\n    LEFT JOIN share AS h ON h.segment_id = s.segment_id\n    LEFT JOIN picked AS p ON p.segment_id = s.segment_id\n  )\n  SELECT segment_id, name, underpass, geojson, state_now, state_label, round(pct, 1) AS pct, minutes,\n         CASE state_label WHEN 'Fluido' THEN 1.0 WHEN 'Denso' THEN 0.45 WHEN 'Congestionado' THEN 0.15 ELSE 0.0 END AS speed\n  FROM labelled\n  WHERE TRUE\n    AND least(pct, 99.9) \u003e= coalesce(try_cast($jam_lo AS DOUBLE), -1)\n    AND least(pct, 99.9) \u003c coalesce(try_cast($jam_hi AS DOUBLE), 101)\n)\nSELECT t,\n       count(*) FILTER (WHERE worst = 1)::DOUBLE AS denso,\n       count(*) FILTER (WHERE worst = 2)::DOUBLE AS congestionado,\n       count(*) FILTER (WHERE worst = 3)::DOUBLE AS cortado\nFROM $traffic\nWHERE segment_id IN (SELECT segment_id FROM f)\n  AND ($state = '' OR ['Fluido', 'Denso', 'Congestionado', 'Cortado'][(worst + 1)::BIGINT] = $state)\nGROUP BY t ORDER BY t"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Cuántos tramos tuvieron como peor estado del cuarto de hora denso, congestionado o cortado, en el rango de tiempo. Respeta el estado y el rango de incidencia elegidos. Arrastrar sobre las barras elige un tramo de tiempo: el mapa, la tabla y las cifras pasan a mostrar el peor estado de cada tramo en ese tiempo, en vez del de ahora; la goma lo quita.",
+          "id": 10,
+          "links": [],
+          "title": "Incidencias por cuarto de hora",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Los tramos con incidencia por cuarto de hora: cuántos tuvieron como peor\n// estado del cuarto denso, congestionado o cortado, apilados en los colores\n// del mapa. Arrastrar sobre las barras elige un tramo de tiempo, escrito en\n// dos variables (FROM y TO, en UTC): el mapa, la tabla y la gráfica de\n// estados pasan a mostrar el peor estado de cada tramo en ese tiempo, en\n// vez del de ahora. La goma de la esquina lo quita.\n// @constants begin\nconst FROM = 'slot_from';\nconst TO = 'slot_to';\nconst STEP_MS = 15 * 60 * 1000;\nconst SERIES = [\n  ['denso', 'Denso', '#fdae61'],\n  ['congestionado', 'Congestionado', '#d73027'],\n  ['cortado', 'Cortado', '#7b0d1e'],\n];\nconst TZ = 'Europe/Madrid';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst times = col('t').map(Number);\nconst hhmm = new Intl.DateTimeFormat('es-ES', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });\nconst day = new Intl.DateTimeFormat('es-ES', { timeZone: TZ, weekday: 'short', day: 'numeric' });\nconst dayOf = (t) =\u003e day.format(new Date(t));\n// A category per quarter hour: stacking works on a category axis, not on a\n// time axis. The label carries the day where it changes.\nconst labels = times.map((t, i) =\u003e (i === 0 || dayOf(t) !== dayOf(times[i - 1]) ? `${dayOf(t)} ${hhmm.format(new Date(t))}` : hhmm.format(new Date(t))));\n\n// On a category axis a brush range is a pair of indices.\nconst snap = (range) =\u003e {\n  const lo = Math.max(0, Math.round(range[0]));\n  const hi = Math.min(times.length - 1, Math.max(lo, Math.round(range[1])));\n  return [lo, hi];\n};\nconst drawBrush = (range) =\u003e\n  chart.dispatchAction({ type: 'brush', areas: range ? [{ brushType: 'lineX', xAxisIndex: 0, coordRange: range }] : [] });\nconst publish = (range) =\u003e {\n  location.partial(\n    {\n      ['var-' + FROM]: range ? new Date(times[range[0]]).toISOString() : '',\n      ['var-' + TO]: range ? new Date(times[range[1]] + STEP_MS).toISOString() : '',\n    },\n    true,\n  );\n};\n\nchart.off('brushEnd');\nchart.off('brush');\nchart.on('brushEnd', (event) =\u003e {\n  const area = event.areas[0];\n  if (!area || !area.coordRange || !times.length) {\n    publish(undefined);\n    return;\n  }\n  const range = snap(area.coordRange);\n  publish(range);\n  setTimeout(() =\u003e drawBrush(range), 0);\n});\nchart.on('brush', (event) =\u003e {\n  if (event.command === 'clear') {\n    publish(undefined);\n  }\n});\n\n// Every redraw wipes the brush: draw it back from the variables, named here\n// as ${slot_from} and ${slot_to} so the panel redraws when they change.\nconst from = Date.parse(context.grafana.replaceVariables('${' + FROM + '}'));\nconst to = Date.parse(context.grafana.replaceVariables('${' + TO + '}'));\nsetTimeout(() =\u003e {\n  chart.dispatchAction({ type: 'takeGlobalCursor', key: 'brush', brushOption: { brushType: 'lineX', brushMode: 'single' } });\n  if (Number.isFinite(from) \u0026\u0026 Number.isFinite(to) \u0026\u0026 times.length) {\n    const lo = times.findIndex((t) =\u003e t \u003e= from);\n    const after = times.findIndex((t) =\u003e t \u003e= to);\n    const hi = (after === -1 ? times.length : after) - 1;\n    if (lo !== -1 \u0026\u0026 hi \u003e= lo) {\n      drawBrush([lo, hi]);\n    }\n  }\n}, 0);\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 16, top: 30, bottom: 8, containLabel: true },\n  legend: { top: 0, left: 'center', textStyle: { color: muted }, itemWidth: 12, itemHeight: 10 },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e {\n      const i = items[0].dataIndex;\n      const t = new Date(times[i]);\n      const rows = items.map((it) =\u003e `${it.marker}${it.seriesName}: \u003cb\u003e${it.value}\u003c/b\u003e`).join('\u003cbr/\u003e');\n      return `${dayOf(times[i])} ${hhmm.format(t)}–${hhmm.format(new Date(times[i] + STEP_MS))}\u003cbr/\u003e${rows}`;\n    },\n  },\n  toolbox: {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: { brush: { type: ['lineX', 'clear'], title: { lineX: 'Elegir un tramo de tiempo', clear: 'Quitar el filtro' } } },\n  },\n  brush: {\n    xAxisIndex: 0,\n    brushType: 'lineX',\n    brushMode: 'single',\n    transformable: true,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.12)', borderColor: muted, borderWidth: 1 },\n    outOfBrush: { colorAlpha: 0.25 },\n  },\n  xAxis: { type: 'category', data: labels, axisTick: { alignWithLabel: true }, axisLabel: { color: muted, fontSize: 11 } },\n  yAxis: { type: 'value', minInterval: 1, axisLabel: { color: muted }, splitLine: { lineStyle: { opacity: 0.15 } } },\n  series: SERIES.map(([key, name, color]) =\u003e ({\n    name,\n    type: 'bar',\n    stack: 'incidencias',\n    barWidth: '85%',\n    data: col(key).map((v) =\u003e (v == null ? null : Number(v))),\n    itemStyle: { color },\n  })),\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-incidents-now": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH f AS (\n  -- Cada tramo con su estado: el de ahora o, si la gráfica de incidencias\n  -- tiene un tramo de tiempo elegido, el peor estado en ese tramo; y su parte\n  -- del tiempo con incidencia en el rango. Filtrado por el estado elegido en\n  -- la gráfica de estados y por el rango del histograma de tiempo con\n  -- incidencia.\n  WITH w AS (SELECT try_cast($slot_from AS TIMESTAMP) AS t0, try_cast($slot_to AS TIMESTAMP) AS t1),\n  share AS (\n    SELECT segment_id, 100.0 * sum(incidents) / sum(n) AS pct, (sum(incidents) * 3)::DOUBLE AS minutes\n    FROM $traffic GROUP BY 1\n  ),\n  picked AS (\n    SELECT segment_id, max(worst) AS worst\n    FROM $traffic, w WHERE w.t0 IS NOT NULL AND t \u003e= w.t0 AND t \u003c w.t1 GROUP BY 1\n  ),\n  labelled AS (\n    SELECT s.segment_id, s.name, s.underpass, s.geojson, s.state_label AS state_now,\n           CASE WHEN w.t0 IS NULL THEN s.state_label\n                ELSE ['Fluido', 'Denso', 'Congestionado', 'Cortado', 'Sin datos'][(coalesce(p.worst, 4) + 1)::BIGINT] END AS state_label,\n           coalesce(h.pct, 0) AS pct, coalesce(h.minutes, 0) AS minutes\n    FROM $segments AS s\n    CROSS JOIN w\n    LEFT JOIN share AS h ON h.segment_id = s.segment_id\n    LEFT JOIN picked AS p ON p.segment_id = s.segment_id\n  )\n  SELECT segment_id, name, underpass, geojson, state_now, state_label, round(pct, 1) AS pct, minutes,\n         CASE state_label WHEN 'Fluido' THEN 1.0 WHEN 'Denso' THEN 0.45 WHEN 'Congestionado' THEN 0.15 ELSE 0.0 END AS speed\n  FROM labelled\n  WHERE ($state = '' OR state_label = $state)\n    AND least(pct, 99.9) \u003e= coalesce(try_cast($jam_lo AS DOUBLE), -1)\n    AND least(pct, 99.9) \u003c coalesce(try_cast($jam_hi AS DOUBLE), 101)\n)\nSELECT count(*) FILTER (WHERE state_label IN ('Denso', 'Congestionado', 'Cortado')) AS \"Tramos\" FROM f"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Tramos densos, congestionados o cortados: ahora o, con un tramo de tiempo elegido en la gráfica de incidencias, en ese tiempo (su peor estado). Respeta el estado y el rango de incidencia elegidos.",
+          "id": 4,
+          "links": [],
+          "title": "Incidencias",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-jam": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Todos los tramos por su parte del tiempo con incidencia en el rango, en\n-- cajas de 5 puntos; el 100 % cae en la última caja.\nWITH share AS (SELECT segment_id, 100.0 * sum(incidents) / sum(n) AS pct FROM $traffic GROUP BY 1)\nSELECT floor(least(pct, 99.9) / 5) * 5 AS bin, count(*) AS n FROM share GROUP BY 1 ORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "all"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH f AS (\n  -- Cada tramo con su estado: el de ahora o, si la gráfica de incidencias\n  -- tiene un tramo de tiempo elegido, el peor estado en ese tramo; y su parte\n  -- del tiempo con incidencia en el rango. Filtrado por el estado elegido en\n  -- la gráfica de estados y por el rango del histograma de tiempo con\n  -- incidencia.\n  WITH w AS (SELECT try_cast($slot_from AS TIMESTAMP) AS t0, try_cast($slot_to AS TIMESTAMP) AS t1),\n  share AS (\n    SELECT segment_id, 100.0 * sum(incidents) / sum(n) AS pct, (sum(incidents) * 3)::DOUBLE AS minutes\n    FROM $traffic GROUP BY 1\n  ),\n  picked AS (\n    SELECT segment_id, max(worst) AS worst\n    FROM $traffic, w WHERE w.t0 IS NOT NULL AND t \u003e= w.t0 AND t \u003c w.t1 GROUP BY 1\n  ),\n  labelled AS (\n    SELECT s.segment_id, s.name, s.underpass, s.geojson, s.state_label AS state_now,\n           CASE WHEN w.t0 IS NULL THEN s.state_label\n                ELSE ['Fluido', 'Denso', 'Congestionado', 'Cortado', 'Sin datos'][(coalesce(p.worst, 4) + 1)::BIGINT] END AS state_label,\n           coalesce(h.pct, 0) AS pct, coalesce(h.minutes, 0) AS minutes\n    FROM $segments AS s\n    CROSS JOIN w\n    LEFT JOIN share AS h ON h.segment_id = s.segment_id\n    LEFT JOIN picked AS p ON p.segment_id = s.segment_id\n  )\n  SELECT segment_id, name, underpass, geojson, state_now, state_label, round(pct, 1) AS pct, minutes,\n         CASE state_label WHEN 'Fluido' THEN 1.0 WHEN 'Denso' THEN 0.45 WHEN 'Congestionado' THEN 0.15 ELSE 0.0 END AS speed\n  FROM labelled\n  WHERE ($state = '' OR state_label = $state)\n    AND TRUE\n)\nSELECT floor(least(pct, 99.9) / 5) * 5 AS bin, count(*) AS n FROM f GROUP BY 1 ORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "selected"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Los tramos repartidos por el porcentaje de lecturas del rango en que estuvieron densos, congestionados o cortados, en cajas de 5 puntos. Gris: todos los tramos; color: los que dejan el estado y el tiempo elegidos. Arrastrar sobre las barras filtra el mapa y la tabla a ese rango; la goma lo quita.",
+          "id": 9,
+          "links": [],
+          "title": "Parte del tiempo con incidencia, por tramo",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// A histogram whose brush filters the rest of the dashboard.\n//\n// Dragging across it writes the selected range to two dashboard variables\n// (LO and HI); the other panels filter on them, and this one does not, so it\n// keeps showing the whole distribution the other filters leave. Two query\n// frames feed it: `all` (grey, the context) and `selected` (colour, what the\n// other filters leave). Each has columns `bin` (the bin's lower edge) and `n`.\n//\n// A dashboard changes only the constants block below.\n// @constants begin\nconst LO = 'jam_lo';\nconst HI = 'jam_hi';\nconst STEP = 5;\nconst DOMAIN = [0, 100];\nconst UNIT = '% del tiempo con incidencia';\nconst COLOR = 'orange';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\n\nconst points = (refId) =\u003e {\n  const frame = context.panel.data.series.find((f) =\u003e f.refId === refId);\n  if (!frame) {\n    return [];\n  }\n  const bins = frame.fields.find((f) =\u003e f.name === 'bin').values;\n  const counts = frame.fields.find((f) =\u003e f.name === 'n').values;\n  return Array.from(bins, (b, i) =\u003e [Number(b) + STEP / 2, Number(counts[i])]);\n};\nconst all = points('all');\nconst selected = points('selected');\nconst domain = DOMAIN || [Math.min(...all.map((p) =\u003e p[0] - STEP / 2)), Math.max(...all.map((p) =\u003e p[0] + STEP / 2))];\n\n// Whole bins only: a range that cuts a bar in two would count half of it.\nconst snap = (range) =\u003e {\n  const lo = Math.floor(range[0] / STEP) * STEP;\n  const hi = Math.max(Math.ceil(range[1] / STEP) * STEP, lo + STEP);\n  return [lo, hi];\n};\nconst drawBrush = (range) =\u003e\n  chart.dispatchAction({ type: 'brush', areas: range ? [{ brushType: 'lineX', xAxisIndex: 0, coordRange: range }] : [] });\nconst publish = (range) =\u003e {\n  location.partial({ ['var-' + LO]: range ? String(range[0]) : '', ['var-' + HI]: range ? String(range[1]) : '' }, true);\n};\n\nchart.off('brushEnd');\nchart.off('brush');\nchart.on('brushEnd', (event) =\u003e {\n  const area = event.areas[0];\n  if (!area || !area.coordRange) {\n    publish(undefined);\n    return;\n  }\n  const range = snap(area.coordRange);\n  publish(range);\n  setTimeout(() =\u003e drawBrush(range), 0);\n});\nchart.on('brush', (event) =\u003e {\n  if (event.command === 'clear') {\n    publish(undefined);\n  }\n});\n\n// Every redraw (setOption without merge) wipes the brush: draw it back from\n// the variables, which is also how a shared link arrives with its range.\nconst current = [\n  parseFloat(context.grafana.replaceVariables('${' + LO + '}')),\n  parseFloat(context.grafana.replaceVariables('${' + HI + '}')),\n];\nsetTimeout(() =\u003e {\n  chart.dispatchAction({ type: 'takeGlobalCursor', key: 'brush', brushOption: { brushType: 'lineX', brushMode: 'single' } });\n  if (current.every(Number.isFinite)) {\n    drawBrush(current);\n  }\n}, 0);\n\nconst accent = theme.visualization.getColorByName(COLOR);\nconst muted = theme.colors.text.secondary;\n\nreturn {\n  animation: false,\n  // The axis name sits under the axis labels, centred: at the end of the axis\n  // it ran past the grid's right edge and was clipped (\"ma\" for magnitude).\n  // `containLabel` leaves the name out, so `bottom` makes room for it.\n  grid: { left: 8, right: 16, top: 30, bottom: 22, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'none' },\n    formatter: (items) =\u003e {\n      const x = items[0].value[0] - STEP / 2;\n      const rows = items.map((it) =\u003e `${it.marker}${it.seriesName}: \u003cb\u003e${it.value[1]}\u003c/b\u003e`).join('\u003cbr/\u003e');\n      return `${x}–${x + STEP} ${UNIT}\u003cbr/\u003e${rows}`;\n    },\n  },\n  toolbox: {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: { brush: { type: ['lineX', 'clear'], title: { lineX: 'Select a range', clear: 'Clear the filter' } } },\n  },\n  brush: {\n    xAxisIndex: 0,\n    seriesIndex: [1],\n    brushType: 'lineX',\n    brushMode: 'single',\n    transformable: true,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.12)', borderColor: muted, borderWidth: 1 },\n    outOfBrush: { colorAlpha: 0.25 },\n  },\n  xAxis: { type: 'value', min: domain[0], max: domain[1], name: UNIT, nameLocation: 'middle', nameGap: 24, nameTextStyle: { color: muted }, axisLabel: { color: muted }, splitLine: { show: false } },\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { opacity: 0.15 } } },\n  series: [\n    { name: 'All', type: 'bar', data: all, barWidth: '94%', silent: true, itemStyle: { color: 'rgba(128, 128, 128, 0.22)' } },\n    { name: 'Filtered', type: 'bar', data: selected, barWidth: '94%', barGap: '-100%', itemStyle: { color: accent } },\n  ],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Cada tramo con su estado: el de ahora o, si la gráfica de incidencias\n-- tiene un tramo de tiempo elegido, el peor estado en ese tramo; y su parte\n-- del tiempo con incidencia en el rango. Filtrado por el estado elegido en\n-- la gráfica de estados y por el rango del histograma de tiempo con\n-- incidencia.\nWITH w AS (SELECT try_cast($slot_from AS TIMESTAMP) AS t0, try_cast($slot_to AS TIMESTAMP) AS t1),\nshare AS (\n  SELECT segment_id, 100.0 * sum(incidents) / sum(n) AS pct, (sum(incidents) * 3)::DOUBLE AS minutes\n  FROM $traffic GROUP BY 1\n),\npicked AS (\n  SELECT segment_id, max(worst) AS worst\n  FROM $traffic, w WHERE w.t0 IS NOT NULL AND t \u003e= w.t0 AND t \u003c w.t1 GROUP BY 1\n),\nlabelled AS (\n  SELECT s.segment_id, s.name, s.underpass, s.geojson, s.state_label AS state_now,\n         CASE WHEN w.t0 IS NULL THEN s.state_label\n              ELSE ['Fluido', 'Denso', 'Congestionado', 'Cortado', 'Sin datos'][(coalesce(p.worst, 4) + 1)::BIGINT] END AS state_label,\n         coalesce(h.pct, 0) AS pct, coalesce(h.minutes, 0) AS minutes\n  FROM $segments AS s\n  CROSS JOIN w\n  LEFT JOIN share AS h ON h.segment_id = s.segment_id\n  LEFT JOIN picked AS p ON p.segment_id = s.segment_id\n)\nSELECT segment_id, name, underpass, geojson, state_now, state_label, round(pct, 1) AS pct, minutes,\n       CASE state_label WHEN 'Fluido' THEN 1.0 WHEN 'Denso' THEN 0.45 WHEN 'Congestionado' THEN 0.15 ELSE 0.0 END AS speed\nFROM labelled\nWHERE ($state = '' OR state_label = $state)\n  AND least(pct, 99.9) \u003e= coalesce(try_cast($jam_lo AS DOUBLE), -1)\n  AND least(pct, 99.9) \u003c coalesce(try_cast($jam_hi AS DOUBLE), 101)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Cada estación Valenbisi con su parte de anclajes con bici ahora, filtrada\n-- por el rango elegido en el histograma de Valenbisi.\nSELECT bike, name, status, bikes, free_slots, slots, pct, latitude, longitude\nFROM $bikes\nWHERE pct IS NOT NULL\n  AND least(pct, 99.9) \u003e= coalesce(try_cast($bikes_lo AS DOUBLE), -1)\n  AND least(pct, 99.9) \u003c coalesce(try_cast($bikes_hi AS DOUBLE), 101)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- El último día de lecturas de las estaciones que miden la medida elegida\n-- (Chaski entrecomilla el valor de una variable; :raw da el nombre de la\n-- columna tal cual). El filtro de tiempo del mapa elige el momento y las\n-- tarjetas dibujan la serie. Un día y no todo el rango: la escala de color\n-- abarca las filas que recibe, y una semana aplastaría en una sola banda la\n-- diferencia entre estaciones en un momento dado.\nSELECT station, name, kind, time, no2, pm10, pm25, o3, temperature, humidity, wind,\n       ${metric:raw} AS value,\n       printf('%.1f', ${metric:raw})\n         || CASE ${metric} WHEN 'temperature' THEN ' °C' WHEN 'humidity' THEN ' %' WHEN 'wind' THEN ' m/s' ELSE ' µg/m³' END AS reading,\n       latitude, longitude\nFROM $readings\nWHERE ${metric:raw} IS NOT NULL\n  AND time \u003e (SELECT max(time) FROM $readings WHERE ${metric:raw} IS NOT NULL) - INTERVAL 24 HOUR\nORDER BY station, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Cada tramo de tráfico es una línea animada en el color de su estado (verde fluido, naranja denso, rojo congestionado, granate cortado): el de ahora o, con un tramo de tiempo elegido en la gráfica de incidencias, el peor de ese tiempo. Cada estación Valenbisi es un anillo con su parte de anclajes con bici (rojo casi vacía, azul casi llena). Las estaciones de calidad del aire y meteorológicas llevan su serie del último día de la medida elegida arriba, y la superficie entre ellas la interpola. Un clic en un tramo o una estación abre su historia debajo.",
+          "id": 1,
+          "links": [],
+          "title": "Tráfico, Valenbisi y estaciones, ahora",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": 39.4699,
+                      "longitude": -0.3763,
+                      "pitch": 0,
+                      "zoom": 12.6
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "visState": {
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-C"
+                          ],
+                          "enabled": true,
+                          "enlarged": false,
+                          "id": "time-window",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "colorsByDataId": {
+                              "grafana-C": "#3EACA8"
+                            },
+                            "defaultTimeFormat": "L LT",
+                            "interval": "1-hour",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "timezone": "Europe/Madrid",
+                          "type": "timeRange",
+                          "value": [
+                            1791851439509,
+                            1791937839509
+                          ],
+                          "view": "minified"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "state_label"
+                              },
+                              {
+                                "name": "state_now"
+                              },
+                              {
+                                "name": "pct"
+                              },
+                              {
+                                "name": "minutes"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "bikes"
+                              },
+                              {
+                                "name": "free_slots"
+                              },
+                              {
+                                "name": "slots"
+                              },
+                              {
+                                "name": "pct"
+                              },
+                              {
+                                "name": "status"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "name": "reading"
+                              },
+                              {
+                                "name": "no2"
+                              },
+                              {
+                                "name": "pm10"
+                              },
+                              {
+                                "name": "pm25"
+                              },
+                              {
+                                "name": "o3"
+                              },
+                              {
+                                "name": "temperature"
+                              },
+                              {
+                                "name": "humidity"
+                              },
+                              {
+                                "name": "wind"
+                              },
+                              {
+                                "name": "time"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              242,
+                              242,
+                              242
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Superficie · medida elegida",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": false,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#5794F2",
+                                  "#8AB8FF",
+                                  "#FADE2A",
+                                  "#FF9830",
+                                  "#F2495C",
+                                  "#E02F44"
+                                ],
+                                "name": "Frío a cálido",
+                                "type": "diverging"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.16,
+                              "outline": true,
+                              "radius": 7,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "surfaceAltitude": 0,
+                              "surfaceBands": true,
+                              "surfaceBreaks": "",
+                              "surfaceExtent": "hull",
+                              "surfaceFade": true,
+                              "surfaceIsolineWidth": 1,
+                              "surfaceIsolines": true,
+                              "surfaceLabelSize": 11,
+                              "surfaceLabels": true,
+                              "surfaceMargin": 1500,
+                              "surfaceMode": "interpolate",
+                              "surfaceNeighbours": "auto",
+                              "surfacePower": 2,
+                              "surfaceRadius": 500,
+                              "surfaceReduce": "last",
+                              "surfaceResolution": "medium",
+                              "surfaceUnderBuildings": false,
+                              "surfaceVehicle": ":auto",
+                              "thickness": 2
+                            }
+                          },
+                          "id": "surface",
+                          "type": "surface",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "value",
+                              "type": "real"
+                            },
+                            "colorScale": "quantile",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              26,
+                              152,
+                              80
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Tráfico por tramo",
+                            "textLabel": [],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Fluido",
+                                    "#1a9850"
+                                  ],
+                                  [
+                                    "Denso",
+                                    "#fdae61"
+                                  ],
+                                  [
+                                    "Congestionado",
+                                    "#d73027"
+                                  ],
+                                  [
+                                    "Cortado",
+                                    "#7b0d1e"
+                                  ],
+                                  [
+                                    "Sin datos",
+                                    "#9e9e9e"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#1a9850",
+                                  "#fdae61",
+                                  "#d73027",
+                                  "#7b0d1e",
+                                  "#9e9e9e"
+                                ],
+                                "name": "Estado del tráfico",
+                                "type": "customOrdinal"
+                              },
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": false,
+                              "opacity": 0.95,
+                              "pipelineAltitude": 0,
+                              "pipelineLaneGap": 1,
+                              "pipelineReverse": false,
+                              "pipelineSignedSpeed": false,
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Fluido",
+                                    "#1a9850"
+                                  ],
+                                  [
+                                    "Denso",
+                                    "#fdae61"
+                                  ],
+                                  [
+                                    "Congestionado",
+                                    "#d73027"
+                                  ],
+                                  [
+                                    "Cortado",
+                                    "#7b0d1e"
+                                  ],
+                                  [
+                                    "Sin datos",
+                                    "#9e9e9e"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#1a9850",
+                                  "#fdae61",
+                                  "#d73027",
+                                  "#7b0d1e",
+                                  "#9e9e9e"
+                                ],
+                                "name": "Estado del tráfico",
+                                "type": "customOrdinal"
+                              },
+                              "strokeOpacity": 0.95,
+                              "stroked": true,
+                              "thickness": 3,
+                              "trafficAnimate": true,
+                              "trafficCycle": 6,
+                              "trafficDashLength": 0.5,
+                              "trafficDirectionMode": "straight",
+                              "trafficGlow": true,
+                              "trafficLapsRange": [
+                                1,
+                                4
+                              ],
+                              "trafficSpacing": 60,
+                              "trafficStyle": "comets",
+                              "trafficTrail": 0.3
+                            }
+                          },
+                          "id": "traffic",
+                          "type": "pipeline",
+                          "visualChannels": {
+                            "sizeScale": "linear",
+                            "speedField": {
+                              "name": "speed",
+                              "type": "real"
+                            },
+                            "speedScale": "linear",
+                            "strokeColorField": {
+                              "name": "state_label",
+                              "type": "string"
+                            },
+                            "strokeColorScale": "customOrdinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              87,
+                              148,
+                              242
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Valenbisi · anclajes con bici",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    10,
+                                    "#E02F44"
+                                  ],
+                                  [
+                                    30,
+                                    "#FF9830"
+                                  ],
+                                  [
+                                    90,
+                                    "#73BF69"
+                                  ],
+                                  [
+                                    null,
+                                    "#5794F2"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#E02F44",
+                                  "#FF9830",
+                                  "#73BF69",
+                                  "#5794F2"
+                                ],
+                                "name": "Anclajes con bici",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "gaugeBackground": true,
+                              "gaugeBackgroundColor": [
+                                24,
+                                27,
+                                31
+                              ],
+                              "gaugeBackgroundOpacity": 0.5,
+                              "gaugeCentreText": false,
+                              "gaugeDistance": 30,
+                              "gaugeIcon": "square",
+                              "gaugeMax": 100,
+                              "gaugeMin": 0,
+                              "gaugePosition": "center",
+                              "gaugeShape": "ring",
+                              "gaugeTextMode": "percent",
+                              "gaugeTextSize": 11,
+                              "gaugeThickness": 3,
+                              "gaugeUnit": "",
+                              "gaugeUpright": true,
+                              "gaugeZoomRate": 0.6,
+                              "gaugeZoomRef": 13,
+                              "gaugeZoomScale": true,
+                              "historyField": "off",
+                              "opacity": 0.9,
+                              "outline": false,
+                              "radius": 9,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "rowsAsset": "auto",
+                              "rowsPerPlace": "last",
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "bikes",
+                          "type": "gauge",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "pct",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              242,
+                              242,
+                              242
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Estaciones · última lectura",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#5794F2",
+                                  "#8AB8FF",
+                                  "#FADE2A",
+                                  "#FF9830",
+                                  "#F2495C",
+                                  "#E02F44"
+                                ],
+                                "name": "Frío a cálido",
+                                "type": "diverging"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.85,
+                              "outline": true,
+                              "radius": 7,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "rowsAsset": "auto",
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "sparkAlertWorst": false,
+                              "sparkAlerts": false,
+                              "sparkCardOpacity": 1,
+                              "sparkCards": "auto",
+                              "sparkChangeColours": "neutral",
+                              "sparkCrossValue": true,
+                              "sparkCrosshair": true,
+                              "sparkDotRadius": 8,
+                              "sparkDots": true,
+                              "sparkFill": true,
+                              "sparkMax": "auto",
+                              "sparkMin": "auto",
+                              "sparkNoDataAfter": "auto",
+                              "sparkOverlap": "none",
+                              "sparkPinned": [],
+                              "sparkPublishCrosshair": true,
+                              "sparkScale": "common",
+                              "sparkSize": "S",
+                              "sparkTimeField": "auto",
+                              "sparkTooltip": false,
+                              "sparkUnit": "",
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "stations",
+                          "type": "sparkline",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "value",
+                              "type": "real"
+                            },
+                            "colorScale": "quantile",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 0,
+                "showSidePanel": false,
+                "timeSync": "toMap",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "segment_id",
+                    "source": "click",
+                    "variable": "segment"
+                  },
+                  {
+                    "field": "bike",
+                    "source": "click",
+                    "variable": "bike"
+                  },
+                  {
+                    "field": "station",
+                    "source": "click",
+                    "variable": "station"
+                  }
+                ]
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-measure": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT time, name AS place, ${metric:raw} AS value FROM $readings WHERE ${metric:raw} IS NOT NULL ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "group": "prepareTimeSeries",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "format": "multi"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "description": "La medida elegida arriba, lectura a lectura, una serie por estación en el rango: calidad del aire cada hora, meteorología cada 10 minutos.",
+          "id": 19,
+          "links": [],
+          "title": "${metric:text} por estación",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": 3600000,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "displayName": "${__field.labels.place}",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-no2-now": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH latest AS (SELECT station, max(time) AS t, arg_max(no2, time) AS v FROM $readings WHERE no2 IS NOT NULL GROUP BY station)\nSELECT median(v) AS \"NO2\" FROM latest WHERE t \u003e (SELECT max(t) FROM latest) - INTERVAL 2 HOUR"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "La mediana de la última lectura de NO₂ de las estaciones de calidad del aire que informaron en las últimas dos horas, en µg/m³.",
+          "id": 6,
+          "links": [],
+          "title": "NO₂ ahora",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "µg/m³"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-segment-name": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH h AS (\n  SELECT 100.0 * sum(incidents) / sum(n) AS pct, (sum(incidents) * 3)::DOUBLE AS minutes\n  FROM $traffic WHERE segment_id = try_cast($segment AS INTEGER)\n)\nSELECT s.name, s.state_label AS state, lower(replace(s.state_label, ' ', '')) AS cls,\n       round(h.pct, 1) AS pct, h.minutes,\n       CASE WHEN s.underpass THEN 'paso inferior' ELSE 'tramo en superficie' END AS kind\nFROM $segments AS s, h WHERE s.segment_id = try_cast($segment AS INTEGER)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "El tramo elegido en el mapa o en la tabla: su estado ahora y la parte de las lecturas del rango con incidencia.",
+          "id": 12,
+          "links": [],
+          "title": "Tramo elegido",
+          "vizConfig": {
+            "group": "marcusolsson-dynamictext-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "afterRender": "",
+                "content": "\u003cdiv class=\"pick\"\u003e\u003cdiv class=\"pick-name\"\u003e{{name}}\u003c/div\u003e\u003cdiv class=\"pick-meta\"\u003e{{kind}} · ahora \u003cstrong class=\"s-{{cls}}\"\u003e{{state}}\u003c/strong\u003e\u003c/div\u003e\u003cdiv class=\"pick-meta\"\u003e\u003cspan class=\"pick-big\"\u003e{{pct}} %\u003c/span\u003e del rango con incidencia ({{minutes}} min)\u003c/div\u003e\u003c/div\u003e",
+                "contentPartials": [],
+                "defaultContent": "Elige un tramo en el mapa o en la tabla.",
+                "editor": {
+                  "format": "auto",
+                  "language": "html"
+                },
+                "editors": [
+                  "styles"
+                ],
+                "externalStyles": [],
+                "helpers": "",
+                "renderMode": "everyRow",
+                "status": "",
+                "styles": ".pick { display: flex; flex-direction: column; gap: 8px; height: 100%; justify-content: center; }\n.pick-name { font-size: 17px; font-weight: 500; line-height: 1.3; }\n.pick-meta { font-size: 13px; line-height: 1.5; opacity: 0.8; }\n.pick-big { font-size: 26px; font-weight: 500; line-height: 1.2; }\n.s-fluido { color: #1a9850; } .s-denso { color: #fdae61; } .s-congestionado { color: #d73027; } .s-cortado { color: #e05a6a; } .s-sindatos { color: #9e9e9e; }",
+                "wrap": false
+              }
+            },
+            "version": "6.3.0"
+          }
+        }
+      },
+      "panel-segment-timeline": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT t AS time, ['Fluido', 'Denso', 'Congestionado', 'Cortado'][(worst + 1)::BIGINT] AS \"Estado\"\nFROM $traffic WHERE segment_id = try_cast($segment AS INTEGER) ORDER BY t"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "El peor estado del tramo en cada cuarto de hora del rango (cortado \u003e congestionado \u003e denso \u003e fluido); un hueco es un cuarto sin datos.",
+          "id": 13,
+          "links": [],
+          "title": "Estado del tramo elegido, por cuarto de hora",
+          "vizConfig": {
+            "group": "state-timeline",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "custom": {
+                    "fillOpacity": 80,
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": 900000,
+                    "lineWidth": 0,
+                    "spanNulls": false
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "Congestionado": {
+                          "color": "#d73027",
+                          "index": 2
+                        },
+                        "Cortado": {
+                          "color": "#7b0d1e",
+                          "index": 3
+                        },
+                        "Denso": {
+                          "color": "#fdae61",
+                          "index": 1
+                        },
+                        "Fluido": {
+                          "color": "#1a9850",
+                          "index": 0
+                        },
+                        "Sin datos": {
+                          "color": "#9e9e9e",
+                          "index": 4
+                        }
+                      },
+                      "type": "value"
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alignValue": "left",
+                "legend": {
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": false
+                },
+                "mergeValues": true,
+                "rowHeight": 0.9,
+                "showValue": "never",
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-segments": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH f AS (\n  -- Cada tramo con su estado: el de ahora o, si la gráfica de incidencias\n  -- tiene un tramo de tiempo elegido, el peor estado en ese tramo; y su parte\n  -- del tiempo con incidencia en el rango. Filtrado por el estado elegido en\n  -- la gráfica de estados y por el rango del histograma de tiempo con\n  -- incidencia.\n  WITH w AS (SELECT try_cast($slot_from AS TIMESTAMP) AS t0, try_cast($slot_to AS TIMESTAMP) AS t1),\n  share AS (\n    SELECT segment_id, 100.0 * sum(incidents) / sum(n) AS pct, (sum(incidents) * 3)::DOUBLE AS minutes\n    FROM $traffic GROUP BY 1\n  ),\n  picked AS (\n    SELECT segment_id, max(worst) AS worst\n    FROM $traffic, w WHERE w.t0 IS NOT NULL AND t \u003e= w.t0 AND t \u003c w.t1 GROUP BY 1\n  ),\n  labelled AS (\n    SELECT s.segment_id, s.name, s.underpass, s.geojson, s.state_label AS state_now,\n           CASE WHEN w.t0 IS NULL THEN s.state_label\n                ELSE ['Fluido', 'Denso', 'Congestionado', 'Cortado', 'Sin datos'][(coalesce(p.worst, 4) + 1)::BIGINT] END AS state_label,\n           coalesce(h.pct, 0) AS pct, coalesce(h.minutes, 0) AS minutes\n    FROM $segments AS s\n    CROSS JOIN w\n    LEFT JOIN share AS h ON h.segment_id = s.segment_id\n    LEFT JOIN picked AS p ON p.segment_id = s.segment_id\n  )\n  SELECT segment_id, name, underpass, geojson, state_now, state_label, round(pct, 1) AS pct, minutes,\n         CASE state_label WHEN 'Fluido' THEN 1.0 WHEN 'Denso' THEN 0.45 WHEN 'Congestionado' THEN 0.15 ELSE 0.0 END AS speed\n  FROM labelled\n  WHERE ($state = '' OR state_label = $state)\n    AND least(pct, 99.9) \u003e= coalesce(try_cast($jam_lo AS DOUBLE), -1)\n    AND least(pct, 99.9) \u003c coalesce(try_cast($jam_hi AS DOUBLE), 101)\n)\nSELECT segment_id, name AS \"Tramo\", state_label AS \"Estado\", pct AS \"Incidencia\"\nFROM f ORDER BY pct DESC, name"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Cada tramo con su estado (ahora, o en el tiempo elegido) y la parte de las lecturas del rango con incidencia, en minutos y en porcentaje. Respeta los filtros. Clic en un nombre: su historia aparece debajo.",
+          "id": 11,
+          "links": [],
+          "title": "Tramos con más incidencia",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false,
+                    "minWidth": 40
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "segment_id"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Tramo"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 230
+                      },
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Ver la historia del tramo",
+                            "url": "/d/fiware-valencia${__url.params:exclude:var-segment}\u0026var-segment=${__data.fields.segment_id}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Estado"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 105
+                      },
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "Congestionado": {
+                                "color": "#d73027",
+                                "index": 2
+                              },
+                              "Cortado": {
+                                "color": "#7b0d1e",
+                                "index": 3
+                              },
+                              "Denso": {
+                                "color": "#fdae61",
+                                "index": 1
+                              },
+                              "Fluido": {
+                                "color": "#1a9850",
+                                "index": 0
+                              },
+                              "Sin datos": {
+                                "color": "#9e9e9e",
+                                "index": 4
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "color-text"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Incidencia"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 95
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "right"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "frameIndex": 0,
+                "showHeader": true,
+                "sortBy": [
+                  {
+                    "desc": true,
+                    "displayName": "Incidencia"
+                  }
+                ]
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-states": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH f AS (\n  -- Cada tramo con su estado: el de ahora o, si la gráfica de incidencias\n  -- tiene un tramo de tiempo elegido, el peor estado en ese tramo; y su parte\n  -- del tiempo con incidencia en el rango. Filtrado por el estado elegido en\n  -- la gráfica de estados y por el rango del histograma de tiempo con\n  -- incidencia.\n  WITH w AS (SELECT try_cast($slot_from AS TIMESTAMP) AS t0, try_cast($slot_to AS TIMESTAMP) AS t1),\n  share AS (\n    SELECT segment_id, 100.0 * sum(incidents) / sum(n) AS pct, (sum(incidents) * 3)::DOUBLE AS minutes\n    FROM $traffic GROUP BY 1\n  ),\n  picked AS (\n    SELECT segment_id, max(worst) AS worst\n    FROM $traffic, w WHERE w.t0 IS NOT NULL AND t \u003e= w.t0 AND t \u003c w.t1 GROUP BY 1\n  ),\n  labelled AS (\n    SELECT s.segment_id, s.name, s.underpass, s.geojson, s.state_label AS state_now,\n           CASE WHEN w.t0 IS NULL THEN s.state_label\n                ELSE ['Fluido', 'Denso', 'Congestionado', 'Cortado', 'Sin datos'][(coalesce(p.worst, 4) + 1)::BIGINT] END AS state_label,\n           coalesce(h.pct, 0) AS pct, coalesce(h.minutes, 0) AS minutes\n    FROM $segments AS s\n    CROSS JOIN w\n    LEFT JOIN share AS h ON h.segment_id = s.segment_id\n    LEFT JOIN picked AS p ON p.segment_id = s.segment_id\n  )\n  SELECT segment_id, name, underpass, geojson, state_now, state_label, round(pct, 1) AS pct, minutes,\n         CASE state_label WHEN 'Fluido' THEN 1.0 WHEN 'Denso' THEN 0.45 WHEN 'Congestionado' THEN 0.15 ELSE 0.0 END AS speed\n  FROM labelled\n  WHERE TRUE\n    AND least(pct, 99.9) \u003e= coalesce(try_cast($jam_lo AS DOUBLE), -1)\n    AND least(pct, 99.9) \u003c coalesce(try_cast($jam_hi AS DOUBLE), 101)\n)\nSELECT state_label, count(*) AS n FROM f GROUP BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Cuántos tramos hay en cada estado: ahora o, con un tramo de tiempo elegido en la gráfica de incidencias, su peor estado en ese tiempo. Respeta el rango del histograma de incidencia. Clic en una barra: el mapa y la tabla muestran solo ese estado; otro clic lo quita. Eje logarítmico.",
+          "id": 8,
+          "links": [],
+          "title": "Tramos por estado",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Los tramos por estado del tráfico, en los colores del mapa: el estado de\n// ahora o, con un tramo de tiempo elegido en la gráfica de incidencias, el\n// peor de ese tramo. Un clic en una barra filtra el mapa y la tabla por ese\n// estado; otro clic en la misma lo quita. El eje es logarítmico: casi todos\n// los tramos están fluidos, y con un eje lineal las incidencias no se verían.\n// @constants begin\nconst VAR = 'state';\nconst ORDER = ['Fluido', 'Denso', 'Congestionado', 'Cortado', 'Sin datos'];\nconst COLORS = { Fluido: '#1a9850', Denso: '#fdae61', Congestionado: '#d73027', Cortado: '#7b0d1e', 'Sin datos': '#9e9e9e' };\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst text = theme.colors.text.primary;\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst labels = col('state_label');\nconst counts = col('n').map(Number);\nconst byLabel = Object.fromEntries(labels.map((l, i) =\u003e [l, counts[i]]));\n// ECharts draws a category axis bottom up: reversed, the first state is on top.\nconst states = ORDER.slice().reverse();\nconst values = states.map((s) =\u003e byLabel[s] ?? 0);\n// Read as '${state}', and written out here so the panel redraws when it changes.\nconst picked = context.grafana.replaceVariables('${' + VAR + '}');\n\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const id = states[event.dataIndex];\n  const same = id === context.grafana.replaceVariables('${' + VAR + '}');\n  location.partial({ ['var-' + VAR]: same ? '' : id }, true);\n});\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 44, top: 6, bottom: 6, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e `${items[0].name}: \u003cb\u003e${values[items[0].dataIndex]}\u003c/b\u003e tramos`,\n  },\n  xAxis: { type: 'log', min: 0.5, axisLabel: { show: false }, splitLine: { show: false } },\n  yAxis: { type: 'category', data: states, axisTick: { show: false }, axisLabel: { color: text, fontSize: 11 } },\n  series: [\n    {\n      type: 'bar',\n      barWidth: '70%',\n      cursor: 'pointer',\n      data: values.map((v, i) =\u003e ({\n        value: v === 0 ? null : v,\n        itemStyle: { color: COLORS[states[i]], opacity: picked \u0026\u0026 picked !== states[i] ? 0.35 : 1, borderRadius: [0, 4, 4, 0] },\n      })),\n      label: { show: true, position: 'right', color: muted, fontSize: 11, formatter: (p) =\u003e p.value },\n    },\n  ],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-station-name": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT any_value(name) AS name, any_value(kind) AS kind, station,\n       count(*) AS readings,\n       CASE any_value(kind)\n         WHEN 'Aire' THEN concat_ws(' · ', 'NO₂ ' || arg_max(no2, time) FILTER (WHERE no2 IS NOT NULL), 'PM10 ' || arg_max(pm10, time) FILTER (WHERE pm10 IS NOT NULL),\n                                    'PM2.5 ' || arg_max(pm25, time) FILTER (WHERE pm25 IS NOT NULL), 'O₃ ' || arg_max(o3, time) FILTER (WHERE o3 IS NOT NULL)) || ' µg/m³'\n         ELSE concat_ws(' · ', arg_max(temperature, time) || ' °C', arg_max(humidity, time) || ' % de humedad', arg_max(wind, time) || ' m/s de viento')\n       END AS latest,\n       date_diff('minute', max(time), now()::TIMESTAMP)::INTEGER AS age_min\nFROM $readings WHERE station = $station GROUP BY station"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "La estación de aire o meteorológica elegida en el mapa o en la gráfica: sus últimas lecturas y cuántas hay en el rango.",
+          "id": 20,
+          "links": [],
+          "title": "Estación elegida",
+          "vizConfig": {
+            "group": "marcusolsson-dynamictext-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "afterRender": "",
+                "content": "\u003cdiv class=\"pick\"\u003e\u003cdiv class=\"pick-name\"\u003e{{name}} \u003cspan class=\"pick-meta\"\u003e· {{station}} · {{kind}}\u003c/span\u003e\u003c/div\u003e\u003cdiv class=\"pick-meta\"\u003e{{latest}}\u003c/div\u003e\u003cdiv class=\"pick-meta\"\u003e{{readings}} lecturas en el rango · la última hace {{age_min}} min\u003c/div\u003e\u003c/div\u003e",
+                "contentPartials": [],
+                "defaultContent": "Elige una estación de aire o meteorológica en el mapa o en la gráfica de estaciones.",
+                "editor": {
+                  "format": "auto",
+                  "language": "html"
+                },
+                "editors": [
+                  "styles"
+                ],
+                "externalStyles": [],
+                "helpers": "",
+                "renderMode": "everyRow",
+                "status": "",
+                "styles": ".pick { display: flex; flex-direction: column; gap: 8px; height: 100%; justify-content: center; }\n.pick-name { font-size: 17px; font-weight: 500; line-height: 1.3; }\n.pick-meta { font-size: 13px; line-height: 1.5; opacity: 0.8; }\n.pick-big { font-size: 26px; font-weight: 500; line-height: 1.2; }\n.s-fluido { color: #1a9850; } .s-denso { color: #fdae61; } .s-congestionado { color: #d73027; } .s-cortado { color: #e05a6a; } .s-sindatos { color: #9e9e9e; }",
+                "wrap": false
+              }
+            },
+            "version": "6.3.0"
+          }
+        }
+      },
+      "panel-station-series": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT time, 'NO₂ (µg/m³)' AS measure, no2 AS value FROM $readings WHERE station = $station AND no2 IS NOT NULL\nUNION ALL SELECT time, 'PM10 (µg/m³)', pm10 FROM $readings WHERE station = $station AND pm10 IS NOT NULL\nUNION ALL SELECT time, 'PM2.5 (µg/m³)', pm25 FROM $readings WHERE station = $station AND pm25 IS NOT NULL\nUNION ALL SELECT time, 'O₃ (µg/m³)', o3 FROM $readings WHERE station = $station AND o3 IS NOT NULL\nUNION ALL SELECT time, 'Temperatura (°C)', temperature FROM $readings WHERE station = $station AND temperature IS NOT NULL\nUNION ALL SELECT time, 'Humedad (%)', humidity FROM $readings WHERE station = $station AND humidity IS NOT NULL\nUNION ALL SELECT time, 'Viento (m/s)', wind FROM $readings WHERE station = $station AND wind IS NOT NULL\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "group": "prepareTimeSeries",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "format": "multi"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "description": "Todo lo que mide la estación en el rango: los contaminantes en µg/m³ en una estación de aire; temperatura, humedad y viento en una meteorológica, cada uno en su eje.",
+          "id": 21,
+          "links": [],
+          "title": "Lecturas de la estación elegida",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": 3600000,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "displayName": "${__field.labels.measure}",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byRegexp",
+                      "options": "/Temperatura/"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "celsius"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byRegexp",
+                      "options": "/Humedad/"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byRegexp",
+                      "options": "/Viento/"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "velocityms"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-stations": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Las estaciones por su última lectura de la medida elegida, y el sextil de\n-- esa lectura entre las del último día, que es como el mapa reparte sus seis\n-- colores.\nWITH day AS (\n  SELECT station, name, kind, time, ${metric:raw} AS v FROM $readings\n  WHERE ${metric:raw} IS NOT NULL AND time \u003e (SELECT max(time) FROM $readings WHERE ${metric:raw} IS NOT NULL) - INTERVAL 24 HOUR\n),\nq AS (\n  SELECT quantile_cont(v, 1 / 6.0) AS q1, quantile_cont(v, 2 / 6.0) AS q2, quantile_cont(v, 3 / 6.0) AS q3,\n         quantile_cont(v, 4 / 6.0) AS q4, quantile_cont(v, 5 / 6.0) AS q5 FROM day\n),\nlatest AS (\n  SELECT station, any_value(name) AS name, any_value(kind) AS kind, arg_max(v, time) AS v, max(time) AS t FROM day GROUP BY station\n)\nSELECT station, name, kind, round(v, 1) AS value, t,\n       (v \u003e q1)::INT + (v \u003e q2)::INT + (v \u003e q3)::INT + (v \u003e q4)::INT + (v \u003e q5)::INT AS bucket\nFROM latest, q ORDER BY v DESC, name"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Las estaciones que miden la medida elegida, por su última lectura, en los colores del mapa (sextiles de las lecturas del último día). Clic en una barra: su historia aparece debajo; otro clic la quita.",
+          "id": 18,
+          "links": [],
+          "title": "Estaciones, última lectura",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Las estaciones por su última lectura de la medida elegida, en los seis\n// colores del mapa (cada lectura, por su sextil entre las del último día,\n// como reparte el mapa su escala). Un clic en una barra elige la estación,\n// como un clic en el mapa; otro clic en la misma la suelta.\n// @constants begin\nconst VAR = 'station';\nconst COLORS = ['#5794F2', '#8AB8FF', '#FADE2A', '#FF9830', '#F2495C', '#E02F44'];\nconst METRIC = 'metric';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst text = theme.colors.text.primary;\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\n// ECharts draws a category axis bottom up: reversed, the highest is on top.\nconst ids = col('station').reverse();\nconst names = col('name').reverse();\nconst kinds = col('kind').reverse();\nconst values = col('value').map(Number).reverse();\nconst buckets = col('bucket').map(Number).reverse();\n// The measure's label is \"Name (unit)\": the unit goes on the axis.\nconst label = context.grafana.replaceVariables('${' + METRIC + ':text}');\nconst unit = (label.match(/\\(([^)]*)\\)/) || [])[1] || '';\n// Read as '${station}' and written out here so the panel redraws when it changes.\nconst picked = context.grafana.replaceVariables('${' + VAR + '}');\n\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const id = ids[event.dataIndex];\n  const same = id === context.grafana.replaceVariables('${' + VAR + '}');\n  location.partial({ ['var-' + VAR]: same ? '' : id }, true);\n});\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 44, top: 26, bottom: 8, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e {\n      const i = items[0].dataIndex;\n      return `\u003cb\u003e${names[i]}\u003c/b\u003e · ${kinds[i]}\u003cbr/\u003e${label}: \u003cb\u003e${values[i]}\u003c/b\u003e`;\n    },\n  },\n  xAxis: { type: 'value', name: unit, nameLocation: 'end', nameTextStyle: { color: muted }, axisLabel: { color: muted }, splitLine: { lineStyle: { opacity: 0.15 } } },\n  yAxis: { type: 'category', data: names, axisTick: { show: false }, axisLabel: { color: text, fontSize: 11 } },\n  series: [\n    {\n      type: 'bar',\n      barWidth: '70%',\n      cursor: 'pointer',\n      data: values.map((v, i) =\u003e ({\n        value: v,\n        itemStyle: { color: COLORS[Math.min(5, Math.max(0, buckets[i]))], opacity: picked \u0026\u0026 picked !== ids[i] ? 0.35 : 1, borderRadius: [0, 4, 4, 0] },\n      })),\n      label: { show: true, position: 'right', color: muted, fontSize: 11, formatter: (p) =\u003e p.value },\n    },\n  ],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-temp-now": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH latest AS (SELECT station, max(time) AS t, arg_max(temperature, time) AS v FROM $readings WHERE temperature IS NOT NULL GROUP BY station)\nSELECT median(v) AS \"Temperatura\" FROM latest WHERE t \u003e (SELECT max(t) FROM latest) - INTERVAL 1 HOUR"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "La mediana de la última lectura de las estaciones meteorológicas que informaron en la última hora.",
+          "id": 7,
+          "links": [],
+          "title": "Temperatura",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "celsius"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-traffic-latest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT max(observed) AS time FROM $segments"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "La fecha de observación más reciente entre los tramos, según el Context Broker. El harvester lee el Geoportal cada 3 minutos.",
+          "id": 2,
+          "links": [],
+          "title": "Tráfico leído",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "RowsLayout",
+      "spec": {
+        "rows": [
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-map"
+                        },
+                        "height": 24,
+                        "width": 16,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-traffic-latest"
+                        },
+                        "height": 3,
+                        "width": 4,
+                        "x": 16,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-air-latest"
+                        },
+                        "height": 3,
+                        "width": 4,
+                        "x": 20,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-incidents-now"
+                        },
+                        "height": 3,
+                        "width": 4,
+                        "x": 16,
+                        "y": 3
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-bikes-now"
+                        },
+                        "height": 3,
+                        "width": 4,
+                        "x": 20,
+                        "y": 3
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-no2-now"
+                        },
+                        "height": 3,
+                        "width": 4,
+                        "x": 16,
+                        "y": 6
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-temp-now"
+                        },
+                        "height": 3,
+                        "width": 4,
+                        "x": 20,
+                        "y": 6
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-states"
+                        },
+                        "height": 7,
+                        "width": 8,
+                        "x": 16,
+                        "y": 9
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-jam"
+                        },
+                        "height": 8,
+                        "width": 8,
+                        "x": 16,
+                        "y": 16
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Mapa"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-incidents"
+                        },
+                        "height": 10,
+                        "width": 15,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-segments"
+                        },
+                        "height": 10,
+                        "width": 9,
+                        "x": 15,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Tráfico"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "conditionalRendering": {
+                "kind": "ConditionalRenderingGroup",
+                "spec": {
+                  "condition": "and",
+                  "items": [
+                    {
+                      "kind": "ConditionalRenderingVariable",
+                      "spec": {
+                        "operator": "notEquals",
+                        "value": "",
+                        "variable": "segment"
+                      }
+                    }
+                  ],
+                  "visibility": "show"
+                }
+              },
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-segment-name"
+                        },
+                        "height": 6,
+                        "width": 6,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-segment-timeline"
+                        },
+                        "height": 6,
+                        "width": 18,
+                        "x": 6,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Tramo elegido"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-bikes-hist"
+                        },
+                        "height": 8,
+                        "width": 8,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-bikes-line"
+                        },
+                        "height": 8,
+                        "width": 16,
+                        "x": 8,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Valenbisi"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "conditionalRendering": {
+                "kind": "ConditionalRenderingGroup",
+                "spec": {
+                  "condition": "and",
+                  "items": [
+                    {
+                      "kind": "ConditionalRenderingVariable",
+                      "spec": {
+                        "operator": "notEquals",
+                        "value": "",
+                        "variable": "bike"
+                      }
+                    }
+                  ],
+                  "visibility": "show"
+                }
+              },
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-bike-name"
+                        },
+                        "height": 6,
+                        "width": 6,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-bike-series"
+                        },
+                        "height": 6,
+                        "width": 18,
+                        "x": 6,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Estación Valenbisi elegida"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-stations"
+                        },
+                        "height": 9,
+                        "width": 8,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-measure"
+                        },
+                        "height": 9,
+                        "width": 16,
+                        "x": 8,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Aire y meteorología"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "conditionalRendering": {
+                "kind": "ConditionalRenderingGroup",
+                "spec": {
+                  "condition": "and",
+                  "items": [
+                    {
+                      "kind": "ConditionalRenderingVariable",
+                      "spec": {
+                        "operator": "notEquals",
+                        "value": "",
+                        "variable": "station"
+                      }
+                    }
+                  ],
+                  "visibility": "show"
+                }
+              },
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-station-name"
+                        },
+                        "height": 7,
+                        "width": 6,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-station-series"
+                        },
+                        "height": 7,
+                        "width": 18,
+                        "x": 6,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Estación elegida"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-about"
+                        },
+                        "height": 14,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Sobre los datos"
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "plus",
+      "kepler",
+      "business-charts",
+      "mobility",
+      "air-quality",
+      "weather",
+      "live"
+    ],
+    "timeSettings": {
+      "autoRefresh": "5m",
+      "autoRefreshIntervals": [
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-24h",
+      "hideTimepicker": false,
+      "timezone": "Europe/Madrid",
+      "to": "now"
+    },
+    "title": "València en tiempo real: tráfico, aire y bicis sobre FIWARE (NGSI-LD)",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "NO₂ (µg/m³)",
+            "value": "no2"
+          },
+          "description": "La medida que dibujan las estaciones del mapa, la superficie entre ellas y las gráficas de estaciones.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Medida",
+          "multi": false,
+          "name": "metric",
+          "options": [],
+          "query": "NO₂ (µg/m³) : no2,PM10 (µg/m³) : pm10,PM2.5 (µg/m³) : pm25,O₃ (µg/m³) : o3,Temperatura (°C) : temperature,Humedad (%) : humidity,Viento (m/s) : wind",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "state",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "jam_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "jam_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "slot_from",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "slot_to",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "bikes_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "bikes_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "segment",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "bike",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "station",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Tramos de tráfico, estado ahora (API NGSI-LD)",
+          "multi": false,
+          "name": "segments",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "segments",
+              "refId": "segments",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: el estado actual de cada tramo de tráfico desde el Context\n-- Broker (Stellio), por la API NGSI-LD estándar: una entidad\n-- TrafficFlowObserved por tramo, con su geometría como GeoJSON. El harvester\n-- la renueva cada 3 minutos. Los pasos inferiores (estados 5 a 9) se\n-- cuentan como su estado en superficie.\nSELECT segmentId AS segment_id,\n       name,\n       trafficState % 5 AS state,\n       ['Fluido', 'Denso', 'Congestionado', 'Cortado', 'Sin datos'][trafficState % 5 + 1] AS state_label,\n       underpass,\n       (dateObserved-\u003e\u003e'@value')::TIMESTAMPTZ AS observed,\n       location::VARCHAR AS geojson\nFROM read_json('https://fiware.ubica.dev/ngsi-ld/v1/entities?type=TrafficFlowObserved\u0026options=keyValues\u0026limit=1000\u0026attrs=name,segmentId,trafficState,underpass,dateObserved,location',\n               columns = {name: 'VARCHAR', segmentId: 'INTEGER', trafficState: 'INTEGER', underpass: 'BOOLEAN', dateObserved: 'JSON', location: 'JSON'})",
+                  "refId": "segments"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Historia del tráfico por tramo y cuarto de hora (Parquet)",
+          "multi": false,
+          "name": "traffic",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "traffic",
+              "refId": "traffic",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: la historia del estado del tráfico (Stellio → Parquet) en el\n-- rango de tiempo, resumida por tramo y cuarto de hora: el peor estado del\n-- cuarto (cortado \u003e congestionado \u003e denso \u003e fluido; NULL si solo hubo \"sin\n-- datos\"), cuántas lecturas tuvo y cuántas con incidencia. Las lecturas son\n-- cada 3 minutos; los pasos inferiores (estados 5 a 9) cuentan como su\n-- estado en superficie. Los exportes guardan 7 días.\nSELECT time_bucket(INTERVAL 15 MINUTE, time) AS t,\n       segment_id,\n       max(CASE WHEN state % 5 \u003c= 3 THEN state % 5 END) AS worst,\n       count(*) AS n,\n       count(*) FILTER (WHERE state % 5 IN (1, 2, 3)) AS incidents\nFROM read_parquet('https://fiware.ubica.dev/exports/traffic_states.parquet')\nWHERE time \u003e= make_timestamptz(CAST(${__from} AS BIGINT) * 1000)\n  AND time \u003c make_timestamptz(CAST(${__to} AS BIGINT) * 1000)\nGROUP BY 1, 2",
+                  "refId": "traffic"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Estaciones Valenbisi ahora (API NGSI-LD)",
+          "multi": false,
+          "name": "bikes",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "bikes",
+              "refId": "bikes",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: cada estación Valenbisi (BikeHireDockingStation) desde\n-- Stellio, con sus bicis y anclajes libres ahora y la fecha de su última\n-- observación. El número de estación es el final de su id NGSI-LD, y el\n-- nombre pierde ese prefijo numérico.\nSELECT regexp_extract(id, '[0-9]+$') AS bike,\n       regexp_extract(id, '[0-9]+$') || ' · ' || replace(regexp_replace(name, '^[0-9]+_', ''), '_', ' ') AS name,\n       status,\n       availableBikeNumber AS bikes,\n       freeSlotNumber      AS free_slots,\n       totalSlotNumber     AS slots,\n       round(100.0 * availableBikeNumber / nullif(totalSlotNumber, 0)) AS pct,\n       (dateObserved-\u003e\u003e'@value')::TIMESTAMPTZ AS observed,\n       date_diff('minute', (dateObserved-\u003e\u003e'@value')::TIMESTAMPTZ, now()) AS age_min,\n       (location-\u003e'coordinates'-\u003e\u003e1)::DOUBLE AS latitude,\n       (location-\u003e'coordinates'-\u003e\u003e0)::DOUBLE AS longitude\nFROM read_json('https://fiware.ubica.dev/ngsi-ld/v1/entities?type=BikeHireDockingStation\u0026options=keyValues\u0026limit=1000\u0026attrs=name,status,availableBikeNumber,freeSlotNumber,totalSlotNumber,dateObserved,location',\n               columns = {id: 'VARCHAR', name: 'VARCHAR', status: 'VARCHAR', availableBikeNumber: 'INTEGER', freeSlotNumber: 'INTEGER',\n                          totalSlotNumber: 'INTEGER', dateObserved: 'JSON', location: 'JSON'})",
+                  "refId": "bikes"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Historia de Valenbisi por estación y cuarto de hora (Parquet)",
+          "multi": false,
+          "name": "bikes_hist",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "bikes_hist",
+              "refId": "bikes_hist",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: la historia de Valenbisi (Stellio → Parquet) en el rango de\n-- tiempo, por estación y cuarto de hora: la última lectura de cada cuarto.\n-- Valenbisi publica cada ~10 minutos; los exportes guardan 7 días.\nSELECT time_bucket(INTERVAL 15 MINUTE, time) AS t,\n       regexp_extract(entity_id, '[0-9]+$') AS bike,\n       last(available_bikes ORDER BY time) AS bikes,\n       last(total_slots ORDER BY time)     AS slots\nFROM read_parquet('https://fiware.ubica.dev/exports/bikes.parquet')\nWHERE time \u003e= make_timestamptz(CAST(${__from} AS BIGINT) * 1000)\n  AND time \u003c make_timestamptz(CAST(${__to} AS BIGINT) * 1000)\nGROUP BY 1, 2",
+                  "refId": "bikes_hist"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Lecturas de aire y meteorología (Parquet)",
+          "multi": false,
+          "name": "readings",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "readings",
+              "refId": "readings",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: las lecturas de las estaciones de calidad del aire (horarias)\n-- y meteorológicas (cada 10 minutos) en el rango de tiempo, Stellio →\n-- Parquet, en una sola tabla: cada fila trae las medidas de su tipo de\n-- estación y NULL en las del otro. La estación es el código del Geoportal\n-- (A01…, W01…); los exportes guardan 7 días.\nSELECT regexp_extract(entity_id, 'valencia-([A-Z][0-9]+)', 1) AS station,\n       name, 'Aire' AS kind, time,\n       no2, pm10, pm25, o3,\n       NULL::DOUBLE AS temperature, NULL::DOUBLE AS humidity, NULL::DOUBLE AS wind,\n       latitude, longitude\nFROM read_parquet('https://fiware.ubica.dev/exports/air_quality.parquet')\nWHERE time \u003e= make_timestamptz(CAST(${__from} AS BIGINT) * 1000)\n  AND time \u003c make_timestamptz(CAST(${__to} AS BIGINT) * 1000)\nUNION ALL\nSELECT regexp_extract(entity_id, 'valencia-([A-Z][0-9]+)', 1),\n       CASE name WHEN 'ESTACIÓN AEROPUERTO' THEN 'Aeropuerto' WHEN 'ESTACIÓN ALBUFERA' THEN 'Albufera'\n                 WHEN 'ESTACIÓN AVD. FRANCIA' THEN 'Avda. de Francia' WHEN 'ESTACIÓN JARDINES DE VIVEROS' THEN 'Jardines de Viveros'\n                 WHEN 'ESTACIÓN NAZARET' THEN 'Natzaret' ELSE replace(name, 'ESTACIÓN ', '') END,\n       'Meteo', time,\n       NULL, NULL, NULL, NULL,\n       temperature, relative_humidity_pct, wind_speed,\n       latitude, longitude\nFROM read_parquet('https://fiware.ubica.dev/exports/weather.parquet')\nWHERE time \u003e= make_timestamptz(CAST(${__from} AS BIGINT) * 1000)\n  AND time \u003c make_timestamptz(CAST(${__to} AS BIGINT) * 1000)",
+                  "refId": "readings"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}

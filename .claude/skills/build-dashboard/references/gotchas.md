@@ -44,8 +44,12 @@ here, in the same shape: symptom, cause, fix.
 | `h3_*` not found in Chaski | no H3 in the browser | compute on the server in the dataset's source query |
 | Two variables break each other | a Chaski dataset and another variable share a name | unique names |
 | Native barchart over Chaski shows a legend and no bars | unknown | Business Charts for bars over Chaski |
+| `array_extract(VARCHAR[], DOUBLE)` binder error in Chaski on `list[n + 1]` | every numeric column of a server-fed dataset reaches the browser as DOUBLE | cast the index: `list[(n + 1)::BIGINT]` |
+| "Cannot compare TIMESTAMP_MS and TIMESTAMP WITH TIME ZONE" in Chaski | a server-fed time column is TIMESTAMP_MS (naive UTC); `try_cast($var AS TIMESTAMPTZ)` is not | `try_cast($var AS TIMESTAMP)` (ISO strings with `Z` parse), and `now()::TIMESTAMP` (Chaski's TimeZone is UTC) |
 | Stacked ECharts bars all start from zero | `stack` does not stack on a value or time x axis | a category axis per bin (a hidden time axis can carry the brush) |
 | Infinity: "unable to merge fields due to different fields" on a filtered query | offset pagination asks for more pages than the filter leaves; the empty ones have no fields | don't filter the paginated query; filter in the map (kepler `variableMappings`) or fetch fewer pages |
+| A stat of a time value shows "No data" | `reduceOptions.fields: ''` takes numeric fields only | `fields: "/.*/"` (as for a `dateTimeFromNow` "Latest data" stat) |
+| A stat or table of a picked entity shows minuscule or truncated text | a long name in a narrow stat scales down; a table truncates | a Business Text panel (`marcusolsson-dynamictext-panel`, `renderMode: everyRow`) with a small HTML template (`fiware-valencia`) |
 | A Business Chart writes a variable on click but its highlight stays on the old value | the panel redraws only when its query or code names that variable | name it: `${var}` in the code (redraws without re-querying) or `-- ${var:raw}` in the SQL |
 | "Malformed JSON", about 1 query in 800, on a feed refreshed often | DuckDB's external file cache mixed two versions of a file | already off instance-wide; don't turn it on |
 | "the remote file has changed" | a source that rebuilds the file per request | cache it in the gateway |
