@@ -1,4 +1,4 @@
-# Pacha
+<a href="https://pacha.ubica.dev"><img src=".github/readme-banner.png" alt="Pacha, by Ubica Geospatial: spatiotemporal visualization in Grafana, in one command. Kepler maps, DuckDB on the server and in the browser, cloud-native rasters, live feeds. The plugins: Kepler Geospatial Maps (open source), Chaski (DuckDB in the browser) and Kepler Plus (commercial)."></a>
 
 *Pacha* is Quechua for the world and time as one.
 
@@ -10,6 +10,19 @@ published.
 No account needed.
 
 > Not affiliated with Grafana Labs.
+
+<table>
+<tr>
+<td width="33%"><a href="https://pacha.ubica.dev/d/nyc-taxi-live"><img src="home/screenshots/nyc-taxi-live.jpg" alt="New York City taxis, live"></a><br><sub><b>New York City taxis, live</b> · DuckDB</sub></td>
+<td width="33%"><a href="https://pacha.ubica.dev/d/earthquakes"><img src="home/screenshots/earthquakes.jpg" alt="Earthquakes, the last 30 days"></a><br><sub><b>Earthquakes, the last 30 days</b> · Chaski</sub></td>
+<td width="33%"><a href="https://pacha.ubica.dev/d/aqueduct-sa"><img src="home/screenshots/aqueduct-sa.jpg" alt="Water risk in South America"></a><br><sub><b>Water risk in South America</b> · ArcGIS, live</sub></td>
+</tr>
+<tr>
+<td><a href="https://pacha.ubica.dev/d/germany-power-borders"><img src="home/screenshots/germany-power-borders.jpg" alt="Germany's power borders, live"></a><br><sub><b>Germany's power borders, live</b> · Plus</sub></td>
+<td><a href="https://pacha.ubica.dev/d/fiware-valencia"><img src="home/screenshots/fiware-valencia.jpg" alt="València in real time, on FIWARE"></a><br><sub><b>València in real time, on FIWARE</b> · Plus</sub></td>
+<td><a href="https://pacha.ubica.dev/d/nyc-skyline-plus"><img src="home/screenshots/nyc-skyline-plus.jpg" alt="Manhattan by height and by subway, in 3D"></a><br><sub><b>Manhattan by height and by subway, in 3D</b> · Plus</sub></td>
+</tr>
+</table>
 
 ## The plugins
 
