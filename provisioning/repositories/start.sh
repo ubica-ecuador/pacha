@@ -141,6 +141,14 @@ set_home_dashboard() {
     fi
     sleep 2
   done
+  # A dashboard Git Sync puts at the root comes with no permissions at all, so
+  # anonymous visitors would get a 403 and Grafana's own home instead. The
+  # same grants the synced folders get.
+  out=$(grafana POST /api/dashboards/uid/home/permissions -H 'Content-Type: application/json' \
+    -d '{"items":[{"role":"Viewer","permission":1},{"role":"Editor","permission":2}]}') || {
+    log "opening the home dashboard to viewers failed: $out"
+    return 0
+  }
   out=$(grafana PATCH /api/org/preferences -H 'Content-Type: application/json' -d '{"homeDashboardUID":"home"}') || {
     log "setting the home dashboard failed: $out"
     return 0
