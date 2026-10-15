@@ -813,18 +813,123 @@
                   "config": {
                     "mapState": {
                       "bearing": 0,
-                      "latitude": 12,
-                      "longitude": 15,
+                      "dragRotate": false,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 24.891034469363838,
+                      "longitude": 4.54408642986621,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
                       "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
                       "zoom": 1.15
                     },
                     "mapStyle": {
-                      "styleType": "openfreemap-dark"
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "grafana-satellite",
+                      "threeDBuildingColor": [
+                        9.311499150948377,
+                        9.311499150948377,
+                        9.311499150948377
+                      ],
+                      "topLayerGroups": {
+                        "label": true
+                      },
+                      "visibleLayerGroups": {
+                        "label": true,
+                        "road": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
                     },
                     "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
                       "filters": [],
                       "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
                         "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
                           "enabled": true,
                           "fieldsToShow": {
                             "grafana-A": [
@@ -839,37 +944,114 @@
                         }
                       },
                       "layerBlending": "normal",
+                      "layerOrder": [
+                        "a5-cells"
+                      ],
                       "layers": [
                         {
                           "config": {
+                            "color": [
+                              221,
+                              178,
+                              124
+                            ],
+                            "columnMode": "geojson",
                             "columns": {
                               "geojson": "_geojson"
                             },
                             "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
                             "isVisible": true,
                             "label": "Detections per A5 cell",
-                            "visConfig": {
-                              "colorRange": {
-                                "category": "Custom",
-                                "colors": [
-                                  "#5C0A0A",
-                                  "#9B1C1C",
-                                  "#D9480F",
-                                  "#F08C00",
-                                  "#FCC419",
-                                  "#FFF3BF"
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
                                 ],
-                                "name": "Fire",
-                                "type": "sequential"
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#0198BD",
+                                  "#42C1BC",
+                                  "#9CE3B1",
+                                  "#F5B272",
+                                  "#EB7053",
+                                  "#D50255"
+                                ],
+                                "name": "Ice And Fire",
+                                "type": "diverging"
                               },
+                              "elevationScale": 5,
                               "enable3d": false,
                               "filled": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
                               "opacity": 0.85,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
                               "strokeColor": [
                                 20,
                                 20,
                                 22
                               ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
                               "strokeOpacity": 0.6,
                               "stroked": true,
                               "thickness": 0.3,
@@ -881,13 +1063,17 @@
                           "visualChannels": {
                             "colorField": {
                               "name": "log_detections",
-                              "type": "real"
+                              "type": "integer"
                             },
                             "colorScale": "quantize",
-                            "sizeScale": "linear"
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
                           }
                         }
                       ],
+                      "overlayBlending": "normal",
                       "splitMaps": []
                     }
                   },
@@ -900,6 +1086,7 @@
                 "rasterBands": "",
                 "rasterColormap": "",
                 "rasterPainted": false,
+                "saveRequest": 1,
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table",
