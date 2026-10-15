@@ -1206,7 +1206,7 @@
                 "name": "panel-newest"
               },
               "height": 3,
-              "width": 6,
+              "width": 4,
               "x": 0,
               "y": 0
             }
@@ -1219,8 +1219,8 @@
                 "name": "panel-detections"
               },
               "height": 3,
-              "width": 6,
-              "x": 6,
+              "width": 4,
+              "x": 4,
               "y": 0
             }
           },
@@ -1232,8 +1232,8 @@
                 "name": "panel-cells"
               },
               "height": 3,
-              "width": 6,
-              "x": 12,
+              "width": 4,
+              "x": 8,
               "y": 0
             }
           },
@@ -1245,8 +1245,21 @@
                 "name": "panel-countries-count"
               },
               "height": 3,
-              "width": 6,
-              "x": 18,
+              "width": 4,
+              "x": 12,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-brush"
+              },
+              "height": 3,
+              "width": 8,
+              "x": 16,
               "y": 0
             }
           },
@@ -1313,19 +1326,6 @@
               "width": 12,
               "x": 12,
               "y": 25
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-brush"
-              },
-              "height": 4,
-              "width": 24,
-              "x": 0,
-              "y": 35
             }
           }
         ]
