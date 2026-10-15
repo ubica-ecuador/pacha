@@ -250,8 +250,12 @@
                 "density": "comfortable",
                 "domain": "data",
                 "floatingPlace": {
-                  "height": 100.5234375,
-                  "width": 1071.63671875,
+                  "anchorX": "center",
+                  "anchorY": "bottom",
+                  "dx": -92.6,
+                  "dy": 8,
+                  "height": 100.5,
+                  "width": 0.570317,
                   "x": 290.7734375,
                   "y": 771.57421875
                 },
