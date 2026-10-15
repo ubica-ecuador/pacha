@@ -1,5 +1,6 @@
 // firms-active-fires: FIRMS detections in Chaski, plus CAMS smoke (omaod550)
-// as a day-by-day Zarr catalogue on the map, sharing t0/t1 with the time brush.
+// as an hourly Zarr catalogue on the map (each hour reuses the latest daily
+// analysis), sharing t0/t1 with the time brush.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { api, rowsOf } from '../lib/grafana.mjs';
@@ -53,10 +54,21 @@ test('is provisioned in Plus', { skip }, () => {
   assert.equal(provisioned.json.meta.folderUid, 'plus');
 });
 
-test('the map gets one CAMS smoke scene per day in the dashboard window', { skip }, async () => {
+test('CAMS smoke is stamped hourly and a short daytime brush still hits a scene', { skip }, async () => {
   const rows = await duckdb(smokeSql);
-  assert.ok(rows.length >= 5 && rows.length <= 10, `got ${rows.length} days`);
+  assert.ok(rows.length >= 24 * 5, `got ${rows.length} hours`);
   assert.ok(rows.every((r) => r.zarr_variable === 'omaod550' && r.zarr_sel === 'time_step=0'));
   assert.ok(rows.every((r) => String(r.zarr_url).includes('cams_global_atmospheric_composition')));
-  assert.ok(rows.every((r) => /^\d{4}-\d{2}-\d{2}T00:00:00\.000000000$/.test(r.zarr_time_label)));
+
+  const t0 = Date.parse('2026-10-13T02:00:00.000Z');
+  const t1 = Date.parse('2026-10-13T08:00:00.000Z');
+  const inWin = rows.filter((r) => r.time >= t0 && r.time <= t1);
+  assert.ok(inWin.length >= 3, `brush window hours: ${inWin.length}`);
+  assert.equal(inWin.at(-1).zarr_time_label.slice(0, 10), '2026-10-13');
+
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+  const todayRows = rows.filter((r) => new Date(r.time).toISOString().slice(0, 10) === today);
+  assert.ok(todayRows.length > 0);
+  assert.ok(todayRows.every((r) => r.zarr_time_label.slice(0, 10) === yesterday));
 });
