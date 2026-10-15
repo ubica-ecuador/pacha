@@ -162,8 +162,43 @@
                       {
                         "id": "color",
                         "value": {
-                          "fixedColor": "#F08C00",
-                          "mode": "fixed"
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "percentage",
+                          "steps": [
+                            {
+                              "color": "#7F1D1D",
+                              "value": null
+                            },
+                            {
+                              "color": "#9B1C1C",
+                              "value": 8
+                            },
+                            {
+                              "color": "#C2410C",
+                              "value": 20
+                            },
+                            {
+                              "color": "#D9480F",
+                              "value": 35
+                            },
+                            {
+                              "color": "#F08C00",
+                              "value": 52
+                            },
+                            {
+                              "color": "#FCC419",
+                              "value": 72
+                            },
+                            {
+                              "color": "#FFF3BF",
+                              "value": 88
+                            }
+                          ]
                         }
                       }
                     ]
@@ -224,6 +259,7 @@
                 "snapTo": "buckets",
                 "stepMs": 600,
                 "stickyOffset": 0,
+                "valueGuides": true,
                 "variables": {
                   "from": "t0",
                   "to": "t1"
