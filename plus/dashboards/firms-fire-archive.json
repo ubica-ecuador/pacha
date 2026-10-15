@@ -119,6 +119,19 @@
                       "tooltip": false,
                       "viz": false
                     }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -172,7 +185,7 @@
                           "steps": [
                             {
                               "color": "#7F1D1D",
-                              "value": null
+                              "value": 0
                             },
                             {
                               "color": "#9B1C1C",
@@ -236,6 +249,12 @@
                 "cursorPublish": true,
                 "density": "comfortable",
                 "domain": "data",
+                "floatingPlace": {
+                  "height": 100.5234375,
+                  "width": 1071.63671875,
+                  "x": 290.7734375,
+                  "y": 771.57421875
+                },
                 "followLatest": false,
                 "hatchGaps": true,
                 "hoverTooltip": false,
@@ -243,10 +262,10 @@
                 "loop": false,
                 "output": "variables",
                 "outsideOpacity": 30,
-                "pinned": "scrolled",
+                "pinned": "always",
                 "pinnedControls": "all",
                 "pinnedHeight": 52,
-                "pinnedPosition": "top",
+                "pinnedPosition": "floating",
                 "pinnedStyle": "solid",
                 "publishIntervalMs": 1200,
                 "publishWhilePlaying": true,
@@ -256,6 +275,7 @@
                 "showHistogram": true,
                 "showPickers": true,
                 "showReadout": true,
+                "snap": true,
                 "snapTo": "buckets",
                 "stepMs": 600,
                 "stickyOffset": 0,
@@ -992,25 +1012,12 @@
             "spec": {
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-brush"
-              },
-              "height": 4,
-              "width": 24,
-              "x": 0,
-              "y": 0
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
                 "name": "panel-newest"
               },
               "height": 3,
               "width": 6,
               "x": 0,
-              "y": 4
+              "y": 0
             }
           },
           {
@@ -1023,7 +1030,7 @@
               "height": 3,
               "width": 6,
               "x": 6,
-              "y": 4
+              "y": 0
             }
           },
           {
@@ -1036,7 +1043,7 @@
               "height": 3,
               "width": 6,
               "x": 12,
-              "y": 4
+              "y": 0
             }
           },
           {
@@ -1049,7 +1056,7 @@
               "height": 3,
               "width": 6,
               "x": 18,
-              "y": 4
+              "y": 0
             }
           },
           {
@@ -1062,7 +1069,7 @@
               "height": 16,
               "width": 16,
               "x": 0,
-              "y": 7
+              "y": 3
             }
           },
           {
@@ -1075,7 +1082,7 @@
               "height": 16,
               "width": 8,
               "x": 16,
-              "y": 7
+              "y": 3
             }
           },
           {
@@ -1088,7 +1095,7 @@
               "height": 16,
               "width": 12,
               "x": 0,
-              "y": 23
+              "y": 19
             }
           },
           {
@@ -1101,7 +1108,7 @@
               "height": 6,
               "width": 12,
               "x": 12,
-              "y": 23
+              "y": 19
             }
           },
           {
@@ -1114,7 +1121,20 @@
               "height": 10,
               "width": 12,
               "x": 12,
-              "y": 29
+              "y": 25
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-brush"
+              },
+              "height": 4,
+              "width": 24,
+              "x": 0,
+              "y": 35
             }
           }
         ]
