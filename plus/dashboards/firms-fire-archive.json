@@ -1342,7 +1342,7 @@
       }
     ],
     "liveNow": false,
-    "preload": false,
+    "preload": true,
     "tags": [
       "chaski",
       "duckdb",
