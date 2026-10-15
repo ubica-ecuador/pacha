@@ -1259,21 +1259,211 @@
                   "config": {
                     "mapState": {
                       "bearing": 0,
-                      "latitude": 12,
-                      "longitude": 15,
+                      "dragRotate": false,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": -1.6259123812303742,
+                      "longitude": -46.77096465241493,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
                       "pitch": 0,
-                      "zoom": 1.15
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 3.198373409972383
                     },
                     "mapStyle": {
-                      "styleType": "openfreemap-dark"
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "plus-maptiler-dataviz-dark",
+                      "threeDBuildingColor": [
+                        224.45365307122788,
+                        221.23183029987055,
+                        213.7142438333701
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
                     },
                     "visState": {
                       "animationConfig": {
                         "speed": 1
                       },
-                      "filters": [],
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-B-zarr-times"
+                          ],
+                          "enabled": true,
+                          "id": "941f1tnnmi",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "defaultTimeFormat": "L",
+                            "interval": "1-day",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            1791331200000,
+                            1791936000000
+                          ],
+                          "view": "side"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A",
+                            "grafana-B"
+                          ],
+                          "enabled": true,
+                          "id": "r0vo8zw2q",
+                          "name": [
+                            "last_seen",
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "colorsByDataId": {
+                              "grafana-A": "#005CFF",
+                              "grafana-B": "#F8B195"
+                            },
+                            "defaultTimeFormat": "L  LT",
+                            "interval": "15-minute",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            1791885840000,
+                            1791935880000
+                          ],
+                          "view": "side"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-B-zarr-times",
+                            "grafana-B"
+                          ],
+                          "enabled": true,
+                          "id": "ykio91s9g",
+                          "name": [
+                            "time",
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "colorsByDataId": {
+                              "grafana-B": "#F8B195",
+                              "grafana-B-zarr-times": "#C06C84"
+                            },
+                            "defaultTimeFormat": "L",
+                            "interval": "1-day",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            1791331200000,
+                            1791936000000
+                          ],
+                          "view": "side"
+                        }
+                      ],
                       "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
                         "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
                           "enabled": true,
                           "fieldsToShow": {
                             "grafana-A": [
@@ -1295,22 +1485,160 @@
                               {
                                 "name": "last_seen"
                               }
+                            ],
+                            "grafana-B": [
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              },
+                              {
+                                "name": "zarr_url"
+                              },
+                              {
+                                "name": "zarr_variable"
+                              },
+                              {
+                                "format": "L LTS",
+                                "name": "zarr_time_label"
+                              },
+                              {
+                                "name": "zarr_sel"
+                              }
+                            ],
+                            "grafana-B-zarr": [],
+                            "grafana-B-zarr-times": [
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              }
                             ]
                           }
                         }
                       },
                       "layerBlending": "additive",
+                      "layerOrder": [
+                        "grafana-B-zarr-layer",
+                        "5kc4qci"
+                      ],
                       "layers": [
                         {
                           "config": {
+                            "color": [
+                              130,
+                              154,
+                              227
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-B-zarr",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "B",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "opacity": 0.22,
+                              "zarrLabel": "2026-10-14T00:00:00.000000000"
+                            }
+                          },
+                          "id": "grafana-B-zarr-layer",
+                          "type": "zarr",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              203,
+                              153
+                            ],
+                            "columnMode": "points",
                             "columns": {
                               "lat": "latitude",
                               "lng": "longitude"
                             },
                             "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
                             "isVisible": true,
                             "label": "Fire, FRP summed per 0.1° cell",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
                             "visConfig": {
+                              "aggregation": "SUM",
                               "colorRange": {
                                 "category": "Custom",
                                 "colors": [
@@ -1324,34 +1652,20 @@
                                 "name": "Fire",
                                 "type": "sequential"
                               },
-                              "filled": true,
-                              "fixedRadius": false,
+                              "intensity": 1,
                               "opacity": 0.85,
-                              "outline": false,
                               "radius": 4,
-                              "radiusRange": [
-                                1.6,
-                                14
-                              ],
-                              "thickness": 0.5
+                              "threshold": 0.18
                             }
                           },
-                          "id": "fire-cells",
-                          "type": "point",
+                          "id": "5kc4qci",
+                          "type": "heatmap",
                           "visualChannels": {
-                            "colorField": {
-                              "name": "frp_mw",
-                              "type": "real"
-                            },
-                            "colorScale": "quantile",
-                            "sizeField": {
-                              "name": "detections",
-                              "type": "real"
-                            },
-                            "sizeScale": "sqrt"
+                            "weightScale": "linear"
                           }
                         }
                       ],
+                      "overlayBlending": "normal",
                       "splitMaps": []
                     }
                   },
@@ -1365,6 +1679,7 @@
                 "rasterColormap": "[[[0,8],[255,244,240,16]],[[8,16],[254,238,235,48]],[[16,24],[254,233,229,80]],[[24,32],[253,227,224,112]],[[32,40],[253,220,217,144]],[[40,48],[253,214,210,176]],[[48,56],[252,207,203,208]],[[56,64],[252,200,195,240]],[[64,72],[252,192,191,255]],[[72,80],[251,182,188,255]],[[80,88],[251,173,185,255]],[[88,96],[250,163,182,255]],[[96,104],[250,151,178,255]],[[104,112],[249,138,173,255]],[[112,120],[248,124,168,255]],[[120,128],[247,110,163,255]],[[128,136],[243,97,160,255]],[[136,144],[237,84,157,255]],[[144,152],[230,71,155,255]],[[152,160],[224,58,152,255]],[[160,168],[214,45,147,255]],[[168,176],[202,32,141,255]],[[176,184],[191,19,135,255]],[[184,192],[179,6,129,255]],[[192,200],[166,1,125,255]],[[200,208],[153,1,123,255]],[[208,216],[140,1,121,255]],[[216,224],[127,1,120,255]],[[224,232],[114,1,117,255]],[[232,240],[102,1,114,255]],[[240,248],[90,0,110,255]],[[248,256],[78,0,107,255]]]",
                 "rasterPainted": false,
                 "rasterServerUrl": "/titiler",
+                "saveRequest": 1,
                 "showSidePanel": false,
                 "timeSync": "variables",
                 "timeVariables": {
