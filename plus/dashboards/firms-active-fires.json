@@ -106,7 +106,34 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "aggregation": "auto",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": [
                   {
                     "matcher": {
@@ -276,29 +303,58 @@
                 ]
               },
               "options": {
+                "accentColor": "",
+                "backgroundColor": "#393126",
+                "backgroundTransparency": 5,
+                "barColor": "",
+                "barsColor": "series",
                 "bucket": "auto",
+                "cursorColor": "",
                 "cursorFollow": true,
                 "cursorPublish": true,
+                "density": "comfortable",
                 "domain": "data",
+                "floatingPlace": {
+                  "anchorX": "left",
+                  "anchorY": "bottom",
+                  "dx": 8,
+                  "dy": 8,
+                  "height": 105.7,
+                  "width": 0.522569
+                },
+                "followLatest": false,
                 "hatchGaps": true,
+                "hoverTooltip": false,
+                "instantVariable": "t",
                 "loop": false,
                 "output": "variables",
                 "outsideOpacity": 30,
-                "pinned": "scrolled",
+                "pinned": "always",
+                "pinnedControls": "all",
                 "pinnedHeight": 52,
-                "pinnedPosition": "top",
+                "pinnedPosition": "floating",
+                "pinnedStyle": "solid",
                 "publishIntervalMs": 1200,
                 "publishWhilePlaying": true,
                 "scale": "linear",
                 "selection": "range",
                 "showAxis": true,
                 "showHistogram": true,
+                "showPickers": true,
                 "showReadout": true,
+                "snap": true,
                 "snapTo": "buckets",
                 "stepMs": 600,
+                "stickyOffset": 0,
+                "valueGuides": false,
                 "variables": {
                   "from": "t0",
                   "to": "t1"
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
                 },
                 "windowMode": "free"
               }
@@ -1199,27 +1255,21 @@
                           "fieldsToShow": {
                             "grafana-A": [
                               {
-                                "format": null,
                                 "name": "country"
                               },
                               {
-                                "format": null,
                                 "name": "detections"
                               },
                               {
-                                "format": null,
                                 "name": "frp_mw"
                               },
                               {
-                                "format": null,
                                 "name": "peak_mw"
                               },
                               {
-                                "format": null,
                                 "name": "satellites"
                               },
                               {
-                                "format": null,
                                 "name": "last_seen"
                               }
                             ]
@@ -1318,7 +1368,7 @@
                 }
               }
             },
-            "version": "1.0.0"
+            "version": "1.1.0"
           }
         }
       },
@@ -1493,25 +1543,12 @@
             "spec": {
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-brush"
-              },
-              "height": 6,
-              "width": 24,
-              "x": 0,
-              "y": 0
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
                 "name": "panel-latest"
               },
               "height": 3,
               "width": 4,
               "x": 0,
-              "y": 6
+              "y": 0
             }
           },
           {
@@ -1524,7 +1561,7 @@
               "height": 3,
               "width": 5,
               "x": 4,
-              "y": 6
+              "y": 0
             }
           },
           {
@@ -1537,7 +1574,7 @@
               "height": 3,
               "width": 5,
               "x": 9,
-              "y": 6
+              "y": 0
             }
           },
           {
@@ -1550,7 +1587,7 @@
               "height": 3,
               "width": 5,
               "x": 14,
-              "y": 6
+              "y": 0
             }
           },
           {
@@ -1563,7 +1600,7 @@
               "height": 3,
               "width": 5,
               "x": 19,
-              "y": 6
+              "y": 0
             }
           },
           {
@@ -1576,7 +1613,7 @@
               "height": 17,
               "width": 16,
               "x": 0,
-              "y": 9
+              "y": 3
             }
           },
           {
@@ -1589,7 +1626,7 @@
               "height": 10,
               "width": 8,
               "x": 16,
-              "y": 9
+              "y": 3
             }
           },
           {
@@ -1602,7 +1639,7 @@
               "height": 7,
               "width": 8,
               "x": 16,
-              "y": 19
+              "y": 13
             }
           },
           {
@@ -1615,7 +1652,7 @@
               "height": 9,
               "width": 8,
               "x": 0,
-              "y": 26
+              "y": 20
             }
           },
           {
@@ -1628,7 +1665,7 @@
               "height": 9,
               "width": 16,
               "x": 8,
-              "y": 26
+              "y": 20
             }
           },
           {
@@ -1641,7 +1678,7 @@
               "height": 8,
               "width": 8,
               "x": 0,
-              "y": 35
+              "y": 29
             }
           },
           {
@@ -1654,7 +1691,20 @@
               "height": 8,
               "width": 16,
               "x": 8,
-              "y": 35
+              "y": 29
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-brush"
+              },
+              "height": 1,
+              "width": 24,
+              "x": 0,
+              "y": 37
             }
           }
         ]
