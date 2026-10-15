@@ -46,6 +46,17 @@ test('follows the dashboards conventions', { skip }, () => {
   assert.equal(opts.zarrRescale, '0,1');
   assert.equal(opts.timeSync, 'variables');
   assert.deepEqual(opts.timeVariables, { from: 't0', to: 't1' });
+  // The fire cells are already aggregated for t0/t1 in SQL. A kepler time
+  // filter on that dataset stays on the previous window (sync only moves the
+  // first filter) and hides the new cells, so the map misses the brush.
+  const timeFilters = opts.mapConfig.config.visState.filters.filter((f) => f.type === 'timeRange');
+  assert.equal(timeFilters.length, 1);
+  assert.deepEqual(timeFilters[0].dataId, ['grafana-B-zarr-times']);
+  assert.ok(!JSON.stringify(timeFilters).includes('grafana-A'));
+  assert.ok(!JSON.stringify(timeFilters).includes('last_seen'));
+  const fireSql = map.data.spec.queries.find((q) => q.spec.refId === 'A').spec.query.spec.rawSql;
+  assert.match(fireSql, /seen %d %b at %H:%M UTC/);
+  assert.doesNotMatch(fireSql, /%Y-%m-%d/);
   assert.doesNotMatch(JSON.stringify(dashboard), /titiler\.ubica|pacha-titiler/);
 });
 

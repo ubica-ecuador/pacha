@@ -1183,7 +1183,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- The detections in the brushed window that pass the satellite, day or night,\n-- country, FRP and confidence filters, gathered into cells of a tenth of a\n-- degree (about 11 km): where the fire of the cell sits (the mean of its\n-- detections), how many, their FRP summed and the strongest. Never filtered by\n-- the view or the drawn area of the map itself, so zooming out brings\n-- everything back.\nWITH sel AS (\n  SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1,\n         try_cast($w AS DOUBLE) AS w, try_cast($s AS DOUBLE) AS s,\n         try_cast($e AS DOUBLE) AS e, try_cast($n AS DOUBLE) AS n,\n         try_cast($frp_lo AS DOUBLE) AS lo, try_cast($frp_hi AS DOUBLE) AS hi\n),\nx AS (\n  SELECT *\n  FROM $fires, sel\n  WHERE (sel.t0 IS NULL OR time >= sel.t0) AND (sel.t1 IS NULL OR time < sel.t1)\n  AND ($country = '' OR country = $country)\n  AND ($sat = '' OR satellite = $sat)\n  AND ($dn = '' OR daynight = $dn)\n  AND (sel.lo IS NULL OR frp_bin >= sel.lo) AND (sel.hi IS NULL OR frp_bin < sel.hi)\n  AND ($conf = 'all' OR NOT low_confidence)\n)\nSELECT round(avg(latitude), 4) AS latitude, round(avg(longitude), 4) AS longitude,\n       count(*)::DOUBLE AS detections, round(sum(frp), 1)::DOUBLE AS frp_mw, max(frp) AS peak_mw,\n       any_value(country) AS country,\n       string_agg(DISTINCT satellite, ', ' ORDER BY satellite) AS satellites,\n       strftime(max(time), '%Y-%m-%d %H:%M UTC') AS last_seen\nFROM x\nGROUP BY floor(latitude * 10), floor(longitude * 10)\nORDER BY frp_mw"
+                        "rawSql": "-- The detections in the brushed window that pass the satellite, day or night,\n-- country, FRP and confidence filters, gathered into cells of a tenth of a\n-- degree (about 11 km): where the fire of the cell sits (the mean of its\n-- detections), how many, their FRP summed and the strongest. Never filtered by\n-- the view or the drawn area of the map itself, so zooming out brings\n-- everything back. last_seen is a label, not a timestamp: a time-shaped\n-- string makes kepler hang a time filter on these cells, and that filter\n-- stays on the previous window when the brush moves.\nWITH sel AS (\n  SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1,\n         try_cast($w AS DOUBLE) AS w, try_cast($s AS DOUBLE) AS s,\n         try_cast($e AS DOUBLE) AS e, try_cast($n AS DOUBLE) AS n,\n         try_cast($frp_lo AS DOUBLE) AS lo, try_cast($frp_hi AS DOUBLE) AS hi\n),\nx AS (\n  SELECT *\n  FROM $fires, sel\n  WHERE (sel.t0 IS NULL OR time >= sel.t0) AND (sel.t1 IS NULL OR time < sel.t1)\n  AND ($country = '' OR country = $country)\n  AND ($sat = '' OR satellite = $sat)\n  AND ($dn = '' OR daynight = $dn)\n  AND (sel.lo IS NULL OR frp_bin >= sel.lo) AND (sel.hi IS NULL OR frp_bin < sel.hi)\n  AND ($conf = 'all' OR NOT low_confidence)\n)\nSELECT round(avg(latitude), 4) AS latitude, round(avg(longitude), 4) AS longitude,\n       count(*)::DOUBLE AS detections, round(sum(frp), 1)::DOUBLE AS frp_mw, max(frp) AS peak_mw,\n       any_value(country) AS country,\n       string_agg(DISTINCT satellite, ', ' ORDER BY satellite) AS satellites,\n       strftime(max(time), 'seen %d %b at %H:%M UTC') AS last_seen\nFROM x\nGROUP BY floor(latitude * 10), floor(longitude * 10)\nORDER BY frp_mw"
                       },
                       "version": "v0"
                     },
@@ -1376,66 +1376,6 @@
                           ],
                           "plotType": {
                             "aggregation": "average",
-                            "defaultTimeFormat": "L",
-                            "interval": "1-day",
-                            "type": "histogram"
-                          },
-                          "speed": 1,
-                          "type": "timeRange",
-                          "value": [
-                            1791331200000,
-                            1791936000000
-                          ],
-                          "view": "side"
-                        },
-                        {
-                          "animationWindow": "free",
-                          "dataId": [
-                            "grafana-A",
-                            "grafana-B"
-                          ],
-                          "enabled": true,
-                          "id": "r0vo8zw2q",
-                          "name": [
-                            "last_seen",
-                            "time"
-                          ],
-                          "plotType": {
-                            "aggregation": "average",
-                            "colorsByDataId": {
-                              "grafana-A": "#005CFF",
-                              "grafana-B": "#F8B195"
-                            },
-                            "defaultTimeFormat": "L  LT",
-                            "interval": "15-minute",
-                            "type": "histogram"
-                          },
-                          "speed": 1,
-                          "type": "timeRange",
-                          "value": [
-                            1791885840000,
-                            1791935880000
-                          ],
-                          "view": "side"
-                        },
-                        {
-                          "animationWindow": "free",
-                          "dataId": [
-                            "grafana-B-zarr-times",
-                            "grafana-B"
-                          ],
-                          "enabled": true,
-                          "id": "ykio91s9g",
-                          "name": [
-                            "time",
-                            "time"
-                          ],
-                          "plotType": {
-                            "aggregation": "average",
-                            "colorsByDataId": {
-                              "grafana-B": "#F8B195",
-                              "grafana-B-zarr-times": "#C06C84"
-                            },
                             "defaultTimeFormat": "L",
                             "interval": "1-day",
                             "type": "histogram"
