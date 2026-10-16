@@ -56,12 +56,44 @@ test('follows the dashboards conventions', () => {
 test('the map arrows measure the time brush', () => {
   const brush = panelsByType(dashboard, 'ubica-timebrush-panel')[0];
   assert.deepEqual(brush.vizConfig.spec.options.variables, { from: 't0', to: 't1' });
+  // The brush is drawn a bar a day over the daily file, and steps by days.
+  assert.equal(brush.vizConfig.spec.options.bucket, '1d');
+  // A window set from outside, a click on an earthquake, brings the brush's axis to it.
+  assert.equal(brush.vizConfig.spec.options.zoomToExternal, true);
+  const [bars] = findAll(brush, (n) => typeof n.rawSql === 'string');
+  assert.equal(bars.datasource?.name ?? brush.data.spec.queries[0].spec.query.datasource.name, 'duckdb');
+  assert.match(bars.rawSql, /positions\.parquet/);
+  // The arrows, the table and the figures read the brush's days ($brush), not $spark's buckets,
+  // which count from the epoch so the cards and the latitude-time map put a day on its midnight.
+  const edges = findAll(dashboard.spec.elements, (n) => typeof n.rawSql === 'string' && n.rawSql.includes('ends AS ('));
+  assert.equal(edges.length, 9);
+  assert.ok(edges.every((q) => q.rawSql.includes('FROM $brush') && !q.rawSql.includes('$spark')));
+  assert.match(serverSql('brush'), /try_cast\(\$t0 AS TIMESTAMP\)/);
+  assert.match(serverSql('spark'), /time_bucket\(to_days\(s\.days\), p\.day, TIMESTAMP '1970-01-01'\)/);
   const arrows = mapConfig.visState.layers.filter((l) => l.type === 'symbol');
   assert.deepEqual(arrows.map((l) => l.config.dataId).sort(), ['grafana-F', 'grafana-G', 'grafana-I']);
+  // A click on an earthquake on the timeline moves the brush, not the window.
+  const [timeline] = panelsByType(dashboard, 'volkovlabs-echarts-panel').filter((p) => p.title.startsWith('Pick the window'));
+  const clickCode = timeline.vizConfig.spec.options.getOption;
+  assert.match(clickCode, /'var-t0': new Date\(t0\)\.toISOString\(\)/);
+  assert.match(clickCode, /setBrush\(ms - AROUND_DAYS \* DAY, ms \+ AROUND_DAYS \* DAY, at\)/);
+  // ... and flies the map to it: the map centres on qlat/qlon, which the click writes.
+  assert.ok(map.vizConfig.spec.options.variableMappings.some((m) => m.source === 'center' && m.variable === 'qlat' && m.variableTo === 'qlon'));
+  assert.match(clickCode, /\['var-' \+ LAT_VAR\]/);
   // The earthquakes on the map are the brush's too, not the whole window's.
   const [quakeSql] = findAll(map, (n) => typeof n.rawSql === 'string' && n.rawSql.includes('FROM $quakes')).map((n) => n.rawSql);
   assert.match(quakeSql, /\$t0/);
   assert.match(quakeSql, /\$t1/);
+});
+
+test('a brush of one day measures that day: two days a station, a path of at most about 60 points', { skip: unbuilt }, async () => {
+  const brushSql = (t0, t1) => serverSql('brush').replaceAll('$t0', `'${t0}'`).replaceAll('$t1', `'${t1}'`);
+  const day = await duckdb(STACK_URL, brushSql('2025-03-01T00:00:00.000Z', '2025-03-02T00:00:00.000Z'));
+  assert.ok(new Set(day.map((r) => r.id)).size > 80, 'stations with a position on 1 and 2 March 2025');
+  assert.ok(day.every((r) => Number(r.days) === 2 && Number(r.steps) <= 2));
+  const years = await duckdb(STACK_URL, brushSql('2021-10-12T00:00:00.000Z', '2026-09-08T00:00:00.000Z'));
+  const perStation = Object.values(Object.groupBy(years, (r) => r.id)).map((rows) => rows.length);
+  assert.ok(Math.max(...perStation) <= 61, `at most ${Math.max(...perStation)} path points a station`);
 });
 
 test('every chart shows the brush and takes part in the shared crosshair', () => {
