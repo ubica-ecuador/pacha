@@ -80,11 +80,21 @@ test('CAMS smoke is stamped hourly and a short daytime brush still hits a scene'
   assert.ok(inWin.length >= 3, `brush window hours: ${inWin.length}`);
   assert.equal(inWin.at(-1).zarr_time_label.slice(0, 10), '2026-10-13');
 
+  // Today has no analysis yet and yesterday may not either: the last days
+  // repeat the newest day the tiler can draw, never a day it would answer 500.
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+  const dayBefore = new Date(Date.now() - 2 * 864e5).toISOString().slice(0, 10);
   const todayRows = rows.filter((r) => new Date(r.time).toISOString().slice(0, 10) === today);
   assert.ok(todayRows.length > 0);
-  assert.ok(todayRows.every((r) => r.zarr_time_label.slice(0, 10) === yesterday));
+  const newest = todayRows[0].zarr_time_label;
+  assert.ok([yesterday, dayBefore].includes(newest.slice(0, 10)), newest);
+  assert.ok(todayRows.every((r) => r.zarr_time_label === newest));
+  const last = rows.at(-1);
+  const info = await api(STACK_URL, `/titiler/zarr/info?${new URLSearchParams([
+    ['url', last.zarr_url], ['variable', last.zarr_variable], ['sel', last.zarr_sel], ['sel', `time=${newest}`],
+  ])}`);
+  assert.equal(info.status, 200, `the tiler cannot draw ${newest}: ${info.text.slice(0, 200)}`);
 });
 
 // A click on a fire cell writes flat/flng/fday0/fday1; the Sentinel-2 panels
@@ -105,6 +115,14 @@ test('a click on a fire hands its cell and days to the Sentinel-2 panels', { ski
   const s2 = sentinel.vizConfig.spec.options;
   assert.equal(s2.rasterServerUrl, '/titiler');
   assert.equal(s2.mapConfig.config.mapState.mapSplitMode, 'SWIPE_COMPARE');
+  // Before on the left, after on the right. kepler saves only the layers whose
+  // dataset is loaded, so a save with no fire clicked drops these two and both
+  // scenes land on both sides: put them back if this fails.
+  const vs = s2.mapConfig.config.visState;
+  const layer = (id) => vs.layers.find((l) => l.id === id);
+  assert.equal(layer('s2scene-before')?.config.dataId, 'grafana-D-raster');
+  assert.equal(layer('s2scene')?.config.dataId, 'grafana-B-raster');
+  assert.deepEqual(vs.splitMaps.map((m) => [m.layers['s2scene-before'], m.layers.s2scene]), [[true, false], [false, true]]);
   assert.ok(s2.variableMappings.some((m) => m.source === 'center' && m.variable === 'flat' && m.variableTo === 'flng'));
 });
 

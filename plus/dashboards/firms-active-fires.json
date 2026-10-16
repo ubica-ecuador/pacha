@@ -1203,7 +1203,7 @@
                       "spec": {
                         "format": 1,
                         "rawQuery": true,
-                        "rawSql": "-- CAMS smoke catalogue for the map clock.\n-- One row per hour in the dashboard window: each hour points at the latest\n-- available daily analysis (omaod550 at 00Z, time_step=0), capped at yesterday\n-- because the store lags. An hourly brush (e.g. 02:00–08:00) still finds a\n-- scene; the image only changes when the calendar day of that analysis moves.\n-- Do NOT read the map's own t0/t1 back in here.\n-- Token in the URL is the one ECMWF ships in its viewer bundle.\nWITH z AS (\n  SELECT 'https://arco.datastores.ecmwf.int/cadl-arco-time-001/arco/cams_global_atmospheric_composition_forecasts/sfc-multiforecast/timeChunked.zarr?_fet=fire-watch-827a2651-8e26-4bc1-ac44-9351fcb916af' AS zarr_url,\n         'omaod550' AS zarr_variable\n),\nhours AS (\n  SELECT unnest(generate_series(\n           date_trunc('hour', greatest($__timeFrom()::TIMESTAMP, (current_date - INTERVAL 100 DAY)::TIMESTAMP)),\n           date_trunc('hour', least($__timeTo()::TIMESTAMP, now()::TIMESTAMP)),\n           INTERVAL 1 HOUR\n         )) AS hour\n)\nSELECT h.hour::TIMESTAMPTZ AS time,\n       z.zarr_url,\n       z.zarr_variable,\n       strftime(\n         least(h.hour::DATE, current_date - INTERVAL 1 DAY)::TIMESTAMP,\n         '%Y-%m-%dT00:00:00.000000000'\n       ) AS zarr_time_label,\n       'time_step=0' AS zarr_sel\nFROM hours h, z\nORDER BY time"
+                        "rawSql": "-- CAMS smoke catalogue for the map clock.\n-- One row per hour in the dashboard window: each hour points at the latest\n-- daily analysis the tiler can draw (omaod550 at 00Z, time_step=0). The store\n-- lags a day or more, so the last days of the window repeat the newest day\n-- that exists: yesterday when the tiler finds it, the day before when not.\n-- An hourly brush (e.g. 02:00–08:00) still finds a scene; the image only\n-- changes when the calendar day of that analysis moves.\n-- The tiler keeps a store open for as long as it runs, keyed by its url, and\n-- never sees the days published after it opened it: the url carries the hour\n-- (_v), so it is reopened at most once an hour and the probe and the tiles\n-- see the same store.\n-- Do NOT read the map's own t0/t1 back in here.\n-- Token in the URL is the one ECMWF ships in its viewer bundle.\nWITH z AS (\n  SELECT 'https://arco.datastores.ecmwf.int/cadl-arco-time-001/arco/cams_global_atmospheric_composition_forecasts/sfc-multiforecast/timeChunked.zarr?_fet=fire-watch-827a2651-8e26-4bc1-ac44-9351fcb916af'\n           || '\u0026_v=' || strftime(now()::TIMESTAMP, '%Y%m%d%H') AS zarr_url,\n         'omaod550' AS zarr_variable,\n         current_date - INTERVAL 1 DAY AS yesterday\n),\nnewest AS (\n  -- One probe, and only when the window reaches yesterday: TiTiler answers 200\n  -- when the store has that day and 500 when it does not.\n  SELECT CASE\n           WHEN $__timeTo()::TIMESTAMP \u003c z.yesterday THEN z.yesterday\n           WHEN (http_get('http://titiler/zarr/info'\n                   || '?url=' || url_encode(z.zarr_url)\n                   || '\u0026variable=' || z.zarr_variable\n                   || '\u0026sel=time_step%3D0'\n                   || '\u0026sel=' || url_encode('time=' || strftime(z.yesterday, '%Y-%m-%dT00:00:00.000000000')))\n                ).status = 200 THEN z.yesterday\n           ELSE z.yesterday - INTERVAL 1 DAY\n         END::DATE AS day\n  FROM z\n),\nhours AS (\n  SELECT unnest(generate_series(\n           date_trunc('hour', greatest($__timeFrom()::TIMESTAMP, (current_date - INTERVAL 100 DAY)::TIMESTAMP)),\n           date_trunc('hour', least($__timeTo()::TIMESTAMP, now()::TIMESTAMP)),\n           INTERVAL 1 HOUR\n         )) AS hour\n)\nSELECT h.hour::TIMESTAMPTZ AS time,\n       z.zarr_url,\n       z.zarr_variable,\n       strftime(least(h.hour::DATE, newest.day)::TIMESTAMP, '%Y-%m-%dT00:00:00.000000000') AS zarr_time_label,\n       'time_step=0' AS zarr_sel\nFROM hours h, z, newest\nORDER BY time"
                       },
                       "version": "v0"
                     },
@@ -2174,7 +2174,9 @@
                       "layerBlending": "normal",
                       "layerOrder": [
                         "boxoutline",
-                        "footprints"
+                        "footprints",
+                        "s2scene-before",
+                        "s2scene"
                       ],
                       "layers": [
                         {
@@ -2416,6 +2418,198 @@
                             "sizeScale": "linear",
                             "strokeColorScale": "quantile"
                           }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              248,
+                              149,
+                              112
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-D-raster",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Sentinel-2 — before",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "colormapId": "cfastie",
+                              "dynamicColor": false,
+                              "enableTerrain": true,
+                              "enableTerrainTopView": false,
+                              "endDate": "2020-03-02",
+                              "filterEnabled": false,
+                              "filterRange": [
+                                -1,
+                                1
+                              ],
+                              "gammaContrastFactor": 1,
+                              "linearRescalingFactor": [
+                                0,
+                                1
+                              ],
+                              "nonLinearRescaling": true,
+                              "opacity": 1,
+                              "preset": "trueColor",
+                              "saturationValue": 1,
+                              "showTileBorders": false,
+                              "showTileDebugInfo": false,
+                              "sigmoidalBiasFactor": 0.5,
+                              "sigmoidalContrastFactor": 0,
+                              "stacSearchProvider": "earth-search",
+                              "startDate": "2020-02-02",
+                              "useSTACSearching": false,
+                              "zoomOffset": 0
+                            }
+                          },
+                          "id": "s2scene-before",
+                          "type": "rasterTile",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              248,
+                              149,
+                              112
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-B-raster",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Sentinel-2 — after",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "colormapId": "cfastie",
+                              "dynamicColor": false,
+                              "enableTerrain": true,
+                              "enableTerrainTopView": false,
+                              "endDate": "2020-03-02",
+                              "filterEnabled": false,
+                              "filterRange": [
+                                -1,
+                                1
+                              ],
+                              "gammaContrastFactor": 1,
+                              "linearRescalingFactor": [
+                                0,
+                                1
+                              ],
+                              "nonLinearRescaling": true,
+                              "opacity": 1,
+                              "preset": "trueColor",
+                              "saturationValue": 1,
+                              "showTileBorders": false,
+                              "showTileDebugInfo": false,
+                              "sigmoidalBiasFactor": 0.5,
+                              "sigmoidalContrastFactor": 0,
+                              "stacSearchProvider": "earth-search",
+                              "startDate": "2020-02-02",
+                              "useSTACSearching": false,
+                              "zoomOffset": 0
+                            }
+                          },
+                          "id": "s2scene",
+                          "type": "rasterTile",
+                          "visualChannels": {}
                         }
                       ],
                       "overlayBlending": "normal",
@@ -2423,13 +2617,17 @@
                         {
                           "layers": {
                             "boxoutline": true,
-                            "footprints": true
+                            "footprints": true,
+                            "s2scene": false,
+                            "s2scene-before": true
                           }
                         },
                         {
                           "layers": {
                             "boxoutline": true,
-                            "footprints": true
+                            "footprints": true,
+                            "s2scene": true,
+                            "s2scene-before": false
                           }
                         }
                       ]
