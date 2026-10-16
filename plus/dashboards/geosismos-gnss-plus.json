@@ -2651,38 +2651,12 @@
             "spec": {
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-timeline"
-              },
-              "height": 7,
-              "width": 22,
-              "x": 0,
-              "y": 0
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
-                "name": "panel-brush"
-              },
-              "height": 7,
-              "width": 2,
-              "x": 22,
-              "y": 0
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
                 "name": "panel-latest"
               },
               "height": 4,
               "width": 5,
               "x": 0,
-              "y": 7
+              "y": 0
             }
           },
           {
@@ -2695,7 +2669,7 @@
               "height": 4,
               "width": 5,
               "x": 5,
-              "y": 7
+              "y": 0
             }
           },
           {
@@ -2708,7 +2682,7 @@
               "height": 4,
               "width": 6,
               "x": 10,
-              "y": 7
+              "y": 0
             }
           },
           {
@@ -2719,9 +2693,35 @@
                 "name": "panel-chosen"
               },
               "height": 4,
-              "width": 8,
+              "width": 6,
               "x": 16,
-              "y": 7
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-brush"
+              },
+              "height": 4,
+              "width": 2,
+              "x": 22,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-timeline"
+              },
+              "height": 7,
+              "width": 24,
+              "x": 0,
+              "y": 4
             }
           },
           {
