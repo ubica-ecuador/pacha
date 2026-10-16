@@ -141,7 +141,7 @@ To bake main of the Kepler repo into the image instead of its pinned release,
 set `KEPLER_PANEL_CHANNEL=edge` in `.env` and run `docker compose up -d --build --wait`.
 Every push to Kepler's main is published as its `edge` pre-release; building
 again picks up the latest. Grafana's plugin page then shows a version like
-`1.2.1-edge.072fa31`, the commit that runs. Edge is not pinned: each rebuild can
+`1.3.0-edge.072fa31`, the commit that runs. Edge is not pinned: each rebuild can
 bring in a newer commit. To go back to the pinned release, remove the
 `KEPLER_PANEL_CHANNEL` line and rebuild. Either way, the previous image is left
 dangling on disk; `docker image prune -f` clears it.
