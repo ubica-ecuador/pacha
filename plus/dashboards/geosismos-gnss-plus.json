@@ -2653,7 +2653,7 @@
                 "kind": "ElementReference",
                 "name": "panel-latest"
               },
-              "height": 4,
+              "height": 3,
               "width": 5,
               "x": 0,
               "y": 0
@@ -2666,7 +2666,7 @@
                 "kind": "ElementReference",
                 "name": "panel-count"
               },
-              "height": 4,
+              "height": 3,
               "width": 5,
               "x": 5,
               "y": 0
@@ -2679,7 +2679,7 @@
                 "kind": "ElementReference",
                 "name": "panel-max"
               },
-              "height": 4,
+              "height": 3,
               "width": 6,
               "x": 10,
               "y": 0
@@ -2692,7 +2692,7 @@
                 "kind": "ElementReference",
                 "name": "panel-chosen"
               },
-              "height": 4,
+              "height": 3,
               "width": 6,
               "x": 16,
               "y": 0
@@ -2705,7 +2705,7 @@
                 "kind": "ElementReference",
                 "name": "panel-brush"
               },
-              "height": 4,
+              "height": 3,
               "width": 2,
               "x": 22,
               "y": 0
@@ -2721,7 +2721,7 @@
               "height": 7,
               "width": 24,
               "x": 0,
-              "y": 4
+              "y": 3
             }
           },
           {
@@ -2731,10 +2731,10 @@
                 "kind": "ElementReference",
                 "name": "panel-map"
               },
-              "height": 24,
-              "width": 15,
+              "height": 19,
+              "width": 16,
               "x": 0,
-              "y": 11
+              "y": 10
             }
           },
           {
@@ -2744,10 +2744,10 @@
                 "kind": "ElementReference",
                 "name": "panel-table"
               },
-              "height": 24,
-              "width": 9,
-              "x": 15,
-              "y": 11
+              "height": 19,
+              "width": 8,
+              "x": 16,
+              "y": 10
             }
           },
           {
@@ -2760,7 +2760,7 @@
               "height": 16,
               "width": 24,
               "x": 0,
-              "y": 35
+              "y": 29
             }
           },
           {
@@ -2773,7 +2773,7 @@
               "height": 18,
               "width": 24,
               "x": 0,
-              "y": 51
+              "y": 45
             }
           },
           {
@@ -2786,7 +2786,7 @@
               "height": 14,
               "width": 24,
               "x": 0,
-              "y": 69
+              "y": 63
             }
           },
           {
@@ -2799,7 +2799,7 @@
               "height": 12,
               "width": 24,
               "x": 0,
-              "y": 83
+              "y": 77
             }
           }
         ]
