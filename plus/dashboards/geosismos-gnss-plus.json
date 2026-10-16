@@ -811,7 +811,7 @@
                 "mapConfig": {
                   "config": {
                     "mapState": {
-                      "bearing": 46.09472981987992,
+                      "bearing": 47.055370246831224,
                       "dragRotate": true,
                       "globe": {
                         "config": {
@@ -860,15 +860,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": -32.553737774330976,
-                      "longitude": -70.98057779075158,
+                      "latitude": -34.439536001139665,
+                      "longitude": -72.19346110592535,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_3D",
                       "maxPitch": 85,
-                      "pitch": 68.29141565069214,
+                      "pitch": 53.465188556075304,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 5.310323625582985
+                      "zoom": 4.7864701384693245
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -1013,7 +1013,7 @@
                           }
                         }
                       },
-                      "layerBlending": "additive",
+                      "layerBlending": "normal",
                       "layerOrder": [
                         "cards",
                         "m26l2d",
@@ -1253,10 +1253,10 @@
                               "coverageRangeMode": "scaled",
                               "coverageRangeMultiplier": 10000,
                               "coverageRangeRange": [
-                                5000,
-                                10000
+                                2000,
+                                20000
                               ],
-                              "coverageSite": true,
+                              "coverageSite": false,
                               "coverageSiteRadius": 3,
                               "filled": false,
                               "fixedRadius": false,
@@ -1607,13 +1607,13 @@
                               "fixedSize": true,
                               "flowContext": {
                                 "camera": {
-                                  "bearing": 46.09472981987992,
-                                  "height": 740,
-                                  "latitude": -32.553737774330976,
-                                  "longitude": -70.98057779075158,
-                                  "pitch": 68.29141565069214,
+                                  "bearing": 47.055370246831224,
+                                  "height": 724,
+                                  "latitude": -34.439536001139665,
+                                  "longitude": -72.19346110592535,
+                                  "pitch": 53.465188556075304,
                                   "width": 1499,
-                                  "zoom": 5.310323625582985
+                                  "zoom": 4.7864701384693245
                                 },
                                 "tallest": 0
                               },
@@ -1737,13 +1737,13 @@
                               "fixedSize": true,
                               "flowContext": {
                                 "camera": {
-                                  "bearing": 46.09472981987992,
-                                  "height": 740,
-                                  "latitude": -32.553737774330976,
-                                  "longitude": -70.98057779075158,
-                                  "pitch": 68.29141565069214,
+                                  "bearing": 47.055370246831224,
+                                  "height": 724,
+                                  "latitude": -34.439536001139665,
+                                  "longitude": -72.19346110592535,
+                                  "pitch": 53.465188556075304,
                                   "width": 1499,
-                                  "zoom": 5.310323625582985
+                                  "zoom": 4.7864701384693245
                                 },
                                 "tallest": 0
                               },
@@ -1865,13 +1865,13 @@
                               "fixedSize": true,
                               "flowContext": {
                                 "camera": {
-                                  "bearing": 46.09472981987992,
-                                  "height": 740,
-                                  "latitude": -32.553737774330976,
-                                  "longitude": -70.98057779075158,
-                                  "pitch": 68.29141565069214,
+                                  "bearing": 47.055370246831224,
+                                  "height": 724,
+                                  "latitude": -34.439536001139665,
+                                  "longitude": -72.19346110592535,
+                                  "pitch": 53.465188556075304,
                                   "width": 1499,
-                                  "zoom": 5.310323625582985
+                                  "zoom": 4.7864701384693245
                                 },
                                 "tallest": 0
                               },
