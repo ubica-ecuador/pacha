@@ -58,6 +58,21 @@ test('the map arrows measure the time brush', () => {
   assert.deepEqual(brush.vizConfig.spec.options.variables, { from: 't0', to: 't1' });
   const arrows = mapConfig.visState.layers.filter((l) => l.type === 'symbol');
   assert.deepEqual(arrows.map((l) => l.config.dataId).sort(), ['grafana-F', 'grafana-G', 'grafana-I']);
+  // The earthquakes on the map are the brush's too, not the whole window's.
+  const [quakeSql] = findAll(map, (n) => typeof n.rawSql === 'string' && n.rawSql.includes('FROM $quakes')).map((n) => n.rawSql);
+  assert.match(quakeSql, /\$t0/);
+  assert.match(quakeSql, /\$t1/);
+});
+
+test('every chart shows the brush and takes part in the shared crosshair', () => {
+  const charts = panelsByType(dashboard, 'volkovlabs-echarts-panel');
+  assert.equal(charts.length, 4);
+  for (const chart of charts) {
+    const code = chart.vizConfig.spec.options.getOption;
+    assert.match(code, /'\$\{t0\}'/, chart.title);
+    assert.match(code, /type: 'data-hover'/, chart.title);
+    assert.match(code, /getStream\(\{ type: 'data-hover' \}\)/, chart.title);
+  }
 });
 
 test('the network query returns every station, and the largest 2025–2026 shift is centimetres', async () => {
