@@ -112,7 +112,11 @@ read files built once on each instance, under `datasets/<name>/`, which the gate
 Grafana's DuckDB only (`http://feeds/datasets/`). geolife-mobility needs
 `datasets/geolife/build.sh`: GeoLife's GPS trajectories, cleaned and analysed into Parquet in
 about three minutes (313 MB download, 8 GB of memory for DuckDB). Until it runs, that
-dashboard's panels show errors.
+dashboard's panels show errors. geosismos-gnss-plus draws its map arrows, its station paths
+and its latitude-time map from `datasets/geosismos/build.sh`: every Chilean GNSS station's
+daily position from the Geo-Sismos API, in a few minutes (about 60 MB download). Without it
+those panels are empty and the rest of that dashboard works; run it again when Geo-Sismos
+publishes new days.
 
 ## Kepler Plus
 
