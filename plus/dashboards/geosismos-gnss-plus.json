@@ -2907,7 +2907,7 @@
                 "name": "panel-map"
               },
               "height": 19,
-              "width": 16,
+              "width": 18,
               "x": 0,
               "y": 10
             }
@@ -2920,8 +2920,8 @@
                 "name": "panel-table"
               },
               "height": 19,
-              "width": 8,
-              "x": 16,
+              "width": 6,
+              "x": 18,
               "y": 10
             }
           },
