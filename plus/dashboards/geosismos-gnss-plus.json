@@ -1496,9 +1496,9 @@
                         {
                           "config": {
                             "color": [
-                              120,
-                              120,
-                              120
+                              33,
+                              102,
+                              172
                             ],
                             "columns": {
                               "lat": "latitude",
@@ -1581,15 +1581,15 @@
                               "gradient": false,
                               "gradientTail": 0.7,
                               "opacity": 0.95,
-                              "outline": false,
+                              "outline": true,
                               "outlineColor": [
-                                255,
-                                255,
-                                255
+                                34,
+                                34,
+                                34
                               ],
-                              "outlineThickness": 3,
+                              "outlineThickness": 1,
                               "pictureAnchor": "bottom",
-                              "pictureUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PSc0OCcgdmlld0JveD0nMCAwIDI0IDQ4Jz48cGF0aCBkPSdNMTIgMSBMMjMgMTcgTDE2IDE3IEwxNiA0NyBMOCA0NyBMOCAxNyBMMSAxNyBaJyBmaWxsPScjMjE2NkFDJyBzdHJva2U9JyMyMjIyMjInIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+",
+                              "pictureUrl": "",
                               "shadow": false,
                               "shadowDistance": 4,
                               "shadowOpacity": 0.5,
@@ -1597,12 +1597,13 @@
                                 10,
                                 128
                               ],
-                              "symbol": "arrow",
+                              "symbol": "up-arrow-alt",
                               "symbolSize": 24,
-                              "symbolSource": "picture",
+                              "symbolSource": "shape",
                               "symbolZoomRate": 0.5,
                               "symbolZoomRef": 10,
                               "symbolZoomScale": false,
+                              "turnAbout": "anchor",
                               "upright": true
                             }
                           },
@@ -1620,9 +1621,9 @@
                         {
                           "config": {
                             "color": [
-                              120,
-                              120,
-                              120
+                              214,
+                              96,
+                              77
                             ],
                             "columns": {
                               "lat": "latitude",
@@ -1671,7 +1672,7 @@
                               }
                             ],
                             "visConfig": {
-                              "angleDegrees": 0,
+                              "angleDegrees": 180,
                               "colorRange": {
                                 "category": "Uber",
                                 "colors": [
@@ -1705,15 +1706,15 @@
                               "gradient": false,
                               "gradientTail": 0.7,
                               "opacity": 0.95,
-                              "outline": false,
+                              "outline": true,
                               "outlineColor": [
-                                255,
-                                255,
-                                255
+                                34,
+                                34,
+                                34
                               ],
-                              "outlineThickness": 3,
+                              "outlineThickness": 1,
                               "pictureAnchor": "bottom",
-                              "pictureUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PSc0OCcgdmlld0JveD0nMCAwIDI0IDQ4Jz48cGF0aCBkPSdNMTIgNDcgTDIzIDMxIEwxNiAzMSBMMTYgMSBMOCAxIEw4IDMxIEwxIDMxIFonIGZpbGw9JyNENjYwNEQnIHN0cm9rZT0nIzIyMjIyMicgc3Ryb2tlLXdpZHRoPScxLjInIHN0cm9rZS1saW5lam9pbj0ncm91bmQnLz48L3N2Zz4=",
+                              "pictureUrl": "",
                               "shadow": false,
                               "shadowDistance": 4,
                               "shadowOpacity": 0.5,
@@ -1721,12 +1722,13 @@
                                 10,
                                 128
                               ],
-                              "symbol": "arrow",
+                              "symbol": "up-arrow-alt",
                               "symbolSize": 24,
-                              "symbolSource": "picture",
+                              "symbolSource": "shape",
                               "symbolZoomRate": 0.5,
                               "symbolZoomRef": 10,
                               "symbolZoomScale": false,
+                              "turnAbout": "centre",
                               "upright": true
                             }
                           },
@@ -1835,7 +1837,7 @@
                                 40
                               ],
                               "outlineThickness": 1,
-                              "pictureAnchor": "center",
+                              "pictureAnchor": "bottom",
                               "pictureUrl": "",
                               "shadow": false,
                               "shadowDistance": 4,
@@ -1844,12 +1846,13 @@
                                 10,
                                 128
                               ],
-                              "symbol": "arrow",
+                              "symbol": "up-arrow-alt",
                               "symbolSize": 24,
                               "symbolSource": "shape",
                               "symbolZoomRate": 0.5,
                               "symbolZoomRef": 10,
                               "symbolZoomScale": false,
+                              "turnAbout": "anchor",
                               "upright": false
                             }
                           },
