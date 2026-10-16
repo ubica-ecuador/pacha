@@ -13,9 +13,6 @@
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "legacyOptions": {
-            "type": "dashboard"
-          },
           "name": "Annotations \u0026 Alerts",
           "query": {
             "datasource": {
@@ -57,11 +54,16 @@
                 "overrides": []
               },
               "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
                 "content": "### Where the data comes from\n\n- **Stations and series**: [Geo-Sismos](https://geosismos.cl/explorador), published by the [Data Observatory](https://www.dataobservatory.net/). The raw RINEX comes from the National Seismological Center of the University of Chile; Data Observatory processes it with GFZRNX and PRIDE PPP-AR and publishes each station's daily position. Open data. Cite it as Data Observatory Foundation (2026), [DOI 10.57716/5j4w-3b13](https://doi.org/10.57716/5j4w-3b13).\n- **Coverage**: 158 stations, from 1 January 2013 to the day in *Latest data*, which is the newest day in the station catalog. This is not a live feed: the catalog is rewritten every few weeks.\n- **Earthquakes**: the [USGS ComCat](https://earthquake.usgs.gov/fdsnws/event/1/) catalogue, every M6+ event between 15°S and 60°S, east of 115°W. Public domain.\n- **Plate boundaries**: PB2002 by Bird (2003), *An updated digital model of plate boundaries*, G³ 4(3), 1027, in the [GeoJSON copy by Hugo Ahlenius](https://github.com/fraxen/tectonicplates) (ODC-By). It is the same model the Geo-Sismos explorer draws.\n\n### How the shift is measured\n\nThe window is the time picker, or a click on the earthquake timeline. A station's shift is its position on the last day of the window minus its position on the first, in east, north and up. The Geo-Sismos network service answers only for those two exact days, and many stations have a gap on one of them, so the dashboard also asks a few days inward from each end (up to an eighth of the window, at most ten days, so a window around an earthquake never crosses it) and keeps the outermost day each station has. A station's tooltip on the map gives the two days used. A window that ends after the newest published day is cut at that day.\n\nThe map measures the **time brush**, not the whole window: each station's shift from its first step inside the brush to its last, as one arrow lying on the ground (the horizontal shift, pointing the way it went, coloured by centimetres) and one standing on it (up and blue where it rose, down and red where it sank). That is the quantity a geodesist reads off two epochs, and it is what the table gives for the whole window; drag the brush to a narrower span, or play it, to watch the network move through the window. Sizes are relative to the largest shift of the brush, *Arrow size* pixels; *Arrow growth* is logarithmic by default, because shifts in Chile run from millimetres of loading to metres at a great earthquake, and on a linear scale everything but the largest becomes a dot. Easter Island (RAPA) sits on the Nazca plate and moves about 7 cm a year to the east; in long windows it sets the size of the mainland arrows, which is what the logarithmic growth is for.\n\n### The paths and the whole network\n\nThe *Path* sparklines in the table and the latitude-time map read a file built once on each instance by `datasets/geosismos/build.sh` (every station's daily position, from the same Geo-Sismos API; run it again when the catalog is rewritten). The build drops the days the source flags as outliers and any day more than 10 cm off the median of the two months around it, which removes a few unflagged runs of metres-off days while keeping real jumps. The window is cut into at most about 120 buckets (a day for windows up to four months, a week for about two years, longer beyond) and each bucket is the median of its days, measured from the station's first bucket in the window. Without the file both panels are empty; everything else works.\n\n### How to read the series\n\nThe daily positions are drawn in millimetres from the station's first good day in the window, so the last point of the east and north lines is the arrow on the map. The trend is an ordinary least-squares line over the good days. When an M7+ earthquake within 500 km of the station falls inside the window, a trend would average over the jump, so the chart gives the jump instead: the mean of the three good days after the event minus the mean of the three before. Days the source flags as outliers are grey dots, left out of the line and the trend.\n",
                 "mode": "markdown"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -181,7 +183,34 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "aggregation": "auto",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -288,6 +317,19 @@
                   "decimals": 2,
                   "displayName": "${__data.fields.label}",
                   "noValue": "no pair",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "lengthcm"
                 },
                 "overrides": []
@@ -295,6 +337,9 @@
               "options": {
                 "colorMode": "none",
                 "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -302,10 +347,12 @@
                   "fields": "",
                   "values": true
                 },
-                "textMode": "value_and_name"
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -351,6 +398,19 @@
                 "defaults": {
                   "decimals": 0,
                   "noValue": "—",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "suffix: of 158"
                 },
                 "overrides": []
@@ -358,6 +418,9 @@
               "options": {
                 "colorMode": "none",
                 "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -365,10 +428,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -507,6 +572,19 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "dateTimeFromNow"
                 },
                 "overrides": []
@@ -514,6 +592,9 @@
               "options": {
                 "colorMode": "none",
                 "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -521,10 +602,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -693,39 +776,156 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
+                "alerts": {},
                 "areaVariable": "area",
                 "basemap": "openfreemap-positron",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
                 "flowRenderMode": "straight",
                 "followGrafanaTheme": true,
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
                 "mapConfig": {
                   "config": {
                     "mapState": {
-                      "bearing": 0,
+                      "bearing": 54.74049366244162,
                       "dragRotate": true,
-                      "latitude": -38,
-                      "longitude": -68,
-                      "pitch": 0,
-                      "zoom": 3.45
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": -41.60413891879486,
+                      "longitude": -68.1434557368009,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 56.67574931880109,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 4.828373154167531
                     },
                     "mapStyle": {
-                      "styleType": "openfreemap-positron"
-                    },
-                    "uiState": {
-                      "mapControls": {
-                        "mapLegend": {
-                          "active": true,
-                          "show": true
-                        }
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-fiord",
+                      "threeDBuildingColor": [
+                        64.2493441415438,
+                        75.42314312268185,
+                        102.42649066043215
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
                       }
                     },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
                     "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
                       "filters": [],
                       "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
                         "tooltip": {
                           "compareMode": false,
                           "compareType": "absolute",
@@ -733,103 +933,84 @@
                           "fieldsToShow": {
                             "grafana-A": [
                               {
-                                "format": null,
                                 "name": "id"
                               },
                               {
-                                "format": null,
                                 "name": "horizontal_cm"
                               },
                               {
-                                "format": null,
                                 "name": "up_cm"
                               }
                             ],
                             "grafana-C": [
                               {
-                                "format": null,
                                 "name": "id"
                               },
                               {
-                                "format": null,
                                 "name": "why"
                               }
                             ],
                             "grafana-D": [
                               {
-                                "format": null,
                                 "name": "place"
                               },
                               {
-                                "format": null,
                                 "name": "mag"
                               },
                               {
-                                "format": null,
                                 "name": "depth_km"
                               },
                               {
-                                "format": null,
                                 "name": "day"
                               }
                             ],
                             "grafana-E": [
                               {
-                                "format": null,
                                 "name": "name"
                               },
                               {
-                                "format": null,
                                 "name": "kind"
                               }
                             ],
                             "grafana-F": [
                               {
-                                "format": null,
                                 "name": "id"
                               },
                               {
-                                "format": null,
                                 "name": "horizontal_cm"
                               },
                               {
-                                "format": null,
                                 "name": "toward_deg"
                               }
                             ],
                             "grafana-G": [
                               {
-                                "format": null,
                                 "name": "id"
                               },
                               {
-                                "format": null,
                                 "name": "up_cm"
                               }
                             ],
                             "grafana-H": [
                               {
-                                "format": null,
                                 "name": "id"
                               },
                               {
-                                "format": null,
                                 "name": "value"
                               }
                             ],
                             "grafana-I": [
                               {
-                                "format": null,
                                 "name": "id"
                               },
                               {
-                                "format": null,
                                 "name": "up_cm"
                               }
                             ]
                           }
                         }
                       },
+                      "layerBlending": "normal",
                       "layerOrder": [
                         "cards",
                         "quakes",
@@ -931,6 +1112,8 @@
                                 50
                               ],
                               "rowsAsset": "auto",
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
                               "sparkAlertWorst": false,
                               "sparkAlerts": false,
                               "sparkCardOpacity": 0.95,
@@ -953,6 +1136,19 @@
                               "sparkTimeField": "auto",
                               "sparkTooltip": true,
                               "sparkUnit": " mm",
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
                               "thickness": 2
                             }
                           },
@@ -964,7 +1160,8 @@
                               "type": "real"
                             },
                             "colorScale": "custom",
-                            "sizeScale": "linear"
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
                           }
                         },
                         {
@@ -974,6 +1171,7 @@
                               50,
                               148
                             ],
+                            "columnMode": "points",
                             "columns": {
                               "lat": "latitude",
                               "lng": "longitude"
@@ -999,6 +1197,7 @@
                                   200,
                                   255
                                 ],
+                                "collisionEnabled": false,
                                 "color": [
                                   255,
                                   255,
@@ -1020,6 +1219,21 @@
                               }
                             ],
                             "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
                               "filled": false,
                               "fixedRadius": false,
                               "opacity": 0.9,
@@ -1029,22 +1243,39 @@
                                 6,
                                 34
                               ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
                               "strokeColor": [
                                 123,
                                 50,
                                 148
                               ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
                               "thickness": 1.5
                             }
                           },
                           "id": "quakes",
                           "type": "point",
                           "visualChannels": {
+                            "colorScale": "quantile",
                             "sizeField": {
                               "name": "mag",
                               "type": "real"
                             },
-                            "sizeScale": "linear"
+                            "sizeScale": "sqrt",
+                            "strokeColorScale": "quantile"
                           }
                         },
                         {
@@ -1054,6 +1285,7 @@
                               70,
                               70
                             ],
+                            "columnMode": "points",
                             "columns": {
                               "lat": "latitude",
                               "lng": "longitude"
@@ -1079,6 +1311,7 @@
                                   200,
                                   255
                                 ],
+                                "collisionEnabled": false,
                                 "color": [
                                   255,
                                   255,
@@ -1100,6 +1333,21 @@
                               }
                             ],
                             "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
                               "filled": true,
                               "fixedRadius": false,
                               "opacity": 0.9,
@@ -1109,17 +1357,36 @@
                                 4,
                                 18
                               ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
                               "strokeColor": [
                                 250,
                                 250,
                                 250
                               ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
                               "thickness": 0.8
                             }
                           },
                           "id": "stations",
                           "type": "point",
-                          "visualChannels": {}
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
                         },
                         {
                           "config": {
@@ -1128,6 +1395,7 @@
                               150,
                               150
                             ],
+                            "columnMode": "points",
                             "columns": {
                               "lat": "latitude",
                               "lng": "longitude"
@@ -1153,6 +1421,7 @@
                                   200,
                                   255
                                 ],
+                                "collisionEnabled": false,
                                 "color": [
                                   255,
                                   255,
@@ -1174,6 +1443,21 @@
                               }
                             ],
                             "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
                               "filled": true,
                               "fixedRadius": false,
                               "opacity": 0.55,
@@ -1182,12 +1466,32 @@
                               "radiusRange": [
                                 4,
                                 18
-                              ]
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
                             }
                           },
                           "id": "nopair",
                           "type": "point",
-                          "visualChannels": {}
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
                         },
                         {
                           "config": {
@@ -1221,6 +1525,7 @@
                                   200,
                                   255
                                 ],
+                                "collisionEnabled": false,
                                 "color": [
                                   255,
                                   255,
@@ -1243,11 +1548,51 @@
                             ],
                             "visConfig": {
                               "angleDegrees": 0,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "declutter": false,
+                              "declutterSpacingPx": 40,
+                              "directionConvention": "towards",
                               "fixedAngle": true,
                               "fixedSize": true,
+                              "flowContext": {
+                                "camera": {
+                                  "bearing": 54.74049366244162,
+                                  "height": 717,
+                                  "latitude": -41.60413891879486,
+                                  "longitude": -68.1434557368009,
+                                  "pitch": 56.67574931880109,
+                                  "width": 1499,
+                                  "zoom": 4.828373154167531
+                                },
+                                "tallest": 0
+                              },
+                              "gradient": false,
+                              "gradientTail": 0.7,
                               "opacity": 0.95,
+                              "outline": false,
+                              "outlineColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "outlineThickness": 3,
                               "pictureAnchor": "bottom",
                               "pictureUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PSc0OCcgdmlld0JveD0nMCAwIDI0IDQ4Jz48cGF0aCBkPSdNMTIgMSBMMjMgMTcgTDE2IDE3IEwxNiA0NyBMOCA0NyBMOCAxNyBMMSAxNyBaJyBmaWxsPScjMjE2NkFDJyBzdHJva2U9JyMyMjIyMjInIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+",
+                              "shadow": false,
+                              "shadowDistance": 4,
+                              "shadowOpacity": 0.5,
                               "sizeRange": [
                                 10,
                                 128
@@ -1255,17 +1600,19 @@
                               "symbol": "arrow",
                               "symbolSize": 24,
                               "symbolSource": "picture",
+                              "symbolZoomRate": 0.5,
+                              "symbolZoomRef": 10,
+                              "symbolZoomScale": false,
                               "upright": true
                             }
                           },
                           "id": "rises",
                           "type": "symbol",
                           "visualChannels": {
-                            "angleScale": "linear",
                             "colorScale": "quantile",
                             "sizeField": {
                               "name": "size_px",
-                              "type": "real"
+                              "type": "integer"
                             },
                             "sizeScale": "linear"
                           }
@@ -1302,6 +1649,7 @@
                                   200,
                                   255
                                 ],
+                                "collisionEnabled": false,
                                 "color": [
                                   255,
                                   255,
@@ -1324,11 +1672,51 @@
                             ],
                             "visConfig": {
                               "angleDegrees": 0,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "declutter": false,
+                              "declutterSpacingPx": 40,
+                              "directionConvention": "towards",
                               "fixedAngle": true,
                               "fixedSize": true,
+                              "flowContext": {
+                                "camera": {
+                                  "bearing": 54.74049366244162,
+                                  "height": 717,
+                                  "latitude": -41.60413891879486,
+                                  "longitude": -68.1434557368009,
+                                  "pitch": 56.67574931880109,
+                                  "width": 1499,
+                                  "zoom": 4.828373154167531
+                                },
+                                "tallest": 0
+                              },
+                              "gradient": false,
+                              "gradientTail": 0.7,
                               "opacity": 0.95,
+                              "outline": false,
+                              "outlineColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "outlineThickness": 3,
                               "pictureAnchor": "bottom",
                               "pictureUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PSc0OCcgdmlld0JveD0nMCAwIDI0IDQ4Jz48cGF0aCBkPSdNMTIgNDcgTDIzIDMxIEwxNiAzMSBMMTYgMSBMOCAxIEw4IDMxIEwxIDMxIFonIGZpbGw9JyNENjYwNEQnIHN0cm9rZT0nIzIyMjIyMicgc3Ryb2tlLXdpZHRoPScxLjInIHN0cm9rZS1saW5lam9pbj0ncm91bmQnLz48L3N2Zz4=",
+                              "shadow": false,
+                              "shadowDistance": 4,
+                              "shadowOpacity": 0.5,
                               "sizeRange": [
                                 10,
                                 128
@@ -1336,17 +1724,19 @@
                               "symbol": "arrow",
                               "symbolSize": 24,
                               "symbolSource": "picture",
+                              "symbolZoomRate": 0.5,
+                              "symbolZoomRef": 10,
+                              "symbolZoomScale": false,
                               "upright": true
                             }
                           },
                           "id": "sinks",
                           "type": "symbol",
                           "visualChannels": {
-                            "angleScale": "linear",
                             "colorScale": "quantile",
                             "sizeField": {
                               "name": "size_px",
-                              "type": "real"
+                              "type": "integer"
                             },
                             "sizeScale": "linear"
                           }
@@ -1383,6 +1773,7 @@
                                   200,
                                   255
                                 ],
+                                "collisionEnabled": false,
                                 "color": [
                                   255,
                                   255,
@@ -1417,9 +1808,25 @@
                                 "name": "Shift",
                                 "type": "sequential"
                               },
+                              "declutter": false,
+                              "declutterSpacingPx": 40,
                               "directionConvention": "towards",
                               "fixedAngle": true,
                               "fixedSize": true,
+                              "flowContext": {
+                                "camera": {
+                                  "bearing": 54.74049366244162,
+                                  "height": 717,
+                                  "latitude": -41.60413891879486,
+                                  "longitude": -68.1434557368009,
+                                  "pitch": 56.67574931880109,
+                                  "width": 1499,
+                                  "zoom": 4.828373154167531
+                                },
+                                "tallest": 0
+                              },
+                              "gradient": false,
+                              "gradientTail": 0.7,
                               "opacity": 0.95,
                               "outline": true,
                               "outlineColor": [
@@ -1428,6 +1835,11 @@
                                 40
                               ],
                               "outlineThickness": 1,
+                              "pictureAnchor": "center",
+                              "pictureUrl": "",
+                              "shadow": false,
+                              "shadowDistance": 4,
+                              "shadowOpacity": 0.5,
                               "sizeRange": [
                                 10,
                                 128
@@ -1435,6 +1847,9 @@
                               "symbol": "arrow",
                               "symbolSize": 24,
                               "symbolSource": "shape",
+                              "symbolZoomRate": 0.5,
+                              "symbolZoomRef": 10,
+                              "symbolZoomScale": false,
                               "upright": false
                             }
                           },
@@ -1443,7 +1858,7 @@
                           "visualChannels": {
                             "angleField": {
                               "name": "toward_deg",
-                              "type": "real"
+                              "type": "integer"
                             },
                             "angleScale": "linear",
                             "colorField": {
@@ -1453,7 +1868,7 @@
                             "colorScale": "quantize",
                             "sizeField": {
                               "name": "size_px",
-                              "type": "real"
+                              "type": "integer"
                             },
                             "sizeScale": "linear"
                           }
@@ -1490,6 +1905,7 @@
                                   200,
                                   255
                                 ],
+                                "collisionEnabled": false,
                                 "color": [
                                   255,
                                   255,
@@ -1511,9 +1927,38 @@
                               }
                             ],
                             "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "elevationScale": 5,
                               "enable3d": false,
                               "filled": false,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
                               "opacity": 0.8,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
                               "strokeColor": [
                                 217,
                                 130,
@@ -1547,6 +1992,10 @@
                           "id": "plates",
                           "type": "geojson",
                           "visualChannels": {
+                            "colorScale": "quantile",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeScale": "linear",
                             "strokeColorField": {
                               "name": "kind",
                               "type": "string"
@@ -1554,13 +2003,24 @@
                             "strokeColorScale": "customOrdinal"
                           }
                         }
-                      ]
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
                     }
                   },
                   "version": "v1"
                 },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 1,
                 "showSidePanel": false,
                 "timeSync": "off",
+                "tripLayerMode": "table",
                 "variableMappings": [
                   {
                     "field": "id",
@@ -1570,7 +2030,7 @@
                 ]
               }
             },
-            "version": "0.1.0"
+            "version": "1.1.0"
           }
         }
       },
@@ -1617,6 +2077,19 @@
                   "decimals": 1,
                   "displayName": "${__data.fields.id}",
                   "noValue": "—",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "lengthcm"
                 },
                 "overrides": []
@@ -1624,6 +2097,9 @@
               "options": {
                 "colorMode": "none",
                 "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -1631,10 +2107,12 @@
                   "fields": "",
                   "values": true
                 },
-                "textMode": "value_and_name"
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -1764,9 +2242,9 @@
               "queryOptions": {},
               "transformations": [
                 {
-                  "kind": "groupBy",
+                  "group": "groupBy",
+                  "kind": "Transformation",
                   "spec": {
-                    "id": "groupBy",
                     "options": {
                       "fields": {
                         "coverage_pct": {
@@ -1814,9 +2292,9 @@
                   }
                 },
                 {
-                  "kind": "organize",
+                  "group": "organize",
+                  "kind": "Transformation",
                   "spec": {
-                    "id": "organize",
                     "options": {
                       "excludeByName": {},
                       "indexByName": {
@@ -1858,10 +2336,27 @@
                       "type": "auto"
                     },
                     "filterable": false,
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false,
                     "minWidth": 40
                   },
                   "decimals": 2,
-                  "noValue": "—"
+                  "noValue": "—",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
                 },
                 "overrides": [
                   {
@@ -2034,7 +2529,7 @@
                 ]
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -2642,7 +3137,8 @@
           "name": "arrow",
           "options": [],
           "query": "Small : 40,Medium : 64,Large : 96,Very large : 128",
-          "skipUrlSync": false
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
         }
       },
       {
@@ -2661,7 +3157,8 @@
           "name": "growth",
           "options": [],
           "query": "Logarithmic from 1 cm : 0.01,Logarithmic from 1 mm : 0.001,Linear : linear",
-          "skipUrlSync": false
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
         }
       },
       {
@@ -2695,7 +3192,8 @@
           "name": "comp",
           "options": [],
           "query": "east_mm,north_mm,up_mm,horizontal_mm",
-          "skipUrlSync": false
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
         }
       },
       {
