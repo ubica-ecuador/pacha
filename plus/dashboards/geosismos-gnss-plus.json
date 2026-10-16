@@ -3007,10 +3007,10 @@
         "1d"
       ],
       "fiscalYearStartMonth": 0,
-      "from": "2025-01-01T00:00:00.000Z",
+      "from": "2023-08-20T00:00:00.000Z",
       "hideTimepicker": false,
       "timezone": "utc",
-      "to": "2026-09-20T00:00:00.000Z"
+      "to": "2025-05-08T00:00:00.000Z"
     },
     "title": "Chile GNSS displacement — Geo-Sismos · Plus",
     "variables": [
@@ -3019,8 +3019,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "d64ed4803_shifts_v13",
+            "value": "d64ed4803_shifts_v13"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -3071,8 +3071,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "d64ed4803_quakes_v1",
+            "value": "d64ed4803_quakes_v1"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -3123,8 +3123,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "d64ed4803_plates_v2",
+            "value": "d64ed4803_plates_v2"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -3175,8 +3175,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "d64ed4803_avail_v3",
+            "value": "d64ed4803_avail_v3"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -3227,8 +3227,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "d64ed4803_spark_v14",
+            "value": "d64ed4803_spark_v14"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -3279,8 +3279,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "d64ed4803_brush_v17",
+            "value": "d64ed4803_brush_v17"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -3331,7 +3331,7 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "ANTC",
+            "text": "ANTC · 2.7 cm",
             "value": "ANTC"
           },
           "description": "The station whose daily series is drawn. A click on the map, a row in the table or a row of the availability chart sets it.",
@@ -3440,14 +3440,14 @@
         "kind": "TextVariable",
         "spec": {
           "current": {
-            "text": "",
-            "value": ""
+            "text": "2024-07-12T00:00:00.000Z",
+            "value": "2024-07-12T00:00:00.000Z"
           },
           "description": "The start of the time brush, written by it; empty means the start of the window.",
           "hide": "hideVariable",
           "label": "Brush from",
           "name": "t0",
-          "query": "",
+          "query": "2024-07-12T00:00:00.000Z",
           "skipUrlSync": false
         }
       },
@@ -3455,14 +3455,14 @@
         "kind": "TextVariable",
         "spec": {
           "current": {
-            "text": "",
-            "value": ""
+            "text": "2024-07-27T00:00:00.000Z",
+            "value": "2024-07-27T00:00:00.000Z"
           },
           "description": "The end of the time brush, written by it; empty means the end of the window.",
           "hide": "hideVariable",
           "label": "Brush to",
           "name": "t1",
-          "query": "",
+          "query": "2024-07-27T00:00:00.000Z",
           "skipUrlSync": false
         }
       },
@@ -3470,14 +3470,14 @@
         "kind": "TextVariable",
         "spec": {
           "current": {
-            "text": "",
-            "value": ""
+            "text": "-23.0791",
+            "value": "-23.0791"
           },
           "description": "The latitude the map centres on, written by a click on an earthquake on the timeline.",
           "hide": "hideVariable",
           "label": "Map centre latitude",
           "name": "qlat",
-          "query": "",
+          "query": "-23.0791",
           "skipUrlSync": false
         }
       },
@@ -3485,14 +3485,14 @@
         "kind": "TextVariable",
         "spec": {
           "current": {
-            "text": "",
-            "value": ""
+            "text": "-67.8404",
+            "value": "-67.8404"
           },
           "description": "The longitude the map centres on, written by a click on an earthquake on the timeline.",
           "hide": "hideVariable",
           "label": "Map centre longitude",
           "name": "qlon",
-          "query": "",
+          "query": "-67.8404",
           "skipUrlSync": false
         }
       }
