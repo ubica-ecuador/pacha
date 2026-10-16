@@ -811,7 +811,7 @@
                 "mapConfig": {
                   "config": {
                     "mapState": {
-                      "bearing": 37.3288859239493,
+                      "bearing": 46.09472981987992,
                       "dragRotate": true,
                       "globe": {
                         "config": {
@@ -860,15 +860,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": -37.586918174912434,
-                      "longitude": -73.70286381435811,
+                      "latitude": -32.553737774330976,
+                      "longitude": -70.98057779075158,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_3D",
                       "maxPitch": 85,
-                      "pitch": 64.49376773991247,
+                      "pitch": 68.29141565069214,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 5.894496804732246
+                      "zoom": 5.310323625582985
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -1013,18 +1013,161 @@
                           }
                         }
                       },
-                      "layerBlending": "normal",
+                      "layerBlending": "additive",
                       "layerOrder": [
-                        "quakes",
+                        "cards",
+                        "m26l2d",
                         "stations",
                         "nopair",
                         "rises",
                         "sinks",
-                        "cards",
                         "shift",
-                        "plates"
+                        "plates",
+                        "aa0r81"
                       ],
                       "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              120,
+                              120,
+                              120
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-H",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Path through the window (mm)",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "id",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    -0.5,
+                                    "#D6604D"
+                                  ],
+                                  [
+                                    null,
+                                    "#2166AC"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#D6604D",
+                                  "#2166AC"
+                                ],
+                                "name": "Down or up",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.8,
+                              "outline": false,
+                              "radius": 4,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "rowsAsset": "auto",
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "sparkAlertWorst": false,
+                              "sparkAlerts": false,
+                              "sparkCardOpacity": 0.95,
+                              "sparkCards": "hover",
+                              "sparkChangeColours": "neutral",
+                              "sparkCrossValue": true,
+                              "sparkCrosshair": true,
+                              "sparkDotRadius": 5,
+                              "sparkDots": true,
+                              "sparkDotsOnTop": false,
+                              "sparkFill": true,
+                              "sparkMax": "auto",
+                              "sparkMin": "auto",
+                              "sparkNoDataAfter": "auto",
+                              "sparkOverlap": "none",
+                              "sparkPinned": [],
+                              "sparkPublishCrosshair": false,
+                              "sparkScale": "perSite",
+                              "sparkSize": "M",
+                              "sparkTimeField": "auto",
+                              "sparkTooltip": false,
+                              "sparkUnit": " mm",
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "cards",
+                          "type": "sparkline",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "value",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
                         {
                           "config": {
                             "color": [
@@ -1085,25 +1228,48 @@
                               "colorRange": {
                                 "category": "Uber",
                                 "colors": [
-                                  "#4C0035",
-                                  "#880030",
-                                  "#B72F15",
-                                  "#D6610A",
-                                  "#EF9100",
-                                  "#FFC300"
+                                  "#0198BD",
+                                  "#6FD3B7",
+                                  "#FAFEB3",
+                                  "#F1925E",
+                                  "#D50255"
                                 ],
-                                "name": "Global Warming",
-                                "type": "sequential"
+                                "name": "Ice And Fire",
+                                "type": "diverging"
                               },
+                              "coverage3d": false,
+                              "coverageAzimuth": 0,
+                              "coverageBeamwidth": 360,
+                              "coverageDetail": "medium",
+                              "coverageGradient": true,
+                              "coverageHeight": 30,
+                              "coverageHeightMetres": 200,
+                              "coverageHeightUnit": "percent",
+                              "coverageInner": 0,
+                              "coverageOutline": false,
+                              "coverageOutlineWidth": 1.5,
+                              "coverageProfile": "dome",
+                              "coverageRange": 1000,
+                              "coverageRangeMode": "scaled",
+                              "coverageRangeMultiplier": 10000,
+                              "coverageRangeRange": [
+                                5000,
+                                10000
+                              ],
+                              "coverageSite": true,
+                              "coverageSiteRadius": 3,
                               "filled": false,
                               "fixedRadius": false,
-                              "opacity": 0.9,
+                              "historyField": "color",
+                              "opacity": 0.5,
                               "outline": true,
                               "radius": 10,
                               "radiusRange": [
                                 6,
                                 34
                               ],
+                              "rowsAsset": "auto",
+                              "rowsPerPlace": "last",
                               "showHighlightColor": true,
                               "showNeighborOnHover": false,
                               "strokeColor": [
@@ -1127,10 +1293,21 @@
                               "thickness": 1.5
                             }
                           },
-                          "id": "quakes",
-                          "type": "point",
+                          "id": "m26l2d",
+                          "type": "coverage",
                           "visualChannels": {
-                            "colorScale": "quantile",
+                            "azimuthScale": "linear",
+                            "beamwidthScale": "linear",
+                            "colorField": {
+                              "name": "mag",
+                              "type": "real"
+                            },
+                            "colorScale": "quantize",
+                            "reachField": {
+                              "name": "mag",
+                              "type": "real"
+                            },
+                            "reachScale": "linear",
                             "sizeField": {
                               "name": "mag",
                               "type": "real"
@@ -1430,13 +1607,13 @@
                               "fixedSize": true,
                               "flowContext": {
                                 "camera": {
-                                  "bearing": 37.3288859239493,
+                                  "bearing": 46.09472981987992,
                                   "height": 740,
-                                  "latitude": -37.586918174912434,
-                                  "longitude": -73.70286381435811,
-                                  "pitch": 64.49376773991247,
+                                  "latitude": -32.553737774330976,
+                                  "longitude": -70.98057779075158,
+                                  "pitch": 68.29141565069214,
                                   "width": 1499,
-                                  "zoom": 5.894496804732246
+                                  "zoom": 5.310323625582985
                                 },
                                 "tallest": 0
                               },
@@ -1560,13 +1737,13 @@
                               "fixedSize": true,
                               "flowContext": {
                                 "camera": {
-                                  "bearing": 37.3288859239493,
+                                  "bearing": 46.09472981987992,
                                   "height": 740,
-                                  "latitude": -37.586918174912434,
-                                  "longitude": -73.70286381435811,
-                                  "pitch": 64.49376773991247,
+                                  "latitude": -32.553737774330976,
+                                  "longitude": -70.98057779075158,
+                                  "pitch": 68.29141565069214,
                                   "width": 1499,
-                                  "zoom": 5.894496804732246
+                                  "zoom": 5.310323625582985
                                 },
                                 "tallest": 0
                               },
@@ -1612,148 +1789,6 @@
                               "type": "integer"
                             },
                             "sizeScale": "linear"
-                          }
-                        },
-                        {
-                          "config": {
-                            "color": [
-                              120,
-                              120,
-                              120
-                            ],
-                            "columnMode": "points",
-                            "columns": {
-                              "lat": "latitude",
-                              "lng": "longitude"
-                            },
-                            "dataId": "grafana-H",
-                            "hidden": false,
-                            "highlightColor": [
-                              252,
-                              242,
-                              26,
-                              255
-                            ],
-                            "isVisible": true,
-                            "label": "Path through the window (mm)",
-                            "textLabel": [
-                              {
-                                "alignment": "center",
-                                "anchor": "start",
-                                "background": false,
-                                "backgroundColor": [
-                                  0,
-                                  0,
-                                  200,
-                                  255
-                                ],
-                                "collisionEnabled": false,
-                                "color": [
-                                  255,
-                                  255,
-                                  255
-                                ],
-                                "field": {
-                                  "name": "id",
-                                  "type": "string"
-                                },
-                                "offset": [
-                                  0,
-                                  0
-                                ],
-                                "outlineColor": [
-                                  255,
-                                  0,
-                                  0,
-                                  255
-                                ],
-                                "outlineWidth": 0,
-                                "size": 18,
-                                "weight": 400
-                              }
-                            ],
-                            "visConfig": {
-                              "allowHover": true,
-                              "billboard": false,
-                              "colorRange": {
-                                "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    -0.5,
-                                    "#D6604D"
-                                  ],
-                                  [
-                                    null,
-                                    "#2166AC"
-                                  ]
-                                ],
-                                "colors": [
-                                  "#D6604D",
-                                  "#2166AC"
-                                ],
-                                "name": "Down or up",
-                                "type": "custom"
-                              },
-                              "filled": true,
-                              "fixedRadius": false,
-                              "opacity": 0.8,
-                              "outline": false,
-                              "radius": 4,
-                              "radiusRange": [
-                                0,
-                                50
-                              ],
-                              "rowsAsset": "auto",
-                              "showHighlightColor": true,
-                              "showNeighborOnHover": false,
-                              "sparkAlertWorst": false,
-                              "sparkAlerts": false,
-                              "sparkCardOpacity": 0.95,
-                              "sparkCards": "hover",
-                              "sparkChangeColours": "neutral",
-                              "sparkCrossValue": true,
-                              "sparkCrosshair": true,
-                              "sparkDotRadius": 5,
-                              "sparkDots": true,
-                              "sparkDotsOnTop": false,
-                              "sparkFill": true,
-                              "sparkMax": "auto",
-                              "sparkMin": "auto",
-                              "sparkNoDataAfter": "auto",
-                              "sparkOverlap": "none",
-                              "sparkPinned": [],
-                              "sparkPublishCrosshair": false,
-                              "sparkScale": "perSite",
-                              "sparkSize": "M",
-                              "sparkTimeField": "auto",
-                              "sparkTooltip": false,
-                              "sparkUnit": " mm",
-                              "strokeColorRange": {
-                                "category": "Uber",
-                                "colors": [
-                                  "#4C0035",
-                                  "#880030",
-                                  "#B72F15",
-                                  "#D6610A",
-                                  "#EF9100",
-                                  "#FFC300"
-                                ],
-                                "name": "Global Warming",
-                                "type": "sequential"
-                              },
-                              "thickness": 2
-                            }
-                          },
-                          "id": "cards",
-                          "type": "sparkline",
-                          "visualChannels": {
-                            "colorField": {
-                              "name": "value",
-                              "type": "real"
-                            },
-                            "colorScale": "custom",
-                            "sizeScale": "linear",
-                            "strokeColorScale": "quantile"
                           }
                         },
                         {
@@ -1830,13 +1865,13 @@
                               "fixedSize": true,
                               "flowContext": {
                                 "camera": {
-                                  "bearing": 37.3288859239493,
+                                  "bearing": 46.09472981987992,
                                   "height": 740,
-                                  "latitude": -37.586918174912434,
-                                  "longitude": -73.70286381435811,
-                                  "pitch": 64.49376773991247,
+                                  "latitude": -32.553737774330976,
+                                  "longitude": -70.98057779075158,
+                                  "pitch": 68.29141565069214,
                                   "width": 1499,
-                                  "zoom": 5.894496804732246
+                                  "zoom": 5.310323625582985
                                 },
                                 "tallest": 0
                               },
@@ -2006,6 +2041,136 @@
                             }
                           },
                           "id": "plates",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorField": {
+                              "name": "kind",
+                              "type": "string"
+                            },
+                            "strokeColorScale": "customOrdinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              217,
+                              130,
+                              43
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-E",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Copy of Plate boundaries (Bird 2003)",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "elevationScale": 5,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.8,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColor": [
+                                217,
+                                130,
+                                43
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "subduction zone",
+                                    "#D9822B"
+                                  ],
+                                  [
+                                    "other boundary",
+                                    "#9A9A9A"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#D9822B",
+                                  "#9A9A9A"
+                                ],
+                                "name": "Boundary",
+                                "type": "custom"
+                              },
+                              "strokeOpacity": 0.08,
+                              "stroked": true,
+                              "thickness": 7,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "aa0r81",
                           "type": "geojson",
                           "visualChannels": {
                             "colorScale": "quantile",
