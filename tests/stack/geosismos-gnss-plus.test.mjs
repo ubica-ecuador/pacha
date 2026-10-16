@@ -76,7 +76,7 @@ test('the network query returns every station, and the largest 2025–2026 shift
 
 test('the paths read only the built file, in at most about 120 buckets a station', { skip: unbuilt }, async () => {
   const sql = serverSql('spark');
-  assert.deepEqual(sql.match(/https?:\/\/[^'"\s]+/g), [FILE]);
+  assert.deepEqual([...new Set(sql.match(/https?:\/\/[^'"\s]+/g))], [FILE]);
   const rows = await duckdb(STACK_URL, sql);
   const ids = new Set(rows.map((r) => r.id));
   assert.ok(ids.size > 120, `${ids.size} stations`);
