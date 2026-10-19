@@ -74,4 +74,6 @@ here, in the same shape: symptom, cause, fix.
 | Admin login refused for minutes | failed logins from helpers without `.env` | always `--env-file=.env` |
 | `localhost` refused from Node | Node resolves it to `::1` | `127.0.0.1` |
 | Chromium crashes on a heavy map | default `/dev/shm` | `--shm-size=2g` |
+| A Business Text panel with two queries shows an empty dropdown under its content | in `everyRow` and `allRows` modes it offers a picker of data frames | `renderMode: "data"`, and read each frame from `context.panelData.series` by `refId` (`mbta-subway-diagram`) |
+| A Business Text `afterRender` draws a broken figure for a moment after a variable changes, or a WebAssembly library it feeds aborts (`Aborted(Assertion failed …)`) | while a query runs again the panel can be handed a frame without its fields: every row reads `undefined` | keep only whole rows, keep the last drawing when none are left, and keep state on `this` (`mbta-subway-diagram`, its Graphviz layout) |
 | A table column hidden with `custom.hidden` still shows | Grafana 13.2's table reads `custom.hideFrom.viz` | override `custom.hideFrom.viz: true`; a data link can still use the hidden field (`firms-active-fires`, largest fires) |

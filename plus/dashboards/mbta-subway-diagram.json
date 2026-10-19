@@ -1,0 +1,1593 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "mbta-subway-diagram"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Boston's subway live, twice: a line diagram laid out by Graphviz in the browser and the Kepler Plus fleet map, with every MBTA train on both. Click a station or a train on either.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Boston's subway, live — the line diagram and the map\n\nEvery MBTA subway train, twice: on a **line diagram that Graphviz lays out in your browser** from the MBTA's own patterns, and on the map. **Click a station** on either to fly the map there and list its next trains; **click a train** to follow it.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT\n  count(*) FILTER (WHERE line = 'Red')::BIGINT AS \"Red\",\n  count(*) FILTER (WHERE line = 'Orange')::BIGINT AS \"Orange\",\n  count(*) FILTER (WHERE line = 'Blue')::BIGINT AS \"Blue\",\n  count(*) FILTER (WHERE line = 'Green')::BIGINT AS \"Green\",\n  count(*) FILTER (WHERE line = 'Mattapan')::BIGINT AS \"Mattapan\"\nFROM $trains"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Subway trains in the latest vehicle positions feed, by line; the four Green Line branches count as one line.",
+          "id": 2,
+          "links": [],
+          "title": "Trains running now",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Red"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#E8473B",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Orange"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#F59A1B",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Blue"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#3C7DE0",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Green"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#1FA35F",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Mattapan"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#E8473B",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT max(feed_time) AS time FROM $trains"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "When the MBTA last wrote the vehicle positions feed, as read on this refresh.",
+          "id": 3,
+          "links": [],
+          "title": "Latest data",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The network, one row per station of each canonical pattern. Names the\n-- station variable so the diagram marks the station picked.\nSELECT route, line, pattern, seq, station, name, latitude, longitude,\n       station = $station AS picked\nFROM $network"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "N"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Where each train sits on the diagram: on the hop between two stations it is\n-- running, and how far along it (0 to 1). The feed gives the station a train\n-- is at or heading to; the hop is the one into that station on its route and\n-- direction, and where two hops lead in (the Red Line at JFK/UMass, heading\n-- north) the one starting nearer the train. How far along is the distance\n-- from the station behind over the distance between both, in a straight line.\n-- A train stopped at a station sits on it; one whose station starts its route\n-- in that direction, too.\nWITH e AS (\n  SELECT route, station AS a, lead(station) OVER w AS b,\n         latitude AS alat, longitude AS alng, lead(latitude) OVER w AS blat, lead(longitude) OVER w AS blng\n  FROM $network\n  WINDOW w AS (PARTITION BY pattern ORDER BY seq)\n),\n-- Each hop both ways: a direction 1 train runs the pattern backwards.\nhop AS (\n  SELECT route, 0 AS dir, a AS f, b AS t, alat AS flat, alng AS flng, blat AS tlat, blng AS tlng FROM e WHERE b IS NOT NULL\n  UNION ALL\n  SELECT route, 1 AS dir, b AS f, a AS t, blat, blng, alat, alng FROM e WHERE b IS NOT NULL\n),\ncand AS (\n  SELECT tr.vehicle, h.f, h.t,\n         -- Degrees of longitude are 0.74 of a degree of latitude in Boston.\n         sqrt(((tr.longitude - h.flng) * 0.74) ^ 2 + (tr.latitude - h.flat) ^ 2) AS df,\n         sqrt(((tr.longitude - h.tlng) * 0.74) ^ 2 + (tr.latitude - h.tlat) ^ 2) AS dt\n  FROM $trains tr\n  JOIN hop h ON h.route = tr.route AND h.dir = tr.dir AND h.t = tr.station\n),\nbest AS (\n  SELECT * FROM cand\n  QUALIFY row_number() OVER (PARTITION BY vehicle ORDER BY df) = 1\n),\n-- Where the trip it is on now ends: the feed also lists the trips each train\n-- will run next.\ntoward AS (\n  SELECT trip, any_value(toward) AS toward FROM $arrivals GROUP BY trip\n)\nSELECT tr.vehicle, tr.unit, tr.line, tr.route, tr.dir, tr.status, tr.station,\n       w.toward,\n       coalesce(b.f, tr.station) AS from_station,\n       coalesce(b.t, tr.station) AS to_station,\n       CASE\n         WHEN tr.current_status = 'STOPPED_AT' OR b.f IS NULL THEN 1.0\n         ELSE greatest(0.05, least(0.95, b.df / nullif(b.df + b.dt, 0)))\n       END AS progress,\n       tr.latitude, tr.longitude,\n       tr.vehicle = $train AS picked\nFROM $trains tr\nLEFT JOIN best b USING (vehicle)\nLEFT JOIN toward w ON w.trip = tr.trip\nWHERE tr.station IS NOT NULL"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "T"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The MBTA's canonical patterns (one per line and branch) as a graph: a node per station, an edge per hop between consecutive stations, laid out by Graphviz neato (Kamada-Kawai) from the stations' real positions with every hop asked to be the same length. Each dot is a train from the latest vehicle positions, on the hop into the station it is at or heading to, as far along it as its straight-line distance from the station behind says, and to the right of its direction of travel. Hover for the train or station; click a station to fly the map there and list its next trains, a train to follow it on the map.",
+          "id": 4,
+          "links": [],
+          "title": "Line diagram — laid out by Graphviz in your browser",
+          "vizConfig": {
+            "group": "marcusolsson-dynamictext-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "afterRender": "// The subway as a line diagram laid out by Graphviz in this browser, with\n// every train on it. Query N is the network (one row per station of each\n// canonical pattern), query T the trains, each on the hop it is running and how\n// far along it. The layout is Graphviz's neato in Kamada-Kawai mode, started\n// from the stations' real positions and asked for hops of equal length: it\n// keeps the shape of the city but opens up downtown, where stations are close,\n// and draws the suburbs tighter. The layout depends on the network only, so it\n// is computed once per visit; each refresh only moves the trains, which glide\n// to their new places.\n// Click a station: the map flies to it and the board lists its next trains.\n// Click a train: the map follows it. Wheel to zoom, drag to pan, double-click\n// to fit.\nconst VIZ = 'https://cdn.jsdelivr.net/npm/@viz-js/viz@3.30.0/dist/viz.js';\nconst theme = context.grafana.theme;\nconst COLOURS = theme.isDark\n  ? { Red: '#E8473B', Orange: '#F59A1B', Blue: '#3C7DE0', Green: '#1FA35F', Mattapan: '#E8473B' }\n  : { Red: '#DA291C', Orange: '#ED8B00', Blue: '#003DA5', Green: '#00843D', Mattapan: '#DA291C' };\nconst TEXT = theme.colors.text.primary;\nconst BACK = theme.colors.background.primary;\nconst PICK = theme.isDark ? '#FFE14D' : '#B8860B';\n\nconst box = context.element.querySelector('.subway-map');\nconst note = context.element.querySelector('.subway-note');\nif (!box) {\n  return;\n}\ncontext.element.style.height = '100%';\n\nconst self = this;\nconst rowsOf = (refId) =\u003e {\n  const frame = (context.panelData?.series ?? []).find((f) =\u003e f.refId === refId);\n  if (!frame) {\n    return [];\n  }\n  const n = frame.length ?? frame.fields[0]?.values.length ?? 0;\n  return Array.from({ length: n }, (_, i) =\u003e\n    Object.fromEntries(frame.fields.map((f) =\u003e [f.name, f.values[i] ?? f.values.get?.(i)])),\n  );\n};\n\n// Stations and hops, with the lines that serve each. The Green branches are one\n// line here, as on the MBTA map.\nconst stations = new Map();\nconst hops = new Map();\nconst patterns = new Map();\n// While a query runs again, the panel can be handed a frame without its rows'\n// fields: only whole rows count.\nconst whole = (r) =\u003e r.pattern \u0026\u0026 r.station \u0026\u0026 COLOURS[r.line] \u0026\u0026 Number.isFinite(r.latitude) \u0026\u0026 Number.isFinite(r.longitude);\nfor (const r of rowsOf('N').filter(whole)) {\n  if (!patterns.has(r.pattern)) {\n    patterns.set(r.pattern, []);\n  }\n  patterns.get(r.pattern).push(r);\n}\nfor (const rows of patterns.values()) {\n  rows.sort((a, b) =\u003e a.seq - b.seq);\n  rows.forEach((r, i) =\u003e {\n    const s = stations.get(r.station) ?? { id: r.station, name: r.name, lat: r.latitude, lng: r.longitude, lines: new Set() };\n    s.lines.add(r.line);\n    stations.set(r.station, s);\n    if (i \u003e 0) {\n      const [a, b] = [rows[i - 1].station, r.station].sort();\n      const key = `${a}--${b}`;\n      const hop = hops.get(key) ?? { a, b, lines: new Set() };\n      hop.lines.add(r.line);\n      hops.set(key, hop);\n    }\n  });\n}\nif (hops.size === 0) {\n  // Keep the drawing there is; a network that never came says so.\n  if (!self.svg) {\n    box.textContent = 'The network did not load.';\n  } else if (self.svg.parentNode !== box) {\n    box.replaceChildren(self.svg);\n  }\n  return;\n}\n\nconst quote = (s) =\u003e `\"${String(s).replace(/[\"\\\\]/g, '\\\\$\u0026')}\"`;\nconst ORDER = ['Red', 'Mattapan', 'Orange', 'Green', 'Blue'];\nconst linesOf = (set) =\u003e ORDER.filter((l) =\u003e set.has(l));\n// Positions in inches from the stations' coordinates, east-west shrunk by the\n// cosine of Boston's latitude, as the start of the layout.\nconst dot = [\n  'graph subway {',\n  `  layout=neato; mode=KK; epsilon=0.0001; overlap=false; splines=false; outputorder=edgesfirst; bgcolor=\"transparent\"; pad=0.3;`,\n  `  node [shape=circle fixedsize=true width=0.13 label=\"\" style=filled fillcolor=${quote(BACK)} penwidth=2 fontname=\"Inter, Helvetica, Arial, sans-serif\" fontsize=9 fontcolor=${quote(TEXT)}];`,\n  '  edge [penwidth=5 len=0.45];',\n];\nconst byId = (a, b) =\u003e (a \u003c b ? -1 : a \u003e b ? 1 : 0);\nfor (const id of [...stations.keys()].sort(byId)) {\n  const s = stations.get(id);\n  const x = (s.lng + 71.06) * 0.74 * 60;\n  const y = (s.lat - 42.36) * 60;\n  const lines = linesOf(s.lines);\n  const transfer = lines.length \u003e 1;\n  dot.push(\n    `  ${quote(s.id)} [id=${quote('n-' + s.id)} xlabel=${quote(s.name)} pos=\"${x.toFixed(3)},${y.toFixed(3)}\" ` +\n      `color=${quote(transfer ? TEXT : COLOURS[lines[0]])}${transfer ? ' width=0.19' : ''}];`,\n  );\n}\nfor (const key of [...hops.keys()].sort(byId)) {\n  const h = hops.get(key);\n  const lines = linesOf(h.lines);\n  dot.push(\n    `  ${quote(h.a)} -- ${quote(h.b)} [id=${quote(`e-${h.a}--${h.b}`)} color=${quote(lines.map((l) =\u003e COLOURS[l]).join(':'))}` +\n      `${lines.length === 1 \u0026\u0026 lines[0] === 'Mattapan' ? ' penwidth=3' : ''}];`,\n  );\n}\ndot.push('}');\n// The same network always gives the same source, whatever order the rows come\n// in, so the layout is computed once.\nconst source = dot.join('\\n');\n\n// What this render shows, kept on the panel: a layout still on its way draws\n// the latest trains when it lands, and a frame handed over half-loaded keeps\n// the trains of the one before.\nconst frameT = (context.panelData?.series ?? []).find((f) =\u003e f.refId === 'T');\nconst trains = frameT?.fields.some((f) =\u003e f.name === 'vehicle')\n  ? rowsOf('T').filter((t) =\u003e t.vehicle \u0026\u0026 COLOURS[t.line] \u0026\u0026 t.to_station)\n  : self.now?.trains ?? [];\nconst picked = { train: trains.find((t) =\u003e t.picked)?.vehicle ?? '', station: context.grafana.replaceVariables('${station}') };\nself.now = { trains, picked, box, note };\n\nconst setVars = (vars) =\u003e context.grafana.locationService.partial(vars, true);\n\n// Wheel zoom, drag to pan, double-click to fit, and clicks that pick a train or\n// a station. Wired once per drawing.\nconst wire = (svg) =\u003e {\n  const base = svg.viewBox.baseVal;\n  const fit = [base.x, base.y, base.width, base.height];\n  self.view = self.view ?? fit.slice();\n  const apply = () =\u003e svg.setAttribute('viewBox', self.view.join(' '));\n  apply();\n  const toSvg = (ev) =\u003e {\n    const r = svg.getBoundingClientRect();\n    const [x, y, w, h] = self.view;\n    // preserveAspectRatio xMidYMid meet: the scale is the smaller of the two.\n    const k = Math.max(w / r.width, h / r.height);\n    return [x + w / 2 + (ev.clientX - r.left - r.width / 2) * k, y + h / 2 + (ev.clientY - r.top - r.height / 2) * k, k];\n  };\n  svg.addEventListener(\n    'wheel',\n    (ev) =\u003e {\n      ev.preventDefault();\n      const [px, py] = toSvg(ev);\n      const f = Math.exp(ev.deltaY * 0.0015);\n      const [x, y, w, h] = self.view;\n      const nw = Math.min(fit[2] * 1.5, Math.max(fit[2] / 12, w * f));\n      const s = nw / w;\n      self.view = [px - (px - x) * s, py - (py - y) * s, w * s, h * s];\n      apply();\n    },\n    { passive: false },\n  );\n  let drag = null;\n  svg.addEventListener('pointerdown', (ev) =\u003e {\n    drag = { x: ev.clientX, y: ev.clientY, view: self.view.slice(), moved: false };\n  });\n  svg.addEventListener('pointermove', (ev) =\u003e {\n    if (!drag) {\n      return;\n    }\n    const dx = ev.clientX - drag.x;\n    const dy = ev.clientY - drag.y;\n    if (!drag.moved \u0026\u0026 Math.hypot(dx, dy) \u003c 4) {\n      return;\n    }\n    if (!drag.moved) {\n      drag.moved = true;\n      svg.setPointerCapture(ev.pointerId);\n      svg.style.cursor = 'grabbing';\n    }\n    const [, , k] = toSvg(ev);\n    self.view = [drag.view[0] - dx * k, drag.view[1] - dy * k, drag.view[2], drag.view[3]];\n    apply();\n  });\n  const end = (ev) =\u003e {\n    if (drag?.moved) {\n      svg.releasePointerCapture?.(ev.pointerId);\n    }\n    svg.style.cursor = '';\n    setTimeout(() =\u003e (drag = null), 0);\n  };\n  svg.addEventListener('pointerup', end);\n  svg.addEventListener('pointercancel', end);\n  svg.addEventListener('dblclick', (ev) =\u003e {\n    ev.preventDefault();\n    self.view = fit.slice();\n    apply();\n  });\n  svg.addEventListener('click', (ev) =\u003e {\n    if (drag?.moved) {\n      return;\n    }\n    const train = ev.target.closest('[data-vehicle]');\n    if (train) {\n      setVars({ 'var-train': train.dataset.vehicle, 'var-station': '' });\n      return;\n    }\n    const node = ev.target.closest('[data-station]');\n    if (node) {\n      const s = self.stations.get(node.dataset.station);\n      setVars({ 'var-station': s.id, 'var-train': '', 'var-lat': s.lat.toFixed(6), 'var-lng': s.lng.toFixed(6) });\n    }\n  });\n};\n\n// The drawing: Graphviz's SVG, without its own titles (they show node ids),\n// with a title per station and a layer for the trains.\nconst draw = (viz) =\u003e {\n  const svg = viz.renderSVGElement(self.layoutSource);\n  svg.removeAttribute('width');\n  svg.removeAttribute('height');\n  svg.classList.add('subway-svg');\n  svg.querySelectorAll('title').forEach((t) =\u003e t.remove());\n  for (const s of stations.values()) {\n    const g = svg.getElementById('n-' + s.id);\n    if (!g) {\n      continue;\n    }\n    g.dataset.station = s.id;\n    const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');\n    title.textContent = `${s.name} · ${linesOf(s.lines).join(', ')}`;\n    g.append(title);\n  }\n  const layer = document.createElementNS('http://www.w3.org/2000/svg', 'g');\n  layer.classList.add('trains');\n  svg.querySelector('g.graph').append(layer);\n  self.trainEls = new Map();\n  wire(svg);\n  return svg;\n};\n\n// Where a train goes: on the drawn hop, at its share of the hop's length, set\n// off to the right of its direction of travel so trains running opposite ways\n// pass side by side.\nconst centre = (svg, id) =\u003e {\n  const e = svg.getElementById('n-' + id)?.querySelector('ellipse');\n  return e ? [e.cx.baseVal.value, e.cy.baseVal.value] : null;\n};\nconst place = (svg, t) =\u003e {\n  const colour = COLOURS[t.line].toLowerCase();\n  if (t.from_station === t.to_station) {\n    return centre(svg, t.to_station);\n  }\n  const [a, b] = [t.from_station, t.to_station].sort();\n  const edge = svg.getElementById(`e-${a}--${b}`);\n  if (!edge) {\n    return centre(svg, t.to_station);\n  }\n  const paths = [...edge.querySelectorAll('path')];\n  const path = paths.find((p) =\u003e (p.getAttribute('stroke') ?? '').toLowerCase() === colour) ?? paths[0];\n  const len = path.getTotalLength();\n  const start = path.getPointAtLength(0);\n  const from = centre(svg, t.from_station);\n  const to = centre(svg, t.to_station);\n  // A path runs from its tail to its head; which end is which is read off the drawing.\n  const forward = !from || !to || Math.hypot(start.x - from[0], start.y - from[1]) \u003c= Math.hypot(start.x - to[0], start.y - to[1]);\n  const s = (forward ? t.progress : 1 - t.progress) * len;\n  const p = path.getPointAtLength(s);\n  const q = path.getPointAtLength(Math.min(len, s + 1));\n  const r = path.getPointAtLength(Math.max(0, s - 1));\n  let dx = q.x - r.x;\n  let dy = q.y - r.y;\n  const d = Math.hypot(dx, dy) || 1;\n  dx /= d;\n  dy /= d;\n  if (!forward) {\n    dx = -dx;\n    dy = -dy;\n  }\n  return [p.x - dy * 4.5, p.y + dx * 4.5];\n};\n\nconst drawTrains = (svg) =\u003e {\n  const { trains, picked, note } = self.now;\n  const layer = svg.querySelector('g.trains');\n  const seen = new Set();\n  let placed = 0;\n  for (const t of trains) {\n    const at = place(svg, t);\n    if (!at) {\n      continue;\n    }\n    placed += 1;\n    seen.add(t.vehicle);\n    let g = self.trainEls.get(t.vehicle);\n    if (!g) {\n      g = document.createElementNS('http://www.w3.org/2000/svg', 'g');\n      g.classList.add('train');\n      g.dataset.vehicle = t.vehicle;\n      g.innerHTML = '\u003ccircle class=\"ring\" r=\"10\"\u003e\u003c/circle\u003e\u003ccircle class=\"dot\" r=\"4.2\"\u003e\u003c/circle\u003e\u003ctitle\u003e\u003c/title\u003e';\n      g.style.transform = `translate(${at[0]}px, ${at[1]}px)`;\n      layer.append(g);\n      self.trainEls.set(t.vehicle, g);\n    }\n    g.querySelector('.dot').setAttribute('fill', COLOURS[t.line]);\n    g.querySelector('.dot').setAttribute('stroke', BACK);\n    g.querySelector('.ring').setAttribute('stroke', PICK);\n    g.classList.toggle('picked', t.vehicle === picked.train);\n    const station = self.stations.get(t.station)?.name ?? t.station;\n    g.querySelector('title').textContent =\n      `${t.route.replace('-', ' ')} · train ${t.unit}${t.toward ? ' to ' + t.toward : ''}\\n${t.status} ${station}`;\n    // Next frame, so a new train appears in place and a known one glides.\n    requestAnimationFrame(() =\u003e (g.style.transform = `translate(${at[0]}px, ${at[1]}px)`));\n  }\n  for (const [vehicle, g] of self.trainEls) {\n    if (!seen.has(vehicle)) {\n      g.remove();\n      self.trainEls.delete(vehicle);\n    }\n  }\n  // The picked train on top.\n  const top = self.trainEls.get(picked.train);\n  if (top) {\n    layer.append(top);\n  }\n  svg.querySelectorAll('g.node.picked').forEach((g) =\u003e g.classList.remove('picked'));\n  svg.getElementById('n-' + picked.station)?.classList.add('picked');\n  if (note) {\n    const lost = trains.length - placed;\n    note.textContent =\n      `${placed} trains on the diagram${lost ? `, ${lost} not placed` : ''} · ` +\n      `laid out by Graphviz (neato, ${self.layoutSource.includes('mode=KK') ? 'Kamada-Kawai' : 'stress majorization'}) in your browser · ` +\n      'wheel to zoom, drag to pan, double-click to fit';\n  }\n};\n\nself.stations = stations;\nif (self.source !== source) {\n  self.source = source;\n  self.svg = null;\n  self.view = null;\n  box.textContent = 'Laying out the network with Graphviz…';\n  const load = () =\u003e\n    import(VIZ)\n      .then((m) =\u003e m.instance())\n      .catch((err) =\u003e {\n        self.viz = null;\n        throw err;\n      });\n  const show = (viz, layoutSource) =\u003e {\n    self.layoutSource = layoutSource;\n    self.svg = draw(viz);\n    self.now.box.replaceChildren(self.svg);\n    drawTrains(self.svg);\n  };\n  self.viz = self.viz ?? load();\n  self.viz\n    .then((viz) =\u003e {\n      if (self.source !== source) {\n        return;\n      }\n      try {\n        show(viz, source);\n      } catch (err) {\n        // Graphviz compiled to WebAssembly aborts on some inputs, and an aborted\n        // instance is unusable: a new one, with neato's default stress\n        // majorization instead of Kamada-Kawai.\n        self.viz = load();\n        return self.viz.then((fresh) =\u003e show(fresh, source.replace('mode=KK; ', '')));\n      }\n    })\n    .catch((err) =\u003e {\n      // Tried again on the next render.\n      self.source = null;\n      self.now.box.textContent = `Graphviz did not draw the network: ${err.message ?? err}`;\n    });\n} else if (self.svg) {\n  if (self.svg.parentNode !== box) {\n    box.replaceChildren(self.svg);\n  }\n  drawTrains(self.svg);\n}\n// Otherwise the layout of this network is on its way, and draws these trains.",
+                "content": "\u003cdiv class=\"subway\"\u003e\u003cdiv class=\"subway-map\"\u003e\u003c/div\u003e\u003cdiv class=\"subway-note\"\u003e\u003c/div\u003e\u003c/div\u003e",
+                "contentPartials": [],
+                "defaultContent": "The network did not load.",
+                "editor": {
+                  "format": "auto",
+                  "language": "html"
+                },
+                "editors": [
+                  "styles",
+                  "afterRender"
+                ],
+                "externalStyles": [],
+                "helpers": "",
+                "renderMode": "data",
+                "status": "",
+                "styles": ".subway { display: flex; flex-direction: column; height: 100%; }\n.subway-map { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; color: #9AA5B1; }\n.subway-svg { width: 100%; height: 100%; display: block; cursor: grab; user-select: none; touch-action: none; }\n.subway-svg .node { cursor: pointer; }\n.subway-svg .node.picked ellipse { fill: #FFE14D; stroke: #FFE14D; stroke-width: 5; }\n.subway-svg .node.picked text { font-weight: 700; }\n.subway-svg .train { cursor: pointer; transition: transform 2.5s ease-in-out; }\n.subway-svg .train .dot { stroke-width: 1.5; }\n.subway-svg .train .ring { fill: none; stroke-width: 2.5; display: none; }\n.subway-svg .train.picked .ring { display: inline; animation: subway-pulse 1.6s ease-out infinite; }\n@keyframes subway-pulse { from { r: 5px; opacity: 1; } to { r: 15px; opacity: 0; } }\n.subway-note { font-size: 11px; line-height: 1.4; color: #9AA5B1; padding: 2px 4px 0; }",
+                "wrap": false
+              }
+            },
+            "version": "6.3.0"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every subway train, for the fleet layer and its tooltip: where its trip\n-- ends and the station it is at or heading to.\nWITH toward AS (SELECT trip, any_value(toward) AS toward FROM $arrivals GROUP BY trip),\nnames AS (SELECT station, any_value(name) AS name FROM $network GROUP BY station)\nSELECT t.vehicle, t.unit, replace(t.route, '-', ' ') AS route, t.line, t.type, w.toward,\n       t.status || ' ' || coalesce(n.name, 'a stop off the network') AS now,\n       t.heading, t.latitude, t.longitude, t.time\nFROM $trains t\nLEFT JOIN toward w ON w.trip = t.trip\nLEFT JOIN names n ON n.station = t.station"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The track of each pattern, in its line colour.\nSELECT route, line, geojson FROM $tracks"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every station once, with the lines that call there.\nSELECT station, any_value(name) AS name, string_agg(DISTINCT line, ', ' ORDER BY line) AS lines,\n       any_value(latitude) AS latitude, any_value(longitude) AS longitude\nFROM $network GROUP BY station"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The station picked on the diagram or the map. Empty until then.\nSELECT any_value(name) AS name, any_value(latitude) AS latitude, any_value(longitude) AS longitude\nFROM $network WHERE station = $station GROUP BY station"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each train from the latest vehicle positions is a fleet asset in its line colour, gliding to its new position on every refresh, with a trail of where it went, remembered by the map while the page stays open. Tracks are the shapes of the canonical patterns in the MBTA schedule data. Click a train to follow it (click the map elsewhere to stop), a station to list its next trains.",
+          "id": 5,
+          "links": [],
+          "title": "The same trains on the map",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-dark",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {
+                        "label": false,
+                        "poi": false,
+                        "road": false
+                      },
+                      "visibleLayerGroups": {
+                        "3d building": true,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "unit"
+                              },
+                              {
+                                "name": "route"
+                              },
+                              {
+                                "name": "toward"
+                              },
+                              {
+                                "name": "now"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "lines"
+                              }
+                            ],
+                            "grafana-D": [
+                              {
+                                "name": "name"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "plus-fleet-grafana-A",
+                        "picked",
+                        "stations",
+                        "tracks"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              23,
+                              184,
+                              190
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Trains · in their line colour",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "unit",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Red",
+                                    "#E8473B"
+                                  ],
+                                  [
+                                    "Orange",
+                                    "#F59A1B"
+                                  ],
+                                  [
+                                    "Blue",
+                                    "#3C7DE0"
+                                  ],
+                                  [
+                                    "Green",
+                                    "#1FA35F"
+                                  ],
+                                  [
+                                    "Mattapan",
+                                    "#E8473B"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#E8473B",
+                                  "#F59A1B",
+                                  "#3C7DE0",
+                                  "#1FA35F",
+                                  "#E8473B"
+                                ],
+                                "name": "MBTA lines",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "fleetAltitudeField": "none",
+                              "fleetAssetField": "vehicle",
+                              "fleetCard": false,
+                              "fleetCardMinutes": 60,
+                              "fleetCardSize": "S",
+                              "fleetCardWindow": "auto",
+                              "fleetDisplay": "3d",
+                              "fleetFollow": "$train",
+                              "fleetFollowMode": "follow",
+                              "fleetHeadingField": "heading",
+                              "fleetHeadingFrom": "auto",
+                              "fleetIcons": "{\"subway\": {\"preset\": \"metro\"}}",
+                              "fleetLabel": "none",
+                              "fleetLabelColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "fleetLabelOffset": -1,
+                              "fleetLabelOutline": true,
+                              "fleetLabelSize": 12,
+                              "fleetMarker": "silhouette",
+                              "fleetModelColours": "beacon",
+                              "fleetOrbitSecs": 60,
+                              "fleetPinned": [],
+                              "fleetPulseBy": "auto",
+                              "fleetPulseCycle": 3,
+                              "fleetPulseLength": 0.3,
+                              "fleetPulseRange": [
+                                1,
+                                4
+                              ],
+                              "fleetRemember": "on",
+                              "fleetRememberMin": 10,
+                              "fleetShadow": true,
+                              "fleetSize": 32,
+                              "fleetSmooth": true,
+                              "fleetSmoothMs": 23200,
+                              "fleetSpeedField": "none",
+                              "fleetSpeedUnit": "km/h",
+                              "fleetStaleAfter": 5,
+                              "fleetStatusFrom": "column",
+                              "fleetStem": true,
+                              "fleetStopSpeed": 2,
+                              "fleetTimeField": "time",
+                              "fleetTimeRef": "live",
+                              "fleetTrail": 2,
+                              "fleetTrailAnimate": true,
+                              "fleetTrailFade": true,
+                              "fleetTrailOpacity": 0.7,
+                              "fleetTrailShow": true,
+                              "fleetTrailWidth": 4,
+                              "fleetTypeField": "type",
+                              "fleetZoomRate": 0.5,
+                              "fleetZoomRef": 14,
+                              "fleetZoomScale": true,
+                              "opacity": 1,
+                              "outline": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "plus-fleet-grafana-A",
+                          "type": "fleet",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "line",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              225,
+                              77
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-D",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Station picked",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": false,
+                              "filled": false,
+                              "opacity": 1,
+                              "outline": true,
+                              "radius": 40,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "strokeColor": [
+                                255,
+                                225,
+                                77
+                              ],
+                              "thickness": 3
+                            }
+                          },
+                          "id": "picked",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "sizeField": null,
+                            "strokeColorField": null
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              235,
+                              235,
+                              240
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Stations",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "filled": true,
+                              "opacity": 1,
+                              "outline": true,
+                              "radius": 4,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "strokeColor": [
+                                24,
+                                27,
+                                31
+                              ],
+                              "thickness": 1.5
+                            }
+                          },
+                          "id": "stations",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "sizeField": null,
+                            "strokeColorField": null
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              70,
+                              121,
+                              170
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Tracks",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": false,
+                              "enable3d": false,
+                              "filled": false,
+                              "opacity": 0.85,
+                              "sizeRange": [
+                                0.5,
+                                3.5
+                              ],
+                              "strokeColor": [
+                                70,
+                                121,
+                                170
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Red",
+                                    "#E8473B"
+                                  ],
+                                  [
+                                    "Orange",
+                                    "#F59A1B"
+                                  ],
+                                  [
+                                    "Blue",
+                                    "#3C7DE0"
+                                  ],
+                                  [
+                                    "Green",
+                                    "#1FA35F"
+                                  ],
+                                  [
+                                    "Mattapan",
+                                    "#E8473B"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#E8473B",
+                                  "#F59A1B",
+                                  "#3C7DE0",
+                                  "#1FA35F",
+                                  "#E8473B"
+                                ],
+                                "name": "MBTA lines",
+                                "type": "custom"
+                              },
+                              "strokeOpacity": 0.85,
+                              "stroked": true,
+                              "thickness": 3,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "tracks",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "strokeColorField": {
+                              "name": "line",
+                              "type": "string"
+                            },
+                            "strokeColorScale": "customOrdinal"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 0,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "vehicle",
+                    "source": "click",
+                    "variable": "train"
+                  },
+                  {
+                    "field": "station",
+                    "source": "click",
+                    "variable": "station"
+                  },
+                  {
+                    "field": "",
+                    "source": "center",
+                    "variable": "lat",
+                    "variableTo": "lng",
+                    "zoom": 15
+                  }
+                ]
+              }
+            },
+            "version": "0.1.0"
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The next trains at the station picked, from the trip updates: line,\n-- where each is going, and in how many minutes. Trips that end there are\n-- left out, as on the platform screens.\nWITH here AS (SELECT any_value(name) AS name FROM $network WHERE station = $station)\nSELECT here.name AS station,\n       CASE WHEN a.route LIKE 'Green-%' THEN replace(a.route, 'Green-', '') ELSE a.line END AS badge,\n       CASE a.line WHEN 'Red' THEN '#E8473B' WHEN 'Orange' THEN '#F59A1B' WHEN 'Blue' THEN '#3C7DE0' WHEN 'Green' THEN '#1FA35F' ELSE '#E8473B' END AS colour,\n       a.toward,\n       CASE WHEN date_diff('second', now()::TIMESTAMP, a.time::TIMESTAMP) \u003c 60 THEN 'now'\n            ELSE round(date_diff('second', now()::TIMESTAMP, a.time::TIMESTAMP) / 60)::BIGINT || ' min' END AS due\nFROM $arrivals a, here\nWHERE a.station = $station AND a.toward IS DISTINCT FROM here.name\nORDER BY a.time\nLIMIT 10"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "From the trip updates feed: the next ten trains the MBTA predicts at the station picked on the diagram or the map, within 45 minutes, with where their trip ends. Trips that end at the station are left out.",
+          "id": 6,
+          "links": [],
+          "title": "Next trains at the station picked",
+          "vizConfig": {
+            "group": "marcusolsson-dynamictext-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "afterRender": "",
+                "content": "\u003cdiv class=\"board\"\u003e\u003cdiv class=\"board-head\"\u003e{{data.[0].station}}\u003c/div\u003e{{#each data}}\u003cdiv class=\"board-row\"\u003e\u003cspan class=\"badge\" style=\"background:{{colour}}\"\u003e{{badge}}\u003c/span\u003e\u003cspan class=\"to\"\u003e{{toward}}\u003c/span\u003e\u003cspan class=\"due\"\u003e{{due}}\u003c/span\u003e\u003c/div\u003e{{/each}}\u003c/div\u003e",
+                "contentPartials": [],
+                "defaultContent": "Click a station on the diagram or the map to list its next trains.",
+                "editor": {
+                  "format": "auto",
+                  "language": "html"
+                },
+                "editors": [
+                  "styles",
+                  "afterRender"
+                ],
+                "externalStyles": [],
+                "helpers": "",
+                "renderMode": "allRows",
+                "status": "",
+                "styles": ".board { font-size: 14px; line-height: 1.3; }\n.board-head { font-weight: 600; font-size: 16px; margin-bottom: 6px; }\n.board-row { display: flex; align-items: center; gap: 10px; padding: 4px 0; border-bottom: 1px solid rgba(128, 128, 128, 0.2); }\n.badge { min-width: 64px; text-align: center; border-radius: 3px; color: #fff; font-weight: 600; font-size: 12px; padding: 2px 6px; }\n.to { flex: 1; }\n.due { font-variant-numeric: tabular-nums; font-weight: 600; }",
+                "wrap": false
+              }
+            },
+            "version": "6.3.0"
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 7,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Sources.** The MBTA's GTFS Realtime feeds, *VehiclePositions* and *TripUpdates* ([cdn.mbta.com](https://www.mbta.com/developers/gtfs-realtime)), read on every refresh through the stack's gateway, whose 15 s cache keeps the MBTA at one request per refresh whoever is watching. The network and the tracks come from the MBTA's schedule data in [LAMP](https://performancedata.mbta.com)'s GTFS archive: the canonical route patterns, which the MBTA keeps for maps and diagrams, with their stops and shapes, in the version in force today in Boston. Nothing is stored: there is no history beyond the trail the map remembers while the page is open.\n\n**The diagram.** Built in your browser on each visit: a graph with a node per station and an edge per hop between consecutive stations of a pattern, handed to [Graphviz](https://graphviz.org) compiled to WebAssembly ([Viz.js](https://github.com/mdaines/viz-js)). Its *neato* engine in Kamada-Kawai mode starts from the stations' real positions and moves them until every hop is as close as it can get to the same length. Where two lines share a hop it draws them side by side.\n\n**Trains on the diagram.** The feed says which station a train is stopped at, arriving at or on its way to. It is drawn on the hop into that station on its route and direction (where two hops lead in, the one starting nearer the train), as far along as its straight-line distance from the station behind over the length of the hop. A train waiting at the first station of its trip sits on it. A few trains report no stop and are only on the map.\n\n\u003csmall\u003eUnofficial dashboard, not endorsed by or affiliated with the MBTA. Data: Massachusetts Bay Transportation Authority, under the MBTA developer license.\u003c/small\u003e",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 5,
+              "width": 12,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              },
+              "height": 5,
+              "width": 8,
+              "x": 12,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 5,
+              "width": 4,
+              "x": 20,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 22,
+              "width": 14,
+              "x": 0,
+              "y": 5
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 14,
+              "width": 10,
+              "x": 14,
+              "y": 5
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              },
+              "height": 8,
+              "width": 10,
+              "x": 14,
+              "y": 19
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-7"
+              },
+              "height": 9,
+              "width": 24,
+              "x": 0,
+              "y": 27
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "kepler",
+      "business-text",
+      "plus",
+      "transit",
+      "live"
+    ],
+    "timeSettings": {
+      "autoRefresh": "20s",
+      "autoRefreshIntervals": [
+        "15s",
+        "20s",
+        "30s",
+        "1m",
+        "5m"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-15m",
+      "hideTimepicker": true,
+      "timezone": "America/New_York",
+      "to": "now"
+    },
+    "title": "Boston's subway live — Graphviz line diagram and map",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "network",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "network",
+              "refId": "network",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the subway as the MBTA draws it. One row per\n-- station of each canonical route pattern (the patterns the MBTA keeps for\n-- maps and diagrams: both Red branches, the four Green branches), in the order\n-- a direction 0 train serves them. The archive keeps every version of a row;\n-- the one in force today in Boston wins. Seven days back picks the year, so\n-- the first week of January still finds a file.\nWITH today AS (SELECT strftime(now() AT TIME ZONE 'America/New_York', '%Y%m%d')::INTEGER AS d),\npatterns AS (\n  SELECT route_id AS route, representative_trip_id AS pattern\n  FROM read_parquet('http://feeds/mbta/lamp/gtfs_archive/' || strftime(current_date - 7, '%Y') || '/route_patterns.parquet'), today\n  WHERE (route_id IN ('Red', 'Orange', 'Blue', 'Mattapan') OR route_id LIKE 'Green-%')\n    AND canonical_route_pattern = 1 AND direction_id = 0\n    AND gtfs_active_date \u003c= d AND gtfs_end_date \u003e= d\n  QUALIFY row_number() OVER (PARTITION BY route_pattern_id ORDER BY gtfs_active_date DESC) = 1\n),\ncalls AS (\n  SELECT trip_id AS pattern, stop_id, stop_sequence\n  FROM read_parquet('http://feeds/mbta/lamp/gtfs_archive/' || strftime(current_date - 7, '%Y') || '/stop_times.parquet'), today\n  WHERE trip_id LIKE 'canonical-%' AND gtfs_active_date \u003c= d AND gtfs_end_date \u003e= d\n  QUALIFY row_number() OVER (PARTITION BY trip_id, stop_sequence ORDER BY gtfs_active_date DESC) = 1\n),\nstops AS (\n  SELECT stop_id,\n         arg_max(coalesce(parent_station, stop_id), gtfs_active_date) AS station,\n         arg_max(stop_name, gtfs_active_date)                          AS name,\n         arg_max(stop_lat, gtfs_active_date)                           AS latitude,\n         arg_max(stop_lon, gtfs_active_date)                           AS longitude\n  FROM read_parquet('http://feeds/mbta/lamp/gtfs_archive/' || strftime(current_date - 7, '%Y') || '/stops.parquet')\n  GROUP BY 1\n)\nSELECT p.route,\n       CASE WHEN p.route LIKE 'Green-%' THEN 'Green' ELSE p.route END AS line,\n       p.pattern,\n       row_number() OVER (PARTITION BY p.pattern ORDER BY c.stop_sequence) AS seq,\n       s.station,\n       st.name,\n       st.latitude,\n       st.longitude\nFROM patterns p\nJOIN calls c USING (pattern)\nJOIN stops s ON s.stop_id = c.stop_id\n-- Named and placed as the station, not the platform the pattern stops at.\nJOIN stops st ON st.stop_id = s.station\nORDER BY p.pattern, seq",
+                  "refId": "network"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "tracks",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "tracks",
+              "refId": "tracks",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the track of each canonical pattern, from the\n-- shapes of the MBTA schedule data, for the map. Versions as in the network.\nWITH today AS (SELECT strftime(now() AT TIME ZONE 'America/New_York', '%Y%m%d')::INTEGER AS d),\npatterns AS (\n  SELECT route_id AS route, trip_id AS pattern, shape_id\n  FROM read_parquet('http://feeds/mbta/lamp/gtfs_archive/' || strftime(current_date - 7, '%Y') || '/trips.parquet'), today\n  WHERE trip_id LIKE 'canonical-%' AND direction_id = 0\n    AND (route_id IN ('Red', 'Orange', 'Blue', 'Mattapan') OR route_id LIKE 'Green-%')\n    AND gtfs_active_date \u003c= d AND gtfs_end_date \u003e= d\n  QUALIFY row_number() OVER (PARTITION BY trip_id ORDER BY gtfs_active_date DESC) = 1\n),\npoints AS (\n  SELECT shape_id, shape_pt_sequence AS seq, shape_pt_lat AS lat, shape_pt_lon AS lng\n  FROM read_parquet('http://feeds/mbta/lamp/gtfs_archive/' || strftime(current_date - 7, '%Y') || '/shapes.parquet'), today\n  WHERE shape_id IN (SELECT shape_id FROM patterns) AND gtfs_active_date \u003c= d AND gtfs_end_date \u003e= d\n  QUALIFY row_number() OVER (PARTITION BY shape_id, shape_pt_sequence ORDER BY gtfs_active_date DESC) = 1\n)\nSELECT p.route,\n       p.pattern,\n       CASE WHEN p.route LIKE 'Green-%' THEN 'Green' ELSE p.route END AS line,\n       ST_AsGeoJSON(ST_MakeLine(list(ST_Point(s.lng, s.lat) ORDER BY s.seq)))::VARCHAR AS geojson\nFROM patterns p JOIN points s USING (shape_id)\nGROUP BY ALL",
+                  "refId": "tracks"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "trains",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "trains",
+              "refId": "trains",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: every subway train in the latest vehicle positions. The feed\n-- sends no CORS headers, so DuckDB in the grafana container reads it through\n-- the gateway, whose 15 s cache keeps the MBTA at one request per refresh\n-- whoever is watching. `station` is the station of the stop the train is at\n-- or heading to (the feed names a platform). `vehicle` is the fleet asset and\n-- `time` its ping; not `vehicle_id`, which the map would read as a trip.\n-- One request per feed: http_get fetches the whole file at once, and the JSON\n-- is parsed from memory; read_json would read it in several passes, and a pass\n-- landing after the cache renews the feed fails DuckDB's ETag check.\nWITH feed AS MATERIALIZED (SELECT (http_get('http://feeds/mbta/realtime/VehiclePositions_enhanced.json')-\u003e\u003e'body')::JSON AS doc),\nvp AS (SELECT (doc-\u003e\u003e'$.header.timestamp')::BIGINT AS hts, unnest(json_extract(doc, '$.entity[*]')) AS e FROM feed),\nv AS (\n  SELECT hts,\n         e-\u003e\u003e'$.vehicle.vehicle.id'                       AS vehicle,\n         e-\u003e\u003e'$.vehicle.vehicle.label'                    AS unit,\n         e-\u003e\u003e'$.vehicle.trip.trip_id'                     AS trip,\n         e-\u003e\u003e'$.vehicle.trip.route_id'                    AS route,\n         (e-\u003e\u003e'$.vehicle.trip.direction_id')::INTEGER     AS dir,\n         e-\u003e\u003e'$.vehicle.stop_id'                          AS stop_id,\n         e-\u003e\u003e'$.vehicle.current_status'                   AS current_status,\n         (e-\u003e\u003e'$.vehicle.position.bearing')::DOUBLE       AS heading,\n         (e-\u003e\u003e'$.vehicle.position.latitude')::DOUBLE      AS latitude,\n         (e-\u003e\u003e'$.vehicle.position.longitude')::DOUBLE     AS longitude,\n         (e-\u003e\u003e'$.vehicle.timestamp')::BIGINT              AS ts\n  FROM vp\n),\nsub AS (\n  SELECT * FROM v WHERE route IN ('Red', 'Orange', 'Blue', 'Mattapan') OR route LIKE 'Green-%'\n),\nstops AS (\n  SELECT stop_id, arg_max(coalesce(parent_station, stop_id), gtfs_active_date) AS station\n  FROM read_parquet('http://feeds/mbta/lamp/gtfs_archive/' || strftime(current_date - 7, '%Y') || '/stops.parquet')\n  WHERE stop_id IN (SELECT stop_id FROM sub)\n  GROUP BY 1\n)\nSELECT vehicle,\n       unit,\n       trip,\n       route,\n       CASE WHEN route LIKE 'Green-%' THEN 'Green' ELSE route END AS line,\n       -- Picks the 3D model: a subway train for every line, the Mattapan trolley too.\n       'subway'                                                    AS type,\n       dir,\n       s.station,\n       current_status,\n       CASE current_status\n         WHEN 'STOPPED_AT'    THEN 'Stopped at'\n         WHEN 'INCOMING_AT'   THEN 'Arriving at'\n         WHEN 'IN_TRANSIT_TO' THEN 'On the way to'\n         ELSE 'No status'\n       END                                                         AS status,\n       heading,\n       latitude,\n       longitude,\n       to_timestamp(ts)                                            AS time,\n       to_timestamp(hts)                                           AS feed_time\nFROM sub LEFT JOIN stops s USING (stop_id)\nWHERE latitude IS NOT NULL",
+                  "refId": "trains"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "arrivals",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "arrivals",
+              "refId": "arrivals",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: when each subway train is expected at each station ahead of it,\n-- from the trip updates feed, read like the positions. Only the next 45\n-- minutes. `toward` is the last station the trip still has ahead, so a\n-- short-turned train says where it really ends.\nWITH feed AS MATERIALIZED (SELECT (http_get('http://feeds/mbta/realtime/TripUpdates_enhanced.json')-\u003e\u003e'body')::JSON AS doc),\ntu AS (SELECT unnest(json_extract(doc, '$.entity[*]')) AS e FROM feed),\ntrips AS (\n  SELECT e-\u003e\u003e'$.trip_update.trip.trip_id'                AS trip,\n         e-\u003e\u003e'$.trip_update.trip.route_id'               AS route,\n         (e-\u003e\u003e'$.trip_update.trip.direction_id')::INTEGER AS dir,\n         e-\u003e\u003e'$.trip_update.vehicle.id'                  AS vehicle,\n         e\n  FROM tu\n  WHERE (e-\u003e\u003e'$.trip_update.trip.route_id') IN ('Red', 'Orange', 'Blue', 'Mattapan')\n     OR (e-\u003e\u003e'$.trip_update.trip.route_id') LIKE 'Green-%'\n),\ncalls AS (\n  SELECT trip, route, dir, vehicle, unnest(json_extract(e, '$.trip_update.stop_time_update[*]')) AS s\n  FROM trips\n),\nc AS (\n  SELECT trip, route, dir, vehicle,\n         (s-\u003e\u003e'$.stop_sequence')::INTEGER AS seq,\n         s-\u003e\u003e'$.stop_id'                  AS stop_id,\n         coalesce((s-\u003e\u003e'$.arrival.time')::BIGINT, (s-\u003e\u003e'$.departure.time')::BIGINT) AS t,\n         coalesce(s-\u003e\u003e'$.schedule_relationship', 'SCHEDULED') = 'SKIPPED' AS skipped\n  FROM calls\n),\nstops AS (\n  SELECT stop_id,\n         arg_max(coalesce(parent_station, stop_id), gtfs_active_date) AS station\n  FROM read_parquet('http://feeds/mbta/lamp/gtfs_archive/' || strftime(current_date - 7, '%Y') || '/stops.parquet')\n  WHERE stop_id IN (SELECT stop_id FROM c)\n  GROUP BY 1\n),\nnames AS (\n  SELECT stop_id AS station, arg_max(stop_name, gtfs_active_date) AS name\n  FROM read_parquet('http://feeds/mbta/lamp/gtfs_archive/' || strftime(current_date - 7, '%Y') || '/stops.parquet')\n  WHERE stop_id LIKE 'place-%'\n  GROUP BY 1\n),\nahead AS (\n  SELECT c.*, s.station, arg_max(n.name, c.seq) OVER (PARTITION BY c.trip) AS toward\n  FROM c JOIN stops s USING (stop_id) LEFT JOIN names n ON n.station = s.station\n  WHERE NOT c.skipped\n)\nSELECT trip,\n       route,\n       CASE WHEN route LIKE 'Green-%' THEN 'Green' ELSE route END AS line,\n       dir,\n       vehicle,\n       station,\n       toward,\n       to_timestamp(t) AS time\nFROM ahead\nWHERE t BETWEEN epoch(now()) - 60 AND epoch(now()) + 45 * 60",
+                  "refId": "arrivals"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Train (diagram or map click)",
+          "name": "train",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Station (diagram or map click)",
+          "name": "station",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Latitude to fly to",
+          "name": "lat",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Longitude to fly to",
+          "name": "lng",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
