@@ -1081,7 +1081,7 @@
                 "kind": "ElementReference",
                 "name": "panel-3"
               },
-              "height": 21,
+              "height": 18,
               "width": 14,
               "x": 0,
               "y": 5
@@ -1094,7 +1094,7 @@
                 "kind": "ElementReference",
                 "name": "panel-4"
               },
-              "height": 21,
+              "height": 18,
               "width": 10,
               "x": 14,
               "y": 5
@@ -1110,7 +1110,7 @@
               "height": 11,
               "width": 14,
               "x": 0,
-              "y": 26
+              "y": 23
             }
           },
           {
@@ -1123,7 +1123,7 @@
               "height": 11,
               "width": 10,
               "x": 14,
-              "y": 26
+              "y": 23
             }
           },
           {
@@ -1136,7 +1136,7 @@
               "height": 10,
               "width": 24,
               "x": 0,
-              "y": 37
+              "y": 34
             }
           }
         ]
