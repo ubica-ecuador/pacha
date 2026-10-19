@@ -43,6 +43,19 @@ test('reads the MBTA only through the gateway, and Graphviz from a pinned versio
   assert.match(diagram.vizConfig.spec.options.afterRender, /@viz-js\/viz@\d+\.\d+\.\d+\//);
 });
 
+test('the map keeps its layers: trains as a fleet, stations, the station picked, tracks', () => {
+  // A Grafana save made while the map's datasets are not loaded keeps no layer,
+  // and the map falls back to points of its own (c1a0bf5): put them back if this fails.
+  const { visState } = panelTitled(dashboard, 'The same trains on the map').vizConfig.spec.options.mapConfig.config;
+  const layer = (id) => visState.layers.find((l) => l.id === id);
+  assert.equal(layer('plus-fleet-grafana-A')?.type, 'fleet');
+  assert.equal(layer('plus-fleet-grafana-A').config.visConfig.fleetAssetField, 'vehicle');
+  assert.equal(layer('stations')?.type, 'point');
+  assert.equal(layer('picked')?.type, 'point');
+  assert.equal(layer('tracks')?.type, 'geojson');
+  assert.deepEqual([...visState.layerOrder].sort(), visState.layers.map((l) => l.id).sort());
+});
+
 test('has no apostrophe in a comment of a browser query, where Chaski would read a quote', () => {
   const browserSql = findAll(dashboard, (n) => n.group === 'ubica-chaski-datasource' && typeof n.spec?.rawSql === 'string');
   assert.ok(browserSql.length >= 8);
