@@ -207,6 +207,7 @@
                 "graphMode": "none",
                 "justifyMode": "center",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -263,6 +264,19 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "dateTimeFromNow"
                 },
                 "overrides": []
@@ -272,6 +286,7 @@
                 "graphMode": "none",
                 "justifyMode": "center",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -345,7 +360,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -466,7 +495,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -482,6 +525,66 @@
                 "hoverSync": false,
                 "mapConfig": {
                   "config": {
+                    "mapState": {
+                      "bearing": 24,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 42.351902,
+                      "longitude": -71.070893,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 50,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 15
+                    },
                     "mapStyle": {
                       "backgroundColor": [
                         0,
@@ -489,11 +592,11 @@
                         0
                       ],
                       "mapStyles": {},
-                      "styleType": "openfreemap-dark",
+                      "styleType": "openfreemap-liberty",
                       "threeDBuildingColor": [
-                        15.035172933000911,
-                        15.035172933000911,
-                        15.035172933000911
+                        230.92517894351974,
+                        227.2005792831404,
+                        223.47597962276103
                       ],
                       "topLayerGroups": {
                         "label": false,
@@ -582,478 +685,8 @@
                         }
                       },
                       "layerBlending": "normal",
-                      "layerOrder": [
-                        "plus-fleet-grafana-A",
-                        "picked",
-                        "stations",
-                        "tracks"
-                      ],
-                      "layers": [
-                        {
-                          "config": {
-                            "color": [
-                              23,
-                              184,
-                              190
-                            ],
-                            "columnMode": "points",
-                            "columns": {
-                              "lat": "latitude",
-                              "lng": "longitude"
-                            },
-                            "dataId": "grafana-A",
-                            "hidden": false,
-                            "highlightColor": [
-                              252,
-                              242,
-                              26,
-                              255
-                            ],
-                            "isVisible": true,
-                            "label": "Trains · in their line colour",
-                            "textLabel": [
-                              {
-                                "alignment": "center",
-                                "anchor": "start",
-                                "background": false,
-                                "backgroundColor": [
-                                  0,
-                                  0,
-                                  200,
-                                  255
-                                ],
-                                "collisionEnabled": false,
-                                "color": [
-                                  255,
-                                  255,
-                                  255
-                                ],
-                                "field": {
-                                  "name": "unit",
-                                  "type": "string"
-                                },
-                                "offset": [
-                                  0,
-                                  0
-                                ],
-                                "outlineColor": [
-                                  255,
-                                  0,
-                                  0,
-                                  255
-                                ],
-                                "outlineWidth": 0,
-                                "size": 18,
-                                "weight": 400
-                              }
-                            ],
-                            "visConfig": {
-                              "allowHover": true,
-                              "billboard": false,
-                              "colorRange": {
-                                "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    "Red",
-                                    "#E8473B"
-                                  ],
-                                  [
-                                    "Orange",
-                                    "#F59A1B"
-                                  ],
-                                  [
-                                    "Blue",
-                                    "#3C7DE0"
-                                  ],
-                                  [
-                                    "Green",
-                                    "#1FA35F"
-                                  ],
-                                  [
-                                    "Mattapan",
-                                    "#E8473B"
-                                  ]
-                                ],
-                                "colors": [
-                                  "#E8473B",
-                                  "#F59A1B",
-                                  "#3C7DE0",
-                                  "#1FA35F",
-                                  "#E8473B"
-                                ],
-                                "name": "MBTA lines",
-                                "type": "customOrdinal"
-                              },
-                              "filled": true,
-                              "fixedRadius": false,
-                              "fleetAltitudeField": "none",
-                              "fleetAssetField": "vehicle",
-                              "fleetCard": false,
-                              "fleetCardMinutes": 60,
-                              "fleetCardSize": "S",
-                              "fleetCardWindow": "auto",
-                              "fleetDisplay": "3d",
-                              "fleetFollow": "$train",
-                              "fleetFollowMode": "follow",
-                              "fleetHeadingField": "heading",
-                              "fleetHeadingFrom": "auto",
-                              "fleetIcons": "{\"subway\": {\"preset\": \"metro\"}}",
-                              "fleetLabel": "none",
-                              "fleetLabelColor": [
-                                255,
-                                255,
-                                255
-                              ],
-                              "fleetLabelOffset": -1,
-                              "fleetLabelOutline": true,
-                              "fleetLabelSize": 12,
-                              "fleetMarker": "silhouette",
-                              "fleetModelColours": "beacon",
-                              "fleetOrbitSecs": 60,
-                              "fleetPinned": [],
-                              "fleetPulseBy": "auto",
-                              "fleetPulseCycle": 3,
-                              "fleetPulseLength": 0.3,
-                              "fleetPulseRange": [
-                                1,
-                                4
-                              ],
-                              "fleetRemember": "on",
-                              "fleetRememberMin": 10,
-                              "fleetShadow": true,
-                              "fleetSize": 32,
-                              "fleetSmooth": true,
-                              "fleetSmoothMs": 23200,
-                              "fleetSpeedField": "none",
-                              "fleetSpeedUnit": "km/h",
-                              "fleetStaleAfter": 5,
-                              "fleetStatusFrom": "column",
-                              "fleetStem": true,
-                              "fleetStopSpeed": 2,
-                              "fleetTimeField": "time",
-                              "fleetTimeRef": "live",
-                              "fleetTrail": 2,
-                              "fleetTrailAnimate": true,
-                              "fleetTrailFade": true,
-                              "fleetTrailOpacity": 0.7,
-                              "fleetTrailShow": true,
-                              "fleetTrailWidth": 4,
-                              "fleetTypeField": "type",
-                              "fleetZoomRate": 0.5,
-                              "fleetZoomRef": 14,
-                              "fleetZoomScale": true,
-                              "opacity": 1,
-                              "outline": false,
-                              "radius": 10,
-                              "radiusRange": [
-                                0,
-                                50
-                              ],
-                              "showHighlightColor": true,
-                              "showNeighborOnHover": false,
-                              "strokeColorRange": {
-                                "category": "Uber",
-                                "colors": [
-                                  "#4C0035",
-                                  "#880030",
-                                  "#B72F15",
-                                  "#D6610A",
-                                  "#EF9100",
-                                  "#FFC300"
-                                ],
-                                "name": "Global Warming",
-                                "type": "sequential"
-                              },
-                              "thickness": 2
-                            }
-                          },
-                          "id": "plus-fleet-grafana-A",
-                          "type": "fleet",
-                          "visualChannels": {
-                            "colorField": {
-                              "name": "line",
-                              "type": "string"
-                            },
-                            "colorScale": "customOrdinal",
-                            "sizeScale": "linear",
-                            "strokeColorScale": "quantile"
-                          }
-                        },
-                        {
-                          "config": {
-                            "color": [
-                              255,
-                              225,
-                              77
-                            ],
-                            "columnMode": "points",
-                            "columns": {
-                              "lat": "latitude",
-                              "lng": "longitude"
-                            },
-                            "dataId": "grafana-D",
-                            "hidden": false,
-                            "highlightColor": [
-                              252,
-                              242,
-                              26,
-                              255
-                            ],
-                            "isVisible": true,
-                            "label": "Station picked",
-                            "textLabel": [
-                              {
-                                "alignment": "center",
-                                "anchor": "start",
-                                "background": false,
-                                "backgroundColor": [
-                                  0,
-                                  0,
-                                  200,
-                                  255
-                                ],
-                                "color": [
-                                  255,
-                                  255,
-                                  255
-                                ],
-                                "offset": [
-                                  0,
-                                  0
-                                ],
-                                "outlineColor": [
-                                  255,
-                                  0,
-                                  0,
-                                  255
-                                ],
-                                "outlineWidth": 0,
-                                "size": 18,
-                                "weight": 400
-                              }
-                            ],
-                            "visConfig": {
-                              "allowHover": false,
-                              "filled": false,
-                              "opacity": 1,
-                              "outline": true,
-                              "radius": 40,
-                              "radiusRange": [
-                                0,
-                                50
-                              ],
-                              "strokeColor": [
-                                255,
-                                225,
-                                77
-                              ],
-                              "thickness": 3
-                            }
-                          },
-                          "id": "picked",
-                          "type": "point",
-                          "visualChannels": {
-                            "colorField": null,
-                            "sizeField": null,
-                            "strokeColorField": null
-                          }
-                        },
-                        {
-                          "config": {
-                            "color": [
-                              235,
-                              235,
-                              240
-                            ],
-                            "columnMode": "points",
-                            "columns": {
-                              "lat": "latitude",
-                              "lng": "longitude"
-                            },
-                            "dataId": "grafana-C",
-                            "hidden": false,
-                            "highlightColor": [
-                              252,
-                              242,
-                              26,
-                              255
-                            ],
-                            "isVisible": true,
-                            "label": "Stations",
-                            "textLabel": [
-                              {
-                                "alignment": "center",
-                                "anchor": "start",
-                                "background": false,
-                                "backgroundColor": [
-                                  0,
-                                  0,
-                                  200,
-                                  255
-                                ],
-                                "color": [
-                                  255,
-                                  255,
-                                  255
-                                ],
-                                "offset": [
-                                  0,
-                                  0
-                                ],
-                                "outlineColor": [
-                                  255,
-                                  0,
-                                  0,
-                                  255
-                                ],
-                                "outlineWidth": 0,
-                                "size": 18,
-                                "weight": 400
-                              }
-                            ],
-                            "visConfig": {
-                              "allowHover": true,
-                              "filled": true,
-                              "opacity": 1,
-                              "outline": true,
-                              "radius": 4,
-                              "radiusRange": [
-                                0,
-                                50
-                              ],
-                              "strokeColor": [
-                                24,
-                                27,
-                                31
-                              ],
-                              "thickness": 1.5
-                            }
-                          },
-                          "id": "stations",
-                          "type": "point",
-                          "visualChannels": {
-                            "colorField": null,
-                            "sizeField": null,
-                            "strokeColorField": null
-                          }
-                        },
-                        {
-                          "config": {
-                            "color": [
-                              70,
-                              121,
-                              170
-                            ],
-                            "columnMode": "geojson",
-                            "columns": {
-                              "geojson": "_geojson"
-                            },
-                            "dataId": "grafana-B",
-                            "hidden": false,
-                            "highlightColor": [
-                              252,
-                              242,
-                              26,
-                              255
-                            ],
-                            "isVisible": true,
-                            "label": "Tracks",
-                            "textLabel": [
-                              {
-                                "alignment": "center",
-                                "anchor": "start",
-                                "background": false,
-                                "backgroundColor": [
-                                  0,
-                                  0,
-                                  200,
-                                  255
-                                ],
-                                "color": [
-                                  255,
-                                  255,
-                                  255
-                                ],
-                                "offset": [
-                                  0,
-                                  0
-                                ],
-                                "outlineColor": [
-                                  255,
-                                  0,
-                                  0,
-                                  255
-                                ],
-                                "outlineWidth": 0,
-                                "size": 18,
-                                "weight": 400
-                              }
-                            ],
-                            "visConfig": {
-                              "allowHover": false,
-                              "enable3d": false,
-                              "filled": false,
-                              "opacity": 0.85,
-                              "sizeRange": [
-                                0.5,
-                                3.5
-                              ],
-                              "strokeColor": [
-                                70,
-                                121,
-                                170
-                              ],
-                              "strokeColorRange": {
-                                "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    "Red",
-                                    "#E8473B"
-                                  ],
-                                  [
-                                    "Orange",
-                                    "#F59A1B"
-                                  ],
-                                  [
-                                    "Blue",
-                                    "#3C7DE0"
-                                  ],
-                                  [
-                                    "Green",
-                                    "#1FA35F"
-                                  ],
-                                  [
-                                    "Mattapan",
-                                    "#E8473B"
-                                  ]
-                                ],
-                                "colors": [
-                                  "#E8473B",
-                                  "#F59A1B",
-                                  "#3C7DE0",
-                                  "#1FA35F",
-                                  "#E8473B"
-                                ],
-                                "name": "MBTA lines",
-                                "type": "custom"
-                              },
-                              "strokeOpacity": 0.85,
-                              "stroked": true,
-                              "thickness": 3,
-                              "wireframe": false
-                            }
-                          },
-                          "id": "tracks",
-                          "type": "geojson",
-                          "visualChannels": {
-                            "strokeColorField": {
-                              "name": "line",
-                              "type": "string"
-                            },
-                            "strokeColorScale": "customOrdinal"
-                          }
-                        }
-                      ],
+                      "layerOrder": [],
+                      "layers": [],
                       "overlayBlending": "normal",
                       "splitMaps": []
                     }
@@ -1092,7 +725,7 @@
                 ]
               }
             },
-            "version": "0.1.0"
+            "version": "1.3.0"
           }
         }
       },
@@ -1135,7 +768,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
