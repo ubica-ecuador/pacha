@@ -1,0 +1,1112 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "europe-power-flows"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "The power crossing Europe's borders every 15 minutes, as a graph Graphviz lays out in the browser (who powers whom, or where) beside the map and two Business Charts, cross-filtered by country and by step over the last two days.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Europe's power flows — who powers whom\n\nThe electricity crossing Europe's borders every 15 minutes, as a graph that **Graphviz lays out in your browser**: an arrow per border from the country that sends to the one that receives, as thick as the flow. *Who powers whom* ranks the senders on top and the receivers below; *Where* lays the same graph out from the map, over the last 48 hours. **Drag the slider, press play or click the chart below** to move every panel to another 15 minutes; **click a country** in the graph or the ranking to follow its borders everywhere.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT (SELECT count(DISTINCT reporter) FROM $flows)::BIGINT AS \"Countries reporting\",\n       (SELECT max(time) FROM $edges) AS \"Latest complete step\""
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Countries reporting: how many of the eight countries asked answered on this load (Energy-Charts allows four requests at once; the rest come on the next refresh). Latest complete step: the newest 15 minutes every operator has reported, usually one to three hours ago.",
+          "id": 2,
+          "links": [],
+          "title": "The data now",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Countries reporting"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "suffix: of 8"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "orange",
+                              "value": 0
+                            },
+                            {
+                              "color": "green",
+                              "value": 8
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Latest complete step"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "dateTimeFromNow"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every border at every ready step.\nSELECT time, a, b, gw FROM $edges"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "E"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The step and the country picked: the graph redraws when either changes.\nSELECT $step AS step, $country AS country"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "V"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The countries, their names and where they are.\nSELECT iso, name, lat, lng, hub FROM $countries"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The net of each reporting country: its own total, positive is import.\nSELECT time, reporter AS iso, gw AS net FROM $flows WHERE neighbour = 'sum'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "H"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "From the edges dataset: every border at every 15 min step every operator has reported, over the last 48 hours. A box per country, filled by what it sends (teal) or takes (amber) in all, an arrow per border carrying 50 MW or more, from sender to receiver, as thick as the flow. The eight reporting countries show their own net; for any other (dashed, with an asterisk) it is the sum over the borders it shares with them. Who powers whom: Graphviz dot, which ranks the graph so arrows point down. Where: Graphviz neato, started from the countries on the map. Click a country to pick it everywhere.",
+          "id": 3,
+          "links": [],
+          "title": "Who powers whom — laid out by Graphviz in your browser",
+          "vizConfig": {
+            "group": "marcusolsson-dynamictext-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "afterRender": "// Europe's cross-border flows as a directed graph that Graphviz lays out in\n// this browser: an arrow per border from the country that sends to the one\n// that receives, as thick as the flow. Query E holds every border at every\n// ready 15 min step, C the countries, H the net of each reporting country.\n// Two layouts of the same graph: \"Who powers whom\" is Graphviz dot, which\n// ranks the graph so arrows point down, senders on top and receivers below;\n// \"Where\" is neato started from the countries' positions on the map. The slider\n// runs the two days; letting go of it moves the map and the charts to that\n// step. Clicking a country picks it everywhere (its borders stand out here, the\n// map keeps only them, the chart below runs them over the two days); clicking\n// it again, or its name in the bar, lets it go.\nconst VIZ = 'https://cdn.jsdelivr.net/npm/@viz-js/viz@3.30.0/dist/viz.js';\nconst self = this;\nconst theme = context.grafana.theme;\n// Graphviz reads #rrggbb or #rrggbbaa, not the rgb() and rgba() the theme uses.\nconst hex = (css) =\u003e {\n  const m = String(css).match(/rgba?\\(\\s*([\\d.]+)[,\\s]+([\\d.]+)[,\\s]+([\\d.]+)(?:[,\\s/]+([\\d.]+))?/);\n  if (!m) {\n    return css;\n  }\n  const byte = (v) =\u003e Math.round(Number(v)).toString(16).padStart(2, '0');\n  return '#' + byte(m[1]) + byte(m[2]) + byte(m[3]) + (m[4] === undefined ? '' : byte(Number(m[4]) * 255));\n};\nconst TEXT = hex(theme.colors.text.primary);\nconst MUTED = hex(theme.colors.text.secondary);\n// Sends (net export) and receives (net import), from pale to full with the GW.\nconst SEND = theme.isDark ? ['#1c3b3a', '#2a9d8f'] : ['#d7efec', '#2a9d8f'];\nconst TAKE = theme.isDark ? ['#4a3517', '#e9a23b'] : ['#fbecd2', '#e9a23b'];\n\nconst root = context.element.querySelector('.grid');\nif (!root) {\n  return;\n}\ncontext.element.style.height = '100%';\n// The bar is built here: the panel sanitizes its content, and buttons and\n// inputs written there would not survive it.\nif (!root.querySelector('.grid-bar')) {\n  root.innerHTML =\n    '\u003cdiv class=\"grid-bar\"\u003e\u003cspan class=\"grid-engine\"\u003e' +\n    '\u003cbutton data-engine=\"dot\" title=\"Graphviz dot: senders on top, receivers below\"\u003eWho powers whom\u003c/button\u003e' +\n    '\u003cbutton data-engine=\"neato\" title=\"Graphviz neato, started from the map\"\u003eWhere\u003c/button\u003e\u003c/span\u003e' +\n    '\u003cbutton class=\"grid-play\" title=\"Run the two days\"\u003e▶\u003c/button\u003e' +\n    '\u003cinput class=\"grid-step\" type=\"range\" min=\"0\" max=\"0\" step=\"1\" value=\"0\"\u003e\u003cspan class=\"grid-when\"\u003e\u003c/span\u003e' +\n    '\u003cbutton class=\"grid-pick\" title=\"Let the country go\"\u003e\u003c/button\u003e\u003c/div\u003e' +\n    '\u003cdiv class=\"grid-graph\"\u003e\u003c/div\u003e\u003cdiv class=\"grid-note\"\u003e\u003c/div\u003e';\n}\nconst box = root.querySelector('.grid-graph');\nconst slider = root.querySelector('.grid-step');\nconst when = root.querySelector('.grid-when');\nconst note = root.querySelector('.grid-note');\nconst chip = root.querySelector('.grid-pick');\nconst setVars = (vars) =\u003e context.grafana.locationService.partial(vars, true);\n// The country picked here, on the ranking or in a shared link.\nconst picked = context.grafana.replaceVariables('${country}');\n\nconst rowsOf = (refId) =\u003e {\n  const frame = (context.panelData?.series ?? []).find((f) =\u003e f.refId === refId);\n  if (!frame || !frame.fields.length) {\n    return null;\n  }\n  const n = frame.length ?? frame.fields[0].values.length;\n  return Array.from({ length: n }, (_, i) =\u003e\n    Object.fromEntries(frame.fields.map((f) =\u003e [f.name, f.values[i] ?? f.values.get?.(i)])),\n  );\n};\n// While a query runs again the panel can be handed frames without their\n// fields: keep what was drawn.\nconst edgeRows = rowsOf('E')?.filter((r) =\u003e r.a \u0026\u0026 r.b \u0026\u0026 Number.isFinite(r.gw) \u0026\u0026 r.time != null);\nconst countryRows = rowsOf('C')?.filter((r) =\u003e r.iso \u0026\u0026 r.name);\nif (!edgeRows?.length || !countryRows?.length) {\n  if (self.svg \u0026\u0026 self.svg.parentNode !== box) {\n    box.replaceChildren(self.svg);\n  } else if (!self.svg) {\n    box.textContent = 'No flows yet.';\n  }\n  return;\n}\nconst countries = new Map(countryRows.map((c) =\u003e [c.iso, c]));\nconst byStep = new Map();\nfor (const e of edgeRows) {\n  const t = Number(e.time);\n  if (!byStep.has(t)) {\n    byStep.set(t, []);\n  }\n  byStep.get(t).push(e);\n}\nconst nets = new Map();\nfor (const h of rowsOf('H') ?? []) {\n  nets.set(`${Number(h.time)}|${h.iso}`, h.net);\n}\nconst steps = [...byStep.keys()].sort((x, y) =\u003e x - y);\n\nconst quote = (s) =\u003e `\"${String(s).replace(/[\"\\\\]/g, '\\\\$\u0026')}\"`;\nconst html = (s) =\u003e String(s).replace(/\u0026/g, '\u0026amp;').replace(/\u003c/g, '\u0026lt;').replace(/\u003e/g, '\u0026gt;');\nconst mix = ([from, to], k) =\u003e {\n  const p = (h) =\u003e [1, 3, 5].map((i) =\u003e parseInt(h.slice(i, i + 2), 16));\n  const [a, b] = [p(from), p(to)];\n  return '#' + a.map((v, i) =\u003e Math.round(v + (b[i] - v) * k).toString(16).padStart(2, '0')).join('');\n};\nconst gw = (v) =\u003e `${Math.abs(v) \u003c 9.95 ? Math.abs(v).toFixed(1) : Math.round(Math.abs(v))} GW`;\n\n// The graph at one step. A border under 50 MW is left out: it carries next to\n// nothing either way. The net of a reporting country is its own total; that\n// of any other country is the sum over the borders reported here, so a dashed\n// outline marks it as partial.\nconst source = (t, engine) =\u003e {\n  const edges = byStep.get(t).filter((e) =\u003e Math.abs(e.gw) \u003e= 0.05);\n  const net = new Map();\n  for (const e of edges) {\n    net.set(e.a, (net.get(e.a) ?? 0) + e.gw);\n    net.set(e.b, (net.get(e.b) ?? 0) - e.gw);\n  }\n  for (const iso of net.keys()) {\n    const own = nets.get(`${t}|${iso}`);\n    if (Number.isFinite(own)) {\n      // Energy-Charts: positive is import. Here: positive is what it sends.\n      net.set(iso, -own);\n    }\n  }\n  const top = Math.max(1, ...[...net.values()].map(Math.abs));\n  const dot = [\n    'digraph flows {',\n    engine === 'dot'\n      ? '  layout=dot; rankdir=TB; nodesep=0.25; ranksep=0.45; splines=true;'\n      : '  layout=neato; mode=major; overlap=false; sep=\"+12\"; splines=true;',\n    `  bgcolor=\"transparent\"; pad=0.2; fontname=\"Helvetica\";`,\n    `  node [shape=box style=\"rounded,filled\" penwidth=1.2 margin=\"0.08,0.04\" fontname=\"Helvetica\" fontsize=10 fontcolor=${quote(TEXT)}];`,\n    `  edge [color=${quote(MUTED)} fontname=\"Helvetica\" fontsize=8 fontcolor=${quote(MUTED)} arrowsize=0.6];`,\n  ];\n  for (const iso of [...net.keys()].sort()) {\n    const c = countries.get(iso);\n    if (!c) {\n      continue;\n    }\n    const v = net.get(iso);\n    const k = Math.min(1, Math.abs(v) / top);\n    const fill = mix(v \u003e= 0 ? SEND : TAKE, 0.15 + 0.85 * k);\n    // Dark text on a light fill, light text on a dark one.\n    const [r, g, b] = [1, 3, 5].map((i) =\u003e parseInt(fill.slice(i, i + 2), 16));\n    const ink = 0.299 * r + 0.587 * g + 0.114 * b \u003e 140 ? '#111111' : '#f2f2f2';\n    const own = c.hub \u0026\u0026 Number.isFinite(nets.get(`${t}|${iso}`));\n    const verb = v \u003e= 0 ? 'sends' : 'takes';\n    // Graphviz neato reads pos as where to start; inches, east-west shrunk by cos 50°.\n    const pos = engine === 'dot' ? '' : ` pos=\"${(c.lng * 0.64 * 0.45).toFixed(2)},${(c.lat * 0.45).toFixed(2)}\"`;\n    dot.push(\n      `  ${quote(iso)} [id=${quote('c-' + iso)} label=\u003c\u003cB\u003e${html(c.name)}\u003c/B\u003e\u003cBR/\u003e\u003cFONT POINT-SIZE=\"8\"\u003e${verb} ${gw(v)}${own ? '' : '*'}\u003c/FONT\u003e\u003e ` +\n        `fillcolor=${quote(fill)} fontcolor=${quote(ink)} color=${quote(own ? fill : MUTED)}${own ? '' : ' style=\"rounded,filled,dashed\"'}${pos}];`,\n    );\n  }\n  for (const e of edges) {\n    const [from, to] = e.gw \u003e 0 ? [e.a, e.b] : [e.b, e.a];\n    const w = Math.min(14, 0.6 + 2.2 * Math.abs(e.gw));\n    dot.push(`  ${quote(from)} -\u003e ${quote(to)} [id=${quote(`e-${from}-${to}`)} penwidth=${w.toFixed(2)} label=${quote(gw(e.gw))} tooltip=${quote(`${countries.get(from)?.name} → ${countries.get(to)?.name}: ${gw(e.gw)}`)}];`);\n  }\n  dot.push('}');\n  return { dot: dot.join('\\n'), edges: edges.length, nodes: net.size };\n};\n\nconst fmt = new Intl.DateTimeFormat(undefined, {\n  timeZone: 'Europe/Berlin', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',\n});\nconst draw = () =\u003e {\n  const t = steps[self.index];\n  const { dot, edges, nodes } = source(t, self.engine);\n  let svg;\n  try {\n    svg = self.viz.renderSVGElement(dot);\n  } catch (err) {\n    // An aborted WebAssembly instance is unusable: a new one next time.\n    self.viz = null;\n    box.textContent = `Graphviz did not draw this step: ${err.message ?? err}`;\n    return;\n  }\n  svg.removeAttribute('width');\n  svg.removeAttribute('height');\n  svg.classList.add('grid-svg');\n  // Graphviz titles show ids; the edges keep their own tooltips.\n  svg.querySelectorAll('g.node \u003e title').forEach((n) =\u003e (n.textContent = countries.get(n.textContent)?.name ?? n.textContent));\n  // The picked country, its borders and its neighbours stand out.\n  if (picked \u0026\u0026 svg.getElementById('c-' + picked)) {\n    svg.classList.add('has-pick');\n    svg.getElementById('c-' + picked).classList.add('on', 'picked');\n    svg.querySelectorAll('g.edge').forEach((g) =\u003e {\n      const [from, to] = g.id.slice(2).split('-');\n      if (from === picked || to === picked) {\n        g.classList.add('on');\n        svg.getElementById('c-' + (from === picked ? to : from))?.classList.add('on');\n      }\n    });\n  }\n  svg.addEventListener('click', (ev) =\u003e {\n    const node = ev.target.closest('g.node');\n    if (node) {\n      const iso = node.id.slice(2);\n      setVars({ 'var-country': iso === picked ? '' : iso });\n    }\n  });\n  self.svg = svg;\n  box.replaceChildren(svg);\n  when.textContent = `${fmt.format(new Date(t))} (Berlin)`;\n  note.textContent =\n    `${nodes} countries, ${edges} borders carrying 50 MW or more · ` +\n    `* partial: only the borders the eight reporting countries share with it`;\n};\n\n// The bar: which layout, which step, play, and the country picked. Wired once,\n// so the handlers reach the latest data through self.draw and self.steps.\nconst wire = () =\u003e {\n  root.querySelectorAll('.grid-engine button').forEach((b) =\u003e\n    b.addEventListener('click', () =\u003e {\n      self.engine = b.dataset.engine;\n      root.querySelectorAll('.grid-engine button').forEach((x) =\u003e x.classList.toggle('on', x === b));\n      self.draw();\n    }),\n  );\n  const publish = () =\u003e setVars({ 'var-step': new Date(self.steps[self.index]).toISOString() });\n  chip.addEventListener('click', () =\u003e setVars({ 'var-country': '' }));\n  slider.addEventListener('input', () =\u003e {\n    self.index = Number(slider.value);\n    self.draw();\n  });\n  slider.addEventListener('change', publish);\n  const play = root.querySelector('.grid-play');\n  play.addEventListener('click', () =\u003e {\n    if (self.timer) {\n      clearInterval(self.timer);\n      self.timer = null;\n      play.textContent = '▶';\n      publish();\n      return;\n    }\n    if (self.index \u003e= self.steps.length - 1) {\n      self.index = 0;\n    }\n    play.textContent = '❚❚';\n    self.timer = setInterval(() =\u003e {\n      if (!root.isConnected || self.index \u003e= self.steps.length - 1) {\n        clearInterval(self.timer);\n        self.timer = null;\n        play.textContent = '▶';\n        publish();\n        return;\n      }\n      self.index += 1;\n      slider.value = String(self.index);\n      self.draw();\n    }, 600);\n  });\n};\n\nself.engine = self.engine ?? 'dot';\nself.draw = draw;\nself.steps = steps;\nchip.textContent = picked ? `${countries.get(picked)?.name ?? picked} ×` : '';\nchip.style.display = picked ? '' : 'none';\n// The step picked in the URL, else the newest ready one.\nconst asked = Date.parse(context.grafana.replaceVariables('${step}'));\nconst at = Number.isFinite(asked) ? steps.findLastIndex((t) =\u003e t \u003c= asked) : -1;\nif (!self.timer) {\n  self.index = at \u003e= 0 ? at : steps.length - 1;\n}\nself.index = Math.min(self.index, steps.length - 1);\nif (self.root !== root) {\n  self.root = root;\n  wire();\n}\nslider.max = String(steps.length - 1);\nslider.value = String(self.index);\nroot.querySelectorAll('.grid-engine button').forEach((x) =\u003e x.classList.toggle('on', x.dataset.engine === self.engine));\n\nif (self.viz) {\n  draw();\n} else {\n  box.textContent = 'Loading Graphviz…';\n  import(VIZ)\n    .then((m) =\u003e m.instance())\n    .then((viz) =\u003e {\n      self.viz = viz;\n      draw();\n    })\n    .catch((err) =\u003e (box.textContent = `Graphviz did not load: ${err.message ?? err}`));\n}",
+                "content": "\u003cdiv class=\"grid\"\u003e\u003c/div\u003e",
+                "contentPartials": [],
+                "defaultContent": "No flows yet.",
+                "editor": {
+                  "format": "auto",
+                  "language": "html"
+                },
+                "editors": [
+                  "styles",
+                  "afterRender"
+                ],
+                "externalStyles": [],
+                "helpers": "",
+                "renderMode": "data",
+                "status": "",
+                "styles": ".grid { display: flex; flex-direction: column; height: 100%; gap: 6px; }\n.grid-bar { display: flex; align-items: center; gap: 8px; font-size: 12px; }\n.grid-engine { display: inline-flex; border: 1px solid rgba(128, 128, 128, 0.4); border-radius: 4px; overflow: hidden; }\n.grid-engine button, .grid-play { background: transparent; color: inherit; border: 0; padding: 3px 10px; font: inherit; cursor: pointer; }\n.grid-engine button.on { background: rgba(128, 128, 128, 0.25); font-weight: 600; }\n.grid-play { border: 1px solid rgba(128, 128, 128, 0.4); border-radius: 4px; min-width: 32px; }\n.grid-step { flex: 1; min-width: 80px; accent-color: #2a9d8f; }\n.grid-when { min-width: 150px; text-align: right; font-variant-numeric: tabular-nums; }\n.grid-graph { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; color: #9AA5B1; }\n.grid-svg { width: 100%; height: 100%; display: block; }\n.grid-note { font-size: 11px; line-height: 1.4; color: #9AA5B1; }\n.grid-pick { border: 1px solid #FFE14D; color: inherit; background: rgba(255, 225, 77, 0.12); border-radius: 12px; padding: 2px 10px; font: inherit; cursor: pointer; white-space: nowrap; }\n.grid-svg g.node { cursor: pointer; }\n.grid-svg.has-pick g.edge:not(.on), .grid-svg.has-pick g.node:not(.on) { opacity: 0.18; }\n.grid-svg g.node.picked path, .grid-svg g.node.picked polygon { stroke: #FFE14D; stroke-width: 3; stroke-dasharray: none; }",
+                "wrap": false
+              }
+            },
+            "version": "6.3.0"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The borders at the step picked on the graph, or the newest ready one,\n-- from sender to receiver, in MW: what the flow layer draws.\nWITH pick AS (\n  SELECT coalesce(max(time) FILTER (WHERE time \u003c= try_cast(nullif($step, '') AS TIMESTAMP)), max(time)) AS t\n  FROM $edges\n),\ne AS (\n  SELECT CASE WHEN gw \u003e 0 THEN a ELSE b END AS src, CASE WHEN gw \u003e 0 THEN b ELSE a END AS dst, abs(gw) AS gw\n  FROM $edges JOIN pick ON time = pick.t\n  WHERE abs(gw) \u003e= 0.05\n    AND ($country = '' OR $country IN (a, b))\n)\nSELECT o.lat AS lat0, o.lng AS lng0, d.lat AS lat1, d.lng AS lng1,\n       round(e.gw * 1000)::BIGINT AS count,\n       round(e.gw * 1000)::BIGINT AS mw,\n       o.name || ' → ' || d.name AS border\nFROM e\nJOIN $countries o ON o.iso = e.src\nJOIN $countries d ON d.iso = e.dst"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The country picked, ringed. Empty until then.\nSELECT name, lat AS latitude, lng AS longitude FROM $countries WHERE iso = $country"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The borders at the step picked on the graph or the chart (the newest complete one until then), each from the middle of the country that sends to the middle of the one that receives, in MW; only the borders of the country picked, when there is one (yellow ring). Circles add up what each country sends and takes over the borders shown.",
+          "id": 4,
+          "links": [],
+          "title": "The same flows on the map",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "openfreemap-dark",
+                "flowRenderMode": "animated-straight",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "isSplit": false,
+                      "latitude": 49.5,
+                      "longitude": 13.0,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "pitch": 0,
+                      "zoom": 3.3
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark",
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "border"
+                              },
+                              {
+                                "name": "mw"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "name"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "picked",
+                        "flows"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              225,
+                              77
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Country picked",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": false,
+                              "filled": false,
+                              "opacity": 1,
+                              "outline": true,
+                              "radius": 30,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "strokeColor": [
+                                255,
+                                225,
+                                77
+                              ],
+                              "thickness": 3
+                            }
+                          },
+                          "id": "picked",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "sizeField": null,
+                            "strokeColorField": null
+                          }
+                        },
+                        {
+                          "config": {
+                            "columnMode": "LAT_LNG",
+                            "columns": {
+                              "count": "count",
+                              "lat0": "lat0",
+                              "lat1": "lat1",
+                              "lng0": "lng0",
+                              "lng1": "lng1"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Borders · sender to receiver, MW",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#1c3b3a",
+                                  "#1f6f68",
+                                  "#2a9d8f",
+                                  "#5cc2b5",
+                                  "#a6e3da",
+                                  "#e6faf7"
+                                ],
+                                "name": "MW",
+                                "type": "sequential"
+                              },
+                              "darkBaseMapEnabled": true,
+                              "flowAdaptiveScalesEnabled": true,
+                              "flowClusteringEnabled": false,
+                              "flowFadeAmount": 30,
+                              "flowFadeEnabled": true,
+                              "flowLineCurviness": 1,
+                              "flowLineThicknessScale": 1.6,
+                              "flowLinesRenderingMode": "animated-straight",
+                              "flowLocationTotalsEnabled": true,
+                              "maxTopFlowsDisplayNum": 5000,
+                              "opacity": 1
+                            }
+                          },
+                          "id": "flows",
+                          "type": "flow",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "publishWhilePlaying": false,
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 0,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [],
+                "viewportVariables": {},
+                "windDensity": 9000
+              }
+            },
+            "version": "1.0.0"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 5,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Source.** [Energy-Charts](https://www.energy-charts.info) by Fraunhofer ISE, its *cross-border physical flows* (`/v2/cbpf`), built on the ENTSO-E Transparency Platform: the power that physically crosses each border, in GW, every 15 minutes, over the last 48 hours every operator has reported. It is read on the server through the stack's gateway, which keeps each answer 10 minutes. Physical flows, not trade: power takes every path the grid offers, so it can cross a country on its way between two others.\n\n**Which countries.** Energy-Charts reports one country's borders per request and allows two requests a minute, so this dashboard asks for eight whose borders, between them, reach most of the continent: Germany, France, Italy, Poland, Hungary, Sweden, Spain and Romania. Borders between two other countries (the Netherlands and Belgium, Austria and Czechia, Norway and Denmark…) are not seen, and the net of a country outside the eight (dashed, with an asterisk) only adds up the borders it shares with them.\n\n**Which steps.** Operators report with a delay of one to three hours, and a step arrives with some borders at exactly zero until each operator does. Only steps every operator has reported are shown.\n\n**The graph.** Built in your browser for each step and handed to [Graphviz](https://graphviz.org) compiled to WebAssembly ([Viz.js](https://github.com/mdaines/viz-js)). *Who powers whom* is the *dot* engine, made for hierarchies: it ranks the countries so arrows point down, and breaks a loop by turning one arrow up. *Where* is the *neato* engine, started from each country's position on the map.\n\n\u003csmall\u003eData: Energy-Charts, Fraunhofer ISE, CC BY 4.0, from ENTSO-E.\u003c/small\u003e",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every step: the power crossing the borders seen.\nSELECT time, sum(abs(gw)) AS gw FROM $edges GROUP BY time ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The borders of the country picked, into it (above zero) or out of it, per step.\n-- Empty until a country is picked.\nSELECT e.time, c.name AS neighbour, CASE WHEN e.a = $country THEN -e.gw ELSE e.gw END AS gw\nFROM $edges e\nJOIN $countries c ON c.iso = CASE WHEN e.a = $country THEN e.b ELSE e.a END\nWHERE $country IN (e.a, e.b)\nORDER BY e.time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT name FROM $countries WHERE iso = $country"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "From the edges dataset, every complete 15 min step of the last 48 hours. With no country picked: the power crossing every border seen, in GW. With one picked: its borders, what comes in above zero and what goes out below, the six that carry most in their own colour, and its net as a line. The dashed line is the step the graph, the map and the ranking show; click the chart to move them.",
+          "id": 6,
+          "links": [],
+          "title": "Two days across the borders — click a moment",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// The two days, step by step. With no country picked: the power crossing the\n// borders seen, in GW. With one picked: its borders, what comes in above zero\n// and what goes out below, a colour per neighbour (the six that carry most;\n// the rest as Other), and its net as a line. The dashed line is the step the\n// graph, the map and the ranking show; clicking the chart moves them there.\n// @constants begin\nconst STEP = 'step';\nconst COUNTRY = 'country';\nconst COLORS = ['#5794F2', '#B877D9', '#FADE2A', '#FF9830', '#73BF69', '#F2495C'];\nconst OTHER = 'rgba(128, 128, 128, 0.55)';\nconst AREA = '#2a9d8f';\nconst MARK = '#FFE14D';\nconst TZ = 'Europe/Berlin';\n// @constants end\n// Named here so the panel redraws when they change: ${step} ${country}\n\nconst chart = context.panel.chart;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst text = theme.colors.text.primary;\nconst frames = context.panel.data.series;\nconst col = (refId, name) =\u003e {\n  const frame = frames.find((f) =\u003e f.refId === refId);\n  return frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : [];\n};\n\nconst times = col('A', 'time').map(Number);\nconst totals = col('A', 'gw').map((v) =\u003e (v == null ? null : Number(v)));\nconst fmt = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, weekday: 'short', hour: '2-digit', minute: '2-digit' });\nconst labels = times.map((t) =\u003e fmt.format(new Date(t)));\nconst country = context.grafana.replaceVariables('${' + COUNTRY + '}');\nconst name = col('C', 'name')[0] ?? country;\nconst asked = Date.parse(context.grafana.replaceVariables('${' + STEP + '}'));\nconst found = Number.isFinite(asked) ? times.findLastIndex((t) =\u003e t \u003c= asked) : -1;\nconst at = found \u003e= 0 ? found : times.length - 1;\n\nlet series;\nif (country) {\n  const bt = col('B', 'time').map(Number);\n  const bn = col('B', 'neighbour');\n  const bg = col('B', 'gw').map(Number);\n  // Neighbours by the power that crosses, over the two days.\n  const carried = new Map();\n  bn.forEach((n, i) =\u003e carried.set(n, (carried.get(n) ?? 0) + Math.abs(bg[i])));\n  const top = [...carried.keys()].sort((x, y) =\u003e carried.get(y) - carried.get(x)).slice(0, COLORS.length);\n  const index = new Map(times.map((t, i) =\u003e [t, i]));\n  const by = new Map([...top, 'Other'].map((n) =\u003e [n, times.map(() =\u003e 0)]));\n  const net = times.map(() =\u003e 0);\n  bn.forEach((n, i) =\u003e {\n    const k = index.get(bt[i]);\n    if (k !== undefined) {\n      by.get(top.includes(n) ? n : 'Other')[k] += bg[i];\n      net[k] += bg[i];\n    }\n  });\n  series = [...by.entries()]\n    .filter(([, v]) =\u003e v.some((x) =\u003e x !== 0))\n    .map(([n, v]) =\u003e ({\n      name: n,\n      type: 'bar',\n      stack: 'borders',\n      barCategoryGap: '15%',\n      data: v.map((x) =\u003e Number(x.toFixed(3))),\n      itemStyle: { color: n === 'Other' ? OTHER : COLORS[top.indexOf(n)] },\n    }));\n  series.push({\n    name: 'Net, in',\n    type: 'line',\n    data: net.map((x) =\u003e Number(x.toFixed(3))),\n    symbol: 'none',\n    lineStyle: { color: text, width: 1.5 },\n    itemStyle: { color: text },\n    z: 5,\n  });\n} else {\n  series = [\n    {\n      name: 'Crossing the borders seen',\n      type: 'line',\n      data: totals,\n      symbol: 'none',\n      lineStyle: { width: 1.5, color: AREA },\n      itemStyle: { color: AREA },\n      areaStyle: { color: AREA, opacity: 0.25 },\n    },\n  ];\n}\nif (series.length \u0026\u0026 labels.length) {\n  series[0].markLine = {\n    silent: true,\n    symbol: 'none',\n    label: { show: false },\n    lineStyle: { color: MARK, type: 'dashed', width: 1.5 },\n    data: [{ xAxis: labels[at] }],\n  };\n}\n\nconst zr = chart.getZr();\nzr.off('click');\nzr.on('click', (e) =\u003e {\n  const pixel = [e.offsetX, e.offsetY];\n  if (!times.length || !chart.containPixel({ gridIndex: 0 }, pixel)) {\n    return;\n  }\n  const x = chart.convertFromPixel({ gridIndex: 0 }, pixel)[0];\n  const i = Math.max(0, Math.min(times.length - 1, Math.round(x)));\n  context.grafana.locationService.partial({ ['var-' + STEP]: new Date(times[i]).toISOString() }, true);\n});\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  graphic: [\n    {\n      type: 'text',\n      left: 8,\n      top: 6,\n      style: {\n        text: country ? `${name}: in above zero, out below, GW` : 'All borders seen, GW · pick a country to see its own',\n        fill: muted,\n        fontSize: 12,\n      },\n    },\n  ],\n  legend: country ? { type: 'scroll', top: 2, right: 8, width: '55%', textStyle: { color: muted }, itemWidth: 12, itemHeight: 8 } : { show: false },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    valueFormatter: (v) =\u003e (v == null ? '' : `${Number(v).toFixed(2)} GW`),\n  },\n  xAxis: {\n    type: 'category',\n    data: labels,\n    axisLabel: { color: muted, hideOverlap: true },\n    axisTick: { alignWithLabel: true },\n    axisLine: { lineStyle: { color: muted } },\n  },\n  yAxis: {\n    type: 'value',\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  series,\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every country at the step picked: what it sends, in GW (negative: takes).\nWITH pick AS (\n  SELECT coalesce(max(time) FILTER (WHERE time \u003c= try_cast(nullif($step, '') AS TIMESTAMP)), max(time)) AS t\n  FROM $edges\n),\ne AS (SELECT a, b, gw FROM $edges JOIN pick ON time = pick.t WHERE abs(gw) \u003e= 0.05),\nside AS (SELECT a AS iso, gw AS sends FROM e UNION ALL SELECT b AS iso, -gw AS sends FROM e),\nseen AS (SELECT iso, sum(sends) AS sends FROM side GROUP BY iso),\n-- Its own total, for the eight that report it: positive there is import.\nown AS (SELECT reporter AS iso, -gw AS sends FROM $flows JOIN pick ON time = pick.t WHERE neighbour = 'sum')\nSELECT c.iso, c.name, coalesce(o.sends, s.sends) AS sends, o.iso IS NOT NULL AS own\nFROM seen s\nJOIN $countries c USING (iso)\nLEFT JOIN own o USING (iso)\nORDER BY sends DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "At the step the graph shows: what each country sends (right) or takes (left) in all, in GW. The eight reporting countries show their own total; any other (paler, with an asterisk) only adds up the borders of 50 MW or more it shares with them, as in the graph. Click a bar to pick the country everywhere; click it again to let it go.",
+          "id": 7,
+          "links": [],
+          "title": "Who sends, who takes — click a country",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Every country at the step the graph shows, by what it sends (to the right,\n// teal) or takes (to the left, amber) in all, in GW, in the colours of the\n// graph. A country outside the eight that report (paler, with an asterisk)\n// only counts its borders with them. Clicking a bar picks the country\n// everywhere; clicking it again lets it go.\n// @constants begin\nconst VAR = 'country';\nconst SEND = '#2a9d8f';\nconst TAKE = '#e9a23b';\n// @constants end\n// Named here so the panel redraws when it changes: ${country}\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst muted = context.grafana.theme.colors.text.secondary;\nconst text = context.grafana.theme.colors.text.primary;\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\n// ECharts draws a category axis bottom up: reversed, the largest sender is on top.\nconst isos = col('iso').reverse();\nconst names = col('name').reverse();\nconst sends = col('sends').map(Number).reverse();\nconst own = col('own').map(Boolean).reverse();\nconst picked = context.grafana.replaceVariables('${' + VAR + '}');\n\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const id = isos[event.dataIndex];\n  const same = id === context.grafana.replaceVariables('${' + VAR + '}');\n  location.partial({ ['var-' + VAR]: same ? '' : id }, true);\n});\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 36, top: 8, bottom: 24, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e {\n      const i = items[0].dataIndex;\n      const v = sends[i];\n      const what = `${v \u003e= 0 ? 'sends' : 'takes'} \u003cb\u003e${Math.abs(v).toFixed(2)} GW\u003c/b\u003e`;\n      return `\u003cb\u003e${names[i]}\u003c/b\u003e ${what}${own[i] ? '' : '\u003cbr/\u003eonly its borders with the eight that report'}`;\n    },\n  },\n  xAxis: {\n    type: 'value',\n    name: '← takes · sends → GW',\n    nameLocation: 'middle',\n    nameGap: 22,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted, formatter: (v) =\u003e String(Math.abs(v)) },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  yAxis: {\n    type: 'category',\n    data: names.map((n, i) =\u003e (own[i] ? n : `${n}*`)),\n    axisTick: { show: false },\n    axisLine: { show: false },\n    axisLabel: { color: text, fontSize: 10 },\n  },\n  series: [\n    {\n      type: 'bar',\n      barWidth: '72%',\n      cursor: 'pointer',\n      data: sends.map((v, i) =\u003e ({\n        value: Number(v.toFixed(3)),\n        itemStyle: {\n          color: v \u003e= 0 ? SEND : TAKE,\n          opacity: picked \u0026\u0026 picked !== isos[i] ? 0.25 : own[i] ? 1 : 0.55,\n          borderRadius: v \u003e= 0 ? [0, 3, 3, 0] : [3, 0, 0, 3],\n        },\n        label: { position: v \u003e= 0 ? 'right' : 'left' },\n      })),\n      label: { show: true, color: muted, fontSize: 10, formatter: (p) =\u003e Math.abs(p.value).toFixed(1) },\n    },\n  ],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 5,
+              "width": 16,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              },
+              "height": 5,
+              "width": 8,
+              "x": 16,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 21,
+              "width": 14,
+              "x": 0,
+              "y": 5
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 21,
+              "width": 10,
+              "x": 14,
+              "y": 5
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              },
+              "height": 11,
+              "width": 14,
+              "x": 0,
+              "y": 26
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-7"
+              },
+              "height": 11,
+              "width": 10,
+              "x": 14,
+              "y": 26
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 10,
+              "width": 24,
+              "x": 0,
+              "y": 37
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "kepler",
+      "business-text",
+      "business-charts",
+      "energy",
+      "live"
+    ],
+    "timeSettings": {
+      "autoRefresh": "5m",
+      "autoRefreshIntervals": [
+        "5m",
+        "15m",
+        "30m"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-2d",
+      "hideTimepicker": true,
+      "timezone": "Europe/Berlin",
+      "to": "now"
+    },
+    "title": "Europe's power flows — who powers whom, drawn by Graphviz",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "countries",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "countries",
+              "refId": "countries",
+              "source": {
+                "sql": "-- Every country the eight report a border with: the id Energy-Charts gives\n-- its series, its name, and a point near its middle, on land, for the map and\n-- for the geographic layout. hub: one of the eight that report.\nSELECT iso, id, name, lat::DOUBLE AS lat, lng::DOUBLE AS lng,\n       iso IN ('DE', 'FR', 'IT', 'PL', 'HU', 'SE', 'ES', 'RO') AS hub\nFROM (VALUES\n  ('AT', 'austria', 'Austria', 47.6, 14.1),\n  ('BE', 'belgium', 'Belgium', 50.6, 4.6),\n  ('BG', 'bulgaria', 'Bulgaria', 42.7, 25.3),\n  ('CH', 'switzerland', 'Switzerland', 46.8, 8.2),\n  ('CZ', 'czech_republic', 'Czechia', 49.8, 15.5),\n  ('DE', 'germany', 'Germany', 51.1, 10.4),\n  ('DK', 'denmark', 'Denmark', 55.9, 9.4),\n  ('ES', 'spain', 'Spain', 40.3, -3.7),\n  ('FI', 'finland', 'Finland', 62.8, 25.8),\n  ('FR', 'france', 'France', 47.0, 2.6),\n  ('GB', 'united_kingdom', 'United Kingdom', 52.8, -1.6),\n  ('GR', 'greece', 'Greece', 39.3, 21.9),\n  ('HR', 'croatia', 'Croatia', 45.5, 16.4),\n  ('HU', 'hungary', 'Hungary', 47.2, 19.4),\n  ('IT', 'italy', 'Italy', 42.8, 12.5),\n  ('LT', 'lithuania', 'Lithuania', 55.3, 23.9),\n  ('LU', 'luxembourg', 'Luxembourg', 49.7, 6.1),\n  ('MD', 'moldova', 'Moldova', 47.2, 28.5),\n  ('ME', 'montenegro', 'Montenegro', 42.8, 19.3),\n  ('MT', 'malta', 'Malta', 35.9, 14.4),\n  ('NL', 'netherlands', 'Netherlands', 52.2, 5.6),\n  ('NO', 'norway', 'Norway', 60.6, 8.5),\n  ('PL', 'poland', 'Poland', 52.1, 19.4),\n  ('PT', 'portugal', 'Portugal', 39.6, -8.0),\n  ('RO', 'romania', 'Romania', 45.9, 24.9),\n  ('RS', 'serbia', 'Serbia', 44.0, 20.9),\n  ('SE', 'sweden', 'Sweden', 59.4, 15.3),\n  ('SI', 'slovenia', 'Slovenia', 46.1, 14.8),\n  ('SK', 'slovakia', 'Slovakia', 48.7, 19.5),\n  ('UA', 'ukraine', 'Ukraine', 49.0, 31.4)\n) AS t(iso, id, name, lat, lng)",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "flows",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "flows",
+              "refId": "flows",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: physical flows across the borders of eight countries, from\n-- Energy-Charts (Fraunhofer ISE, on ENTSO-E data), from the day before\n-- yesterday in Berlin on, 15 min steps, GW, positive = into the country that\n-- reports it. Three calendar days, so that the last 48 hours are there even\n-- just after midnight, when today has no complete step yet.\n-- Energy-Charts sends no CORS headers and answers the Host header DuckDB\n-- sends with 503, so DuckDB reads it through the gateway (10 min cache). It\n-- reports one country at a time and allows two requests a minute, four at\n-- once: eight countries whose borders, between them, reach most of the\n-- continent. A country refused now (HTTP 429) is left out of this load and\n-- asked again on the next refresh, five minutes on, when the limit allows.\nWITH day AS (SELECT strftime((now() AT TIME ZONE 'Europe/Berlin')::DATE - 2, '%Y-%m-%d') AS d0,\n                    strftime((now() AT TIME ZONE 'Europe/Berlin')::DATE, '%Y-%m-%d') AS d1),\nhub AS (SELECT unnest(['de', 'fr', 'it', 'pl', 'hu', 'se', 'es', 'ro']) AS c),\nres AS MATERIALIZED (\n  SELECT c, http_get('http://feeds/energy-charts/v2/cbpf?country=' || c || '\u0026start=' || d0 || '\u0026end=' || d1) AS r\n  FROM day, hub\n),\ndoc AS (SELECT c, (r-\u003e\u003e'body')::JSON AS doc FROM res WHERE (r-\u003e\u003e'status') = '200'),\nstep AS (SELECT c, unnest(json_extract(doc, '$.data[*]')) AS s FROM doc),\nv AS (SELECT c, (s-\u003e\u003e'timestamp')::TIMESTAMPTZ AS time, unnest(json_keys(s-\u003e'values')) AS k, s-\u003e'values' AS vals FROM step)\nSELECT upper(c) AS reporter, k AS neighbour, time, (vals-\u003e\u003ek)::DOUBLE AS gw\nFROM v\nWHERE (vals-\u003e\u003ek) IS NOT NULL",
+                  "refId": "flows"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "edges",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "edges",
+              "refId": "edges",
+              "source": {
+                "sql": "-- One row per border and 15 min step: the flow from a to b (a before b in\n-- the alphabet; negative is from b to a), averaged over the sides that report\n-- it. Only steps every operator has reported: the newest arrive with borders\n-- at exactly zero until their operator does, and a step with more zeros than\n-- a stray idle cable is not ready. The last 48 hours of those.\nWITH per AS (\n  SELECT time, count(DISTINCT reporter) AS reporters,\n         count(*) FILTER (WHERE neighbour \u003c\u003e 'sum') AS n,\n         count(*) FILTER (WHERE neighbour \u003c\u003e 'sum' AND gw = 0) AS zeros\n  FROM $flows GROUP BY time\n),\ncomplete AS (\n  SELECT time FROM per\n  WHERE reporters = (SELECT max(reporters) FROM per) AND zeros \u003c= greatest(2, 0.1 * n)\n),\nready AS (\n  SELECT time FROM complete WHERE time \u003e (SELECT max(time) FROM complete) - INTERVAL 48 HOUR\n),\ne AS (\n  SELECT f.time, f.reporter AS rep, c.iso AS nb, f.gw\n  FROM $flows f JOIN $countries c ON c.id = f.neighbour\n  WHERE f.time IN (SELECT time FROM ready)\n)\nSELECT time,\n       least(rep, nb) AS a,\n       greatest(rep, nb) AS b,\n       -- gw is into the reporter: from a to b it is -gw when a reports, gw when b does.\n       avg(CASE WHEN rep \u003c nb THEN -gw ELSE gw END) AS gw,\n       count(*) AS sides\nFROM e\nGROUP BY ALL\nORDER BY time, a, b",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Step shown (graph slider or chart click)",
+          "name": "step",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Country picked (graph or ranking click)",
+          "name": "country",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
