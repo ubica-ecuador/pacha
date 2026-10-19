@@ -348,7 +348,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- The borders at the step picked on the graph, or the newest ready one,\n-- from sender to receiver, in MW: what the flow layer draws.\nWITH pick AS (\n  SELECT coalesce(max(time) FILTER (WHERE time \u003c= try_cast(nullif($step, '') AS TIMESTAMP)), max(time)) AS t\n  FROM $edges\n),\ne AS (\n  SELECT CASE WHEN gw \u003e 0 THEN a ELSE b END AS src, CASE WHEN gw \u003e 0 THEN b ELSE a END AS dst, abs(gw) AS gw\n  FROM $edges JOIN pick ON time = pick.t\n  WHERE abs(gw) \u003e= 0.05\n    AND ($country = '' OR $country IN (a, b))\n)\nSELECT o.lat AS lat0, o.lng AS lng0, d.lat AS lat1, d.lng AS lng1,\n       round(e.gw * 1000)::BIGINT AS count,\n       round(e.gw * 1000)::BIGINT AS mw,\n       o.name || ' → ' || d.name AS border\nFROM e\nJOIN $countries o ON o.iso = e.src\nJOIN $countries d ON d.iso = e.dst"
+                        "rawSql": "-- The borders at the step picked on the graph, or the newest ready one,\n-- from sender to receiver, in MW: what the traffic layer draws.\nWITH pick AS (\n  SELECT coalesce(max(time) FILTER (WHERE time \u003c= try_cast(nullif($step, '') AS TIMESTAMP)), max(time)) AS t\n  FROM $edges\n),\ne AS (\n  SELECT CASE WHEN gw \u003e 0 THEN a ELSE b END AS src, CASE WHEN gw \u003e 0 THEN b ELSE a END AS dst, abs(gw) AS gw\n  FROM $edges JOIN pick ON time = pick.t\n  WHERE abs(gw) \u003e= 0.05\n    AND ($country = '' OR $country IN (a, b))\n)\nSELECT o.lat AS lat0, o.lng AS lng0, d.lat AS lat1, d.lng AS lng1,\n       round(e.gw * 1000)::BIGINT AS count,\n       round(e.gw * 1000)::BIGINT AS mw,\n       o.name || ' → ' || d.name AS border\nFROM e\nJOIN $countries o ON o.iso = e.src\nJOIN $countries d ON d.iso = e.dst"
                       },
                       "version": "v0"
                     },
@@ -378,7 +378,7 @@
               "transformations": []
             }
           },
-          "description": "The borders at the step picked on the graph or the chart (the newest complete one until then), each from the middle of the country that sends to the middle of the one that receives, in MW; only the borders of the country picked, when there is one (yellow ring). Circles add up what each country sends and takes over the borders shown.",
+          "description": "The borders at the step picked on the graph or the chart (the newest complete one until then), each from the middle of the country that sends to the middle of the one that receives, in MW; only the borders of the country picked, when there is one (yellow ring). Arcs pulse from sender to receiver, coloured and paced by the MW they carry (the Kepler Plus traffic layer).",
           "id": 4,
           "links": [],
           "title": "The same flows on the map",
@@ -1149,6 +1149,7 @@
       "chaski",
       "duckdb",
       "kepler",
+      "plus",
       "business-text",
       "business-charts",
       "energy",

@@ -1,8 +1,9 @@
-// The europe-power-flows dashboard (Gallery): the physical flows across
-// Europe's borders from Energy-Charts, read on the server through the gateway
-// for eight countries, held by Chaski, drawn as a directed graph that Graphviz
-// lays out in the browser and on the free Kepler panel as flows. Live data, so
-// the checks are about shape and plausible ranges.
+// The europe-power-flows dashboard (Plus): the physical flows across Europe's
+// borders from Energy-Charts, read on the server through the gateway for eight
+// countries, held by Chaski, drawn as a directed graph that Graphviz lays out
+// in the browser and as arcs on the Kepler Plus traffic layer. Live data, so
+// the checks are about shape and plausible ranges. It needs Kepler Plus
+// (compose.plus.yaml): without it, the browser test is skipped.
 import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { api, duckdb } from '../lib/grafana.mjs';
@@ -12,7 +13,7 @@ import { openDashboard } from '../lib/browser.mjs';
 
 const UID = 'europe-power-flows';
 const DATASETS = ['countries', 'flows', 'edges'];
-const dashboard = loadDashboard(`dashboards/gallery/${UID}.json`);
+const dashboard = loadDashboard(`plus/dashboards/${UID}.json`);
 const source = (name) => findAll(dashboard, (n) => n.kind === 'dataset' && n.name === name)[0].source;
 const flowsSql = source('flows').query.rawSql;
 // The browser datasets run on the server: each dataset as a subquery.
@@ -22,10 +23,13 @@ const inline = (sql) =>
 let view;
 after(async () => view && view.browser.close());
 
+const provisioned = await api(STACK_URL, `/api/dashboards/uid/${UID}`);
+const skip = provisioned.status === 404 && 'Kepler Plus is not mounted';
+
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, UID);
   assert.ok(dashboard.spec.description);
-  for (const tag of ['chaski', 'duckdb', 'kepler', 'business-text', 'energy', 'live']) assert.ok(dashboard.spec.tags.includes(tag), tag);
+  for (const tag of ['chaski', 'duckdb', 'kepler', 'plus', 'business-text', 'business-charts', 'energy', 'live']) assert.ok(dashboard.spec.tags.includes(tag), tag);
   assert.deepEqual(findAll(dashboard, (n) => n.kind === 'dataset' && n.source).map((n) => n.name).sort(), [...DATASETS].sort());
 });
 
@@ -86,13 +90,19 @@ test('the edges are one per border and step, over complete steps only', async ()
   assert.ok(hours < 12, `latest complete step ${hours.toFixed(1)} h ago`);
 });
 
-test('is provisioned in Gallery', async () => {
-  const { status, json } = await api(STACK_URL, `/api/dashboards/uid/${UID}`);
-  assert.equal(status, 200);
-  assert.equal(json.meta.folderUid, 'gallery');
+test('is provisioned in Plus', { skip }, () => {
+  assert.equal(provisioned.status, 200);
+  assert.equal(provisioned.json.meta.folderUid, 'plus');
 });
 
-test('loads for an anonymous visitor, with the graph drawn and no panel in error', { timeout: 180_000 }, async () => {
+test('the map draws the borders as arcs on a traffic layer, with the country picked ringed', () => {
+  const map = panelTitled(dashboard, 'The same flows on the map');
+  assert.equal(map.vizConfig.group, 'ubica-keplerplus-panel');
+  const layers = map.vizConfig.spec.options.mapConfig.config.visState.layers;
+  assert.deepEqual(layers.map((l) => [l.type, l.config.dataId]).sort(), [['point', 'grafana-B'], ['traffic', 'grafana-A']]);
+});
+
+test('loads for an anonymous visitor, with the graph drawn and no panel in error', { skip, timeout: 180_000 }, async () => {
   view = await openDashboard(`/d/${UID}?refresh=`, { datasets: DATASETS, timeoutMs: 120_000 });
   assert.equal(await view.panelErrors(), 0);
   await view.page.waitForSelector('.grid-svg', { timeout: 60_000 });
