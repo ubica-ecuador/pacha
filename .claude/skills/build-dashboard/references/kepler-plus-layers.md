@@ -57,7 +57,7 @@ Examples: `caltrans-la-cameras`, `agi-hq-grid-cameras`.
 `surfaceMaxDistance`, `surfaceExtent` hull|rectangle, `surfaceMargin`, `surfaceBreaks`
 ("2, 5, 10": fixed breaks keep frames comparable while playing), `surfaceUnderBuildings` (true:
 drawn inside the base map under its 3D buildings, on styles that have them such as
-`openfreemap-liberty` or MapTiler's; not with Relief), `surfaceDrape` (true: with a `tile3d` layer
+`openfreemap-liberty`; not with Relief), `surfaceDrape` (true: with a `tile3d` layer
 on the map, laid over the ground of its tiles, buildings standing through it; flat otherwise),
 `surfaceAltitude` (metres above the ground, 0). Example: `air-quality-amsterdam`.
 
@@ -130,10 +130,12 @@ Minimal gauge layer:
 
 ## Plus base maps
 
-`config.mapStyle.styleType`: `plus-maptiler-*` (streets, streets-dark, outdoor, topo, winter,
-dataviz, dataviz-dark, satellite, hybrid), `plus-esri-*` (navigation, navigation-night,
-streets, topographic, outdoor, light-gray, dark-gray, imagery), `plus-azure-*`,
+`config.mapStyle.styleType`: `plus-azure-road|dark-grey|imagery|hybrid` and
 `plus-google-roadmap|satellite|hybrid|terrain`. Each needs its provider's key in the app
-config. Relief is a toggle, not a base map: `config.mapStyle.visibleLayerGroups.relief = true`
-(MapTiler, Esri, Azure). Never invent a `*-relief` id. Google Photorealistic 3D tiles: the
+config (both kept on the server). Since Plus 1.4.0 there are no `plus-maptiler-*` or
+`plus-esri-*` styles: a map saved on one falls back to the free default with a notice, so use
+the keyless `openfreemap-*` ids (or `grafana-satellite`) instead. Plus also has no
+`cartoApiKey` option. Relief is a toggle, not a base map:
+`config.mapStyle.visibleLayerGroups.relief = true` (Azure styles; on free styles use
+`grafana-satellite-terrain` or `grafana-topographic-terrain`). Never invent a `*-relief` id. Google Photorealistic 3D tiles: the
 "3D (Plus)" tab of Add Data (`tile3d` layer, `agi-hq-grid-cameras`).
