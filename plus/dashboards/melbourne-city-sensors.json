@@ -723,7 +723,7 @@
                         0
                       ],
                       "mapStyles": {},
-                      "styleType": "plus-maptiler-streets-dark",
+                      "styleType": "openfreemap-dark",
                       "threeDBuildingColor": [
                         224.45365307122788,
                         221.23183029987055,
