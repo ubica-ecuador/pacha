@@ -34,7 +34,13 @@ test('follows the dashboards conventions', () => {
   // Both maps frame the new state's tracts when the state changes, and nothing else moves them.
   const maps = findAll(dashboard, (n) => n.vizConfig?.group === 'ubica-keplergl-panel');
   assert.equal(maps.length, 2);
-  for (const map of maps) assert.deepEqual(map.vizConfig.spec.options.fitOnVariables, ['state'], map.title);
+  for (const map of maps) {
+    const { fitOnVariables, selectionField, dimUnselected } = map.vizConfig.spec.options;
+    assert.deepEqual(fitOnVariables, ['state'], map.title);
+    // The scatter plot's box is a column the query computes, not a list in the URL.
+    assert.equal(selectionField, 'selected', map.title);
+    assert.equal(dimUnselected, true, map.title);
+  }
 });
 
 test('is provisioned in Gallery', async () => {

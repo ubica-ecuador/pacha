@@ -88,6 +88,9 @@ All in `panel.options`, not in `mapConfig`.
 | `areaVariable` | the drawn polygon or rectangle → WKT EPSG:4326; `''` when deleted |
 | `clickArea`, `clickAreaSizeMetres` | a click sets the area to a square around the entity |
 | `viewportVariables` | `{"west":"w","south":"s","east":"e","north":"n"}` |
+| `selectionField` | a boolean column of the query (`... AS selected`): its true rows are ringed as selected, beside what click mappings published. For selections too big for the URL: compute them from short variables (a brushed box's edges) |
+| `dimUnselected` | `true`: while something is selected, a veil of the base map's tone covers the rest |
+| `haloStyle` | `auto` (default: amber, or under the veil a thin line for ≤ 50 shapes and none beyond), `amber`, `thin`, `none` |
 | `fitOnVariables` | `["state"]`: when one of these variables changes, the map frames its new rows as on load, at the zoom they need; nothing else moves it. For pickers that move the data elsewhere. Free panel after 1.4.0 (edge on pacha) |
 | `variableMappings` | see below |
 | `clickConfirm` | a click only opens the popup; **Select** publishes |
@@ -102,7 +105,7 @@ A list of `{field, variable, variableTo?, source?, zoom?, keepOnDeselect?}`:
 
 - `source: "filter"` (default): a kepler filter on `field` ⇄ the variable, two-way. With
   `variableTo`, a numeric range (min → `variable`, max → `variableTo`).
-- `source: "click"`: the clicked entity's `field` → the variable, one way.
+- `source: "click"`: the clicked entity's `field` → the variable, one way. On a multi-value variable, Shift+click adds or removes the entity.
   `keepOnDeselect: true` keeps it on an empty click.
 - `source: "coordinate"`: the clicked place, latitude → `variable`, longitude → `variableTo`.
 - `source: "center"`: the map flies to lat/lng variables set elsewhere; optional `zoom`.

@@ -236,7 +236,7 @@
                 "overrides": []
               },
               "options": {
-                "content": "# Where ancestry groups cluster\n\nExploratory spatial data analysis of the **American Community Survey 2024**, one state at a time: is a group's share of residents high where its neighbours' is high too? **Moran's I** answers for the whole state; **local Moran's I** (LISA) finds where: the *High-High* hot spots, the *Low-Low* cold spots, and the outliers that differ from the tracts around them. Everything is computed in your browser, with the same method as [PySAL](https://pysal.org/esda/) and [GeoDa](https://geodacenter.github.io/).\n\n**Brush the scatter plot** (a box, or a lasso from its toolbox) to ring those tracts on both maps; **click a tract** on a map to find it on the plot. Change the neighbours, the permutations or the significance to see how much the clusters depend on them.",
+                "content": "# Where ancestry groups cluster\n\nExploratory spatial data analysis of the **American Community Survey 2024**, one state at a time: is a group's share of residents high where its neighbours' is high too? **Moran's I** answers for the whole state; **local Moran's I** (LISA) finds where: the *High-High* hot spots, the *Low-Low* cold spots, and the outliers that differ from the tracts around them. Everything is computed in your browser, with the same method as [PySAL](https://pysal.org/esda/) and [GeoDa](https://geodacenter.github.io/).\n\n**Drag a box on the scatter plot** to select every tract in it — both maps dim the rest — or draw a lasso from its toolbox; **click a tract** on a map to find it on the plot, **Shift+click** to add more. Change the neighbours, the permutations or the significance to see how much the clusters depend on them.",
                 "mode": "markdown"
               }
             },
@@ -262,7 +262,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- The cluster map: every tract coloured by its LISA cluster (dataset clusters).\n-- The selection is not read here: the map rings it by itself, and filtering\n-- on it would ring every tract left.\nSELECT c.geoid, s.name, s.county, round(c.share, 2) AS share, c.cluster, round(c.p, 3) AS p, s.geojson\nFROM $clusters c JOIN $shapes s USING (geoid)"
+                        "rawSql": "-- The cluster map: every tract coloured by its LISA cluster (dataset clusters).\n-- `selected` is the box brushed on the scatter plot, which the map marks and\n-- dims the rest around (selectionField). The tracts clicked one by one (sel)\n-- the map rings by itself; filtering on either would leave nothing to dim.\nSELECT c.geoid, s.name, s.county, round(c.share, 2) AS share, c.cluster, round(c.p, 3) AS p,\n       coalesce(c.z BETWEEN try_cast($bx0 AS DOUBLE) AND try_cast($bx1 AS DOUBLE) AND c.lag BETWEEN try_cast($by0 AS DOUBLE) AND try_cast($by1 AS DOUBLE), false) AS selected, s.geojson\nFROM $clusters c JOIN $shapes s USING (geoid)"
                       },
                       "version": "v0"
                     },
@@ -274,7 +274,7 @@
               "transformations": []
             }
           },
-          "description": "The LISA cluster map: each tract coloured by its local Moran's I quadrant where the pseudo p-value clears the significance picked, from conditional permutations. Only significant tracts get a colour; a cluster's core is the coloured tract, its neighbours are part of the pattern too. Click a tract to select it.",
+          "description": "The LISA cluster map: each tract coloured by its local Moran's I quadrant where the pseudo p-value clears the significance picked, from conditional permutations. Only significant tracts get a colour; a cluster's core is the coloured tract, its neighbours are part of the pattern too. Click a tract to select it, Shift+click to add one; the rest of the map dims around the selection.",
           "id": 5,
           "links": [],
           "title": "Local clusters · ${grupo} in ${state:text}",
@@ -291,6 +291,7 @@
                 "clickArea": false,
                 "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
+                "dimUnselected": true,
                 "fitOnVariables": [
                   "state"
                 ],
@@ -441,6 +442,7 @@
                 "rasterColormap": "",
                 "rasterPainted": false,
                 "saveRequest": 0,
+                "selectionField": "selected",
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table",
@@ -587,7 +589,7 @@
               "transformations": []
             }
           },
-          "description": "Each tract's standardised share against the mean of its neighbours' (the spatial lag). The slope of the line is Moran's I. Brush a box or a lasso to select tracts, click a point to select one; the trash icon clears.",
+          "description": "Each tract's standardised share against the mean of its neighbours' (the spatial lag). The slope of the line is Moran's I. Drag a box to select every tract in it, draw a lasso from the toolbox, or click a point; the trash icon clears.",
           "id": 6,
           "links": [],
           "title": "Moran scatter plot",
@@ -612,7 +614,7 @@
                   "key": "",
                   "plugin": "AMap.Scale,AMap.ToolBar"
                 },
-                "getOption": "// The Moran scatter plot: every tract's standardised share (x) against the\n// mean of its neighbours' (y, the spatial lag). The slope of the line through\n// the origin is Moran's I; the four quadrants are the four kinds of local\n// association, coloured as on the cluster map when the tract is significant.\n//\n// Drag a rectangle (or draw a lasso from the toolbox) to select tracts: their\n// geoids go to the multi-value variable SEL, and both maps ring them. Clicking\n// a point selects that one tract, clicking it again clears; a click on a map\n// selects there too, and the point grows here. The trash icon clears.\n//\n// A dashboard changes only the constants block below.\n// @constants begin\nconst SEL = 'sel';\nconst COLORS = {\n  'High-High': '#d7301f',\n  'Low-Low': '#2166ac',\n  'High-Low': '#f4a582',\n  'Low-High': '#92c5de',\n  'Not significant': 'rgba(128, 128, 128, 0.35)',\n  'No neighbours': 'rgba(128, 128, 128, 0.35)',\n};\nconst UNIT = '% of residents';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst geoid = col('geoid');\nconst name = col('name');\nconst county = col('county');\nconst share = col('share').map(Number);\nconst z = col('z').map(Number);\nconst lag = col('lag').map((v) =\u003e (v === null || v === undefined ? null : Number(v)));\nconst p = col('p').map((v) =\u003e (v === null || v === undefined ? null : Number(v)));\nconst cluster = col('cluster');\n\n// The selection, read on every draw so a shared link shows it too. Naming\n// ${sel} here is what makes the panel redraw when the variable changes.\nlet picked = [];\ntry {\n  picked = JSON.parse(context.grafana.replaceVariables('${sel:json}'));\n} catch (e) {\n  picked = [];\n}\n// Only what this state has: a selection made in another state matches nothing.\nconst here = new Set(geoid);\nconst selected = new Set((Array.isArray(picked) ? picked : [picked]).filter((v) =\u003e v \u0026\u0026 here.has(v)));\nconst anySelected = selected.size \u003e 0;\n// A handful of points must stand out among thousands; hundreds must not hide the rest.\nconst pickedSize = selected.size \u003c= 5 ? 14 : 9;\n\n// Moran's I as GeoDa draws it: the slope of lag on z, over tracts with\n// neighbours (z has mean 0 and variance 1 over all of them).\nlet szl = 0;\nlet withNeighbours = 0;\nfor (let i = 0; i \u003c z.length; i++) {\n  if (lag[i] !== null) {\n    szl += z[i] * lag[i];\n    withNeighbours += 1;\n  }\n}\nconst moran = withNeighbours ? szl / withNeighbours : 0;\nconst xs = z.filter(Number.isFinite);\nconst xMin = Math.min(-1, ...xs);\nconst xMax = Math.max(1, ...xs);\n\nconst point = (i) =\u003e ({\n  value: [z[i], lag[i], i],\n  itemStyle: {\n    color: COLORS[cluster[i]] || COLORS['Not significant'],\n    opacity: anySelected \u0026\u0026 !selected.has(geoid[i]) ? 0.15 : 0.9,\n    borderColor: selected.has(geoid[i]) ? theme.colors.text.primary : 'transparent',\n    borderWidth: selected.has(geoid[i]) ? 2 : 0,\n  },\n  symbolSize: selected.has(geoid[i]) ? pickedSize : 5,\n});\nconst rest = [];\nconst front = [];\nfor (let i = 0; i \u003c z.length; i++) {\n  if (lag[i] === null || !Number.isFinite(z[i])) {\n    continue;\n  }\n  const significant = cluster[i] !== 'Not significant';\n  (selected.has(geoid[i]) || (!anySelected \u0026\u0026 significant) ? front : rest).push(point(i));\n}\n\nconst publish = (ids) =\u003e location.partial({ ['var-' + SEL]: ids.length ? ids : '' }, true);\n\n// Points inside a brushed area. A rectangle comes as [[x0, x1], [y0, y1]],\n// a lasso as its vertices.\nconst inside = (area, x, y) =\u003e {\n  if (area.brushType === 'rect') {\n    const [[x0, x1], [y0, y1]] = area.coordRange;\n    return x \u003e= x0 \u0026\u0026 x \u003c= x1 \u0026\u0026 y \u003e= y0 \u0026\u0026 y \u003c= y1;\n  }\n  const poly = area.coordRange;\n  let hit = false;\n  for (let a = 0, b = poly.length - 1; a \u003c poly.length; b = a++) {\n    const [xa, ya] = poly[a];\n    const [xb, yb] = poly[b];\n    if (ya \u003e y !== yb \u003e y \u0026\u0026 x \u003c ((xb - xa) * (y - ya)) / (yb - ya) + xa) {\n      hit = !hit;\n    }\n  }\n  return hit;\n};\n\nchart.off('brushEnd');\nchart.on('brushEnd', (event) =\u003e {\n  const areas = (event.areas || []).filter((a) =\u003e a.coordRange);\n  if (!areas.length) {\n    return;\n  }\n  const ids = [];\n  for (let i = 0; i \u003c z.length; i++) {\n    if (lag[i] !== null \u0026\u0026 areas.some((a) =\u003e inside(a, z[i], lag[i]))) {\n      ids.push(geoid[i]);\n    }\n  }\n  publish(ids);\n  // The highlighted points now show the selection; the box would only hide them.\n  setTimeout(() =\u003e chart.dispatchAction({ type: 'brush', areas: [] }), 0);\n});\nchart.off('brush');\nchart.on('brush', (event) =\u003e {\n  if (event.command === 'clear') {\n    publish([]);\n  }\n});\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const i = event.value \u0026\u0026 event.value[2];\n  if (i === undefined) {\n    return;\n  }\n  const same = selected.size === 1 \u0026\u0026 selected.has(geoid[i]);\n  publish(same ? [] : [geoid[i]]);\n});\nsetTimeout(() =\u003e {\n  chart.dispatchAction({ type: 'takeGlobalCursor', key: 'brush', brushOption: { brushType: 'rect', brushMode: 'single' } });\n}, 0);\n\nconst fmt = (v, d) =\u003e (v === null || v === undefined || !Number.isFinite(v) ? '–' : v.toFixed(d));\nconst series = (data, extra) =\u003e ({\n  type: 'scatter',\n  data,\n  emphasis: { scale: 1.6 },\n  ...extra,\n});\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 12, right: 24, top: 36, bottom: 30, containLabel: true },\n  tooltip: {\n    trigger: 'item',\n    formatter: (item) =\u003e {\n      if (item.seriesName === 'line') {\n        return `Moran's I = \u003cb\u003e${moran.toFixed(3)}\u003c/b\u003e`;\n      }\n      const i = item.value[2];\n      return (\n        `\u003cb\u003e${name[i]}\u003c/b\u003e, ${county[i]}\u003cbr/\u003e` +\n        `share: \u003cb\u003e${fmt(share[i], 1)}\u003c/b\u003e ${UNIT} (z ${fmt(z[i], 2)})\u003cbr/\u003e` +\n        `neighbours' mean z: \u003cb\u003e${fmt(lag[i], 2)}\u003c/b\u003e\u003cbr/\u003e` +\n        `${cluster[i]} · pseudo p = ${fmt(p[i], 3)}`\n      );\n    },\n  },\n  toolbox: {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: {\n      brush: {\n        type: ['rect', 'polygon', 'clear'],\n        title: { rect: 'Select tracts in a box', polygon: 'Select tracts with a lasso', clear: 'Clear the selection' },\n      },\n    },\n  },\n  brush: {\n    xAxisIndex: 0,\n    yAxisIndex: 0,\n    brushType: 'rect',\n    brushMode: 'single',\n    transformable: false,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.12)', borderColor: muted, borderWidth: 1 },\n    inBrush: {},\n    outOfBrush: {},\n  },\n  title: {\n    text: `Moran's I = ${moran.toFixed(3)}` + (anySelected ? `   ·   ${selected.size} selected` : ''),\n    left: 8,\n    top: 4,\n    textStyle: { fontSize: 13, fontWeight: 'normal', color: theme.colors.text.primary },\n  },\n  xAxis: {\n    type: 'value',\n    name: `share, standardised (z of ${UNIT})`,\n    nameLocation: 'middle',\n    nameGap: 26,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { show: false },\n    axisLine: { onZero: false },\n  },\n  yAxis: {\n    type: 'value',\n    name: \"neighbours' mean z (spatial lag)\",\n    nameLocation: 'middle',\n    nameGap: 36,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { show: false },\n    axisLine: { onZero: false },\n  },\n  series: [\n    series(rest, { name: 'tracts', z: 1 }),\n    series(front, { name: 'highlighted', z: 2 }),\n    {\n      name: 'line',\n      type: 'line',\n      data: [\n        [xMin, moran * xMin],\n        [xMax, moran * xMax],\n      ],\n      symbol: 'none',\n      silent: true,\n      z: 3,\n      lineStyle: { color: theme.colors.text.primary, width: 1.5 },\n      markLine: {\n        silent: true,\n        symbol: 'none',\n        label: { show: false },\n        lineStyle: { color: muted, type: 'dashed', width: 1, opacity: 0.6 },\n        data: [{ xAxis: 0 }, { yAxis: 0 }],\n      },\n    },\n  ],\n};\n",
+                "getOption": "// The Moran scatter plot: every tract's standardised share (x) against the\n// mean of its neighbours' (y, the spatial lag). The slope of the line through\n// the origin is Moran's I; the four quadrants are the four kinds of local\n// association, coloured as on the cluster map when the tract is significant.\n//\n// Drag a rectangle to select tracts: its four edges go to BOX (short whatever\n// it catches), and both maps flag the tracts inside it with a `selected`\n// column, ring them and dim the rest. A lasso from the toolbox writes the\n// geoids to the multi-value SEL instead, as does a click on a point; on a map,\n// Shift+click adds tracts to SEL. The trash icon clears both.\n//\n// A dashboard changes only the constants block below.\n// @constants begin\nconst SEL = 'sel';\nconst BOX = ['bx0', 'bx1', 'by0', 'by1'];\nconst COLORS = {\n  'High-High': '#d7301f',\n  'Low-Low': '#2166ac',\n  'High-Low': '#f4a582',\n  'Low-High': '#92c5de',\n  'Not significant': 'rgba(128, 128, 128, 0.35)',\n  'No neighbours': 'rgba(128, 128, 128, 0.35)',\n};\nconst UNIT = '% of residents';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst geoid = col('geoid');\nconst name = col('name');\nconst county = col('county');\nconst share = col('share').map(Number);\nconst z = col('z').map(Number);\nconst lag = col('lag').map((v) =\u003e (v === null || v === undefined ? null : Number(v)));\nconst p = col('p').map((v) =\u003e (v === null || v === undefined ? null : Number(v)));\nconst cluster = col('cluster');\n\n// The selection, read on every draw so a shared link shows it too. Naming\n// ${sel} here is what makes the panel redraw when the variable changes.\nlet picked = [];\ntry {\n  picked = JSON.parse(context.grafana.replaceVariables('${sel:json}'));\n} catch (e) {\n  picked = [];\n}\n// Only what this state has: a selection made in another state matches nothing.\nconst here = new Set(geoid);\nconst selected = new Set((Array.isArray(picked) ? picked : [picked]).filter((v) =\u003e v \u0026\u0026 here.has(v)));\n// The box, read the same way: ${bx0} ${bx1} ${by0} ${by1} named here so the chart redraws on them.\nconst box = BOX.map((name) =\u003e parseFloat(context.grafana.replaceVariables('${' + name + '}')));\nif (box.every(Number.isFinite)) {\n  for (let i = 0; i \u003c z.length; i++) {\n    if (lag[i] !== null \u0026\u0026 z[i] \u003e= box[0] \u0026\u0026 z[i] \u003c= box[1] \u0026\u0026 lag[i] \u003e= box[2] \u0026\u0026 lag[i] \u003c= box[3]) {\n      selected.add(geoid[i]);\n    }\n  }\n}\nconst anySelected = selected.size \u003e 0;\n// A handful of points must stand out among thousands; hundreds must not hide the rest.\nconst pickedSize = selected.size \u003c= 5 ? 14 : 9;\n\n// Moran's I as GeoDa draws it: the slope of lag on z, over tracts with\n// neighbours (z has mean 0 and variance 1 over all of them).\nlet szl = 0;\nlet withNeighbours = 0;\nfor (let i = 0; i \u003c z.length; i++) {\n  if (lag[i] !== null) {\n    szl += z[i] * lag[i];\n    withNeighbours += 1;\n  }\n}\nconst moran = withNeighbours ? szl / withNeighbours : 0;\nconst xs = z.filter(Number.isFinite);\nconst xMin = Math.min(-1, ...xs);\nconst xMax = Math.max(1, ...xs);\n\nconst point = (i) =\u003e ({\n  value: [z[i], lag[i], i],\n  itemStyle: {\n    color: COLORS[cluster[i]] || COLORS['Not significant'],\n    opacity: anySelected \u0026\u0026 !selected.has(geoid[i]) ? 0.15 : 0.9,\n    borderColor: selected.has(geoid[i]) ? theme.colors.text.primary : 'transparent',\n    borderWidth: selected.has(geoid[i]) ? 2 : 0,\n  },\n  symbolSize: selected.has(geoid[i]) ? pickedSize : 5,\n});\nconst rest = [];\nconst front = [];\nfor (let i = 0; i \u003c z.length; i++) {\n  if (lag[i] === null || !Number.isFinite(z[i])) {\n    continue;\n  }\n  const significant = cluster[i] !== 'Not significant';\n  (selected.has(geoid[i]) || (!anySelected \u0026\u0026 significant) ? front : rest).push(point(i));\n}\n\nconst publish = (ids) =\u003e location.partial({ ['var-' + SEL]: ids.length ? ids : '' }, true);\nconst publishBox = (edges) =\u003e\n  location.partial(Object.fromEntries(BOX.map((name, k) =\u003e ['var-' + name, edges ? String(edges[k]) : ''])), true);\n\n// Points inside a brushed area. A rectangle comes as [[x0, x1], [y0, y1]],\n// a lasso as its vertices.\nconst inside = (area, x, y) =\u003e {\n  if (area.brushType === 'rect') {\n    const [[x0, x1], [y0, y1]] = area.coordRange;\n    return x \u003e= x0 \u0026\u0026 x \u003c= x1 \u0026\u0026 y \u003e= y0 \u0026\u0026 y \u003c= y1;\n  }\n  const poly = area.coordRange;\n  let hit = false;\n  for (let a = 0, b = poly.length - 1; a \u003c poly.length; b = a++) {\n    const [xa, ya] = poly[a];\n    const [xb, yb] = poly[b];\n    if (ya \u003e y !== yb \u003e y \u0026\u0026 x \u003c ((xb - xa) * (y - ya)) / (yb - ya) + xa) {\n      hit = !hit;\n    }\n  }\n  return hit;\n};\n\nchart.off('brushEnd');\nchart.on('brushEnd', (event) =\u003e {\n  const areas = (event.areas || []).filter((a) =\u003e a.coordRange);\n  if (!areas.length) {\n    return;\n  }\n  const rect = areas.find((a) =\u003e a.brushType === 'rect');\n  if (rect) {\n    const [[x0, x1], [y0, y1]] = rect.coordRange;\n    publishBox([x0, x1, y0, y1].map((v) =\u003e Math.round(v * 1000) / 1000));\n    setTimeout(() =\u003e chart.dispatchAction({ type: 'brush', areas: [] }), 0);\n    return;\n  }\n  const ids = [];\n  for (let i = 0; i \u003c z.length; i++) {\n    if (lag[i] !== null \u0026\u0026 areas.some((a) =\u003e inside(a, z[i], lag[i]))) {\n      ids.push(geoid[i]);\n    }\n  }\n  publish(ids);\n  // The highlighted points now show the selection; the box would only hide them.\n  setTimeout(() =\u003e chart.dispatchAction({ type: 'brush', areas: [] }), 0);\n});\nchart.off('brush');\nchart.on('brush', (event) =\u003e {\n  if (event.command === 'clear') {\n    publish([]);\n    publishBox(null);\n  }\n});\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const i = event.value \u0026\u0026 event.value[2];\n  if (i === undefined) {\n    return;\n  }\n  const same = selected.size === 1 \u0026\u0026 selected.has(geoid[i]);\n  publish(same ? [] : [geoid[i]]);\n});\nsetTimeout(() =\u003e {\n  chart.dispatchAction({ type: 'takeGlobalCursor', key: 'brush', brushOption: { brushType: 'rect', brushMode: 'single' } });\n}, 0);\n\nconst fmt = (v, d) =\u003e (v === null || v === undefined || !Number.isFinite(v) ? '–' : v.toFixed(d));\nconst series = (data, extra) =\u003e ({\n  type: 'scatter',\n  data,\n  emphasis: { scale: 1.6 },\n  ...extra,\n});\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 12, right: 24, top: 36, bottom: 30, containLabel: true },\n  tooltip: {\n    trigger: 'item',\n    formatter: (item) =\u003e {\n      if (item.seriesName === 'line') {\n        return `Moran's I = \u003cb\u003e${moran.toFixed(3)}\u003c/b\u003e`;\n      }\n      const i = item.value[2];\n      return (\n        `\u003cb\u003e${name[i]}\u003c/b\u003e, ${county[i]}\u003cbr/\u003e` +\n        `share: \u003cb\u003e${fmt(share[i], 1)}\u003c/b\u003e ${UNIT} (z ${fmt(z[i], 2)})\u003cbr/\u003e` +\n        `neighbours' mean z: \u003cb\u003e${fmt(lag[i], 2)}\u003c/b\u003e\u003cbr/\u003e` +\n        `${cluster[i]} · pseudo p = ${fmt(p[i], 3)}`\n      );\n    },\n  },\n  toolbox: {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: {\n      brush: {\n        type: ['rect', 'polygon', 'clear'],\n        title: { rect: 'Select tracts in a box', polygon: 'Select tracts with a lasso', clear: 'Clear the selection' },\n      },\n    },\n  },\n  brush: {\n    xAxisIndex: 0,\n    yAxisIndex: 0,\n    brushType: 'rect',\n    brushMode: 'single',\n    transformable: false,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.12)', borderColor: muted, borderWidth: 1 },\n    inBrush: {},\n    outOfBrush: {},\n  },\n  title: {\n    text: `Moran's I = ${moran.toFixed(3)}` + (anySelected ? `   ·   ${selected.size} selected` : ''),\n    left: 8,\n    top: 4,\n    textStyle: { fontSize: 13, fontWeight: 'normal', color: theme.colors.text.primary },\n  },\n  xAxis: {\n    type: 'value',\n    name: `share, standardised (z of ${UNIT})`,\n    nameLocation: 'middle',\n    nameGap: 26,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { show: false },\n    axisLine: { onZero: false },\n  },\n  yAxis: {\n    type: 'value',\n    name: \"neighbours' mean z (spatial lag)\",\n    nameLocation: 'middle',\n    nameGap: 36,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { show: false },\n    axisLine: { onZero: false },\n  },\n  series: [\n    series(rest, { name: 'tracts', z: 1 }),\n    series(front, { name: 'highlighted', z: 2 }),\n    {\n      name: 'line',\n      type: 'line',\n      data: [\n        [xMin, moran * xMin],\n        [xMax, moran * xMax],\n      ],\n      symbol: 'none',\n      silent: true,\n      z: 3,\n      lineStyle: { color: theme.colors.text.primary, width: 1.5 },\n      markLine: {\n        silent: true,\n        symbol: 'none',\n        label: { show: false },\n        lineStyle: { color: muted, type: 'dashed', width: 1, opacity: 0.6 },\n        data: [{ xAxis: 0 }, { yAxis: 0 }],\n      },\n    },\n  ],\n};\n",
                 "google": {
                   "callback": "gmapReady",
                   "key": ""
@@ -652,7 +654,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Pooled shares: the group's residents over all residents, not a mean of tract shares.\nWITH sel AS (SELECT unnest([${sel:singlequote}]::VARCHAR[]) AS geoid),\nt AS (SELECT v.geoid, v.people, s.total_pop FROM $tractvals v JOIN $shapes s USING (geoid))\nSELECT (SELECT count(*) FROM t WHERE geoid IN (SELECT geoid FROM sel))::DOUBLE AS \"Selected\",\n       (SELECT 100 * sum(people) / nullif(sum(total_pop), 0) FROM t WHERE geoid IN (SELECT geoid FROM sel)) AS \"Their share\",\n       (SELECT 100 * sum(people) / sum(total_pop) FROM t) AS \"State\""
+                        "rawSql": "-- Pooled shares: the group's residents over all residents, not a mean of tract shares.\nWITH sel AS (SELECT unnest([${sel:singlequote}]::VARCHAR[]) AS geoid),\npicked AS (\n  -- the selection: tracts picked one by one (sel), and the box brushed on the scatter plot\n  SELECT c.geoid FROM $clusters c\n  WHERE c.geoid IN (SELECT geoid FROM sel) OR coalesce(c.z BETWEEN try_cast($bx0 AS DOUBLE) AND try_cast($bx1 AS DOUBLE) AND c.lag BETWEEN try_cast($by0 AS DOUBLE) AND try_cast($by1 AS DOUBLE), false)\n),\nt AS (SELECT v.geoid, v.people, s.total_pop FROM $tractvals v JOIN $shapes s USING (geoid))\nSELECT (SELECT count(*) FROM picked)::DOUBLE AS \"Selected\",\n       (SELECT 100 * sum(people) / nullif(sum(total_pop), 0) FROM t WHERE geoid IN (SELECT geoid FROM picked)) AS \"Their share\",\n       (SELECT 100 * sum(people) / sum(total_pop) FROM t) AS \"State\""
                       },
                       "version": "v0"
                     },
@@ -664,7 +666,7 @@
               "transformations": []
             }
           },
-          "description": "The tracts selected on the scatter plot or a map: how many, and the group's share of all their residents, against the share in the whole state.",
+          "description": "The tracts selected on the scatter plot (a box, a lasso, a click) or on a map (click, Shift+click): how many, and the group's share of all their residents, against the share in the whole state.",
           "id": 4,
           "links": [],
           "title": "Selection",
@@ -740,7 +742,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- The choropleth of the share itself, to read the clusters against.\n-- The selection is not read here: the map rings it by itself, and filtering\n-- on it would ring every tract left.\nSELECT c.geoid, s.name, s.county, round(c.share, 2) AS share, c.cluster, round(c.p, 3) AS p, s.geojson\nFROM $clusters c JOIN $shapes s USING (geoid)"
+                        "rawSql": "-- The choropleth of the share itself, to read the clusters against.\n-- `selected` is the box brushed on the scatter plot, which the map marks and\n-- dims the rest around (selectionField). The tracts clicked one by one (sel)\n-- the map rings by itself; filtering on either would leave nothing to dim.\nSELECT c.geoid, s.name, s.county, round(c.share, 2) AS share, c.cluster, round(c.p, 3) AS p,\n       coalesce(c.z BETWEEN try_cast($bx0 AS DOUBLE) AND try_cast($bx1 AS DOUBLE) AND c.lag BETWEEN try_cast($by0 AS DOUBLE) AND try_cast($by1 AS DOUBLE), false) AS selected, s.geojson\nFROM $clusters c JOIN $shapes s USING (geoid)"
                       },
                       "version": "v0"
                     },
@@ -752,7 +754,7 @@
               "transformations": []
             }
           },
-          "description": "The value the statistics are computed on: the group's share of each tract's residents, in %, in seven quantile classes. Click a tract to select it.",
+          "description": "The value the statistics are computed on: the group's share of each tract's residents, in %, in seven quantile classes. Click a tract to select it, Shift+click to add one; the rest of the map dims around the selection.",
           "id": 7,
           "links": [],
           "title": "Share of residents · ${grupo}",
@@ -769,6 +771,7 @@
                 "clickArea": false,
                 "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
+                "dimUnselected": true,
                 "fitOnVariables": [
                   "state"
                 ],
@@ -894,6 +897,7 @@
                 "rasterColormap": "",
                 "rasterPainted": false,
                 "saveRequest": 0,
+                "selectionField": "selected",
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table",
@@ -929,7 +933,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH sel AS (SELECT unnest([${sel:singlequote}]::VARCHAR[]) AS geoid)\nSELECT replace(s.name, 'Census Tract ', '') AS \"Tract\", replace(s.county, ' County', '') AS \"County\",\n       c.share AS \"Share %\", c.lag AS \"Neighbours' z\",\n       c.p AS \"p\", c.cluster AS \"Cluster\"\nFROM $clusters c JOIN $shapes s USING (geoid)\nWHERE CASE WHEN (SELECT count(*) FROM sel WHERE geoid \u003c\u003e '') \u003e 0\n           THEN c.geoid IN (SELECT geoid FROM sel)\n           ELSE c.cluster IN ('High-High', 'High-Low') END\nORDER BY c.p, c.share DESC\nLIMIT 1000"
+                        "rawSql": "WITH sel AS (SELECT unnest([${sel:singlequote}]::VARCHAR[]) AS geoid),\npicked AS (\n  -- the selection: tracts picked one by one (sel), and the box brushed on the scatter plot\n  SELECT c.geoid FROM $clusters c\n  WHERE c.geoid IN (SELECT geoid FROM sel) OR coalesce(c.z BETWEEN try_cast($bx0 AS DOUBLE) AND try_cast($bx1 AS DOUBLE) AND c.lag BETWEEN try_cast($by0 AS DOUBLE) AND try_cast($by1 AS DOUBLE), false)\n)\nSELECT replace(s.name, 'Census Tract ', '') AS \"Tract\", replace(s.county, ' County', '') AS \"County\",\n       c.share AS \"Share %\", c.lag AS \"Neighbours' z\", c.p AS \"p\", c.cluster AS \"Cluster\"\nFROM $clusters c JOIN $shapes s USING (geoid)\nWHERE CASE WHEN (SELECT count(*) FROM picked) \u003e 0\n           THEN c.geoid IN (SELECT geoid FROM picked)\n           ELSE c.cluster IN ('High-High', 'High-Low') END\nORDER BY c.p, c.share DESC\nLIMIT 1000"
                       },
                       "version": "v0"
                     },
@@ -1606,6 +1610,62 @@
           "regexApplyTo": "value",
           "skipUrlSync": true,
           "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Box, z from",
+          "name": "bx0",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Box, z to",
+          "name": "bx1",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Box, lag from",
+          "name": "by0",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Box, lag to",
+          "name": "by1",
+          "query": "",
+          "skipUrlSync": false
         }
       }
     ]
