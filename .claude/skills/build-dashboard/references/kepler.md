@@ -124,7 +124,8 @@ WHERE time >= coalesce(try_cast($t0 AS TIMESTAMPTZ), '-infinity'::TIMESTAMPTZ)
   AND ($area = '' OR ST_Intersects(geom, ST_GeomFromText($area)))      -- server, spatial
 ```
 
-In Chaski, without `spatial`, use `assets/area-filter.sql` for the drawn area.
+In Chaski, declare the map's variables in a filters variable and read them with
+`$__crossfilter` (engines.md), the drawn area included.
 
 ## Free or Plus
 

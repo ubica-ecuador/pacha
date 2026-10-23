@@ -52,7 +52,7 @@ nothing) are already in it.
 
 | You need | Copy from | Why |
 |---|---|---|
-| Points from a public GeoJSON feed, all in the browser, cross-filtered by map, brush and draw | `dashboards/gallery/earthquakes.json` | Chaski datasets, `areaVariable` + point-in-polygon without `spatial`, brush histogram, `timeSync: variables` |
+| Points from a public GeoJSON feed, all in the browser, cross-filtered by map, brush and draw | `dashboards/gallery/earthquakes.json` | Chaski datasets, a `filters` variable with `$__crossfilter` and a filter bar, `areaVariable`, brush histogram, `timeSync: variables` |
 | A server query over a large file into a browser dataset, then many small panels | `plus/dashboards/geolife-mobility.json` | `source.type: datasource`, a dataset built per instance (`datasets/geolife`), H3 on the server, flows, stops |
 | Live vehicle positions (GTFS-RT, ADS-B, AIS) | `gtfs-rt-mbta-fleet`, `trimet-live-fleet`, `air-traffic-world` | Fleet layer, refresh, feeds through the gateway, recorder history |
 | Replaying tracks with charts in sync | `f1-race-laps`, `drone-delivery-flights` | Fleet `fleetTimeRef: history`, cards, `SET VARIABLE` to build a URL from data, centre on selection |
@@ -96,5 +96,7 @@ Read only what the task needs.
   in plain SQL, for Chaski (no `spatial`). `@cte` and `@predicate` parts.
 - `assets/brush-histogram.js`: an ECharts histogram whose brush writes two variables. Change
   only its `@constants` block.
+- `assets/filter-bar.js` and `filter-bar.css`: a Business Text filter bar over
+  `$__filters(...)`: chips, a × per filter, Clear all, "N of M". Change only its `@constants`.
 
-Both are tested by `tests/templates/`; a dashboard embeds a copy.
+All are tested by `tests/templates/`; a dashboard embeds a copy.

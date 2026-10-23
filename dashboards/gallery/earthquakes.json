@@ -98,7 +98,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH area AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($quakeArea, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n)\nSELECT $__timeGroup(time, 1d) AS time, count(*) AS \"Filtered\"\nFROM $quakes, area\nWHERE $__timeFilter(time) AND mag \u003e= coalesce(try_cast($mag_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND mag \u003c coalesce(try_cast($mag_hi AS DOUBLE), 'infinity'::DOUBLE) AND greatest(least(depth, 299.9), 0) \u003e= coalesce(try_cast($depth_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND greatest(least(depth, 299.9), 0) \u003c coalesce(try_cast($depth_hi AS DOUBLE), 'infinity'::DOUBLE) AND (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n        AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\nGROUP BY 1 ORDER BY 1"
+                        "rawSql": "SELECT $__timeGroup(time, 1d) AS time, count(*) AS \"Filtered\"\nFROM $quakes\nWHERE $__timeFilter(time) AND $__crossfilter($quakeFilters, -time)\nGROUP BY 1 ORDER BY 1"
                       },
                       "version": "v0"
                     },
@@ -266,7 +266,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH area AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($quakeArea, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n)\nSELECT floor(greatest(least(depth, 299.9), 0) / 10) * 10 AS bin, count(*) AS n\nFROM $quakes, area\nWHERE $__timeFilter(time)\n  AND time \u003e= coalesce(try_cast($quakeFrom AS TIMESTAMPTZ), '-infinity'::TIMESTAMPTZ)\nAND time \u003c= coalesce(try_cast($quakeTo AS TIMESTAMPTZ), 'infinity'::TIMESTAMPTZ)\n  AND mag \u003e= coalesce(try_cast($mag_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND mag \u003c coalesce(try_cast($mag_hi AS DOUBLE), 'infinity'::DOUBLE)\n  AND (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n        AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\nGROUP BY 1 ORDER BY 1"
+                        "rawSql": "SELECT floor(depth_axis / 10) * 10 AS bin, count(*) AS n\nFROM $quakes\nWHERE $__timeFilter(time) AND $__crossfilter($quakeFilters, -depth)\nGROUP BY 1 ORDER BY 1"
                       },
                       "version": "v0"
                     },
@@ -343,7 +343,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH area AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($quakeArea, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n)\nSELECT count(*) AS \"Earthquakes\"\nFROM $quakes, area\nWHERE $__timeFilter(time)\n  AND time \u003e= coalesce(try_cast($quakeFrom AS TIMESTAMPTZ), '-infinity'::TIMESTAMPTZ)\nAND time \u003c= coalesce(try_cast($quakeTo AS TIMESTAMPTZ), 'infinity'::TIMESTAMPTZ)\n  AND mag \u003e= coalesce(try_cast($mag_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND mag \u003c coalesce(try_cast($mag_hi AS DOUBLE), 'infinity'::DOUBLE)\n  AND greatest(least(depth, 299.9), 0) \u003e= coalesce(try_cast($depth_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND greatest(least(depth, 299.9), 0) \u003c coalesce(try_cast($depth_hi AS DOUBLE), 'infinity'::DOUBLE)\n  AND (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n        AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)"
+                        "rawSql": "SELECT count(*) AS \"Earthquakes\"\nFROM $quakes\nWHERE $__timeFilter(time) AND $__crossfilter($quakeFilters)"
                       },
                       "version": "v0"
                     },
@@ -402,6 +402,93 @@
               }
             },
             "version": "13.2.1"
+          }
+        }
+      },
+      "panel-filter-bar": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT name, label, value, variables, active FROM $__filters($quakeFilters)",
+                        "refId": "filters"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "filters"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*) FILTER (WHERE $__crossfilter($quakeFilters))::DOUBLE AS shown,\n       count(*) FILTER (WHERE $__crossfilter($quakeFilters, -time))::DOUBLE AS without_time,\n       count(*)::DOUBLE AS total\nFROM $quakes WHERE $__timeFilter(time)",
+                        "refId": "count"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "count"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "What filters the dashboard now. Each chip clears its filter; Clear all clears every one.",
+          "id": 13,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "marcusolsson-dynamictext-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "afterRender": "// A filter bar for Business Text (renderMode \"data\"): the dashboard's active\n// filters as chips, a × on each to clear it, \"Clear all\", and how many rows\n// the filters leave.\n//\n// Two query frames feed it, both from Chaski:\n//   FILTERS: SELECT name, label, value, variables, active FROM $__filters($quakeFilters)\n//   COUNT:   SELECT count(*) FILTER (WHERE $__crossfilter($quakeFilters))::DOUBLE AS shown,\n//                   count(*) FILTER (WHERE $__crossfilter($quakeFilters, -time))::DOUBLE AS without_time,\n//                   count(*)::DOUBLE AS total FROM $quakes WHERE $__timeFilter(time)\n// A `without_\u003cname\u003e` column hides that filter's chip while it removes no rows: a kepler\n// map publishes its whole time window on load, which is active but narrows nothing.\n// A chip's × empties its filter's variables; \"Clear all\" empties every one.\n// Text goes in with textContent only: a variable's value is never markup.\n//\n// The panel's content is \u003cdiv class=\"fbar\"\u003e\u003c/div\u003e; styles in filter-bar.css.\n// A dashboard changes only the constants block below.\n// @constants begin\nconst FILTERS = 'filters';\nconst COUNT = 'count';\nconst NOUN = 'earthquakes';\nconst HINT = \"No filter yet: brush a histogram, draw an area or move the map's time slider.\";\n// @constants end\n\nconst frames = context.panelData.series;\nconst frame = (ref) =\u003e frames.find((f) =\u003e f.refId === ref);\nconst column = (f, name) =\u003e (f \u0026\u0026 f.fields.find((x) =\u003e x.name === name)?.values) || [];\nconst filters = frame(FILTERS);\nconst rows = Array.from(column(filters, 'label'), (label, i) =\u003e ({\n  name: column(filters, 'name')[i],\n  label,\n  value: column(filters, 'value')[i],\n  active: Boolean(column(filters, 'active')[i]),\n  vars: String(column(filters, 'variables')[i] || '').split(',').filter(Boolean),\n}));\nconst count = frame(COUNT);\nconst shown = column(count, 'shown')[0];\nconst total = column(count, 'total')[0];\nconst fmt = (n) =\u003e (n === undefined ? '…' : Number(n).toLocaleString('en-US'));\nconst clear = (vars) =\u003e\n  context.grafana.locationService.partial(Object.fromEntries(vars.map((v) =\u003e ['var-' + v, ''])), true);\n\nconst box = context.element.querySelector('.fbar');\nif (!box) {\n  return;\n}\nbox.replaceChildren();\nconst add = (parent, tag, cls, text) =\u003e {\n  const el = document.createElement(tag);\n  if (cls) {\n    el.className = cls;\n  }\n  if (text !== undefined) {\n    el.textContent = text;\n  }\n  parent.appendChild(el);\n  return el;\n};\nadd(box, 'span', 'fbar-count', `${fmt(shown)} of ${fmt(total)} ${NOUN}`);\n// Active, and narrowing: a filter with a `without_\u003cname\u003e` count equal to `shown` removes nothing.\nconst narrows = (r) =\u003e {\n  const without = column(count, `without_${r.name}`)[0];\n  return without === undefined || without !== shown;\n};\nconst on = rows.filter((r) =\u003e r.active \u0026\u0026 narrows(r));\nif (on.length === 0) {\n  add(box, 'span', 'fbar-hint', HINT);\n}\nfor (const r of on) {\n  const chip = add(box, 'span', 'fbar-chip');\n  add(chip, 'b', '', r.label);\n  add(chip, 'span', '', r.value);\n  const x = add(chip, 'button', '', '×');\n  x.type = 'button';\n  x.title = `Clear ${r.label}`;\n  x.onclick = () =\u003e clear(r.vars);\n}\nif (on.length \u003e 0) {\n  const all = add(box, 'button', 'fbar-clear', 'Clear all');\n  all.type = 'button';\n  all.onclick = () =\u003e clear(rows.flatMap((r) =\u003e r.vars));\n}\n",
+                "content": "\u003cdiv class=\"fbar\"\u003e\u003c/div\u003e",
+                "contentPartials": [],
+                "defaultContent": "\u003cdiv class=\"fbar\"\u003e\u003c/div\u003e",
+                "editor": {
+                  "format": "auto",
+                  "language": "html"
+                },
+                "editors": [
+                  "styles",
+                  "afterRender"
+                ],
+                "externalStyles": [],
+                "helpers": "",
+                "renderMode": "data",
+                "status": "",
+                "styles": ".fbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 100%; font-size: 13px; }\n.fbar-count { font-weight: 600; margin-right: 4px; }\n.fbar-hint { opacity: 0.7; }\n.fbar-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 2px 2px 10px; border-radius: 12px; border: 1px solid rgba(128, 128, 128, 0.45); }\n.fbar-chip button, .fbar-clear { background: none; border: none; color: inherit; cursor: pointer; line-height: 1; padding: 3px 7px; border-radius: 10px; }\n.fbar-chip button { font-size: 15px; }\n.fbar-chip button:hover, .fbar-clear:hover { background: rgba(128, 128, 128, 0.2); }\n.fbar-clear { font-size: 12px; text-decoration: underline; }\n",
+                "wrap": false
+              }
+            },
+            "version": "6.3.0"
           }
         }
       },
@@ -478,7 +565,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH area AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($quakeArea, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n)\nSELECT floor(mag / 0.5) * 0.5 AS bin, count(*) AS n\nFROM $quakes, area\nWHERE $__timeFilter(time)\n  AND time \u003e= coalesce(try_cast($quakeFrom AS TIMESTAMPTZ), '-infinity'::TIMESTAMPTZ)\nAND time \u003c= coalesce(try_cast($quakeTo AS TIMESTAMPTZ), 'infinity'::TIMESTAMPTZ)\n  AND greatest(least(depth, 299.9), 0) \u003e= coalesce(try_cast($depth_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND greatest(least(depth, 299.9), 0) \u003c coalesce(try_cast($depth_hi AS DOUBLE), 'infinity'::DOUBLE)\n  AND (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n        AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\nGROUP BY 1 ORDER BY 1"
+                        "rawSql": "SELECT floor(mag / 0.5) * 0.5 AS bin, count(*) AS n\nFROM $quakes\nWHERE $__timeFilter(time) AND $__crossfilter($quakeFilters, -mag)\nGROUP BY 1 ORDER BY 1"
                       },
                       "version": "v0"
                     },
@@ -839,7 +926,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH area AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($quakeArea, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n), f AS (\n  SELECT q.* FROM $quakes AS q, area\n  WHERE $__timeFilter(time) AND time \u003e= coalesce(try_cast($quakeFrom AS TIMESTAMPTZ), '-infinity'::TIMESTAMPTZ)\nAND time \u003c= coalesce(try_cast($quakeTo AS TIMESTAMPTZ), 'infinity'::TIMESTAMPTZ) AND mag \u003e= coalesce(try_cast($mag_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND mag \u003c coalesce(try_cast($mag_hi AS DOUBLE), 'infinity'::DOUBLE) AND greatest(least(depth, 299.9), 0) \u003e= coalesce(try_cast($depth_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND greatest(least(depth, 299.9), 0) \u003c coalesce(try_cast($depth_hi AS DOUBLE), 'infinity'::DOUBLE) AND (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n        AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\n)\nSELECT f.place AS \"Place\",\n       round(f.mag, 1) AS \"Mag\",\n       coalesce(f.alert, 'none') AS \"PAGER\",\n       e.people_100km AS \"People ≤100 km\",\n       e.largest_place AS \"Largest place\",\n       e.largest_pop AS \"Population\",\n       f.id, f.latitude, f.longitude\nFROM f JOIN $exposure AS e ON e.id = f.id\nWHERE e.people_100km \u003e 0\nORDER BY e.people_100km DESC\nLIMIT 10"
+                        "rawSql": "WITH f AS (\n  SELECT q.* FROM $quakes AS q\n  WHERE $__timeFilter(time) AND $__crossfilter($quakeFilters)\n)\nSELECT f.place AS \"Place\",\n       round(f.mag, 1) AS \"Mag\",\n       coalesce(f.alert, 'none') AS \"PAGER\",\n       e.people_100km AS \"People ≤100 km\",\n       e.largest_place AS \"Largest place\",\n       e.largest_pop AS \"Population\",\n       f.id, f.latitude, f.longitude\nFROM f JOIN $exposure AS e ON e.id = f.id\nWHERE e.people_100km \u003e 0\nORDER BY e.people_100km DESC\nLIMIT 10"
                       },
                       "version": "v0"
                     },
@@ -1492,7 +1579,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH area AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($quakeArea, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n), f AS (\n  SELECT q.* FROM $quakes AS q, area\n  WHERE $__timeFilter(time) AND time \u003e= coalesce(try_cast($quakeFrom AS TIMESTAMPTZ), '-infinity'::TIMESTAMPTZ)\nAND time \u003c= coalesce(try_cast($quakeTo AS TIMESTAMPTZ), 'infinity'::TIMESTAMPTZ) AND mag \u003e= coalesce(try_cast($mag_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND mag \u003c coalesce(try_cast($mag_hi AS DOUBLE), 'infinity'::DOUBLE) AND greatest(least(depth, 299.9), 0) \u003e= coalesce(try_cast($depth_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND greatest(least(depth, 299.9), 0) \u003c coalesce(try_cast($depth_hi AS DOUBLE), 'infinity'::DOUBLE) AND (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n        AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\n),\nstrong AS (SELECT latitude, longitude FROM f WHERE mag \u003e= 4.5),\nnear AS (\n  SELECT DISTINCT p.name, p.latitude, p.longitude, p.pop_min\n  FROM strong AS q\n  JOIN $places AS p\n    ON p.latitude BETWEEN q.latitude - 1 AND q.latitude + 1\n   AND least(abs(p.longitude - q.longitude), 360 - abs(p.longitude - q.longitude))\n       \u003c= 1 / greatest(cos(radians(q.latitude)), 0.01)\n  WHERE 2 * 6371 * asin(sqrt(\n  power(sin(radians(p.latitude - q.latitude) / 2), 2)\n  + cos(radians(q.latitude)) * cos(radians(p.latitude))\n    * power(sin(radians(p.longitude - q.longitude) / 2), 2))) \u003c= 100\n)\nSELECT coalesce(sum(pop_min), 0)::DOUBLE AS \"People within 100 km\" FROM near"
+                        "rawSql": "WITH f AS (\n  SELECT q.* FROM $quakes AS q\n  WHERE $__timeFilter(time) AND $__crossfilter($quakeFilters)\n),\nstrong AS (SELECT latitude, longitude FROM f WHERE mag \u003e= 4.5),\nnear AS (\n  SELECT DISTINCT p.name, p.latitude, p.longitude, p.pop_min\n  FROM strong AS q\n  JOIN $places AS p\n    ON p.latitude BETWEEN q.latitude - 1 AND q.latitude + 1\n   AND least(abs(p.longitude - q.longitude), 360 - abs(p.longitude - q.longitude))\n       \u003c= 1 / greatest(cos(radians(q.latitude)), 0.01)\n  WHERE 2 * 6371 * asin(sqrt(\n  power(sin(radians(p.latitude - q.latitude) / 2), 2)\n  + cos(radians(q.latitude)) * cos(radians(p.latitude))\n    * power(sin(radians(p.longitude - q.longitude) / 2), 2))) \u003c= 100\n)\nSELECT coalesce(sum(pop_min), 0)::DOUBLE AS \"People within 100 km\" FROM near"
                       },
                       "version": "v0"
                     },
@@ -1921,7 +2008,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH area AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($quakeArea, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n), f AS (\n  SELECT q.* FROM $quakes AS q, area\n  WHERE $__timeFilter(time) AND time \u003e= coalesce(try_cast($quakeFrom AS TIMESTAMPTZ), '-infinity'::TIMESTAMPTZ)\nAND time \u003c= coalesce(try_cast($quakeTo AS TIMESTAMPTZ), 'infinity'::TIMESTAMPTZ) AND mag \u003e= coalesce(try_cast($mag_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND mag \u003c coalesce(try_cast($mag_hi AS DOUBLE), 'infinity'::DOUBLE) AND greatest(least(depth, 299.9), 0) \u003e= coalesce(try_cast($depth_lo AS DOUBLE), '-infinity'::DOUBLE)\nAND greatest(least(depth, 299.9), 0) \u003c coalesce(try_cast($depth_hi AS DOUBLE), 'infinity'::DOUBLE) AND (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n        AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1)\n)\nSELECT round(max(mag), 1) AS \"Strongest\" FROM f"
+                        "rawSql": "SELECT round(max(mag), 1) AS \"Strongest\"\nFROM $quakes\nWHERE $__timeFilter(time) AND $__crossfilter($quakeFilters)"
                       },
                       "version": "v0"
                     },
@@ -2013,12 +2100,25 @@
                                 "spec": {
                                   "element": {
                                     "kind": "ElementReference",
+                                    "name": "panel-filter-bar"
+                                  },
+                                  "height": 2,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
                                     "name": "panel-map"
                                   },
                                   "height": 16,
                                   "width": 16,
                                   "x": 0,
-                                  "y": 0
+                                  "y": 2
                                 }
                               },
                               {
@@ -2031,7 +2131,7 @@
                                   "height": 3,
                                   "width": 3,
                                   "x": 16,
-                                  "y": 0
+                                  "y": 2
                                 }
                               },
                               {
@@ -2044,7 +2144,7 @@
                                   "height": 3,
                                   "width": 3,
                                   "x": 19,
-                                  "y": 0
+                                  "y": 2
                                 }
                               },
                               {
@@ -2057,7 +2157,7 @@
                                   "height": 3,
                                   "width": 2,
                                   "x": 22,
-                                  "y": 0
+                                  "y": 2
                                 }
                               },
                               {
@@ -2070,7 +2170,7 @@
                                   "height": 6,
                                   "width": 4,
                                   "x": 16,
-                                  "y": 3
+                                  "y": 5
                                 }
                               },
                               {
@@ -2083,7 +2183,7 @@
                                   "height": 6,
                                   "width": 4,
                                   "x": 20,
-                                  "y": 3
+                                  "y": 5
                                 }
                               },
                               {
@@ -2096,7 +2196,7 @@
                                   "height": 7,
                                   "width": 8,
                                   "x": 16,
-                                  "y": 9
+                                  "y": 11
                                 }
                               }
                             ]
@@ -2327,7 +2427,7 @@
               "name": "quakes",
               "refId": "quakes",
               "source": {
-                "sql": "SELECT\n  f.id AS id,\n  to_timestamp(f.properties.time / 1000) AS time,\n  f.geometry.coordinates[2]::DOUBLE AS latitude,\n  f.geometry.coordinates[1]::DOUBLE AS longitude,\n  f.geometry.coordinates[3]::DOUBLE AS depth,\n  f.properties.mag::DOUBLE AS mag,\n  f.properties.place::VARCHAR AS place,\n  f.properties.alert::VARCHAR AS alert,\n  f.properties.mmi::DOUBLE AS mmi,\n  f.properties.felt::INTEGER AS felt,\n  f.properties.tsunami::INTEGER AS tsunami,\n  f.properties.sig::INTEGER AS sig,\n  f.properties.url::VARCHAR AS url\nFROM read_json('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson'), unnest(features) AS t(f)\nWHERE f.properties.mag IS NOT NULL",
+                "sql": "SELECT\n  f.id AS id,\n  to_timestamp(f.properties.time / 1000) AS time,\n  f.geometry.coordinates[2]::DOUBLE AS latitude,\n  f.geometry.coordinates[1]::DOUBLE AS longitude,\n  f.geometry.coordinates[3]::DOUBLE AS depth,\n  -- Depth clamped to the histogram's axis, so the depth filter and its bars agree.\n  greatest(least(f.geometry.coordinates[3]::DOUBLE, 299.9), 0) AS depth_axis,\n  f.properties.mag::DOUBLE AS mag,\n  f.properties.place::VARCHAR AS place,\n  f.properties.alert::VARCHAR AS alert,\n  f.properties.mmi::DOUBLE AS mmi,\n  f.properties.felt::INTEGER AS felt,\n  f.properties.tsunami::INTEGER AS tsunami,\n  f.properties.sig::INTEGER AS sig,\n  f.properties.url::VARCHAR AS url\nFROM read_json('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson'), unnest(features) AS t(f)\nWHERE f.properties.mag IS NOT NULL",
                 "type": "sql"
               }
             },
@@ -2542,6 +2642,75 @@
           "name": "lng",
           "query": "",
           "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "quakeFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$quakes",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$quakeFrom",
+                  "label": "Time",
+                  "name": "time",
+                  "to": "$quakeTo",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "mag",
+                  "from": "$mag_lo",
+                  "label": "Magnitude",
+                  "name": "mag",
+                  "to": "$mag_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "depth_axis",
+                  "from": "$depth_lo",
+                  "label": "Depth (km)",
+                  "name": "depth",
+                  "to": "$depth_hi",
+                  "type": "range"
+                },
+                {
+                  "label": "Area",
+                  "lat": "latitude",
+                  "lng": "longitude",
+                  "name": "area",
+                  "type": "area",
+                  "variable": "$quakeArea"
+                }
+              ],
+              "kind": "filters",
+              "refId": "quakeFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
         }
       }
     ]

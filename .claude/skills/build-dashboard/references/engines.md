@@ -102,7 +102,41 @@ Panels then read it as `$name`, like a table.
   variable `trip` broke both).
 
 **A panel query** reads datasets with SQL: `"spec": { "rawSql": "SELECT ... FROM $quakes WHERE $__timeFilter(time)" }`.
-Macros: `$__timeFilter`, `$__timeGroup(time, 1d)`, `$__timeFrom`, `$__timeTo`, `$__interval`.
+Macros: `$__timeFilter`, `$__timeGroup(time, 1d)`, `$__timeFrom`, `$__timeTo`, `$__interval`,
+and the cross-filter macros below.
+
+**Cross-filters** (Chaski 1.2.0). Panels that filter each other (a brush, a drawn area, the map's
+time slider, a picked value) write variables; declare once which column each one narrows, in a
+hidden `filters` variable beside the dataset, and every panel applies them with one macro:
+
+```json
+"query": { "datasource": { "name": "duckdbwasm" }, "group": "ubica-chaski-datasource", "kind": "DataQuery", "version": "v0",
+  "spec": { "kind": "filters", "refId": "quakeFilters", "dataset": "$quakes", "filters": [
+    { "name": "time", "label": "Time", "type": "range", "column": "time", "as": "time", "from": "$quakeFrom", "to": "$quakeTo", "upper": "closed" },
+    { "name": "mag", "label": "Magnitude", "type": "range", "column": "mag", "from": "$mag_lo", "to": "$mag_hi" },
+    { "name": "area", "label": "Area", "type": "area", "variable": "$quakeArea", "lat": "latitude", "lng": "longitude" } ] } }
+```
+
+```sql
+SELECT floor(mag / 0.5) * 0.5 AS bin, count(*) AS n FROM $quakes
+WHERE $__timeFilter(time) AND $__crossfilter($quakeFilters, -mag)   -- every filter but its own
+```
+
+- The variable (named `quakeFilters` here) is a `QueryVariable` like the dataset's, hidden,
+  `refresh: onDashboardLoad`. Write the dataset and every variable it reads as `$name`: that is
+  how Grafana refreshes it, and the panels naming it, when one changes.
+- Pass the filters variable to the macros, never the dataset: a query naming only `$quakes`
+  would not run again when a filter moves.
+- A panel leaves out the filter it writes (`-mag` in the histogram that brushes `mag_lo`/`mag_hi`),
+  or it would narrow itself and could never widen again. The map filters in kepler: no macro.
+- Types: `range` (`as: number|time`, `upper: open|closed`), `in` (multi-value), `equals`,
+  `search`, `area` (the WKT kepler writes; no `spatial` needed), `link` (`filters` = another
+  dataset's filters variable, `column`, `to`: a cohort). Columns are names, not expressions:
+  derive them in the dataset (`depth_axis` in earthquakes). Values are parsed and quoted by
+  Chaski, never pasted into the SQL; times compare as UTC.
+- `$__filters($quakeFilters)` is a table of the declared filters (`name, label, active, value,
+  variables`) for a filter bar: `assets/filter-bar.js` in a Business Text panel.
+- The server DuckDB has no such macros: there, filters stay hand-written (kepler.md).
 
 **A values variable** fills a dropdown from a dataset:
 `"spec": { "kind": "values", "refId": "flight", "sql": "SELECT x AS value, label AS text FROM $flights" }`.
@@ -116,7 +150,8 @@ Chaski traps:
   `spain-daily-mobility` (legend, no bars; cause unknown), while a daily `timeseries` works in
   `earthquakes`. For bar charts over Chaski use Business Charts; stat and table are fine.
 - Memory limit is 1 GB per viewer: reduce on the server first.
-- Point in a drawn polygon without `spatial`: `assets/area-filter.sql`.
+- Point in a drawn polygon without `spatial`: an `area` filter with `$__crossfilter` (above);
+  `assets/area-filter.sql` is the hand-written form, for a dataset with no filters variable.
 
 ## Infinity
 

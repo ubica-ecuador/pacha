@@ -23,3 +23,7 @@ export function areaFilter(areaSqlExpr) {
   };
   return { cte: part('cte'), predicate: part('predicate') };
 }
+
+export function filterBarBody() {
+  return asset('filter-bar.js');
+}
