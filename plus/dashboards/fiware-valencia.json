@@ -1088,15 +1088,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": 39.45745103919292,
-                      "longitude": -0.40603353562847466,
+                      "latitude": 39.46102081825062,
+                      "longitude": -0.40217401336310954,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_3D",
                       "maxPitch": 85,
                       "pitch": 50,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 11.988975101908029
+                      "zoom": 13.177350383771156
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -1105,7 +1105,7 @@
                         0
                       ],
                       "mapStyles": {},
-                      "styleType": "openfreemap-positron",
+                      "styleType": "openfreemap-liberty",
                       "threeDBuildingColor": [
                         12.887291085429352,
                         12.887291085429352,
@@ -1114,13 +1114,15 @@
                       "topLayerGroups": {
                         "label": true,
                         "poi": true,
-                        "road": true
+                        "road": false
                       },
                       "visibleLayerGroups": {
+                        "3d building": true,
                         "border": false,
                         "building": true,
                         "label": true,
                         "land": true,
+                        "poi": false,
                         "relief": false,
                         "road": true,
                         "water": true
@@ -1131,6 +1133,10 @@
                       "mapControls": {
                         "chart": {
                           "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
                         },
                         "mapLegend": {
                           "active": false
@@ -1172,13 +1178,17 @@
                           "timezone": "Europe/Madrid",
                           "type": "timeRange",
                           "value": [
-                            1791871200000,
-                            1791950400000
+                            1792681646115,
+                            1792768046115
                           ],
                           "view": "minified"
                         }
                       ],
+                      "groupBys": [],
                       "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
                         "brush": {
                           "enabled": false,
                           "size": 0.5
@@ -1187,8 +1197,17 @@
                           "enabled": false
                         },
                         "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
                           "enabled": false,
                           "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
                         },
                         "tooltip": {
                           "compareMode": false,
@@ -1268,8 +1287,13 @@
                               }
                             ]
                           }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
                         }
                       },
+                      "joins": [],
                       "layerBlending": "normal",
                       "layerOrder": [
                         "bikes",
@@ -1345,11 +1369,12 @@
                               "gaugeBackgroundOpacity": 0.5,
                               "gaugeCentreText": false,
                               "gaugeDistance": 30,
-                              "gaugeIcon": "square",
+                              "gaugeIcon": "temaki:bicycle_parked",
                               "gaugeMax": 100,
                               "gaugeMin": 0,
+                              "gaugeOnTop": true,
                               "gaugePosition": "center",
-                              "gaugeShape": "ring",
+                              "gaugeShape": "icon",
                               "gaugeTextMode": "percent",
                               "gaugeTextSize": 11,
                               "gaugeThickness": 3,
@@ -1361,7 +1386,7 @@
                               "historyField": "off",
                               "opacity": 0.9,
                               "outline": false,
-                              "radius": 4.8,
+                              "radius": 10.3,
                               "radiusRange": [
                                 0,
                                 50
@@ -1458,6 +1483,7 @@
                               "sparkCrosshair": true,
                               "sparkDotRadius": 8,
                               "sparkDots": true,
+                              "sparkDotsOnTop": true,
                               "sparkFill": true,
                               "sparkMax": "auto",
                               "sparkMin": "auto",
@@ -1556,15 +1582,22 @@
                                 "name": "Estado del tráfico",
                                 "type": "customOrdinal"
                               },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
                               "elevationScale": 0,
                               "enable3d": false,
                               "filled": false,
+                              "fixedElevation": true,
                               "fixedHeight": false,
                               "heightRange": [
                                 0,
                                 500
                               ],
                               "historyField": "color",
+                              "invertHeight": false,
                               "opacity": 0.95,
                               "pipelineAltitude": 0,
                               "pipelineLaneGap": 1,
@@ -1594,9 +1627,9 @@
                               },
                               "strokeOpacity": 0.95,
                               "stroked": true,
-                              "thickness": 17.1,
+                              "thickness": 5.07,
                               "trafficAnimate": true,
-                              "trafficCycle": 12.5,
+                              "trafficCycle": 17,
                               "trafficDashLength": 0.5,
                               "trafficDirectionMode": "straight",
                               "trafficGlow": false,
@@ -1604,8 +1637,8 @@
                                 1,
                                 6
                               ],
-                              "trafficSpacing": 21,
-                              "trafficStyle": "pulse",
+                              "trafficSpacing": 30,
+                              "trafficStyle": "dots",
                               "trafficTiming": "random",
                               "trafficTrail": 0.3,
                               "wireframe": false
@@ -1615,6 +1648,7 @@
                           "type": "pipeline",
                           "visualChannels": {
                             "altitudeScale": "linear",
+                            "elevationOffsetScale": "linear",
                             "reverseColorScale": "quantile",
                             "reverseSizeScale": "linear",
                             "reverseSpeedScale": "linear",
@@ -1697,6 +1731,7 @@
                               "surfaceAltitude": 0,
                               "surfaceBands": true,
                               "surfaceBreaks": "",
+                              "surfaceDrape": true,
                               "surfaceExtent": "hull",
                               "surfaceFade": true,
                               "surfaceIsolineWidth": 1,
@@ -1764,7 +1799,7 @@
                 ]
               }
             },
-            "version": "1.0.0"
+            "version": "1.4.1"
           }
         }
       },
