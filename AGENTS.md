@@ -24,6 +24,9 @@ when it exists.
    `PACHA_REPO_TYPE=github` the instance follows the branch on GitHub: **a push is live**, and a
    save in Grafana is a commit. On such an instance, show the user a preview copy first and push
    only after they approve (see [workflow.md](.claude/skills/build-dashboard/references/workflow.md)).
+   A third repository, `chaski`, syncs the Chaski repo's `examples/dashboards/` read-only into the
+   "Chaski plugin" folder on a GitHub-synced instance: change those dashboards in the Chaski repo,
+   never in Grafana or here.
 2. **Never write into a synced folder by API or MCP** to try something out. Saving into the
    `gallery` or `plus` folders writes the repository (or GitHub). Previews go in a separate,
    non-synced folder.

@@ -19,7 +19,7 @@ services:
     environment:
       # Replaces the image's list (see images/grafana/Dockerfile): repeat it,
       # plus the app and the panel it nests.
-      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: ubica-keplergl-panel,ubica-chaski-datasource,motherduck-duckdb-datasource,ubica-keplerplus-app,ubica-keplerplus-panel,ubica-timebrush-panel
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: ubica-keplergl-panel,ubica-chaski-app,ubica-chaski-datasource,ubica-chaski-mosaic-panel,motherduck-duckdb-datasource,ubica-keplerplus-app,ubica-keplerplus-panel,ubica-timebrush-panel
     volumes:
       - type: bind
         source: ${PLUS_DIST:?set PLUS_DIST to the Plus app's dist/ folder}

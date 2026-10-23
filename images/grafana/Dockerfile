@@ -21,8 +21,8 @@ ARG KEPLER_PANEL_SHA256=ea376c3f93d095635dabf29a625f193417f989b4b7d585500e60bbb1
 # release: the version above. edge: main of the Kepler repo, as its CI last
 # published it; not pinned, see the kepler-edge stage.
 ARG KEPLER_PANEL_CHANNEL=release
-ARG CHASKI_VERSION=1.2.0
-ARG CHASKI_SHA256=bfa22e7712b0d81e00779c6fe41376d5b7f1ad5be16259f5c1bab34d014f1d51
+ARG CHASKI_VERSION=2.0.0
+ARG CHASKI_SHA256=76ecf85f539a3f4a4e94f2b2e9da8cfe76a257f1bcc7fbb3469b1665046e7cf6
 ARG DUCKDB_DS_VERSION=0.4.5
 ARG DUCKDB_DS_SHA256=156c6ab8caad03d6a8956dfae1f685697101d14a1f0921528d8c6258f03a3c40
 # The engine the DuckDB datasource is linked against. Extensions are built per
@@ -72,7 +72,7 @@ ARG DUCKDB_DS_VERSION
 ARG DUCKDB_DS_SHA256
 RUN apk add --no-cache curl unzip
 WORKDIR /fetch
-RUN curl -fsSLo chaski.zip "https://github.com/ubica-ecuador/chaski/releases/download/v${CHASKI_VERSION}/ubica-chaski-datasource-${CHASKI_VERSION}.zip" \
+RUN curl -fsSLo chaski.zip "https://github.com/ubica-ecuador/chaski/releases/download/v${CHASKI_VERSION}/ubica-chaski-app-${CHASKI_VERSION}.zip" \
  && curl -fsSLo duckdb.zip "https://github.com/motherduckdb/grafana-duckdb-datasource/releases/download/v${DUCKDB_DS_VERSION}/motherduck-duckdb-datasource-${DUCKDB_DS_VERSION}.zip" \
  && printf '%s  chaski.zip\n%s  duckdb.zip\n' "${CHASKI_SHA256}" "${DUCKDB_DS_SHA256}" | sha256sum -c - \
  && mkdir /plugins \
@@ -138,8 +138,9 @@ COPY --from=kepler --chown=472:0 /plugins/ubica-keplergl-panel /opt/pacha/plugin
 USER 472
 
 # - Anonymous visitors see dashboards and change nothing.
-# - Unsigned: our two plugins until the catalogue signs them, and DuckDB, which
-#   is not in the catalogue at all. Nothing else.
+# - Unsigned: our plugins until the catalogue signs them (Chaski is an app that
+#   brings its datasource and the Mosaic panel, each listed by its own id), and
+#   DuckDB, which is not in the catalogue at all. Nothing else.
 # - Grafana 13 hands a backend plugin only the host variables named in
 #   GF_PLUGINS_FORWARD_HOST_ENV_VARS, and never HOME: it always pins a plugin
 #   subprocess's HOME to GF_PATHS_HOME (/usr/share/grafana), no matter what
@@ -159,7 +160,7 @@ ENV GF_PATHS_PLUGINS=/opt/pacha/plugins \
     HOME=/opt/pacha/duckdb-home \
     GF_AUTH_ANONYMOUS_ENABLED=true \
     GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer \
-    GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=ubica-keplergl-panel,ubica-chaski-datasource,motherduck-duckdb-datasource \
+    GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=ubica-keplergl-panel,ubica-chaski-app,ubica-chaski-datasource,ubica-chaski-mosaic-panel,motherduck-duckdb-datasource \
     GF_PLUGINS_FORWARD_HOST_ENV_VARS=motherduck-duckdb-datasource,yesoreyeram-infinity-datasource \
     GF_PLUGIN_PAGINATION_MAX_PAGES=12 \
     GF_PLUGINS_PREINSTALL_DISABLED=true \

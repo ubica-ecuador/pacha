@@ -5,9 +5,14 @@ import { ADMIN, api, dsQueryBody, rowsOf } from '../lib/grafana.mjs';
 
 const IMAGE = process.env.GRAFANA_IMAGE ?? 'ghcr.io/ubica-ecuador/pacha-grafana:dev';
 
+// Chaski's app brings these two inside its own folder, ubica-chaski-app/.
+const NESTED = ['ubica-chaski-datasource', 'ubica-chaski-mosaic-panel'];
+
 const EXPECTED = {
   'ubica-keplergl-panel': { version: '1.4.0', signature: 'unsigned' },
-  'ubica-chaski-datasource': { version: '1.2.0', signature: 'unsigned' },
+  'ubica-chaski-app': { version: '2.0.0', signature: 'unsigned' },
+  'ubica-chaski-datasource': { version: '2.0.0', signature: 'unsigned' },
+  'ubica-chaski-mosaic-panel': { version: '2.0.0', signature: 'unsigned' },
   'motherduck-duckdb-datasource': { version: '0.4.5', signature: 'unsigned' },
   'yesoreyeram-infinity-datasource': { version: '4.0.0', signature: 'valid' },
   'volkovlabs-echarts-panel': { version: '7.2.5', signature: 'valid' },
@@ -49,7 +54,7 @@ test('runs Grafana Enterprise 13.2.1', async () => {
   assert.equal(json.buildInfo.edition, 'Enterprise');
 });
 
-test('the seven plugins load with the pinned versions and signatures', async () => {
+test('the plugins load with the pinned versions and signatures', async () => {
   const { json } = await api(base, '/api/plugins');
   for (const [pluginId, want] of Object.entries(EXPECTED)) {
     const plugin = json.find((p) => p.id === pluginId);
@@ -76,7 +81,7 @@ test('safe defaults, and plugins and DuckDB home outside /var/lib/grafana', () =
     'HOME=/opt/pacha/duckdb-home',
     'GF_AUTH_ANONYMOUS_ENABLED=true',
     'GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer',
-    'GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=ubica-keplergl-panel,ubica-chaski-datasource,motherduck-duckdb-datasource',
+    'GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=ubica-keplergl-panel,ubica-chaski-app,ubica-chaski-datasource,ubica-chaski-mosaic-panel,motherduck-duckdb-datasource',
     'GF_PLUGINS_FORWARD_HOST_ENV_VARS=motherduck-duckdb-datasource,yesoreyeram-infinity-datasource',
     'GF_PLUGIN_PAGINATION_MAX_PAGES=12',
     'GF_PLUGINS_PREINSTALL_DISABLED=true',
@@ -90,7 +95,7 @@ test('versions are exposed as image labels', () => {
   const labels = JSON.parse(sh('docker', ['image', 'inspect', '--format', '{{json .Config.Labels}}', IMAGE]));
   assert.equal(labels['io.pacha.kepler-panel.version'], '1.4.0');
   assert.equal(labels['io.pacha.kepler-panel.channel'], 'release');
-  assert.equal(labels['io.pacha.chaski.version'], '1.2.0');
+  assert.equal(labels['io.pacha.chaski.version'], '2.0.0');
   assert.equal(labels['io.pacha.duckdb-datasource.version'], '0.4.5');
   assert.equal(labels['io.pacha.duckdb-engine.version'], '1.5.4');
   assert.equal(labels['io.pacha.business-charts.version'], '7.2.5');
@@ -139,7 +144,7 @@ test('DuckDB loads every baked extension with no network at all', async () => {
 
 // Last on purpose: Grafana's plugin preinstall runs in the background after
 // startup, so by now it would have had time to write into the folder.
-test('nothing is downloaded at startup: the plugin folder holds exactly the seven', () => {
+test('nothing is downloaded at startup: the plugin folder holds exactly ours', () => {
   const dirs = sh('docker', ['exec', id, 'ls', '/opt/pacha/plugins']).split('\n').sort();
-  assert.deepEqual(dirs, Object.keys(EXPECTED).sort());
+  assert.deepEqual(dirs, Object.keys(EXPECTED).filter((id) => !NESTED.includes(id)).sort());
 });

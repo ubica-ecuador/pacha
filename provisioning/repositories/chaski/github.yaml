@@ -1,0 +1,25 @@
+# The Chaski plugin's examples on a public instance: examples/dashboards/ on
+# main of the Chaski repo, in the "Chaski plugin" folder. Read-only: a save in
+# Grafana is not a commit, the dashboards change in the Chaski repo. Polls
+# every 60 s; no webhook, so GitHub never has to reach Grafana. The examples
+# need Grafana 13, the Chaski app (2.0 and later) and, for the taxi one, the
+# kepler panel; their data is public and read by the viewer's browser.
+apiVersion: provisioning.grafana.app/v0alpha1
+kind: Repository
+metadata:
+  name: chaski
+spec:
+  title: Chaski plugin
+  type: github
+  github:
+    url: https://github.com/ubica-ecuador/chaski
+    branch: main
+    path: examples/dashboards/
+  sync:
+    enabled: true
+    target: folder
+    intervalSeconds: 60
+  workflows: []
+secure:
+  token:
+    create: "${PACHA_GIT_TOKEN}"
