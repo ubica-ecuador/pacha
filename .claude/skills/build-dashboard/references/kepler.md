@@ -88,6 +88,7 @@ All in `panel.options`, not in `mapConfig`.
 | `areaVariable` | the drawn polygon or rectangle → WKT EPSG:4326; `''` when deleted |
 | `clickArea`, `clickAreaSizeMetres` | a click sets the area to a square around the entity |
 | `viewportVariables` | `{"west":"w","south":"s","east":"e","north":"n"}` |
+| `fitOnVariables` | `["state"]`: when one of these variables changes, the map frames its new rows as on load, at the zoom they need; nothing else moves it. For pickers that move the data elsewhere. Free panel after 1.4.0 (edge on pacha) |
 | `variableMappings` | see below |
 | `clickConfirm` | a click only opens the popup; **Select** publishes |
 | `hoverSync`, `hoverMaxAgeSeconds` | positions at the crosshair's time |

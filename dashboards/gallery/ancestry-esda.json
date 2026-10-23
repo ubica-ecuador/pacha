@@ -291,6 +291,9 @@
                 "clickArea": false,
                 "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
+                "fitOnVariables": [
+                  "state"
+                ],
                 "flowRenderMode": "straight",
                 "followGrafanaTheme": false,
                 "hoverMaxAgeSeconds": 60,
@@ -446,30 +449,6 @@
                     "field": "geoid",
                     "source": "click",
                     "variable": "sel"
-                  },
-                  {
-                    "source": "center",
-                    "variable": "wide_lat",
-                    "variableTo": "wide_lng",
-                    "zoom": 4.9
-                  },
-                  {
-                    "source": "center",
-                    "variable": "mid_lat",
-                    "variableTo": "mid_lng",
-                    "zoom": 5.6
-                  },
-                  {
-                    "source": "center",
-                    "variable": "small_lat",
-                    "variableTo": "small_lng",
-                    "zoom": 6.9
-                  },
-                  {
-                    "source": "center",
-                    "variable": "tiny_lat",
-                    "variableTo": "tiny_lng",
-                    "zoom": 8.6
                   }
                 ],
                 "windDensity": 9000
@@ -790,6 +769,9 @@
                 "clickArea": false,
                 "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
+                "fitOnVariables": [
+                  "state"
+                ],
                 "flowRenderMode": "straight",
                 "followGrafanaTheme": false,
                 "hoverMaxAgeSeconds": 60,
@@ -920,30 +902,6 @@
                     "field": "geoid",
                     "source": "click",
                     "variable": "sel"
-                  },
-                  {
-                    "source": "center",
-                    "variable": "wide_lat",
-                    "variableTo": "wide_lng",
-                    "zoom": 4.9
-                  },
-                  {
-                    "source": "center",
-                    "variable": "mid_lat",
-                    "variableTo": "mid_lng",
-                    "zoom": 5.6
-                  },
-                  {
-                    "source": "center",
-                    "variable": "small_lat",
-                    "variableTo": "small_lng",
-                    "zoom": 6.9
-                  },
-                  {
-                    "source": "center",
-                    "variable": "tiny_lat",
-                    "variableTo": "tiny_lng",
-                    "zoom": 8.6
                   }
                 ],
                 "windDensity": 9000
@@ -1421,254 +1379,6 @@
           "query": "",
           "skipUrlSync": false,
           "valuesFormat": "csv"
-        }
-      },
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "allowCustomValue": true,
-          "current": {
-            "text": "",
-            "value": ""
-          },
-          "hide": "hideVariable",
-          "includeAll": false,
-          "multi": false,
-          "name": "wide_lat",
-          "options": [],
-          "query": {
-            "datasource": {
-              "name": "duckdb"
-            },
-            "group": "motherduck-duckdb-datasource",
-            "kind": "DataQuery",
-            "spec": {
-              "__legacyStringValue": "-- The latitude to centre on when the state's zoom class is -99 to 5.6, '' otherwise.\nWITH b AS (\n  SELECT quantile_cont(latitude, 0.02) AS la0, quantile_cont(latitude, 0.98) AS la1,\n         quantile_cont(longitude, 0.02) AS lo0, quantile_cont(longitude, 0.98) AS lo1\n  FROM read_parquet('http://feeds/datasets/ancestry/tracts.parquet')\n  WHERE state_abbr = ${state:sqlstring} AND total_pop \u003e= 100\n), z AS (\n  SELECT *, least(log2(560 * 360 / (512 * (lo1 - lo0))),\n                  log2(520 * 2 * pi() / (512 * (ln(tan(pi() / 4 + radians(la1) / 2)) - ln(tan(pi() / 4 + radians(la0) / 2)))))) AS fit\n  FROM b\n)\n-- The clock nudges the centre by up to 0.001 degrees: the map ignores a pair\n-- it has centred on before, so going back to a state would leave it where it\n-- was without a value it has not seen.\nSELECT CASE WHEN fit \u003e= -99 AND fit \u003c 5.6\n            THEN round((la0 + la1) / 2 + (epoch_ms(now()) % 1000) * 1e-6, 6)::VARCHAR\n            ELSE '' END\nFROM z"
-            },
-            "version": "v0"
-          },
-          "refresh": "onDashboardLoad",
-          "regex": "",
-          "regexApplyTo": "value",
-          "skipUrlSync": false,
-          "sort": "disabled"
-        }
-      },
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "allowCustomValue": true,
-          "current": {
-            "text": "",
-            "value": ""
-          },
-          "hide": "hideVariable",
-          "includeAll": false,
-          "multi": false,
-          "name": "wide_lng",
-          "options": [],
-          "query": {
-            "datasource": {
-              "name": "duckdb"
-            },
-            "group": "motherduck-duckdb-datasource",
-            "kind": "DataQuery",
-            "spec": {
-              "__legacyStringValue": "-- The longitude to centre on when the state's zoom class is -99 to 5.6, '' otherwise.\nWITH b AS (\n  SELECT quantile_cont(latitude, 0.02) AS la0, quantile_cont(latitude, 0.98) AS la1,\n         quantile_cont(longitude, 0.02) AS lo0, quantile_cont(longitude, 0.98) AS lo1\n  FROM read_parquet('http://feeds/datasets/ancestry/tracts.parquet')\n  WHERE state_abbr = ${state:sqlstring} AND total_pop \u003e= 100\n), z AS (\n  SELECT *, least(log2(560 * 360 / (512 * (lo1 - lo0))),\n                  log2(520 * 2 * pi() / (512 * (ln(tan(pi() / 4 + radians(la1) / 2)) - ln(tan(pi() / 4 + radians(la0) / 2)))))) AS fit\n  FROM b\n)\n-- The clock nudges the centre by up to 0.001 degrees: the map ignores a pair\n-- it has centred on before, so going back to a state would leave it where it\n-- was without a value it has not seen.\nSELECT CASE WHEN fit \u003e= -99 AND fit \u003c 5.6\n            THEN round((lo0 + lo1) / 2 + (epoch_ms(now()) % 1000) * 1e-6, 6)::VARCHAR\n            ELSE '' END\nFROM z"
-            },
-            "version": "v0"
-          },
-          "refresh": "onDashboardLoad",
-          "regex": "",
-          "regexApplyTo": "value",
-          "skipUrlSync": false,
-          "sort": "disabled"
-        }
-      },
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "allowCustomValue": true,
-          "current": {
-            "text": "",
-            "value": ""
-          },
-          "hide": "hideVariable",
-          "includeAll": false,
-          "multi": false,
-          "name": "mid_lat",
-          "options": [],
-          "query": {
-            "datasource": {
-              "name": "duckdb"
-            },
-            "group": "motherduck-duckdb-datasource",
-            "kind": "DataQuery",
-            "spec": {
-              "__legacyStringValue": "-- The latitude to centre on when the state's zoom class is 5.6 to 6.9, '' otherwise.\nWITH b AS (\n  SELECT quantile_cont(latitude, 0.02) AS la0, quantile_cont(latitude, 0.98) AS la1,\n         quantile_cont(longitude, 0.02) AS lo0, quantile_cont(longitude, 0.98) AS lo1\n  FROM read_parquet('http://feeds/datasets/ancestry/tracts.parquet')\n  WHERE state_abbr = ${state:sqlstring} AND total_pop \u003e= 100\n), z AS (\n  SELECT *, least(log2(560 * 360 / (512 * (lo1 - lo0))),\n                  log2(520 * 2 * pi() / (512 * (ln(tan(pi() / 4 + radians(la1) / 2)) - ln(tan(pi() / 4 + radians(la0) / 2)))))) AS fit\n  FROM b\n)\n-- The clock nudges the centre by up to 0.001 degrees: the map ignores a pair\n-- it has centred on before, so going back to a state would leave it where it\n-- was without a value it has not seen.\nSELECT CASE WHEN fit \u003e= 5.6 AND fit \u003c 6.9\n            THEN round((la0 + la1) / 2 + (epoch_ms(now()) % 1000) * 1e-6, 6)::VARCHAR\n            ELSE '' END\nFROM z"
-            },
-            "version": "v0"
-          },
-          "refresh": "onDashboardLoad",
-          "regex": "",
-          "regexApplyTo": "value",
-          "skipUrlSync": false,
-          "sort": "disabled"
-        }
-      },
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "allowCustomValue": true,
-          "current": {
-            "text": "",
-            "value": ""
-          },
-          "hide": "hideVariable",
-          "includeAll": false,
-          "multi": false,
-          "name": "mid_lng",
-          "options": [],
-          "query": {
-            "datasource": {
-              "name": "duckdb"
-            },
-            "group": "motherduck-duckdb-datasource",
-            "kind": "DataQuery",
-            "spec": {
-              "__legacyStringValue": "-- The longitude to centre on when the state's zoom class is 5.6 to 6.9, '' otherwise.\nWITH b AS (\n  SELECT quantile_cont(latitude, 0.02) AS la0, quantile_cont(latitude, 0.98) AS la1,\n         quantile_cont(longitude, 0.02) AS lo0, quantile_cont(longitude, 0.98) AS lo1\n  FROM read_parquet('http://feeds/datasets/ancestry/tracts.parquet')\n  WHERE state_abbr = ${state:sqlstring} AND total_pop \u003e= 100\n), z AS (\n  SELECT *, least(log2(560 * 360 / (512 * (lo1 - lo0))),\n                  log2(520 * 2 * pi() / (512 * (ln(tan(pi() / 4 + radians(la1) / 2)) - ln(tan(pi() / 4 + radians(la0) / 2)))))) AS fit\n  FROM b\n)\n-- The clock nudges the centre by up to 0.001 degrees: the map ignores a pair\n-- it has centred on before, so going back to a state would leave it where it\n-- was without a value it has not seen.\nSELECT CASE WHEN fit \u003e= 5.6 AND fit \u003c 6.9\n            THEN round((lo0 + lo1) / 2 + (epoch_ms(now()) % 1000) * 1e-6, 6)::VARCHAR\n            ELSE '' END\nFROM z"
-            },
-            "version": "v0"
-          },
-          "refresh": "onDashboardLoad",
-          "regex": "",
-          "regexApplyTo": "value",
-          "skipUrlSync": false,
-          "sort": "disabled"
-        }
-      },
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "allowCustomValue": true,
-          "current": {
-            "text": "",
-            "value": ""
-          },
-          "hide": "hideVariable",
-          "includeAll": false,
-          "multi": false,
-          "name": "small_lat",
-          "options": [],
-          "query": {
-            "datasource": {
-              "name": "duckdb"
-            },
-            "group": "motherduck-duckdb-datasource",
-            "kind": "DataQuery",
-            "spec": {
-              "__legacyStringValue": "-- The latitude to centre on when the state's zoom class is 6.9 to 8.5, '' otherwise.\nWITH b AS (\n  SELECT quantile_cont(latitude, 0.02) AS la0, quantile_cont(latitude, 0.98) AS la1,\n         quantile_cont(longitude, 0.02) AS lo0, quantile_cont(longitude, 0.98) AS lo1\n  FROM read_parquet('http://feeds/datasets/ancestry/tracts.parquet')\n  WHERE state_abbr = ${state:sqlstring} AND total_pop \u003e= 100\n), z AS (\n  SELECT *, least(log2(560 * 360 / (512 * (lo1 - lo0))),\n                  log2(520 * 2 * pi() / (512 * (ln(tan(pi() / 4 + radians(la1) / 2)) - ln(tan(pi() / 4 + radians(la0) / 2)))))) AS fit\n  FROM b\n)\n-- The clock nudges the centre by up to 0.001 degrees: the map ignores a pair\n-- it has centred on before, so going back to a state would leave it where it\n-- was without a value it has not seen.\nSELECT CASE WHEN fit \u003e= 6.9 AND fit \u003c 8.5\n            THEN round((la0 + la1) / 2 + (epoch_ms(now()) % 1000) * 1e-6, 6)::VARCHAR\n            ELSE '' END\nFROM z"
-            },
-            "version": "v0"
-          },
-          "refresh": "onDashboardLoad",
-          "regex": "",
-          "regexApplyTo": "value",
-          "skipUrlSync": false,
-          "sort": "disabled"
-        }
-      },
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "allowCustomValue": true,
-          "current": {
-            "text": "",
-            "value": ""
-          },
-          "hide": "hideVariable",
-          "includeAll": false,
-          "multi": false,
-          "name": "small_lng",
-          "options": [],
-          "query": {
-            "datasource": {
-              "name": "duckdb"
-            },
-            "group": "motherduck-duckdb-datasource",
-            "kind": "DataQuery",
-            "spec": {
-              "__legacyStringValue": "-- The longitude to centre on when the state's zoom class is 6.9 to 8.5, '' otherwise.\nWITH b AS (\n  SELECT quantile_cont(latitude, 0.02) AS la0, quantile_cont(latitude, 0.98) AS la1,\n         quantile_cont(longitude, 0.02) AS lo0, quantile_cont(longitude, 0.98) AS lo1\n  FROM read_parquet('http://feeds/datasets/ancestry/tracts.parquet')\n  WHERE state_abbr = ${state:sqlstring} AND total_pop \u003e= 100\n), z AS (\n  SELECT *, least(log2(560 * 360 / (512 * (lo1 - lo0))),\n                  log2(520 * 2 * pi() / (512 * (ln(tan(pi() / 4 + radians(la1) / 2)) - ln(tan(pi() / 4 + radians(la0) / 2)))))) AS fit\n  FROM b\n)\n-- The clock nudges the centre by up to 0.001 degrees: the map ignores a pair\n-- it has centred on before, so going back to a state would leave it where it\n-- was without a value it has not seen.\nSELECT CASE WHEN fit \u003e= 6.9 AND fit \u003c 8.5\n            THEN round((lo0 + lo1) / 2 + (epoch_ms(now()) % 1000) * 1e-6, 6)::VARCHAR\n            ELSE '' END\nFROM z"
-            },
-            "version": "v0"
-          },
-          "refresh": "onDashboardLoad",
-          "regex": "",
-          "regexApplyTo": "value",
-          "skipUrlSync": false,
-          "sort": "disabled"
-        }
-      },
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "allowCustomValue": true,
-          "current": {
-            "text": "",
-            "value": ""
-          },
-          "hide": "hideVariable",
-          "includeAll": false,
-          "multi": false,
-          "name": "tiny_lat",
-          "options": [],
-          "query": {
-            "datasource": {
-              "name": "duckdb"
-            },
-            "group": "motherduck-duckdb-datasource",
-            "kind": "DataQuery",
-            "spec": {
-              "__legacyStringValue": "-- The latitude to centre on when the state's zoom class is 8.5 to 99, '' otherwise.\nWITH b AS (\n  SELECT quantile_cont(latitude, 0.02) AS la0, quantile_cont(latitude, 0.98) AS la1,\n         quantile_cont(longitude, 0.02) AS lo0, quantile_cont(longitude, 0.98) AS lo1\n  FROM read_parquet('http://feeds/datasets/ancestry/tracts.parquet')\n  WHERE state_abbr = ${state:sqlstring} AND total_pop \u003e= 100\n), z AS (\n  SELECT *, least(log2(560 * 360 / (512 * (lo1 - lo0))),\n                  log2(520 * 2 * pi() / (512 * (ln(tan(pi() / 4 + radians(la1) / 2)) - ln(tan(pi() / 4 + radians(la0) / 2)))))) AS fit\n  FROM b\n)\n-- The clock nudges the centre by up to 0.001 degrees: the map ignores a pair\n-- it has centred on before, so going back to a state would leave it where it\n-- was without a value it has not seen.\nSELECT CASE WHEN fit \u003e= 8.5 AND fit \u003c 99\n            THEN round((la0 + la1) / 2 + (epoch_ms(now()) % 1000) * 1e-6, 6)::VARCHAR\n            ELSE '' END\nFROM z"
-            },
-            "version": "v0"
-          },
-          "refresh": "onDashboardLoad",
-          "regex": "",
-          "regexApplyTo": "value",
-          "skipUrlSync": false,
-          "sort": "disabled"
-        }
-      },
-      {
-        "kind": "QueryVariable",
-        "spec": {
-          "allowCustomValue": true,
-          "current": {
-            "text": "",
-            "value": ""
-          },
-          "hide": "hideVariable",
-          "includeAll": false,
-          "multi": false,
-          "name": "tiny_lng",
-          "options": [],
-          "query": {
-            "datasource": {
-              "name": "duckdb"
-            },
-            "group": "motherduck-duckdb-datasource",
-            "kind": "DataQuery",
-            "spec": {
-              "__legacyStringValue": "-- The longitude to centre on when the state's zoom class is 8.5 to 99, '' otherwise.\nWITH b AS (\n  SELECT quantile_cont(latitude, 0.02) AS la0, quantile_cont(latitude, 0.98) AS la1,\n         quantile_cont(longitude, 0.02) AS lo0, quantile_cont(longitude, 0.98) AS lo1\n  FROM read_parquet('http://feeds/datasets/ancestry/tracts.parquet')\n  WHERE state_abbr = ${state:sqlstring} AND total_pop \u003e= 100\n), z AS (\n  SELECT *, least(log2(560 * 360 / (512 * (lo1 - lo0))),\n                  log2(520 * 2 * pi() / (512 * (ln(tan(pi() / 4 + radians(la1) / 2)) - ln(tan(pi() / 4 + radians(la0) / 2)))))) AS fit\n  FROM b\n)\n-- The clock nudges the centre by up to 0.001 degrees: the map ignores a pair\n-- it has centred on before, so going back to a state would leave it where it\n-- was without a value it has not seen.\nSELECT CASE WHEN fit \u003e= 8.5 AND fit \u003c 99\n            THEN round((lo0 + lo1) / 2 + (epoch_ms(now()) % 1000) * 1e-6, 6)::VARCHAR\n            ELSE '' END\nFROM z"
-            },
-            "version": "v0"
-          },
-          "refresh": "onDashboardLoad",
-          "regex": "",
-          "regexApplyTo": "value",
-          "skipUrlSync": false,
-          "sort": "disabled"
         }
       },
       {

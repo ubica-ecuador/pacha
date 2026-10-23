@@ -31,6 +31,10 @@ test('follows the dashboards conventions', () => {
   const code = lisa.source.sql.replace(/--.*$/gm, '');
   assert.match(code, /hash\(/);
   assert.doesNotMatch(code, /random\(/);
+  // Both maps frame the new state's tracts when the state changes, and nothing else moves them.
+  const maps = findAll(dashboard, (n) => n.vizConfig?.group === 'ubica-keplergl-panel');
+  assert.equal(maps.length, 2);
+  for (const map of maps) assert.deepEqual(map.vizConfig.spec.options.fitOnVariables, ['state'], map.title);
 });
 
 test('is provisioned in Gallery', async () => {

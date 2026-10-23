@@ -24,7 +24,7 @@ here, in the same shape: symptom, cause, fix.
 | `fleetTimeRef: live` shows no vehicle at wall-clock now | the range reaches past now, so "now" is the end of the data | keep the range ending at `now` |
 | Fleet cards with no chart | a card's chart needs ≥ 2 readings in its window | widen `fleetCardWindow`, or accept |
 | A map that should follow the selection stays put | saved `mapState` | save without `mapState` and add a `center` mapping with `zoom` |
-| A map whose data changes (another state, another region) stays where it was | the panel frames its data on load only; a `center` mapping moves it, at the mapping's fixed `zoom` | hidden lat/lng variables from a server query, one pair per zoom class, only the pair of the current class non-empty (`ancestry-esda`) |
+| A map whose data changes (another state, another region) stays where it was | the panel frames its data on load only, and a `center` mapping moves it at a fixed `zoom` | name the variable in the panel option `fitOnVariables` (free panel after 1.4.0; edge on pacha): the map frames the new rows at the zoom they need (`ancestry-esda`) |
 | The `center` mapping ignores a change back to a place it has shown before | it skips a lat/lng pair it has already centred on, so as not to fight the user's panning | make each value new: nudge it by the clock, `+ (epoch_ms(now()) % 1000) * 1e-6` (`ancestry-esda`) |
 | Velocity layer draws nothing | lattice spacing wobbles > 5 %, or `u`/`v` NULL over land | regular lattice; drop land rows instead of NULLs |
 | Zarr tiles look like patchwork | no `zarrRescale` | set `min,max` in the store's units |
