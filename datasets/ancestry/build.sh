@@ -1,15 +1,15 @@
 #!/bin/sh
-# Builds the files the ancestry-census dashboard reads: downloads the American
-# Community Survey 2020-2024 five-year summary files for three tables and the
-# Census Bureau's cartographic boundary file of census tracts (about 370 MB,
-# all from www2.census.gov, no key), runs build.sql on them with a DuckDB CLI
-# of the release the Grafana datasource is linked against, and leaves the
-# files here, in datasets/ancestry/, which the gateway serves at
-# http://feeds/datasets/ancestry/. Once per instance, a few minutes; nothing to
-# restart afterwards.
+# Builds the files the ancestry-census and ancestry-esda dashboards read:
+# downloads the American Community Survey 2020-2024 five-year summary files for
+# three tables and the Census Bureau's cartographic boundary file of census
+# tracts (about 370 MB, all from www2.census.gov, no key), runs build.sql on
+# them with a DuckDB CLI of the release the Grafana datasource is linked
+# against, and leaves the files here, in datasets/ancestry/, which the gateway
+# serves at http://feeds/datasets/ancestry/. Once per instance, a few minutes;
+# nothing to restart afterwards.
 #
 # Every input is a work of the U.S. federal government, in the public domain.
-# The outputs are derived (about 65 MB) and rebuilt rather than kept in git.
+# The outputs are derived (about 70 MB) and rebuilt rather than kept in git.
 #
 # Needs curl, unzip, about 2 GB of free disk and internet access for the DuckDB
 # extensions spatial (core) and h3 (community).
@@ -20,7 +20,7 @@ DUCKDB_VERSION=1.5.4
 YEAR=2024
 SF="https://www2.census.gov/programs-surveys/acs/summary_file/$YEAR/table-based-SF"
 TIGER="https://www2.census.gov/geo/tiger/GENZ$YEAR/shp"
-FILES='ancestries dots h3 tract-ancestry tracts-geom tracts'
+FILES='ancestries dots h3 tract-ancestry tracts-geom tracts weights'
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT

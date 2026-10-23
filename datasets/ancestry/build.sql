@@ -1,6 +1,7 @@
 -- Ancestry of every U.S. census tract, after the New York Times ancestry map of
 -- July 2026, as the Parquet files the ancestry-census dashboard reads through
--- the gateway (http://feeds/datasets/ancestry/...). Run by build.sh, which sets
+-- the gateway (http://feeds/datasets/ancestry/...), and the spatial weights
+-- the ancestry-esda dashboard adds to them. Run by build.sh, which sets
 -- `src` (the folder of downloaded Census files) and `year`, and runs this in
 -- the folder the files are written to.
 --
@@ -29,6 +30,7 @@ SET VARIABLE people_per_dot = 250;  -- set by the city view: Chicago ~38k dots, 
 SET VARIABLE dot_buckets = 4;       -- the dashboard keeps a share of buckets by zoom
 SET VARIABLE simplify = 0.0015;     -- degrees, ~150 m: tract borders survive, the file halves
 SET VARIABLE h3_res = 5;
+SET VARIABLE esda_min_pop = 100;    -- smaller tracts are left out of the weights: a share of 30 people is noise
 SET VARIABLE residual = 'Sin ascendencia reportada';
 SET VARIABLE other = 'Otros grupos';
 SET VARIABLE sf = getvariable('src') || '/acsdt5y' || getvariable('year') || '-';
@@ -224,7 +226,48 @@ SELECT h3, sum(people)::BIGINT AS count,
        max(CASE WHEN rnk = 1 THEN people END)::BIGINT AS dominant_people
 FROM per_group GROUP BY h3;
 
--- 7. The files, sorted by H3 cell for spatial locality in the row groups.
+-- 7. Spatial weights for ancestry-esda: who neighbours whom, two ways, within
+--    each state (the dashboard analyses one state at a time), among the tracts
+--    of at least esda_min_pop residents. From the cartographic boundary
+--    polygons as published, not the simplified ones: those are simplified one
+--    by one, so neighbours stop touching. Both lists are directed (i, j) pairs.
+--    queen: the polygons share a border or a corner. Symmetric; a tract with no
+--           neighbour (an island) appears in neither column.
+--    knn6:  the six nearest interior points, by great-circle distance. Every
+--           tract has six; j being one of i's six does not make i one of j's.
+--    The bounding-box test lets the join skip ST_Intersects on pairs far
+--    apart: without it, every pair in a state, minutes instead of seconds.
+CREATE TABLE esda_tracts AS
+SELECT s.GEOID AS geoid, s.STUSPS AS state_abbr, s.geom,
+       ST_XMin(s.geom) AS minx, ST_XMax(s.geom) AS maxx, ST_YMin(s.geom) AS miny, ST_YMax(s.geom) AS maxy,
+       g.latitude, g.longitude
+FROM ST_Read('/vsizip/' || getvariable('src') || '/cb_' || getvariable('year') || '_us_tract_500k.zip') s
+JOIN tract_pop p ON p.geoid = s.GEOID
+JOIN tract_geom g ON g.geoid = s.GEOID
+WHERE p.total_pop >= getvariable('esda_min_pop');
+
+CREATE TABLE weights AS
+SELECT 'queen' AS kind, a.state_abbr AS state, a.geoid AS i, b.geoid AS j
+FROM esda_tracts a JOIN esda_tracts b
+  ON a.state_abbr = b.state_abbr AND a.geoid <> b.geoid
+ AND a.minx <= b.maxx AND b.minx <= a.maxx AND a.miny <= b.maxy AND b.miny <= a.maxy
+WHERE ST_Intersects(a.geom, b.geom)
+UNION ALL
+SELECT 'knn6', state, i, unnest(min_by(j, km, 6))
+FROM (
+  SELECT a.state_abbr AS state, a.geoid AS i, b.geoid AS j,
+         2 * 6371.0088 * asin(sqrt(
+           power(sin(radians(b.latitude - a.latitude) / 2), 2)
+           + cos(radians(a.latitude)) * cos(radians(b.latitude))
+             * power(sin(radians(b.longitude - a.longitude) / 2), 2))) AS km
+  FROM esda_tracts a JOIN esda_tracts b ON a.state_abbr = b.state_abbr AND a.geoid <> b.geoid
+)
+GROUP BY state, i;
+SELECT kind, count(*) AS links, count(DISTINCT i) AS tracts,
+       (SELECT count(*) FROM esda_tracts) AS of_tracts
+FROM weights GROUP BY kind ORDER BY kind;
+
+-- 8. The files, sorted by H3 cell for spatial locality in the row groups.
 COPY (
   SELECT geoid, name, county, state, state_abbr, total_pop, latitude, longitude,
          top1_ancestry, color_group(top1_ancestry) AS top1_color_group, top1_people, top1_pct,
@@ -260,3 +303,8 @@ COPY (
          count(DISTINCT geoid) AS tracts_present
   FROM tract_ancestry GROUP BY ancestry ORDER BY national_total DESC, ancestry
 ) TO 'ancestries.parquet' (FORMAT parquet, COMPRESSION zstd);
+
+-- By kind and state, so the dashboard's one state is a few row groups.
+COPY (
+  SELECT kind, state, i, j FROM weights ORDER BY kind, state, i, j
+) TO 'weights.parquet' (FORMAT parquet, COMPRESSION zstd);

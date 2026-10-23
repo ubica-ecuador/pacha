@@ -24,6 +24,8 @@ here, in the same shape: symptom, cause, fix.
 | `fleetTimeRef: live` shows no vehicle at wall-clock now | the range reaches past now, so "now" is the end of the data | keep the range ending at `now` |
 | Fleet cards with no chart | a card's chart needs ≥ 2 readings in its window | widen `fleetCardWindow`, or accept |
 | A map that should follow the selection stays put | saved `mapState` | save without `mapState` and add a `center` mapping with `zoom` |
+| A map whose data changes (another state, another region) stays where it was | the panel frames its data on load only; a `center` mapping moves it, at the mapping's fixed `zoom` | hidden lat/lng variables from a server query, one pair per zoom class, only the pair of the current class non-empty (`ancestry-esda`) |
+| The `center` mapping ignores a change back to a place it has shown before | it skips a lat/lng pair it has already centred on, so as not to fight the user's panning | make each value new: nudge it by the clock, `+ (epoch_ms(now()) % 1000) * 1e-6` (`ancestry-esda`) |
 | Velocity layer draws nothing | lattice spacing wobbles > 5 %, or `u`/`v` NULL over land | regular lattice; drop land rows instead of NULLs |
 | Zarr tiles look like patchwork | no `zarrRescale` | set `min,max` in the store's units |
 | Raster colours like confetti | kepler's default ramp is for NDVI | set `rasterColormap`, or `rasterPainted` for classified rasters |
@@ -37,6 +39,9 @@ here, in the same shape: symptom, cause, fix.
 | Symptom | Cause | Fix |
 |---|---|---|
 | `''value''` parse error | `'$var'` on the DuckDB datasource, which quotes itself | `$var`; `${var:raw}` inside a string you build |
+| A DuckDB `QueryVariable` fails with `Referenced column "IL" not found` | the datasource quotes `$var` in panel and dataset queries, not in a variable's own query | `${var:sqlstring}` there |
+| Random draws from `hash(p, m)` are not independent: permutation p-values drift | DuckDB's multi-argument `hash` combines by XOR: `xor(hash(1, m), hash(2, m))` is the same for every `m` | hash one integer: `hash(p * 4294967296 + m)` |
+| A query that indexes a list from a one-row CTE (`pool.zs[i]`) after a large cross join runs out of memory; on the server it killed the DuckDB plugin | the list is carried on every row of the join | join on an integer position instead (`ancestry-esda`, dataset `lisa`) |
 | Empty frame from a hand-written DuckDB query | `"format": "table"` | `"format": 1` |
 | `strftime` binder error | no `TIMESTAMPTZ` overload | cast to `TIMESTAMP` first |
 | `QUALIFY` error | bare `QUALIFY` without a window function | use a subquery |
