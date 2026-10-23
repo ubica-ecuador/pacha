@@ -1,6 +1,6 @@
 ---
 name: build-dashboard
-description: Build or change a Pacha Grafana dashboard — DuckDB on the server, Chaski (DuckDB-WASM) in the browser, Kepler.gl free or Plus maps, Business Charts (ECharts). Use for any new dashboard, any edit to dashboards/ or plus/dashboards/, and any map, chart or SQL that goes into one.
+description: Build or change a Pacha Grafana dashboard — DuckDB on the server, Chaski (DuckDB-WASM) in the browser, Kepler.gl free or Plus maps, Business Charts (ECharts), Mosaic linked views. Use for any new dashboard, any edit to dashboards/ or plus/dashboards/, and any map, chart or SQL that goes into one.
 ---
 
 # Building a Pacha dashboard
@@ -53,6 +53,7 @@ nothing) are already in it.
 | You need | Copy from | Why |
 |---|---|---|
 | Points from a public GeoJSON feed, all in the browser, cross-filtered by map, brush and draw | `dashboards/gallery/earthquakes.json` | Chaski datasets, a `filters` variable with `$__crossfilter` and a filter bar, `areaVariable`, brush histogram, `timeSync: variables` |
+| Linked histograms, rasters or density over many rows in the browser, brushes that drive the other panels | `mosaic-gallery`, `mosaic-nyc-taxi` (Chaski repo, read-only) | Mosaic panel on Chaski datasets, brushes written to variables, kepler viewport and drawn area read back ([mosaic.md](references/mosaic.md)) |
 | A server query over a large file into a browser dataset, then many small panels | `plus/dashboards/geolife-mobility.json` | `source.type: datasource`, a dataset built per instance (`datasets/geolife`), H3 on the server, flows, stops |
 | Live vehicle positions (GTFS-RT, ADS-B, AIS) | `gtfs-rt-mbta-fleet`, `trimet-live-fleet`, `air-traffic-world` | Fleet layer, refresh, feeds through the gateway, recorder history |
 | Replaying tracks with charts in sync | `f1-race-laps`, `drone-delivery-flights` | Fleet `fleetTimeRef: history`, cards, `SET VARIABLE` to build a URL from data, centre on selection |
@@ -82,6 +83,8 @@ Read only what the task needs.
   Alerts.
 - [business-charts.md](references/business-charts.md): ECharts panels on Chaski frames; the
   `@constants` template; brush to variables; colours from the theme.
+- [mosaic.md](references/mosaic.md): the Chaski Mosaic panel: when to use it, its options,
+  writing and reading variables, pairing with kepler, the examples to copy.
 - [grafana.md](references/grafana.md): v2 JSON shapes, layouts, conditional rendering,
   hidden variables, tables, time ranges.
 - [spatial-sources.md](references/spatial-sources.md): recipes by data family
