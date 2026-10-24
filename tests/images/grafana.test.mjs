@@ -6,13 +6,14 @@ import { ADMIN, api, dsQueryBody, rowsOf } from '../lib/grafana.mjs';
 const IMAGE = process.env.GRAFANA_IMAGE ?? 'ghcr.io/ubica-ecuador/pacha-grafana:dev';
 
 // Chaski's app brings these two inside its own folder, ubica-chaski-app/.
-const NESTED = ['ubica-chaski-datasource', 'ubica-chaski-mosaic-panel'];
+const NESTED = ['ubica-chaski-datasource', 'ubica-chaski-mosaic-panel', 'ubica-chaski-filters-panel'];
 
 const EXPECTED = {
-  'ubica-keplergl-panel': { version: '1.4.0', signature: 'unsigned' },
-  'ubica-chaski-app': { version: '2.1.0', signature: 'unsigned' },
-  'ubica-chaski-datasource': { version: '2.1.0', signature: 'unsigned' },
-  'ubica-chaski-mosaic-panel': { version: '2.1.0', signature: 'unsigned' },
+  'ubica-keplergl-panel': { version: '1.5.0', signature: 'unsigned' },
+  'ubica-chaski-app': { version: '2.2.0', signature: 'unsigned' },
+  'ubica-chaski-datasource': { version: '2.2.0', signature: 'unsigned' },
+  'ubica-chaski-mosaic-panel': { version: '2.2.0', signature: 'unsigned' },
+  'ubica-chaski-filters-panel': { version: '2.2.0', signature: 'unsigned' },
   'motherduck-duckdb-datasource': { version: '0.4.5', signature: 'unsigned' },
   'yesoreyeram-infinity-datasource': { version: '4.0.0', signature: 'valid' },
   'volkovlabs-echarts-panel': { version: '7.2.5', signature: 'valid' },
@@ -81,7 +82,7 @@ test('safe defaults, and plugins and DuckDB home outside /var/lib/grafana', () =
     'HOME=/opt/pacha/duckdb-home',
     'GF_AUTH_ANONYMOUS_ENABLED=true',
     'GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer',
-    'GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=ubica-keplergl-panel,ubica-chaski-app,ubica-chaski-datasource,ubica-chaski-mosaic-panel,motherduck-duckdb-datasource',
+    'GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=ubica-keplergl-panel,ubica-chaski-app,ubica-chaski-datasource,ubica-chaski-mosaic-panel,ubica-chaski-filters-panel,motherduck-duckdb-datasource',
     'GF_PLUGINS_FORWARD_HOST_ENV_VARS=motherduck-duckdb-datasource,yesoreyeram-infinity-datasource',
     'GF_PLUGIN_PAGINATION_MAX_PAGES=12',
     'GF_PLUGINS_PREINSTALL_DISABLED=true',
@@ -93,7 +94,7 @@ test('safe defaults, and plugins and DuckDB home outside /var/lib/grafana', () =
 
 test('versions are exposed as image labels', () => {
   const labels = JSON.parse(sh('docker', ['image', 'inspect', '--format', '{{json .Config.Labels}}', IMAGE]));
-  assert.equal(labels['io.pacha.kepler-panel.version'], '1.4.0');
+  assert.equal(labels['io.pacha.kepler-panel.version'], '1.5.0');
   assert.equal(labels['io.pacha.kepler-panel.channel'], 'release');
   assert.equal(labels['io.pacha.chaski.version'], '2.1.0');
   assert.equal(labels['io.pacha.duckdb-datasource.version'], '0.4.5');

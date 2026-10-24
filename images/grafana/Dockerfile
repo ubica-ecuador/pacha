@@ -16,13 +16,13 @@
 
 ARG GRAFANA_EDITION=grafana-enterprise
 ARG GRAFANA_VERSION=13.2.1
-ARG KEPLER_PANEL_VERSION=1.4.0
-ARG KEPLER_PANEL_SHA256=ea376c3f93d095635dabf29a625f193417f989b4b7d585500e60bbb1299aeb73
+ARG KEPLER_PANEL_VERSION=1.5.0
+ARG KEPLER_PANEL_SHA256=afa8a789a50acfbad1f59e92aa0b0ca2010852fb4cfe2e393e96bdaf82bee06f
 # release: the version above. edge: main of the Kepler repo, as its CI last
 # published it; not pinned, see the kepler-edge stage.
 ARG KEPLER_PANEL_CHANNEL=release
-ARG CHASKI_VERSION=2.1.0
-ARG CHASKI_SHA256=40e93955532ecf28ca2f14e64a597883b8e22274ace458eeca96d1b4a07b92e0
+ARG CHASKI_VERSION=2.2.0
+ARG CHASKI_SHA256=ba0fd71824c777a04bb044accf0b38bd42b50696b53776640e9c1eaf0fb22aea
 ARG DUCKDB_DS_VERSION=0.4.5
 ARG DUCKDB_DS_SHA256=156c6ab8caad03d6a8956dfae1f685697101d14a1f0921528d8c6258f03a3c40
 # The engine the DuckDB datasource is linked against. Extensions are built per
@@ -160,7 +160,7 @@ ENV GF_PATHS_PLUGINS=/opt/pacha/plugins \
     HOME=/opt/pacha/duckdb-home \
     GF_AUTH_ANONYMOUS_ENABLED=true \
     GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer \
-    GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=ubica-keplergl-panel,ubica-chaski-app,ubica-chaski-datasource,ubica-chaski-mosaic-panel,motherduck-duckdb-datasource \
+    GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=ubica-keplergl-panel,ubica-chaski-app,ubica-chaski-datasource,ubica-chaski-mosaic-panel,ubica-chaski-filters-panel,motherduck-duckdb-datasource \
     GF_PLUGINS_FORWARD_HOST_ENV_VARS=motherduck-duckdb-datasource,yesoreyeram-infinity-datasource \
     GF_PLUGIN_PAGINATION_MAX_PAGES=12 \
     GF_PLUGINS_PREINSTALL_DISABLED=true \
