@@ -521,7 +521,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "**Click an earthquake** on the map, or a row in *Most exposed*, to see who lives near it.\n\n**Drag** across the magnitude or depth bars, **draw** an area on the map, or move the map's **time slider**: every panel follows, answered in your browser.",
+                "content": "**Click an earthquake** on the map, or a row in *Most exposed*, to see who lives near it.\n\n**Drag** across the magnitude or depth bars, **draw** an area on the map, move the map's **time slider**, or **play** the timeline under the map: every panel follows, answered in your browser.",
                 "mode": "markdown"
               }
             },
@@ -2073,6 +2073,44 @@
             "version": "13.2.1"
           }
         }
+      },
+      "panel-timeline": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The earthquakes over time, with every other filter as a pill. Drag across it, or press play: a window slides along the month and the map, the cards and the table follow each step.",
+          "id": 14,
+          "links": [],
+          "title": "Timeline",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 60,
+                "filters": "quakeFilters",
+                "layout": "timeline",
+                "maxValues": 8,
+                "noun": "earthquakes",
+                "playMode": "slide",
+                "stepMs": 800,
+                "timeColumn": "time",
+                "timeline": "time"
+              }
+            }
+          }
+        }
       }
     },
     "layout": {
@@ -2197,6 +2235,19 @@
                                   "width": 8,
                                   "x": 16,
                                   "y": 11
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-timeline"
+                                  },
+                                  "height": 6,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 18
                                 }
                               }
                             ]
