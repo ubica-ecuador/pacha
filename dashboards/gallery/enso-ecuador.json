@@ -13,9 +13,6 @@
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "legacyOptions": {
-            "type": "dashboard"
-          },
           "name": "Annotations \u0026 Alerts",
           "query": {
             "datasource": {
@@ -44,6 +41,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 1,
           "links": [],
           "title": "",
@@ -56,11 +54,16 @@
                 "overrides": []
               },
               "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
                 "content": "# El Niño en Ecuador\n\n## Qué es y por qué nos afecta\n\nCada cierto número de años, el océano Pacífico frente a nuestras costas se calienta más de\nlo normal. Eso cambia el clima de todo el país: en la Costa suele traer lluvias fuertes e\ninundaciones, y en la Sierra y la Amazonía puede hacer lo contrario, dejar sequía.\n\nHay una cosa que casi nunca se dice y aquí importa mucho. El número que sale en las noticias\nmundiales mide el Pacífico central, lejos de nosotros. **Al Ecuador lo que le afecta es el mar\nque tiene enfrente**, y no siempre van juntos: en 2017 el mar frente a Manta y Esmeraldas se\ncalentó, hubo inundaciones graves en la Costa, y el índice del que hablaba el mundo estaba\ntranquilo. Por eso este tablero mira primero nuestro mar.\n\n## Cómo estamos hoy\n\n**Hay un evento en curso y va en aumento.** El mar frente a Ecuador está **4,6 grados más\ncaliente** de lo normal para esta época, y el nivel del mar en La Libertad está entre los\ndiez meses más altos desde que se mide, en 1949.\n\n**Pero el mar y el cielo no van al mismo paso.** Los informes oficiales del ERFEN y de la\nComisión Permanente del Pacífico Sur insisten en lo mismo: el océano ya está caliente, pero\n**todavía no ha llegado la lluvia**. La Sierra sigue seca y agosto fue el peor mes de\nincendios del año. Ver un 4,6 y entender \"ya empezaron las lluvias\" sería leer mal esta\npantalla.\n\nLo que viene puede cambiar eso. La Organización Meteorológica Mundial da por seguro que el\nevento sigue hasta febrero de 2027, y podría ser fuerte hacia fin de año.\n\n## Qué encontrarás aquí\n\n| | |\n|---|---|\n| **Mar** | El calentamiento y el nivel del mar, hoy y en los últimos 77 años |\n| **Ahora** | Mapas de lo que está pasando en este momento, con el detalle de cada estación |\n| **Caudales** | Lo que llovió y lo que van a hacer los ríos |\n| **Historia** | Cómo fueron los eventos anteriores, incluidos el del 82-83 y el del 97-98 |\n| **Futuro** | Lo que los modelos esperan en los próximos días y semanas |\n| **Oleaje** | El estado de la mar frente a la costa |\n\n## Lo que este tablero no hace\n\n**No pronostica El Niño.** Vigila lo que está pasando y lo que dicen los modelos de lluvia y\nde ríos para los próximos días. Predecir cuánto durará el fenómeno o qué tan fuerte será\nrequiere modelos del océano y la atmósfera que no están aquí.\n\nTampoco reemplaza a los boletines oficiales. Si necesitas una alerta o una decisión formal,\nla fuente es el **INAMHI**, el **INOCAR** y el **Servicio Nacional de Gestión de Riesgos**.\n",
                 "mode": "markdown"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -106,15 +109,57 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
                   "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
                     "axisLabel": "caudal (m³/s)",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
                     "drawStyle": "line",
                     "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
                     "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
                     "showPoints": "never",
-                    "spanNulls": true
+                    "showValues": false,
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
                   },
-                  "decimals": 1
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
                 },
                 "overrides": [
                   {
@@ -208,13 +253,14 @@
                   "showLegend": true
                 },
                 "tooltip": {
+                  "hideZeros": false,
                   "mode": "multi",
                   "sort": "none"
                 },
                 "xField": "dia"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -284,7 +330,16 @@
               },
               "options": {
                 "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
                 "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
                 "mapConfig": {
                   "config": {
                     "mapState": {
@@ -383,12 +438,21 @@
                   },
                   "version": "v1"
                 },
+                "mosaicArea": true,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
                 "showSidePanel": false,
                 "timeSync": "variables",
                 "timeVariables": {
                   "from": "cieloFrom",
                   "to": "cieloTo"
                 },
+                "tripLayerMode": "table",
                 "variableMappings": [
                   {
                     "field": "id_estacion",
@@ -398,7 +462,7 @@
                 ]
               }
             },
-            "version": ""
+            "version": "1.5.0"
           }
         }
       },
@@ -444,13 +508,44 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
                   "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
                     "axisSoftMax": 3,
                     "axisSoftMin": -3,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
                     "drawStyle": "line",
                     "fillOpacity": 8,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
                     "lineWidth": 2,
-                    "spanNulls": true
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
                   },
                   "decimals": 2,
                   "thresholds": {
@@ -458,7 +553,7 @@
                     "steps": [
                       {
                         "color": "blue",
-                        "value": null
+                        "value": 0
                       },
                       {
                         "color": "text",
@@ -548,17 +643,19 @@
               },
               "options": {
                 "legend": {
+                  "calcs": [],
                   "displayMode": "list",
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
+                  "hideZeros": false,
                   "mode": "multi",
                   "sort": "none"
                 }
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -606,29 +703,76 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
                   "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
                     "drawStyle": "bars",
                     "fillOpacity": 80,
-                    "lineWidth": 1
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
                   },
                   "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "lengthmm"
                 },
                 "overrides": []
               },
               "options": {
                 "legend": {
+                  "calcs": [],
                   "displayMode": "list",
                   "placement": "bottom",
                   "showLegend": false
                 },
                 "tooltip": {
+                  "hideZeros": false,
                   "mode": "single",
                   "sort": "none"
                 }
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -673,7 +817,31 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -681,7 +849,7 @@
                 "showHeader": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -727,30 +895,75 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
                   "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
                     "drawStyle": "points",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
                     "lineWidth": 0,
                     "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
                     "showPoints": "always",
-                    "spanNulls": false
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
                   },
-                  "decimals": 2
+                  "decimals": 2,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
                 },
                 "overrides": []
               },
               "options": {
                 "legend": {
+                  "calcs": [],
                   "displayMode": "list",
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
+                  "hideZeros": false,
                   "mode": "multi",
                   "sort": "none"
                 }
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -765,6 +978,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 23,
           "links": [],
           "title": "Qué estás viendo",
@@ -777,11 +991,16 @@
                 "overrides": []
               },
               "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
                 "content": "### Dos mapas del momento\n\n**El de la izquierda** pinta el país por regiones según lo lluviosas o secas que estén\nrespecto a lo normal, con las estaciones de medición encima. **El de la derecha** deja\nelegir qué capa ver: lluvia de las últimas horas, pronóstico a tres días, viento, nubes o\nhumedad del suelo.\n\n**Pincha cualquier punto o región** y su detalle se llena aquí abajo: la lluvia y la\ntemperatura de esa estación en los últimos diez días, sus datos, y el caudal esperado del\nrío si tiene uno cerca.\n\n### Un aviso sobre los datos\n\nVienen tal como los publica INAMHI, sin corregir. Hay estaciones que fallan: algunas marcan\ncero durante días aunque esté lloviendo, y **dos han registrado cantidades imposibles**\n—Quinindé en Esmeraldas y Captación Central en Napo, con horas de 75 y 122 milímetros\ncuando lo normal en toda la red no llega a 5—. Si un dato te parece raro, probablemente lo\nsea. Preferimos mostrarlos y decirlo, antes que borrarlos en silencio.\n",
                 "mode": "markdown"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -796,6 +1015,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 24,
           "links": [],
           "title": "El detalle de lo que pinchaste",
@@ -808,11 +1028,16 @@
                 "overrides": []
               },
               "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
                 "content": "### Elige un punto en los mapas de arriba\n\nTodo lo de esta sección cambia según la estación o la región que pinches. También puedes\nelegirlas a mano en los selectores de arriba de la pestaña.\n\n- **Lluvia** — hora a hora, los últimos diez días.\n- **Temperatura** — máxima, media y mínima de cada hora.\n- **Datos de la estación** — dónde está, a qué altura y quién la opera.\n- **Once años de la región** — para ver este momento en contexto, no aislado.\n- **Caudal del río** — quince días de pronóstico, si hay un río del modelo cerca.\n",
                 "mode": "markdown"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -827,6 +1052,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 25,
           "links": [],
           "title": "Qué estás viendo",
@@ -839,11 +1065,16 @@
                 "overrides": []
               },
               "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
                 "content": "### Para saber si esto ya pasó antes\n\nUn número suelto no dice mucho. Saber que **1983 fue el año más lluvioso desde que hay\nregistro** en Pichilingue, con casi el doble de lo normal, sí dice algo sobre lo que un Niño\nfuerte puede hacer.\n\nAquí están los eventos anteriores con datos ecuatorianos: la temporada de lluvias año por\naño desde 1945, la relación entre el mar caliente y la lluvia que vino después, y el detalle\nde cada región desde 2015.\n\n**Ojo con los vacíos.** La serie por regiones tiene huecos de verdad: entre 2021 y 2022 no\nhay nada porque no se publicó, no porque no lloviera. Por eso son puntos sueltos y no una\nlínea continua.\n\nSi quieres ir más atrás, la pestaña **Mar** tiene el nivel del mar desde 1949, que alcanza\nel evento de 1982-83.\n",
                 "mode": "markdown"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -858,6 +1089,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 26,
           "links": [],
           "title": "Qué estás viendo",
@@ -870,11 +1102,16 @@
                 "overrides": []
               },
               "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
                 "content": "### Lo que se espera, y hasta dónde creerlo\n\nPredecir lluvia es distinto según el plazo, y conviene saber cuál es cuál.\n\n**Los próximos tres días** tienen pronóstico de verdad, con detalle suficiente para ver\ndónde va a llover. Está en el mapa de la pestaña **Ahora**, eligiendo la capa de lluvia\npronosticada.\n\n**Hasta cinco semanas** es lo que muestra esta pestaña, y ya no funciona igual. El modelo se\ncorre 31 veces cambiando un poco las condiciones de partida, y lo que se dibuja es el rango\nen el que caen esas 31 versiones. Si la franja es ancha, ni el modelo lo sabe.\n\n**Pasada la segunda semana no hay que leer días concretos.** Que marque lluvia un martes\ndentro de tres semanas no significa nada; que toda la franja esté por encima de lo normal\ndurante dos semanas seguidas, sí.\n\n**Más allá de eso**, lo que hay son las probabilidades del evento en conjunto, y esas las\npublican los organismos oficiales. La Organización Meteorológica Mundial da por seguro que\neste Niño sigue hasta febrero de 2027.\n",
                 "mode": "markdown"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -927,7 +1164,7 @@
                     "steps": [
                       {
                         "color": "blue",
-                        "value": null
+                        "value": 0
                       },
                       {
                         "color": "green",
@@ -954,6 +1191,9 @@
               "options": {
                 "colorMode": "background",
                 "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -961,10 +1201,12 @@
                   "fields": "/^Frente a Ecuador \\(semana a semana\\)$/",
                   "values": false
                 },
-                "textMode": "auto"
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -1034,7 +1276,16 @@
               },
               "options": {
                 "basemap": "openfreemap-positron",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
                 "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
                 "mapConfig": {
                   "config": {
                     "mapState": {
@@ -1206,13 +1457,21 @@
                   },
                   "version": "v1"
                 },
+                "mosaicArea": true,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "publishIntervalMs": 1500,
                 "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
                 "showSidePanel": false,
                 "timeSync": "variables",
                 "timeVariables": {
                   "from": "mapFrom",
                   "to": "mapTo"
                 },
+                "tripLayerMode": "table",
                 "variableMappings": [
                   {
                     "field": "zona_id",
@@ -1227,7 +1486,7 @@
                 ]
               }
             },
-            "version": ""
+            "version": "1.5.0"
           }
         }
       },
@@ -1352,16 +1611,57 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
                   "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
                     "axisLabel": "m³/s",
                     "axisPlacement": "right",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
                     "drawStyle": "line",
                     "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
                     "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
                     "showPoints": "never",
-                    "spanNulls": true
+                    "showValues": false,
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
                   },
                   "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "m3/s"
                 },
                 "overrides": [
@@ -1491,13 +1791,14 @@
                   "showLegend": true
                 },
                 "tooltip": {
+                  "hideZeros": false,
                   "mode": "multi",
                   "sort": "none"
                 },
                 "xField": "dia"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -1542,7 +1843,31 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": [
                   {
                     "matcher": {
@@ -1564,7 +1889,7 @@
                           "steps": [
                             {
                               "color": "green",
-                              "value": null
+                              "value": 0
                             },
                             {
                               "color": "yellow",
@@ -1602,7 +1927,7 @@
                           "steps": [
                             {
                               "color": "red",
-                              "value": null
+                              "value": 0
                             },
                             {
                               "color": "text",
@@ -1624,7 +1949,7 @@
                 "showHeader": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -1639,6 +1964,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 52,
           "links": [],
           "title": "Qué estás viendo, y qué no",
@@ -1651,11 +1977,16 @@
                 "overrides": []
               },
               "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
                 "content": "### La lluvia de arriba y el río de abajo\n\nCuando llueve en la cabecera de una cuenca, el agua tarda horas o días en llegar al río de\nabajo. Esta pestaña pone las dos cosas en la misma línea de tiempo para que se vea esa\nrelación: **a la izquierda del cero lo que ya cayó, a la derecha lo que se espera del río**.\n\n### Lo que esto no es\n\nNo es una demostración de que una cosa causa la otra. Las dos mitades **casi no se solapan**:\nla lluvia que publica INAMHI llega hasta hoy, y el pronóstico del río empieza hoy. Lo que ves\nes una secuencia, no una relación medida.\n\nY la estación de lluvia que se muestra es simplemente **la más cercana en línea recta**, que\nno siempre es la que alimenta ese río. La tabla del lado dice a cuántos kilómetros está cada\nuna: por debajo de 25 la cosa se sostiene, por encima de 50 tómala con pinzas.\n\nDos estaciones quedan fuera de esta comparación por medir cantidades imposibles. Siguen\nvisibles en el mapa de **Ahora**, con su aviso.\n",
                 "mode": "markdown"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -1765,7 +2096,16 @@
               },
               "options": {
                 "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
                 "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
                 "mapConfig": {
                   "config": {
                     "mapState": {
@@ -1786,53 +2126,42 @@
                           "fieldsToShow": {
                             "grafana-A": [
                               {
-                                "format": null,
                                 "name": "nombre"
                               },
                               {
-                                "format": null,
                                 "name": "lluvia de"
                               },
                               {
-                                "format": null,
                                 "name": "km"
                               },
                               {
-                                "format": null,
                                 "name": "caudal_ahora"
                               }
                             ],
                             "grafana-B": [
                               {
-                                "format": null,
                                 "name": "nombre"
                               },
                               {
-                                "format": null,
                                 "name": "mm_10d"
                               }
                             ],
                             "grafana-C": [
                               {
-                                "format": null,
                                 "name": "rio"
                               },
                               {
-                                "format": null,
                                 "name": "est"
                               },
                               {
-                                "format": null,
                                 "name": "km"
                               }
                             ],
                             "grafana-D": [
                               {
-                                "format": null,
                                 "name": "nombre"
                               },
                               {
-                                "format": null,
                                 "name": "provincia"
                               }
                             ]
@@ -2026,8 +2355,17 @@
                   },
                   "version": "v1"
                 },
+                "mosaicArea": true,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
                 "showSidePanel": false,
                 "timeSync": "off",
+                "tripLayerMode": "table",
                 "variableMappings": [
                   {
                     "field": "id_estacion",
@@ -2037,7 +2375,7 @@
                 ]
               }
             },
-            "version": ""
+            "version": "1.5.0"
           }
         }
       },
@@ -2168,7 +2506,7 @@
                     "steps": [
                       {
                         "color": "blue",
-                        "value": null
+                        "value": 0
                       },
                       {
                         "color": "green",
@@ -2196,6 +2534,8 @@
                 "colorMode": "background",
                 "graphMode": "area",
                 "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -2203,10 +2543,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value_and_name"
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -2255,15 +2597,57 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
                   "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
                     "axisLabel": "milímetros sobre lo normal",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
                     "drawStyle": "line",
                     "fillOpacity": 12,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
                     "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
                     "showPoints": "never",
-                    "spanNulls": false
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
                   },
                   "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "lengthmm"
                 },
                 "overrides": [
@@ -2305,17 +2689,19 @@
               },
               "options": {
                 "legend": {
+                  "calcs": [],
                   "displayMode": "list",
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
+                  "hideZeros": false,
                   "mode": "multi",
                   "sort": "none"
                 }
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -2360,7 +2746,31 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": [
                   {
                     "matcher": {
@@ -2382,7 +2792,7 @@
                           "steps": [
                             {
                               "color": "yellow",
-                              "value": null
+                              "value": 0
                             },
                             {
                               "color": "orange",
@@ -2408,7 +2818,7 @@
                 "showHeader": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -2454,15 +2864,57 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
                   "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
                     "axisLabel": "altura del mar (m)",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
                     "drawStyle": "line",
                     "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
                     "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
                     "showPoints": "never",
-                    "spanNulls": true
+                    "showValues": false,
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
                   },
                   "decimals": 2,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "lengthm"
                 },
                 "overrides": [
@@ -2490,18 +2942,20 @@
               },
               "options": {
                 "legend": {
+                  "calcs": [],
                   "displayMode": "list",
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
+                  "hideZeros": false,
                   "mode": "multi",
                   "sort": "none"
                 },
                 "xField": "hora"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -2550,14 +3004,57 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
                   "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
                     "drawStyle": "line",
                     "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
                     "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
                     "showPoints": "never",
-                    "spanNulls": true
+                    "showValues": false,
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
                   },
-                  "decimals": 2
+                  "decimals": 2,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
                 },
                 "overrides": [
                   {
@@ -2621,17 +3118,19 @@
               },
               "options": {
                 "legend": {
+                  "calcs": [],
                   "displayMode": "list",
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
+                  "hideZeros": false,
                   "mode": "multi",
                   "sort": "none"
                 }
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -2646,6 +3145,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 65,
           "links": [],
           "title": "Cómo leer esta pestaña",
@@ -2658,11 +3158,16 @@
                 "overrides": []
               },
               "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
                 "content": "### El mar caliente no llega solo\n\nCuando el Pacífico se calienta frente a nuestra costa pasan tres cosas a la vez, y las tres\nestán en esta pantalla.\n\n**El agua sube.** Al calentarse se dilata. Unos centímetros parecen poco, pero cuando\ncoinciden con un aguaje —la marea alta de luna llena o luna nueva— el agua entra donde\nnormalmente no llega. El informe oficial de este año cuenta **18 inundaciones por aguaje**\ncon 41 personas afectadas, y **seis eventos de oleaje** con 1.480.\n\n**El aire de encima se humedece**, y con el tiempo eso se convierte en lluvia sobre la Costa.\nCon el tiempo: entre que el mar se calienta y que llueve pueden pasar semanas o meses.\n\n**El calor se acumula abajo antes de verse arriba.** Por eso la línea del agua cálida importa:\navisa con meses de anticipación de si el evento va a seguir creciendo.\n\n### Dónde estamos ahora\n\nEl mar está claramente caliente y alto. La atmósfera todavía no ha respondido: sigue sin\nllover como en un Niño hecho y derecho. Eso puede cambiar en las próximas semanas, y es\njustamente lo que hay que vigilar.\n\n### De dónde salen estos datos\n\nLa temperatura del mar y las señales del fenómeno son de la **NOAA** de Estados Unidos. El\nnivel del mar histórico viene de la red mundial de mareógrafos, y la marea de ahora mismo es\ndel **INOCAR**, que mantiene los ocho mareógrafos de nuestra costa.\n",
                 "mode": "markdown"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -2708,14 +3213,57 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
                   "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
                     "drawStyle": "line",
                     "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
                     "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
                     "showPoints": "never",
-                    "spanNulls": true
+                    "showValues": false,
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
                   },
                   "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "celsius"
                 },
                 "overrides": [
@@ -2768,17 +3316,19 @@
               },
               "options": {
                 "legend": {
+                  "calcs": [],
                   "displayMode": "list",
                   "placement": "bottom",
                   "showLegend": true
                 },
                 "tooltip": {
+                  "hideZeros": false,
                   "mode": "multi",
                   "sort": "none"
                 }
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -2910,8 +3460,16 @@
               },
               "options": {
                 "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
                 "flowRenderMode": "straight",
                 "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
                 "mapConfig": {
                   "config": {
                     "mapState": {
@@ -2964,15 +3522,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": -1.2,
-                      "longitude": -84,
+                      "latitude": -1.2384447861367254,
+                      "longitude": -83.52105298209348,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_2D",
                       "maxPitch": 60,
                       "pitch": 0,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 5.35
+                      "zoom": 5.571132123425488
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -2981,7 +3539,7 @@
                         0
                       ],
                       "mapStyles": {},
-                      "styleType": "openfreemap-dark",
+                      "styleType": "grafana-satellite",
                       "threeDBuildingColor": [
                         9.311499150948377,
                         9.311499150948377,
@@ -2989,13 +3547,24 @@
                       ],
                       "topLayerGroups": {},
                       "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
                         "label": true,
-                        "road": false
+                        "land": true,
+                        "road": false,
+                        "water": true
                       }
                     },
                     "uiState": {
                       "locale": "es",
                       "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
                         "mapLegend": {
                           "active": false
                         }
@@ -3004,7 +3573,6 @@
                     },
                     "visState": {
                       "animationConfig": {
-                        "currentTime": null,
                         "speed": 1
                       },
                       "annotations": [],
@@ -3014,7 +3582,11 @@
                       },
                       "effects": [],
                       "filters": [],
+                      "groupBys": [],
                       "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
                         "brush": {
                           "enabled": false,
                           "size": 0.5
@@ -3023,8 +3595,17 @@
                           "enabled": false
                         },
                         "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
                           "enabled": false,
                           "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
                         },
                         "tooltip": {
                           "compareMode": false,
@@ -3040,8 +3621,13 @@
                               }
                             ]
                           }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
                         }
                       },
+                      "joins": [],
                       "layerBlending": "normal",
                       "layerOrder": [
                         "flowfield-grafana-A",
@@ -3083,6 +3669,7 @@
                                   200,
                                   255
                                 ],
+                                "collisionEnabled": false,
                                 "color": [
                                   255,
                                   255,
@@ -3104,6 +3691,8 @@
                               }
                             ],
                             "visConfig": {
+                              "animate": true,
+                              "calmOpacity": 0.2,
                               "colorBySpeed": false,
                               "colorRange": {
                                 "category": "Uber",
@@ -3120,15 +3709,37 @@
                               },
                               "cycleSeconds": 60,
                               "density": 7000,
+                              "directionConvention": "from",
                               "elevationScale": 1,
+                              "fixedSpeedRange": false,
+                              "flowContext": {
+                                "camera": {
+                                  "bearing": 0,
+                                  "height": 675,
+                                  "latitude": -1.2384447861367254,
+                                  "longitude": -83.52105298209348,
+                                  "pitch": 0,
+                                  "width": 1499,
+                                  "zoom": 5.571132123425488
+                                },
+                                "tallest": 0
+                              },
+                              "gradientDirection": "downhill",
                               "heightMeters": 0,
                               "lifeFraction": 0.55,
                               "lineLength": 40,
-                              "opacity": 0.85,
+                              "opacity": 0.17,
+                              "opacityBySpeed": false,
                               "seamlessLoop": true,
                               "smoothing": 1,
-                              "thickness": 1.8,
-                              "trailShare": 10,
+                              "speedContrast": 1,
+                              "thickness": 15.24,
+                              "trailShare": 1,
+                              "widthBySpeed": false,
+                              "widthRange": [
+                                1,
+                                4
+                              ],
                               "zoomResponse": 0.25
                             }
                           },
@@ -3171,6 +3782,7 @@
                                   200,
                                   255
                                 ],
+                                "collisionEnabled": false,
                                 "color": [
                                   255,
                                   255,
@@ -3192,6 +3804,7 @@
                               }
                             ],
                             "visConfig": {
+                              "allowHover": true,
                               "colorRange": {
                                 "category": "Custom",
                                 "colorLegends": {},
@@ -3237,9 +3850,21 @@
                                 "name": "Altura significativa (m)",
                                 "type": "custom"
                               },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
                               "elevationScale": 5,
                               "enable3d": false,
                               "filled": true,
+                              "fixedElevation": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "invertHeight": false,
                               "opacity": 0.55,
                               "radius": 10,
                               "radiusRange": [
@@ -3250,6 +3875,56 @@
                                 0,
                                 10
                               ],
+                              "strokeColor": [
+                                30,
+                                150,
+                                190
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    0.5,
+                                    "#08306B"
+                                  ],
+                                  [
+                                    1,
+                                    "#1F6FB5"
+                                  ],
+                                  [
+                                    1.5,
+                                    "#2FA9D6"
+                                  ],
+                                  [
+                                    2,
+                                    "#4FD0C0"
+                                  ],
+                                  [
+                                    2.5,
+                                    "#8FDC6B"
+                                  ],
+                                  [
+                                    3,
+                                    "#F2C94C"
+                                  ],
+                                  [
+                                    4,
+                                    "#E2523B"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#08306B",
+                                  "#1F6FB5",
+                                  "#2FA9D6",
+                                  "#4FD0C0",
+                                  "#8FDC6B",
+                                  "#F2C94C",
+                                  "#E2523B"
+                                ],
+                                "name": "Altura significativa (m)",
+                                "type": "custom"
+                              },
                               "strokeOpacity": 0.8,
                               "stroked": false,
                               "thickness": 0.5,
@@ -3264,6 +3939,7 @@
                               "type": "real"
                             },
                             "colorScale": "custom",
+                            "elevationOffsetScale": "linear",
                             "heightScale": "linear",
                             "radiusScale": "linear",
                             "sizeScale": "linear",
@@ -3277,14 +3953,20 @@
                   },
                   "version": "v1"
                 },
+                "mosaicArea": true,
+                "mosaicViewport": false,
                 "peerTimeSync": false,
+                "publishIntervalMs": 1500,
                 "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table"
               }
             },
-            "version": ""
+            "version": "1.5.0"
           }
         }
       },
@@ -3299,6 +3981,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 71,
           "links": [],
           "title": "Qué estás viendo",
@@ -3311,11 +3994,16 @@
                 "overrides": []
               },
               "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
                 "content": "### El estado de la mar, hora por hora\n\nEl color de fondo es la **altura de las olas** en metros: el azul oscuro es mar tranquila, el\nverde ronda los dos metros, y el amarillo y el rojo son marejada. Las líneas blancas corren **hacia donde viaja la mar**, no de donde\nviene. Con el selector de arriba eliges la hora, desde ayer hasta seis días adelante.\n\n### Por qué está en un tablero de El Niño\n\nPorque el oleaje es una de las formas en que el fenómeno hace daño, y no la más conocida.\nEl informe oficial de este año cuenta **seis eventos de oleaje con 1.480 personas\nafectadas**. Cuando un mar de fondo fuerte coincide con el nivel del mar alto que se ve en\nla pestaña **Mar**, el agua llega donde normalmente no llega.\n\n### Hasta dónde llega este mapa\n\nCada casilla mide unos **55 kilómetros de lado**. Eso alcanza para ver el mar de fondo que\ndomina nuestro oleaje, pero no lo que pasa pegado a la costa: lo que ocurre dentro del golfo\nde Guayaquil o al pie de un acantilado no está aquí.\n\nLos colores tienen cortes fijos, los mismos que usa el INOCAR. Eso permite comparar dos\nhoras distintas entre sí: un día en calma se ve azul y una marejada amarilla o roja, siempre.\n\n### De dónde sale\n\nDel modelo mundial de oleaje de la **NOAA**. El INOCAR corre su propio modelo con mucho más\ndetalle para nuestra costa, pero lo publica solo como imágenes, así que no se puede\nconsultar así.\n",
                 "mode": "markdown"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -3330,6 +4018,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 8,
           "links": [],
           "title": "Cómo se leen estas dos gráficas",
@@ -3342,11 +4031,16 @@
                 "overrides": []
               },
               "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
                 "content": "### Cómo se leen estas dos gráficas\n\n**La de barras**: cada barra es un año, y su altura es cuánta lluvia cayó entre enero y\nabril, que es la temporada lluviosa de la Costa, y su color, lo caliente que estaba el mar\nen diciembre, enero y febrero. La barra que se sale de la pantalla es\n**1983**, el Niño que inundó el país.\n\n**La de puntos**: cada punto es una temporada. Hacia la derecha, los años en que el mar\nestuvo más caliente; hacia arriba, los años en que llovió más después.\n\nLos puntos suben hacia la derecha, así que la relación existe: **mar caliente en diciembre\nsuele traer una temporada lluviosa**. Pero están dispersos, y esa dispersión es la parte\nimportante. Un mar caliente hace más probable una temporada de lluvias fuertes; no la\ngarantiza. Hay años que se salen de la nube en las dos direcciones.\n\n**Pincha una temporada**, en una barra o en un punto, y se resalta en las dos (y en la\ngráfica de regiones si es de 2016 en adelante). Pincha otra vez para soltarla.\n",
                 "mode": "markdown"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -3392,16 +4086,57 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
                   "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
                     "axisLabel": "lluvia media sobre Ecuador (mm/dia)",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
                     "drawStyle": "line",
                     "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
                     "lineWidth": 2,
                     "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
                     "showPoints": "auto",
-                    "spanNulls": true
+                    "showValues": false,
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
                   },
-                  "decimals": 1
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
                 },
                 "overrides": [
                   {
@@ -3522,13 +4257,14 @@
                   "showLegend": true
                 },
                 "tooltip": {
+                  "hideZeros": false,
                   "mode": "multi",
                   "sort": "none"
                 },
                 "xField": "dia"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       }
@@ -3861,7 +4597,8 @@
                       }
                     ],
                     "query": "Lluvia caida en 24 h · PERSIANN satelite : satellite_based_precipitation:persiann_pdir_24h,Lluvia caida en 72 h · PERSIANN : satellite_based_precipitation:persiann_pdir_72h,Lluvia pronosticada diaria · WRF +3 dias : wrf:wrf_precipitation_daily,Viento pronosticado · WRF +3 dias : wrf:wrf_wind_speed,La nube ahora en color real · GOES : goes:goes_rgb_true_color,Temperatura de incendios · GOES : goes:goes_rgb_fire_temperature,Humedad del suelo · FFGS : ffgs:soil_moisture",
-                    "skipUrlSync": false
+                    "skipUrlSync": false,
+                    "valuesFormat": "csv"
                   }
                 },
                 {
@@ -3949,6 +4686,7 @@
                     },
                     "refresh": "onDashboardLoad",
                     "regex": "",
+                    "regexApplyTo": "value",
                     "skipUrlSync": false,
                     "sort": "disabled"
                   }
@@ -3982,6 +4720,7 @@
                     },
                     "refresh": "onDashboardLoad",
                     "regex": "",
+                    "regexApplyTo": "value",
                     "skipUrlSync": false,
                     "sort": "disabled"
                   }
@@ -4015,6 +4754,7 @@
                     },
                     "refresh": "onDashboardLoad",
                     "regex": "",
+                    "regexApplyTo": "value",
                     "skipUrlSync": false,
                     "sort": "disabled"
                   }
@@ -4124,6 +4864,7 @@
                     },
                     "refresh": "onDashboardLoad",
                     "regex": "",
+                    "regexApplyTo": "value",
                     "skipUrlSync": false,
                     "sort": "disabled"
                   }
@@ -4237,6 +4978,7 @@
                     },
                     "refresh": "onDashboardLoad",
                     "regex": "",
+                    "regexApplyTo": "value",
                     "skipUrlSync": false,
                     "sort": "disabled"
                   }
@@ -4350,6 +5092,7 @@
                     },
                     "refresh": "onDashboardLoad",
                     "regex": "",
+                    "regexApplyTo": "value",
                     "skipUrlSync": false,
                     "sort": "disabled"
                   }
@@ -4478,6 +5221,7 @@
           },
           "refresh": "onDashboardLoad",
           "regex": "",
+          "regexApplyTo": "value",
           "skipUrlSync": false,
           "sort": "disabled"
         }
