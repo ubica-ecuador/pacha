@@ -246,7 +246,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "**Click an earthquake** on the map, or a row in *Most exposed*, to see who lives near it.\n\n**Drag** across the bars in *Filters*, **draw** an area on the map, move the map's **time slider**, or **play** the timeline under the map: every panel follows, answered in your browser.",
+                "content": "**Click an earthquake** on the map, or a row in *Most exposed*, to see who lives near it.\n\n**Drag** across the bars in *Filters*, **draw** an area on the map, or **play** the timeline at the top: every panel follows, answered in your browser.",
                 "mode": "markdown"
               }
             },
@@ -459,8 +459,8 @@
                           "speed": 1,
                           "type": "timeRange",
                           "value": [
-                            1790776800000,
-                            1791068400000
+                            0,
+                            4102444800000
                           ],
                           "view": "side"
                         }
@@ -907,6 +907,7 @@
                   "version": "v1"
                 },
                 "mosaicArea": true,
+                "mosaicSelection": "quakeFilters",
                 "mosaicViewport": false,
                 "peerTimeSync": false,
                 "publishIntervalMs": 1500,
@@ -915,11 +916,7 @@
                 "rasterColormap": "",
                 "rasterPainted": false,
                 "showSidePanel": false,
-                "timeSync": "variables",
-                "timeVariables": {
-                  "from": "quakeFrom",
-                  "to": "quakeTo"
-                },
+                "timeSync": "off",
                 "tripLayerMode": "table",
                 "variableMappings": [
                   {
@@ -932,16 +929,6 @@
                     "variable": "lat",
                     "variableTo": "lng",
                     "zoom": 5
-                  },
-                  {
-                    "field": "mag",
-                    "variable": "mag_lo",
-                    "variableTo": "mag_hi"
-                  },
-                  {
-                    "field": "depth_axis",
-                    "variable": "depth_lo",
-                    "variableTo": "depth_hi"
                   }
                 ]
               }

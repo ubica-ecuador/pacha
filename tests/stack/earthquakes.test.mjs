@@ -17,10 +17,9 @@ const open = async (query = '') => {
 };
 after(async () => current && current.browser.close());
 
-// Settled: the map has published its time window (every windowed panel re-runs
-// when it lands) and no panel is still loading because of it.
+// Settled: the filters panel has applied the URL's filters (every panel on
+// them re-runs when it does) and no panel is still loading because of it.
 const settled = async (view) => {
-  await view.page.waitForFunction(() => new URL(location.href).searchParams.get('var-quakeFrom'), null, { timeout: 30_000 });
   await view.page.waitForTimeout(500);
   await view.page.waitForFunction(() => document.querySelectorAll('[aria-label="Panel loading bar"]').length === 0, null, {
     timeout: 30_000,
@@ -61,6 +60,14 @@ test('a magnitude filter in the URL gives a lower count than the page\'s own unf
   assert.match(filters, /Magnitude\s+5 – 10/);
   const counted = await view.page.getByTestId('filters-count').first().innerText();
   assert.ok(counted.startsWith(`${filtered.toLocaleString('en-US')} of`), counted);
+});
+
+test('opens on the whole month: the map publishes no time window of its own', async () => {
+  const view = await open();
+  await settled(view);
+  assert.equal(new URL(view.page.url()).searchParams.get('var-quakeFrom') || '', '');
+  const counted = await view.page.getByTestId('filters-count').first().innerText();
+  assert.match(counted, /^([\d,]+) of \1\b/);
 });
 
 test('selecting a quake via the URL shows it in "Selected earthquake"', async () => {
