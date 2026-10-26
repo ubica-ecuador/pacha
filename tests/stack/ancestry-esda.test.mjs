@@ -1,7 +1,8 @@
 // The ancestry-esda dashboard: the spatial weights datasets/ancestry/build.sh
 // adds to the ancestry files, the server datasets as Grafana runs them for the
 // state and group the dashboard opens on (Illinois, Polish), and the page: no
-// panel in error, and the global Moran's I the browser computes is PySAL's.
+// panel in error, and the global Moran's I the browser computes is PySAL's,
+// with its reference distribution.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { api, duckdb } from '../lib/grafana.mjs';
@@ -11,7 +12,7 @@ import { openDashboard } from '../lib/browser.mjs';
 
 const dashboard = loadDashboard('dashboards/gallery/ancestry-esda.json');
 const FILES = 'http://feeds/datasets/ancestry/';
-const DATASETS = ['shapes', 'tractvals', 'links', 'lisa', 'clusters'];
+const DATASETS = ['shapes', 'tractvals', 'links', 'lisa', 'clusters', 'refdist'];
 const VARS = { state: 'IL', grupo: 'Polish', weights: 'queen' };
 // What the DuckDB datasource does to a panel's or a dataset's `$var`: quote it.
 const fill = (sql) => sql.replace(/\$(state|grupo|weights)\b/g, (_, name) => `'${VARS[name]}'`);
@@ -23,14 +24,27 @@ const serverSql = (name) => {
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, 'ancestry-esda');
   assert.ok(dashboard.spec.description);
-  assert.deepEqual(dashboard.spec.tags, ['chaski', 'duckdb', 'kepler', 'business-charts', 'demographics']);
+  assert.deepEqual(dashboard.spec.tags, ['chaski', 'duckdb', 'kepler', 'mosaic', 'demographics']);
   const text = JSON.stringify(dashboard);
   for (const url of text.match(/read_parquet\('[^']+'\)/g)) assert.ok(url.includes(FILES), url);
   // p-values the same on every visit: permutations come from hash(), not random().
-  const [lisa] = findAll(dashboard, (n) => n.kind === 'dataset' && n.name === 'lisa');
-  const code = lisa.source.sql.replace(/--.*$/gm, '');
-  assert.match(code, /hash\(/);
-  assert.doesNotMatch(code, /random\(/);
+  for (const name of ['lisa', 'refdist']) {
+    const [dataset] = findAll(dashboard, (n) => n.kind === 'dataset' && n.name === name);
+    const code = dataset.source.sql.replace(/--.*$/gm, '');
+    assert.match(code, /hash\(/, name);
+    assert.doesNotMatch(code, /random\(/, name);
+  }
+  // The Mosaic brushes write the box and the share range; no dataset reads
+  // them, or each brush would reload it and clear every brush.
+  const written = ['bx0', 'bx1', 'by0', 'by1', 'sh0', 'sh1'];
+  const writes = findAll(dashboard, (n) => n.vizConfig?.group === 'ubica-chaski-mosaic-panel')
+    .map((p) => p.vizConfig.spec.options.variables)
+    .join('\n');
+  for (const name of written) assert.match(writes, new RegExp(`\\b${name}\\b`), name);
+  for (const dataset of findAll(dashboard, (n) => n.kind === 'dataset')) {
+    const sql = dataset.source.sql ?? dataset.source.query.rawSql;
+    for (const name of written) assert.doesNotMatch(sql, new RegExp(`\\$${name}\\b`), `${dataset.name} reads ${name}`);
+  }
   // Both maps frame the new state's tracts when the state changes, and nothing else moves them.
   const maps = findAll(dashboard, (n) => n.vizConfig?.group === 'ubica-keplergl-panel');
   assert.equal(maps.length, 2);
@@ -88,6 +102,20 @@ test("opens with no panel in error, and Moran's I is PySAL's", { timeout: 300_00
     assert.equal(await view.panelErrors(), 0);
     // esda.Moran on the same shares and queen weights: 0.70092180
     assert.equal(await view.statNumber("Global Moran's I"), 0.701);
+    // The reference distribution: 999 shuffles, centred near E[I] = -1/(n - 1),
+    // none reaching the observed I, which is the same as the stat's.
+    const [ref] = await view.chaski(
+      'SELECT count(*)::INT AS n, avg(i) AS mean, max(i) AS top, max(observed) AS observed FROM datasets.refdist',
+    );
+    assert.equal(ref.n, 999);
+    assert.ok(Math.abs(ref.mean) < 0.005 && ref.top < 0.1, JSON.stringify(ref));
+    assert.ok(Math.abs(ref.observed - 0.7009218) < 1e-6, JSON.stringify(ref));
+    // The four Mosaic panels draw, below the fold too, and show no error of their own.
+    for (const title of ['Moran scatter plot', 'Tracts by share · Polish', 'Pseudo p-values', "Reference distribution of Moran's I"]) {
+      const panel = await view.panel(title);
+      await panel.getByTestId('mosaic-panel').locator('svg rect, svg circle').first().waitFor({ timeout: 60_000 });
+    }
+    assert.equal(await view.page.getByTestId('mosaic-error').count(), 0);
     assert.equal(await view.panelErrors(), 0);
   } finally {
     await view.browser.close();

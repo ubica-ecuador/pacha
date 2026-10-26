@@ -30,7 +30,7 @@
       }
     ],
     "cursorSync": "Off",
-    "description": "Where each ancestry group clusters, state by state: global and local Moran's I (LISA) of a group's share across census tracts, with a Moran scatter plot linked to the maps, computed in the browser from the ACS 2024.",
+    "description": "Where each ancestry group clusters, state by state: global and local Moran's I (LISA) of a group's share across census tracts, with a Moran scatter plot, histograms and the reference distribution of Moran's I drawn by Mosaic and linked to the maps, computed in the browser from the ACS 2024.",
     "editable": true,
     "elements": {
       "panel-about": {
@@ -57,7 +57,7 @@
                 "overrides": []
               },
               "options": {
-                "content": "**Data.** The share of each census tract's residents who report an ancestry or origin, from the American Community Survey 2020–2024 five-year estimates (tables B04006, B03001, B02015; published by the U.S. Census Bureau in 2025, public domain), with the tract polygons of the TIGER 2024 cartographic boundary files, built once per instance by `datasets/ancestry/build.sh`. Tracts with fewer than 100 residents are left out (about 650 of 85,044): a share of 30 people swings by a third with one household. ACS margins of error are not used.\n\n**Neighbours.** Built in the same step from the polygons as published, within each state. *Queen contiguity*: two tracts touch at a border or a corner (a tract with none is an island and gets no LISA). *6 nearest*: the six tracts with the nearest interior points, which links islands but not symmetrically. Weights are row-standardised, so a tract's spatial lag is the mean of its neighbours' values.\n\n**Statistics.** Global Moran's I with its expectation and variance under randomisation. Local Moran's I for every tract, with a pseudo p-value from conditional permutations: the tract keeps its value and its neighbours are replaced by tracts drawn at random from the rest of the state, as many times as *Permutations* says. As in PySAL, each permutation draws one random set shared by all tracts, without replacement; the draws come from a hash, so every visit gets the same p-values. Checked against PySAL esda 2.10 on Illinois and California: the same I, z and local I to 14 digits, and counts of significant tracts within the spread of PySAL's own permutation runs.\n\n**Reading it.** A LISA map is exploratory, not a test of segregation: with thousands of tracts some pass p ≤ 0.05 by chance (pick *FDR 5 %* to control that), the clusters depend on the neighbours chosen and on the tracts' size and shape, and a share says nothing about where people choose to live. ACS ancestry is self-reported and multiple-response.",
+                "content": "**Data.** The share of each census tract's residents who report an ancestry or origin, from the American Community Survey 2020–2024 five-year estimates (tables B04006, B03001, B02015; published by the U.S. Census Bureau in 2025, public domain), with the tract polygons of the TIGER 2024 cartographic boundary files, built once per instance by `datasets/ancestry/build.sh`. Tracts with fewer than 100 residents are left out (about 650 of 85,044): a share of 30 people swings by a third with one household. ACS margins of error are not used.\n\n**Neighbours.** Built in the same step from the polygons as published, within each state. *Queen contiguity*: two tracts touch at a border or a corner (a tract with none is an island and gets no LISA). *6 nearest*: the six tracts with the nearest interior points, which links islands but not symmetrically. Weights are row-standardised, so a tract's spatial lag is the mean of its neighbours' values.\n\n**Statistics.** Global Moran's I with its expectation and variance under randomisation, and its reference distribution: I again with the shares shuffled among the tracts, as many times as *Permutations* says, as PySAL's `esda.Moran` gets its pseudo p-value. Local Moran's I for every tract, with a pseudo p-value from conditional permutations: the tract keeps its value and its neighbours are replaced by tracts drawn at random from the rest of the state, as many times as *Permutations* says. As in PySAL, each permutation draws one random set shared by all tracts, without replacement; the draws come from a hash, so every visit gets the same p-values. Checked against PySAL esda 2.10 on Illinois and California: the same I, z and local I to 14 digits, and counts of significant tracts within the spread of PySAL's own permutation runs.\n\n**Reading it.** A LISA map is exploratory, not a test of segregation: with thousands of tracts some pass p ≤ 0.05 by chance (pick *FDR 5 %* to control that), the clusters depend on the neighbours chosen and on the tracts' size and shape, and a share says nothing about where people choose to live. ACS ancestry is self-reported and multiple-response. The scatter plot and the histograms are drawn by [Mosaic](https://idl.uw.edu/mosaic/) on the same browser tables as everything else.",
                 "mode": "markdown"
               }
             },
@@ -236,7 +236,7 @@
                 "overrides": []
               },
               "options": {
-                "content": "# Where ancestry groups cluster\n\nExploratory spatial data analysis of the **American Community Survey 2024**, one state at a time: is a group's share of residents high where its neighbours' is high too? **Moran's I** answers for the whole state; **local Moran's I** (LISA) finds where: the *High-High* hot spots, the *Low-Low* cold spots, and the outliers that differ from the tracts around them. Everything is computed in your browser, with the same method as [PySAL](https://pysal.org/esda/) and [GeoDa](https://geodacenter.github.io/).\n\n**Drag a box on the scatter plot** to select every tract in it — both maps dim the rest — or draw a lasso from its toolbox; **click a tract** on a map to find it on the plot, **Shift+click** to add more. Change the neighbours, the permutations or the significance to see how much the clusters depend on them.",
+                "content": "# Where ancestry groups cluster\n\nExploratory spatial data analysis of the **American Community Survey 2024**, one state at a time: is a group's share of residents high where its neighbours' is high too? **Moran's I** answers for the whole state; **local Moran's I** (LISA) finds where: the *High-High* hot spots, the *Low-Low* cold spots, and the outliers that differ from the tracts around them. Everything is computed in your browser, with the same method as [PySAL](https://pysal.org/esda/) and [GeoDa](https://geodacenter.github.io/).\n\n**Drag a box on the scatter plot**, or a range on the share histogram, to select the tracts in it: both maps dim the rest and the histograms show where the selection falls. **Click a tract** on a map to find it on the plot, **Shift+click** to add more, click empty map to clear. Change the neighbours, the permutations or the significance to see how much the clusters depend on them.",
                 "mode": "markdown"
               }
             },
@@ -262,7 +262,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- The cluster map: every tract coloured by its LISA cluster (dataset clusters).\n-- `selected` is the box brushed on the scatter plot, which the map marks and\n-- dims the rest around (selectionField). The tracts clicked one by one (sel)\n-- the map rings by itself; filtering on either would leave nothing to dim.\nSELECT c.geoid, s.name, s.county, round(c.share, 2) AS share, c.cluster, round(c.p, 3) AS p,\n       coalesce(c.z BETWEEN try_cast($bx0 AS DOUBLE) AND try_cast($bx1 AS DOUBLE) AND c.lag BETWEEN try_cast($by0 AS DOUBLE) AND try_cast($by1 AS DOUBLE), false) AS selected, s.geojson\nFROM $clusters c JOIN $shapes s USING (geoid)"
+                        "rawSql": "-- The cluster map: every tract coloured by its LISA cluster (dataset clusters).\n-- `selected` is the box brushed on the scatter plot and the share histogram, which the map marks and\n-- dims the rest around (selectionField). The tracts clicked one by one (sel)\n-- the map rings by itself; filtering on either would leave nothing to dim.\nSELECT c.geoid, s.name, s.county, round(c.share, 2) AS share, c.cluster, round(c.p, 3) AS p,\n       coalesce((try_cast($bx0 AS DOUBLE) IS NOT NULL OR try_cast($sh0 AS DOUBLE) IS NOT NULL)\n         AND (try_cast($bx0 AS DOUBLE) IS NULL OR (c.z BETWEEN try_cast($bx0 AS DOUBLE) AND try_cast($bx1 AS DOUBLE) AND c.lag BETWEEN try_cast($by0 AS DOUBLE) AND try_cast($by1 AS DOUBLE)))\n         AND (try_cast($sh0 AS DOUBLE) IS NULL OR c.share BETWEEN try_cast($sh0 AS DOUBLE) AND try_cast($sh1 AS DOUBLE)), false) AS selected, s.geojson\nFROM $clusters c JOIN $shapes s USING (geoid)"
                       },
                       "version": "v0"
                     },
@@ -559,42 +559,23 @@
           }
         }
       },
-      "panel-scatter": {
+      "panel-p-hist": {
         "kind": "Panel",
         "spec": {
           "data": {
             "kind": "QueryGroup",
             "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT c.geoid, s.name, s.county, c.share, c.z, c.lag, c.p, c.cluster\nFROM $clusters c JOIN $shapes s USING (geoid)"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
+              "queries": [],
               "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "Each tract's standardised share against the mean of its neighbours' (the spatial lag). The slope of the line is Moran's I. Drag a box to select every tract in it, draw a lasso from the toolbox, or click a point; the trash icon clears.",
-          "id": 6,
+          "description": "Each tract's LISA pseudo p-value (grey; orange: the selection) and the significance cut. With no clustering they would spread evenly between 0 and 0.5 (PySAL folds them on the smaller tail); a pile at the left is the signal, and how many tracts sit just under the cut is what FDR guards against.",
+          "id": 11,
           "links": [],
-          "title": "Moran scatter plot",
+          "title": "Pseudo p-values",
           "vizConfig": {
-            "group": "volkovlabs-echarts-panel",
+            "group": "ubica-chaski-mosaic-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
@@ -602,37 +583,81 @@
                 "overrides": []
               },
               "options": {
-                "baidu": {
-                  "callback": "bmapReady",
-                  "key": ""
-                },
-                "editor": {
-                  "format": "auto"
-                },
-                "editorMode": "code",
-                "gaode": {
-                  "key": "",
-                  "plugin": "AMap.Scale,AMap.ToolBar"
-                },
-                "getOption": "// The Moran scatter plot: every tract's standardised share (x) against the\n// mean of its neighbours' (y, the spatial lag). The slope of the line through\n// the origin is Moran's I; the four quadrants are the four kinds of local\n// association, coloured as on the cluster map when the tract is significant.\n//\n// Drag a rectangle to select tracts: its four edges go to BOX (short whatever\n// it catches), and both maps flag the tracts inside it with a `selected`\n// column, ring them and dim the rest. A lasso from the toolbox writes the\n// geoids to the multi-value SEL instead, as does a click on a point; on a map,\n// Shift+click adds tracts to SEL. The trash icon clears both.\n//\n// A dashboard changes only the constants block below.\n// @constants begin\nconst SEL = 'sel';\nconst BOX = ['bx0', 'bx1', 'by0', 'by1'];\nconst COLORS = {\n  'High-High': '#d7301f',\n  'Low-Low': '#2166ac',\n  'High-Low': '#f4a582',\n  'Low-High': '#92c5de',\n  'Not significant': 'rgba(128, 128, 128, 0.35)',\n  'No neighbours': 'rgba(128, 128, 128, 0.35)',\n};\nconst UNIT = '% of residents';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst geoid = col('geoid');\nconst name = col('name');\nconst county = col('county');\nconst share = col('share').map(Number);\nconst z = col('z').map(Number);\nconst lag = col('lag').map((v) =\u003e (v === null || v === undefined ? null : Number(v)));\nconst p = col('p').map((v) =\u003e (v === null || v === undefined ? null : Number(v)));\nconst cluster = col('cluster');\n\n// The selection, read on every draw so a shared link shows it too. Naming\n// ${sel} here is what makes the panel redraw when the variable changes.\nlet picked = [];\ntry {\n  picked = JSON.parse(context.grafana.replaceVariables('${sel:json}'));\n} catch (e) {\n  picked = [];\n}\n// Only what this state has: a selection made in another state matches nothing.\nconst here = new Set(geoid);\nconst selected = new Set((Array.isArray(picked) ? picked : [picked]).filter((v) =\u003e v \u0026\u0026 here.has(v)));\n// The box, read the same way: ${bx0} ${bx1} ${by0} ${by1} named here so the chart redraws on them.\nconst box = BOX.map((name) =\u003e parseFloat(context.grafana.replaceVariables('${' + name + '}')));\nif (box.every(Number.isFinite)) {\n  for (let i = 0; i \u003c z.length; i++) {\n    if (lag[i] !== null \u0026\u0026 z[i] \u003e= box[0] \u0026\u0026 z[i] \u003c= box[1] \u0026\u0026 lag[i] \u003e= box[2] \u0026\u0026 lag[i] \u003c= box[3]) {\n      selected.add(geoid[i]);\n    }\n  }\n}\nconst anySelected = selected.size \u003e 0;\n// A handful of points must stand out among thousands; hundreds must not hide the rest.\nconst pickedSize = selected.size \u003c= 5 ? 14 : 9;\n\n// Moran's I as GeoDa draws it: the slope of lag on z, over tracts with\n// neighbours (z has mean 0 and variance 1 over all of them).\nlet szl = 0;\nlet withNeighbours = 0;\nfor (let i = 0; i \u003c z.length; i++) {\n  if (lag[i] !== null) {\n    szl += z[i] * lag[i];\n    withNeighbours += 1;\n  }\n}\nconst moran = withNeighbours ? szl / withNeighbours : 0;\nconst xs = z.filter(Number.isFinite);\nconst xMin = Math.min(-1, ...xs);\nconst xMax = Math.max(1, ...xs);\n\nconst point = (i) =\u003e ({\n  value: [z[i], lag[i], i],\n  itemStyle: {\n    color: COLORS[cluster[i]] || COLORS['Not significant'],\n    opacity: anySelected \u0026\u0026 !selected.has(geoid[i]) ? 0.15 : 0.9,\n    borderColor: selected.has(geoid[i]) ? theme.colors.text.primary : 'transparent',\n    borderWidth: selected.has(geoid[i]) ? 2 : 0,\n  },\n  symbolSize: selected.has(geoid[i]) ? pickedSize : 5,\n});\nconst rest = [];\nconst front = [];\nfor (let i = 0; i \u003c z.length; i++) {\n  if (lag[i] === null || !Number.isFinite(z[i])) {\n    continue;\n  }\n  const significant = cluster[i] !== 'Not significant';\n  (selected.has(geoid[i]) || (!anySelected \u0026\u0026 significant) ? front : rest).push(point(i));\n}\n\nconst publish = (ids) =\u003e location.partial({ ['var-' + SEL]: ids.length ? ids : '' }, true);\nconst publishBox = (edges) =\u003e\n  location.partial(Object.fromEntries(BOX.map((name, k) =\u003e ['var-' + name, edges ? String(edges[k]) : ''])), true);\n\n// Points inside a brushed area. A rectangle comes as [[x0, x1], [y0, y1]],\n// a lasso as its vertices.\nconst inside = (area, x, y) =\u003e {\n  if (area.brushType === 'rect') {\n    const [[x0, x1], [y0, y1]] = area.coordRange;\n    return x \u003e= x0 \u0026\u0026 x \u003c= x1 \u0026\u0026 y \u003e= y0 \u0026\u0026 y \u003c= y1;\n  }\n  const poly = area.coordRange;\n  let hit = false;\n  for (let a = 0, b = poly.length - 1; a \u003c poly.length; b = a++) {\n    const [xa, ya] = poly[a];\n    const [xb, yb] = poly[b];\n    if (ya \u003e y !== yb \u003e y \u0026\u0026 x \u003c ((xb - xa) * (y - ya)) / (yb - ya) + xa) {\n      hit = !hit;\n    }\n  }\n  return hit;\n};\n\nchart.off('brushEnd');\nchart.on('brushEnd', (event) =\u003e {\n  const areas = (event.areas || []).filter((a) =\u003e a.coordRange);\n  if (!areas.length) {\n    return;\n  }\n  const rect = areas.find((a) =\u003e a.brushType === 'rect');\n  if (rect) {\n    const [[x0, x1], [y0, y1]] = rect.coordRange;\n    publishBox([x0, x1, y0, y1].map((v) =\u003e Math.round(v * 1000) / 1000));\n    setTimeout(() =\u003e chart.dispatchAction({ type: 'brush', areas: [] }), 0);\n    return;\n  }\n  const ids = [];\n  for (let i = 0; i \u003c z.length; i++) {\n    if (lag[i] !== null \u0026\u0026 areas.some((a) =\u003e inside(a, z[i], lag[i]))) {\n      ids.push(geoid[i]);\n    }\n  }\n  publish(ids);\n  // The highlighted points now show the selection; the box would only hide them.\n  setTimeout(() =\u003e chart.dispatchAction({ type: 'brush', areas: [] }), 0);\n});\nchart.off('brush');\nchart.on('brush', (event) =\u003e {\n  if (event.command === 'clear') {\n    publish([]);\n    publishBox(null);\n  }\n});\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const i = event.value \u0026\u0026 event.value[2];\n  if (i === undefined) {\n    return;\n  }\n  const same = selected.size === 1 \u0026\u0026 selected.has(geoid[i]);\n  publish(same ? [] : [geoid[i]]);\n});\nsetTimeout(() =\u003e {\n  chart.dispatchAction({ type: 'takeGlobalCursor', key: 'brush', brushOption: { brushType: 'rect', brushMode: 'single' } });\n}, 0);\n\nconst fmt = (v, d) =\u003e (v === null || v === undefined || !Number.isFinite(v) ? '–' : v.toFixed(d));\nconst series = (data, extra) =\u003e ({\n  type: 'scatter',\n  data,\n  emphasis: { scale: 1.6 },\n  ...extra,\n});\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 12, right: 24, top: 36, bottom: 30, containLabel: true },\n  tooltip: {\n    trigger: 'item',\n    formatter: (item) =\u003e {\n      if (item.seriesName === 'line') {\n        return `Moran's I = \u003cb\u003e${moran.toFixed(3)}\u003c/b\u003e`;\n      }\n      const i = item.value[2];\n      return (\n        `\u003cb\u003e${name[i]}\u003c/b\u003e, ${county[i]}\u003cbr/\u003e` +\n        `share: \u003cb\u003e${fmt(share[i], 1)}\u003c/b\u003e ${UNIT} (z ${fmt(z[i], 2)})\u003cbr/\u003e` +\n        `neighbours' mean z: \u003cb\u003e${fmt(lag[i], 2)}\u003c/b\u003e\u003cbr/\u003e` +\n        `${cluster[i]} · pseudo p = ${fmt(p[i], 3)}`\n      );\n    },\n  },\n  toolbox: {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: {\n      brush: {\n        type: ['rect', 'polygon', 'clear'],\n        title: { rect: 'Select tracts in a box', polygon: 'Select tracts with a lasso', clear: 'Clear the selection' },\n      },\n    },\n  },\n  brush: {\n    xAxisIndex: 0,\n    yAxisIndex: 0,\n    brushType: 'rect',\n    brushMode: 'single',\n    transformable: false,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.12)', borderColor: muted, borderWidth: 1 },\n    inBrush: {},\n    outOfBrush: {},\n  },\n  title: {\n    text: `Moran's I = ${moran.toFixed(3)}` + (anySelected ? `   ·   ${selected.size} selected` : ''),\n    left: 8,\n    top: 4,\n    textStyle: { fontSize: 13, fontWeight: 'normal', color: theme.colors.text.primary },\n  },\n  xAxis: {\n    type: 'value',\n    name: `share, standardised (z of ${UNIT})`,\n    nameLocation: 'middle',\n    nameGap: 26,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { show: false },\n    axisLine: { onZero: false },\n  },\n  yAxis: {\n    type: 'value',\n    name: \"neighbours' mean z (spatial lag)\",\n    nameLocation: 'middle',\n    nameGap: 36,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { show: false },\n    axisLine: { onZero: false },\n  },\n  series: [\n    series(rest, { name: 'tracts', z: 1 }),\n    series(front, { name: 'highlighted', z: 2 }),\n    {\n      name: 'line',\n      type: 'line',\n      data: [\n        [xMin, moran * xMin],\n        [xMax, moran * xMax],\n      ],\n      symbol: 'none',\n      silent: true,\n      z: 3,\n      lineStyle: { color: theme.colors.text.primary, width: 1.5 },\n      markLine: {\n        silent: true,\n        symbol: 'none',\n        label: { show: false },\n        lineStyle: { color: muted, type: 'dashed', width: 1, opacity: 0.6 },\n        data: [{ xAxis: 0 }, { yAxis: 0 }],\n      },\n    },\n  ],\n};\n",
-                "google": {
-                  "callback": "gmapReady",
-                  "key": ""
-                },
-                "map": "none",
-                "renderer": "canvas",
-                "themeEditor": {
-                  "config": "{}",
-                  "name": "default"
-                },
-                "visualEditor": {
-                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
-                  "dataset": [],
-                  "series": []
-                }
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# The tracts' pseudo p-values (grey: all with neighbours; orange: the\n# selection) and the significance cut. Folded as in PySAL (the smaller tail),\n# so with no clustering they would spread evenly from 0 to 0.5; a pile at the\n# left is the signal.\nparams:\n  box: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: clusters }\n    x: { bin: p, steps: 40 }\n    y: { count: }\n    fill: 'rgba(128, 128, 128, 0.35)'\n    inset: 0.5\n  - mark: rectY\n    data: { from: clusters, filterBy: $box }\n    x: { bin: p, steps: 40 }\n    y: { count: }\n    fill: '#FF9830'\n    inset: 0.5\n  - mark: ruleX\n    data: { from: clusters }\n    x: { max: cut }\n    stroke: '#e8423f'\n    strokeWidth: 1.5\n  - mark: text\n    data: { from: clusters }\n    x: { max: cut }\n    text: { sql: \"printf('p ≤ %.3g', max(cut))\" }\n    frameAnchor: top\n    textAnchor: start\n    dx: 4\n    dy: 4\n    fill: '#e8423f'\nxDomain: [0, 0.5]\nyScale: sqrt\nxLabel: Pseudo p-value →\nyLabel: ↑ Tracts\nmarginLeft: 44\n",
+                "variables": ""
               }
             },
-            "version": "7.2.5"
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-refdist": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Global Moran's I again after shuffling the shares among the state's tracts, as many times as Permutations says (bars), against the observed I (line): the permutation test of PySAL's esda.Moran.",
+          "id": 12,
+          "links": [],
+          "title": "Reference distribution of Moran's I",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# Global Moran's I of the shares shuffled among the tracts (bars), against\n# the observed one (line): how far the state's pattern is from chance.\nplot:\n  - mark: rectY\n    data: { from: refdist }\n    x: { bin: i, steps: 30 }\n    y: { count: }\n    fill: '#5794F2'\n    inset: 0.5\n  - mark: ruleX\n    data: { from: refdist }\n    x: { max: observed }\n    stroke: '#e8423f'\n    strokeWidth: 2\n  - mark: ruleX\n    data: [0]\n    stroke: currentColor\n    strokeOpacity: 0.25\n  - mark: text\n    data: { from: refdist }\n    x: { max: observed }\n    text: { sql: \"printf('observed I = %.3f%s%.0f sd from the shuffles%spseudo p = %.4g', max(observed), chr(10), abs(max(observed) - avg(i)) / stddev_samp(i), chr(10), (count_if(i \u003e= observed) + 1) / (count(*) + 1))\" }\n    frameAnchor: top\n    textAnchor: end\n    lineAnchor: top\n    dx: -6\n    dy: 4\n    fill: '#e8423f'\nxLabel: Moran's I with the shares shuffled →\nyLabel: ↑ Permutations\nmarginLeft: 44\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-scatter": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each tract's standardised share against the mean of its neighbours' (the spatial lag), coloured by cluster; the slope of the fitted line is about Moran's I. Drag a box to select every tract in it, click outside it to clear. Tracts picked on a map are ringed. Drawn by Mosaic in the browser.",
+          "id": 6,
+          "links": [],
+          "title": "Moran scatter plot",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "- param: picked\n  column: geoid\n  values: sel\n",
+                "spec": "# The Moran scatter plot: each tract's standardised share (z) against the mean\n# of its neighbours' (lag). A box dragged here, and one along the share\n# histogram, are clauses of the selection box; the dots light up inside both,\n# and the tracts picked on a map (sel) are ringed.\nparams:\n  box: { select: crossfilter }\n  lit: { select: intersect, include: [$box] }\n  picked: { select: intersect, empty: true }\nplot:\n  - mark: ruleX\n    data: [0]\n    stroke: currentColor\n    strokeOpacity: 0.25\n  - mark: ruleY\n    data: [0]\n    stroke: currentColor\n    strokeOpacity: 0.25\n  - mark: dot\n    data: { from: clusters }\n    x: z\n    y: lag\n    fill: cluster\n    r: 2.4\n    stroke: none\n    fillOpacity: 0.9\n  - select: highlight\n    by: $lit\n  - select: intervalXY\n    as: $box\n    brush: { fillOpacity: 0.06, stroke: currentColor, strokeOpacity: 0.6 }\n  - mark: regressionY\n    data: { from: clusters }\n    x: z\n    y: lag\n    stroke: currentColor\n    strokeWidth: 1.5\n  - mark: dot\n    data: { from: clusters, filterBy: $picked }\n    x: z\n    y: lag\n    r: 6\n    fill: none\n    stroke: currentColor\n    strokeWidth: 2\n  - mark: text\n    data: { from: clusters }\n    text: { sql: \"printf('Moran''s I = %.3f', sum(z * lag) / count(lag))\" }\n    frameAnchor: top-left\n    dx: 6\n    dy: 4\n    fontSize: 13\nxyDomain: Fixed\ncolorDomain: [High-High, Low-Low, High-Low, Low-High, Not significant, No neighbours]\ncolorRange: ['#e8423f', '#3a7bd5', '#f5a3a3', '#9cc3f0', 'rgba(128, 128, 128, 0.35)', 'rgba(128, 128, 128, 0.35)']\nxLabel: Share, standardised (z) →\nyLabel: ↑ Neighbours' mean z (spatial lag)\nmarginLeft: 44\n",
+                "variables": "- param: box\n  column: [z, lag]\n  from: [bx0, by0]\n  to: [bx1, by1]\n"
+              }
+            },
+            "version": "2.2.0"
           }
         }
       },
@@ -654,7 +679,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Pooled shares: the group's residents over all residents, not a mean of tract shares.\nWITH sel AS (SELECT unnest([${sel:singlequote}]::VARCHAR[]) AS geoid),\npicked AS (\n  -- the selection: tracts picked one by one (sel), and the box brushed on the scatter plot\n  SELECT c.geoid FROM $clusters c\n  WHERE c.geoid IN (SELECT geoid FROM sel) OR coalesce(c.z BETWEEN try_cast($bx0 AS DOUBLE) AND try_cast($bx1 AS DOUBLE) AND c.lag BETWEEN try_cast($by0 AS DOUBLE) AND try_cast($by1 AS DOUBLE), false)\n),\nt AS (SELECT v.geoid, v.people, s.total_pop FROM $tractvals v JOIN $shapes s USING (geoid))\nSELECT (SELECT count(*) FROM picked)::DOUBLE AS \"Selected\",\n       (SELECT 100 * sum(people) / nullif(sum(total_pop), 0) FROM t WHERE geoid IN (SELECT geoid FROM picked)) AS \"Their share\",\n       (SELECT 100 * sum(people) / sum(total_pop) FROM t) AS \"State\""
+                        "rawSql": "-- Pooled shares: the group's residents over all residents, not a mean of tract shares.\nWITH sel AS (SELECT unnest([${sel:singlequote}]::VARCHAR[]) AS geoid),\npicked AS (\n  -- the selection: tracts picked one by one (sel), and the box brushed on the scatter\n  -- plot and the share histogram (both, when both are)\n  SELECT c.geoid FROM $clusters c\n  WHERE c.geoid IN (SELECT geoid FROM sel) OR coalesce((try_cast($bx0 AS DOUBLE) IS NOT NULL OR try_cast($sh0 AS DOUBLE) IS NOT NULL)\n         AND (try_cast($bx0 AS DOUBLE) IS NULL OR (c.z BETWEEN try_cast($bx0 AS DOUBLE) AND try_cast($bx1 AS DOUBLE) AND c.lag BETWEEN try_cast($by0 AS DOUBLE) AND try_cast($by1 AS DOUBLE)))\n         AND (try_cast($sh0 AS DOUBLE) IS NULL OR c.share BETWEEN try_cast($sh0 AS DOUBLE) AND try_cast($sh1 AS DOUBLE)), false)\n),\nt AS (SELECT v.geoid, v.people, s.total_pop FROM $tractvals v JOIN $shapes s USING (geoid))\nSELECT (SELECT count(*) FROM picked)::DOUBLE AS \"Selected\",\n       (SELECT 100 * sum(people) / nullif(sum(total_pop), 0) FROM t WHERE geoid IN (SELECT geoid FROM picked)) AS \"Their share\",\n       (SELECT 100 * sum(people) / sum(total_pop) FROM t) AS \"State\""
                       },
                       "version": "v0"
                     },
@@ -724,6 +749,40 @@
           }
         }
       },
+      "panel-share-hist": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The group's share in every tract of the state (grey) and in the selection (orange). Brush a range to select the tracts in it, alone or with the box on the scatter plot.",
+          "id": 10,
+          "links": [],
+          "title": "Tracts by share · ${grupo}",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# The group's share across the state's tracts (grey) and in the selection\n# (orange). Brushing a range here selects the tracts in it, with the box.\nparams:\n  box: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: clusters }\n    x: { bin: share, steps: 30 }\n    y: { count: }\n    fill: 'rgba(128, 128, 128, 0.35)'\n    inset: 0.5\n  - mark: rectY\n    data: { from: clusters, filterBy: $box }\n    x: { bin: share, steps: 30 }\n    y: { count: }\n    fill: '#FF9830'\n    inset: 0.5\n  - select: intervalX\n    as: $box\n    brush: { fillOpacity: 0.06, stroke: currentColor, strokeOpacity: 0.6 }\nxDomain: Fixed\nyScale: sqrt\nxLabel: Share of residents (%) →\nyLabel: ↑ Tracts\nmarginLeft: 44\n",
+                "variables": "- param: box\n  column: share\n  from: sh0\n  to: sh1\n"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
       "panel-share-map": {
         "kind": "Panel",
         "spec": {
@@ -742,7 +801,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- The choropleth of the share itself, to read the clusters against.\n-- `selected` is the box brushed on the scatter plot, which the map marks and\n-- dims the rest around (selectionField). The tracts clicked one by one (sel)\n-- the map rings by itself; filtering on either would leave nothing to dim.\nSELECT c.geoid, s.name, s.county, round(c.share, 2) AS share, c.cluster, round(c.p, 3) AS p,\n       coalesce(c.z BETWEEN try_cast($bx0 AS DOUBLE) AND try_cast($bx1 AS DOUBLE) AND c.lag BETWEEN try_cast($by0 AS DOUBLE) AND try_cast($by1 AS DOUBLE), false) AS selected, s.geojson\nFROM $clusters c JOIN $shapes s USING (geoid)"
+                        "rawSql": "-- The choropleth of the share itself, to read the clusters against.\n-- `selected` is the box brushed on the scatter plot and the share histogram, which the map marks and\n-- dims the rest around (selectionField). The tracts clicked one by one (sel)\n-- the map rings by itself; filtering on either would leave nothing to dim.\nSELECT c.geoid, s.name, s.county, round(c.share, 2) AS share, c.cluster, round(c.p, 3) AS p,\n       coalesce((try_cast($bx0 AS DOUBLE) IS NOT NULL OR try_cast($sh0 AS DOUBLE) IS NOT NULL)\n         AND (try_cast($bx0 AS DOUBLE) IS NULL OR (c.z BETWEEN try_cast($bx0 AS DOUBLE) AND try_cast($bx1 AS DOUBLE) AND c.lag BETWEEN try_cast($by0 AS DOUBLE) AND try_cast($by1 AS DOUBLE)))\n         AND (try_cast($sh0 AS DOUBLE) IS NULL OR c.share BETWEEN try_cast($sh0 AS DOUBLE) AND try_cast($sh1 AS DOUBLE)), false) AS selected, s.geojson\nFROM $clusters c JOIN $shapes s USING (geoid)"
                       },
                       "version": "v0"
                     },
@@ -933,7 +992,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH sel AS (SELECT unnest([${sel:singlequote}]::VARCHAR[]) AS geoid),\npicked AS (\n  -- the selection: tracts picked one by one (sel), and the box brushed on the scatter plot\n  SELECT c.geoid FROM $clusters c\n  WHERE c.geoid IN (SELECT geoid FROM sel) OR coalesce(c.z BETWEEN try_cast($bx0 AS DOUBLE) AND try_cast($bx1 AS DOUBLE) AND c.lag BETWEEN try_cast($by0 AS DOUBLE) AND try_cast($by1 AS DOUBLE), false)\n)\nSELECT replace(s.name, 'Census Tract ', '') AS \"Tract\", replace(s.county, ' County', '') AS \"County\",\n       c.share AS \"Share %\", c.lag AS \"Neighbours' z\", c.p AS \"p\", c.cluster AS \"Cluster\"\nFROM $clusters c JOIN $shapes s USING (geoid)\nWHERE CASE WHEN (SELECT count(*) FROM picked) \u003e 0\n           THEN c.geoid IN (SELECT geoid FROM picked)\n           ELSE c.cluster IN ('High-High', 'High-Low') END\nORDER BY c.p, c.share DESC\nLIMIT 1000"
+                        "rawSql": "WITH sel AS (SELECT unnest([${sel:singlequote}]::VARCHAR[]) AS geoid),\npicked AS (\n  -- the selection: tracts picked one by one (sel), and the box brushed on the scatter\n  -- plot and the share histogram (both, when both are)\n  SELECT c.geoid FROM $clusters c\n  WHERE c.geoid IN (SELECT geoid FROM sel) OR coalesce((try_cast($bx0 AS DOUBLE) IS NOT NULL OR try_cast($sh0 AS DOUBLE) IS NOT NULL)\n         AND (try_cast($bx0 AS DOUBLE) IS NULL OR (c.z BETWEEN try_cast($bx0 AS DOUBLE) AND try_cast($bx1 AS DOUBLE) AND c.lag BETWEEN try_cast($by0 AS DOUBLE) AND try_cast($by1 AS DOUBLE)))\n         AND (try_cast($sh0 AS DOUBLE) IS NULL OR c.share BETWEEN try_cast($sh0 AS DOUBLE) AND try_cast($sh1 AS DOUBLE)), false)\n)\nSELECT replace(s.name, 'Census Tract ', '') AS \"Tract\", replace(s.county, ' County', '') AS \"County\",\n       c.share AS \"Share %\", c.lag AS \"Neighbours' z\", c.p AS \"p\", c.cluster AS \"Cluster\"\nFROM $clusters c JOIN $shapes s USING (geoid)\nWHERE CASE WHEN (SELECT count(*) FROM picked) \u003e 0\n           THEN c.geoid IN (SELECT geoid FROM picked)\n           ELSE c.cluster IN ('High-High', 'High-Low') END\nORDER BY c.p, c.share DESC\nLIMIT 1000"
                       },
                       "version": "v0"
                     },
@@ -1191,7 +1250,7 @@
                 "kind": "ElementReference",
                 "name": "panel-share-map"
               },
-              "height": 14,
+              "height": 16,
               "width": 12,
               "x": 0,
               "y": 26
@@ -1202,12 +1261,51 @@
             "spec": {
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-table"
+                "name": "panel-share-hist"
               },
-              "height": 14,
+              "height": 8,
               "width": 12,
               "x": 12,
               "y": 26
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-p-hist"
+              },
+              "height": 8,
+              "width": 12,
+              "x": 12,
+              "y": 34
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-table"
+              },
+              "height": 12,
+              "width": 12,
+              "x": 0,
+              "y": 42
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-refdist"
+              },
+              "height": 12,
+              "width": 12,
+              "x": 12,
+              "y": 42
             }
           },
           {
@@ -1220,7 +1318,7 @@
               "height": 9,
               "width": 24,
               "x": 0,
-              "y": 40
+              "y": 54
             }
           }
         ]
@@ -1233,7 +1331,7 @@
       "chaski",
       "duckdb",
       "kepler",
-      "business-charts",
+      "mosaic",
       "demographics"
     ],
     "timeSettings": {
@@ -1599,7 +1697,44 @@
               "name": "clusters",
               "refId": "clusters",
               "source": {
-                "sql": "-- What the maps and charts colour by: each tract's LISA quadrant where its\n-- pseudo p-value clears the significance picked, \"Not significant\" where it\n-- does not. FDR is Benjamini and Hochberg's false discovery rate at 5 %, over\n-- the tracts with neighbours: with thousands of tests, p ≤ 0.05 alone lets\n-- about one tract in twenty through by chance.\nWITH tested AS (\n  SELECT p, row_number() OVER (ORDER BY p) AS rnk, count(*) OVER () AS m\n  FROM $lisa WHERE k \u003e 0\n),\ncut AS (\n  SELECT CASE WHEN $alpha = 'fdr'\n              THEN coalesce((SELECT max(p) FROM tested WHERE p \u003c= 0.05 * rnk / m), 0)\n              ELSE coalesce(try_cast($alpha AS DOUBLE), 0.05) END AS cut\n)\nSELECT l.geoid, l.share, l.z, l.lag, l.k, l.ii, l.p, cut.cut,\n       CASE WHEN l.k = 0 THEN 'No neighbours'\n            WHEN l.p \u003e cut.cut THEN 'Not significant'\n            WHEN l.quadrant = 'HH' THEN 'High-High'\n            WHEN l.quadrant = 'LL' THEN 'Low-Low'\n            WHEN l.quadrant = 'HL' THEN 'High-Low'\n            ELSE 'Low-High' END AS cluster\nFROM $lisa l, cut",
+                "sql": "-- What the maps and charts colour by: each tract's LISA quadrant where its\n-- pseudo p-value clears the significance picked, \"Not significant\" where it\n-- does not. FDR is Benjamini and Hochberg's false discovery rate at 5 %, over\n-- the tracts with neighbours: with thousands of tests, p ≤ 0.05 alone lets\n-- about one tract in twenty through by chance.\nWITH tested AS (\n  SELECT p, row_number() OVER (ORDER BY p) AS rnk, count(*) OVER () AS m\n  FROM $lisa WHERE k \u003e 0\n),\ncut AS (\n  SELECT CASE WHEN $alpha = 'fdr'\n              THEN coalesce((SELECT max(p) FROM tested WHERE p \u003c= 0.05 * rnk / m), 0)\n              ELSE coalesce(try_cast($alpha AS DOUBLE), 0.05) END AS cut\n)\nSELECT l.geoid, l.share, l.z, l.lag, l.k, l.ii, l.p, cut.cut,\n       CASE WHEN l.k = 0 THEN 'No neighbours'\n            WHEN l.p \u003e cut.cut THEN 'Not significant'\n            WHEN l.quadrant = 'HH' THEN 'High-High'\n            WHEN l.quadrant = 'LL' THEN 'Low-Low'\n            WHEN l.quadrant = 'HL' THEN 'High-Low'\n            ELSE 'Low-High' END AS cluster\nFROM $lisa l, cut\n-- the significant tracts last, so the Mosaic scatter plot draws them on top\nORDER BY l.p DESC",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "refdist",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "refdist",
+              "refId": "refdist",
+              "source": {
+                "sql": "-- The reference distribution of global Moran's I: I again for each\n-- permutation of the z values among the tracts (all of them, islands too), as\n-- PySAL's esda.Moran draws its pseudo p-value. Permutation p puts at position\n-- rn the z of the tract ranked rn by hash(p, rn), not random(), so every visit\n-- gets the same distribution. I = n / S0 * sum w_ij z_i z_j / sum z^2 with\n-- row-standardised weights, as the Global Moran's I panel computes it.\n-- Each permutation is one list of z read by position: a join per link and\n-- permutation would cost five times as long.\nWITH t AS (\n  SELECT geoid, z, k, row_number() OVER (ORDER BY geoid) AS rn FROM $lisa\n),\ns AS (\n  SELECT count(*) AS n, count(*) FILTER (WHERE k \u003e 0)::DOUBLE AS s0, sum(z * z) AS z2 FROM t\n),\nw AS (\n  SELECT a.rn AS ri, b.rn AS rj, 1.0 / count(*) OVER (PARTITION BY l.i) AS wij\n  FROM $links l JOIN t a ON a.geoid = l.i JOIN t b ON b.geoid = l.j\n),\nperms AS (\n  SELECT coalesce(try_cast($perms AS BIGINT), 499) AS p\n),\nshuffled AS (\n  SELECT q.p, list(t.z ORDER BY hash(q.p * 4294967296 + t.rn)) AS zs\n  FROM perms, range(perms.p) q(p), t\n  GROUP BY q.p\n),\nip AS (\n  SELECT p, sum(w.wij * zs[w.ri] * zs[w.rj]) AS zlag FROM shuffled, w GROUP BY p\n),\nobs AS (\n  SELECT sum(w.wij * a.z * b.z) AS zlag FROM w JOIN t a ON a.rn = w.ri JOIN t b ON b.rn = w.rj\n)\nSELECT ip.p AS perm, s.n / s.s0 * ip.zlag / s.z2 AS i, s.n / s.s0 * obs.zlag / s.z2 AS observed\nFROM ip, s, obs",
                 "type": "sql"
               }
             },
@@ -1664,6 +1799,34 @@
           "hide": "hideVariable",
           "label": "Box, lag to",
           "name": "by1",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Share from",
+          "name": "sh0",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Share to",
+          "name": "sh1",
           "query": "",
           "skipUrlSync": false
         }
