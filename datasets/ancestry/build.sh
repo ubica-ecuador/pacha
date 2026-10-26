@@ -1,5 +1,5 @@
 #!/bin/sh
-# Builds the files the ancestry-census and ancestry-esda dashboards read:
+# Builds the files the ancestry-esda dashboard reads:
 # downloads the American Community Survey 2020-2024 five-year summary files for
 # three tables and the Census Bureau's cartographic boundary file of census
 # tracts (about 370 MB, all from www2.census.gov, no key), runs build.sql on

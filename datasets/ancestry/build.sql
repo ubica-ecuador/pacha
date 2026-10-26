@@ -1,7 +1,7 @@
 -- Ancestry of every U.S. census tract, after the New York Times ancestry map of
--- July 2026, as the Parquet files the ancestry-census dashboard reads through
--- the gateway (http://feeds/datasets/ancestry/...), and the spatial weights
--- the ancestry-esda dashboard adds to them. Run by build.sh, which sets
+-- July 2026, as the Parquet files the ancestry-esda dashboard reads through
+-- the gateway (http://feeds/datasets/ancestry/...), with the spatial weights
+-- it adds to them. Run by build.sh, which sets
 -- `src` (the folder of downloaded Census files) and `year`, and runs this in
 -- the folder the files are written to.
 --
