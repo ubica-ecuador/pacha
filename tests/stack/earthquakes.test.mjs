@@ -67,7 +67,9 @@ test('opens on the whole month: the map publishes no time window of its own', as
   await settled(view);
   assert.equal(new URL(view.page.url()).searchParams.get('var-quakeFrom') || '', '');
   const counted = await view.page.getByTestId('filters-count').first().innerText();
-  assert.match(counted, /^([\d,]+) of \1\b/);
+  // All but the few quakes the feed holds from just before the 30 days (a window would leave about 12 %).
+  const [shown, all] = counted.match(/^([\d,]+) of ([\d,]+)/).slice(1).map((n) => Number(n.replace(/,/g, '')));
+  assert.ok(shown > 0.95 * all, counted);
 });
 
 test('selecting a quake via the URL shows it in "Selected earthquake"', async () => {
