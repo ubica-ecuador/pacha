@@ -24,6 +24,54 @@
             "version": "v0"
           }
         }
+      },
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "enable": true,
+          "filter": {
+            "ids": [
+              7,
+              9
+            ]
+          },
+          "hide": true,
+          "iconColor": "rgba(87, 148, 242, 0.18)",
+          "name": "Hours on the map",
+          "query": {
+            "datasource": {
+              "name": "infinity"
+            },
+            "group": "yesoreyeram-infinity-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "columns": [
+                {
+                  "selector": "time",
+                  "text": "time",
+                  "type": "timestamp"
+                },
+                {
+                  "selector": "timeEnd",
+                  "text": "timeEnd",
+                  "type": "timestamp"
+                },
+                {
+                  "selector": "text",
+                  "text": "text",
+                  "type": "string"
+                }
+              ],
+              "data": "[{\"time\":\"${t0}\",\"timeEnd\":\"${t1}\",\"text\":\"Hours on the map\"}]",
+              "format": "table",
+              "parser": "backend",
+              "refId": "Window",
+              "source": "inline",
+              "type": "json"
+            },
+            "version": "v0"
+          }
+        }
       }
     ],
     "cursorSync": "Crosshair",
@@ -54,11 +102,144 @@
                 "overrides": []
               },
               "options": {
-                "content": "### Where the data comes from\n\n[Luchtmeetnet](https://www.luchtmeetnet.nl/) is the Dutch national air quality network, run by RIVM with the GGDs and the provinces. Its stations are reference instruments, the kind a city's compliance is measured with, and it publishes their readings hour by hour as open data, through [its API](https://api-docs.luchtmeetnet.nl/).\n\nThis dashboard reads the 17 stations of GGD Amsterdam's network that measure nitrogen dioxide (NO2), from Zaandam in the north to Oude Meer by Schiphol in the south. Each value is the mean of one hour, published within about an hour of its end; the dashboard reloads every 15 minutes. The latest hours are provisional: the network validates its data later, and a value can still change.\n\nThe requests go through Grafana's server and a cache, one per station, and ask for whole hours, so every visitor in the same hour shares one copy. The time range picks the hours, up to its last 7 days, the most the API gives in one request.\n\n### How to read it\n\n- **NO2** is in µg/m³. It comes mostly from road traffic, so it is highest beside busy roads and in the rush hours, and it changes from one street to the next: that is why the map shows it. Particulate matter (PM10, PM2.5) travels far and varies little across one city; the selected station's panel has it.\n- The colours are 5 bands, from dim to bright: brighter is more NO2. The brightest is above 25 µg/m³, the WHO 2021 guideline for a 24-hour mean (the dashed lines); the WHO's for a year's mean is 10 µg/m³; the EU's limit for a year's mean is 40 µg/m³, and 20 µg/m³ from 2030.\n- A mean needs 75% of its hours: 18 for the last 24 hours, the EU's rule for a daily mean. A station short of them is left out of the ranking and the surface.\n- A reading a little under zero, the instruments' noise around nothing, counts as 0.\n\n### The map\n\nThe cards are the stations' hourly NO2 over the time range, all on one scale; a station with no room for a card stays as a dot, and one that stops reporting turns red. Under them, a surface interpolated between the stations (inverse distance weighting, over the area they span) of each station's mean in the window of the **time filter** at the foot of the map. The window opens on the whole range; narrowed to an hour and played, the surface redraws hour by hour, and each card's cursor and value follow it. The surface is a guess between 17 points, not a measurement: a station by a busy road raises the guess around it, though the street behind may be cleaner.\n\n### How it works\n\nGrafana's DuckDB fetches the readings, and hands them to DuckDB running in your browser (the Chaski data source), which answers every panel and every click without another round trip. The map is the Kepler Geospatial Maps Plus panel, with its Sparkline and Surface layers; the ranking is Business Charts (Apache ECharts).",
+                "content": "### Where the data comes from\n\n[Luchtmeetnet](https://www.luchtmeetnet.nl/) is the Dutch national air quality network, run by RIVM with the GGDs and the provinces. Its stations are reference instruments, the kind a city's compliance is measured with, and it publishes their readings hour by hour as open data, through [its API](https://api-docs.luchtmeetnet.nl/).\n\nThis dashboard reads the 17 stations of GGD Amsterdam's network that measure nitrogen dioxide (NO2), from Zaandam in the north to Oude Meer by Schiphol in the south. Each value is the mean of one hour, published within about an hour of its end; the dashboard reloads every 15 minutes. The latest hours are provisional: the network validates its data later, and a value can still change.\n\nThe requests go through Grafana's server and a cache, one per station, and ask for whole hours, so every visitor in the same hour shares one copy. The time range picks the hours, up to its last 7 days, the most the API gives in one request.\n\n### How to read it\n\n- **NO2** is in µg/m³. It comes mostly from road traffic, so it is highest beside busy roads and in the rush hours, and it changes from one street to the next: that is why the map shows it. Particulate matter (PM10, PM2.5) travels far and varies little across one city; the selected station's panel has it.\n- The colours are 5 bands, from dim to bright: brighter is more NO2. The brightest is above 25 µg/m³, the WHO 2021 guideline for a 24-hour mean (the dashed lines); the WHO's for a year's mean is 10 µg/m³; the EU's limit for a year's mean is 40 µg/m³, and 20 µg/m³ from 2030.\n- A mean needs 75% of its hours: 18 for the last 24 hours, the EU's rule for a daily mean. A station short of them is left out of the ranking and the surface.\n- A reading a little under zero, the instruments' noise around nothing, counts as 0.\n\n### The map\n\nThe cards are the stations' hourly NO2 over the time range, all on one scale; a station with no room for a card stays as a dot, and one that stops reporting turns red. Under them, a surface interpolated between the stations (inverse distance weighting, over the area they span) of each station's mean in the window of the **brush** floating at the foot of the page, shaded on the graphs. The window opens on the last six hours; narrowed to an hour and played, the surface redraws hour by hour, and each card's cursor and value follow it. Scrolled down to a station, the brush stays at the foot of the page. The surface is a guess between 17 points, not a measurement: a station by a busy road raises the guess around it, though the street behind may be cleaner.\n\n### How it works\n\nGrafana's DuckDB fetches the readings, and hands them to DuckDB running in your browser (the Chaski data source), which answers every panel and every click without another round trip. The map is the Kepler Geospatial Maps Plus panel, with its Sparkline and Surface layers; the brush is the same app's Time Brush; the ranking is Business Charts (Apache ECharts).",
                 "mode": "markdown"
               }
             },
             "version": ""
+          }
+        }
+      },
+      "panel-brush": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- NO2 per hour: the median of the stations in bars, the highest station as a\n-- line. A picture to brush over: the window it writes (t0, t1) is the hours\n-- the surface averages and the cards point at.\nSELECT time, median(no2) AS \"Median of the stations\", max(no2) AS \"Highest station\"\nFROM $series GROUP BY time ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The hours the map shows. Drag the window, resize it by its handles or draw a new one, step it hour by hour, or press play: the surface averages each station's readings in the window and every card points at its end.",
+          "id": 13,
+          "links": [],
+          "title": "Hours on the map",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#5794F2",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "aggregation": "mean",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "decimals": 0,
+                  "unit": "µg/m³"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Highest station"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "line"
+                      },
+                      {
+                        "id": "custom.aggregation",
+                        "value": "max"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#FF9830",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "backgroundColor": "#121d31",
+                "backgroundTransparency": 5,
+                "barsColor": "series",
+                "bucket": "1h",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "density": "comfortable",
+                "domain": "data",
+                "floatingPlace": {
+                  "anchorX": "center",
+                  "anchorY": "bottom",
+                  "dx": 0,
+                  "dy": 8,
+                  "height": 105,
+                  "width": 0.5
+                },
+                "followLatest": false,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "loop": false,
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "always",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "floating",
+                "pinnedStyle": "solid",
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 1200,
+                "variables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "windowMode": "free"
+              },
+              "pluginVersion": ""
+            }
           }
         }
       },
@@ -433,7 +614,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "**Click a station** on the map, or **its bar** in the ranking, to see every pollutant it measures. **Hover** the graph above, or a card's chart, and every card follows the same hour. The **time filter** at the foot of the map picks the hours the surface averages: it opens on the whole range; drag its handles to one hour and press **play** to watch the surface and the cards move hour by hour. The **time range** picks the hours, up to its last 7 days.",
+                "content": "**Click a station** on the map, or **its bar** in the ranking, to see every pollutant it measures. **Hover** the graph above, or a card's chart, and every card follows the same hour. The **brush** floating at the foot of the page picks the hours the map shows, the last six when it opens: drag it, step it with ‹ › or press **play** to watch the surface and the cards move hour by hour. The **time range** picks the hours, up to its last 7 days.",
                 "mode": "markdown"
               }
             },
@@ -745,7 +926,7 @@
                             1791597600000,
                             1791757800000
                           ],
-                          "view": "minified"
+                          "view": "side"
                         }
                       ],
                       "interactionConfig": {
@@ -1137,7 +1318,11 @@
                 "rasterPainted": false,
                 "saveRequest": 5,
                 "showSidePanel": false,
-                "timeSync": "off",
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
                 "tripLayerMode": "table",
                 "variableMappings": [
                   {
@@ -1933,10 +2118,23 @@
                                     "kind": "ElementReference",
                                     "name": "panel-ranking"
                                   },
-                                  "height": 14,
+                                  "height": 12,
                                   "width": 8,
                                   "x": 16,
                                   "y": 6
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-brush"
+                                  },
+                                  "height": 2,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 18
                                 }
                               }
                             ]
@@ -2006,7 +2204,7 @@
                                     "kind": "ElementReference",
                                     "name": "panel-hint"
                                   },
-                                  "height": 3,
+                                  "height": 4,
                                   "width": 24,
                                   "x": 0,
                                   "y": 0
@@ -2281,6 +2479,72 @@
           "regex": "",
           "regexApplyTo": "value",
           "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "definition": "-- The brush's window when the dashboard opens: the last six hours, whole\n-- hours in UTC. The brush and the map overwrite it (custom values allowed),\n-- and a shared link keeps its own.\nSELECT strftime(date_trunc('hour', now() AT TIME ZONE 'UTC') - INTERVAL 6 HOUR, '%Y-%m-%dT%H:00:00.000Z')",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Window from (brush; last six hours by default)",
+          "multi": false,
+          "name": "t0",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- The brush's window when the dashboard opens: the last six hours, whole\n-- hours in UTC. The brush and the map overwrite it (custom values allowed),\n-- and a shared link keeps its own.\nSELECT strftime(date_trunc('hour', now() AT TIME ZONE 'UTC') - INTERVAL 6 HOUR, '%Y-%m-%dT%H:00:00.000Z')"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "definition": "-- The brush's window when the dashboard opens: the last six hours, whole\n-- hours in UTC. The brush and the map overwrite it (custom values allowed),\n-- and a shared link keeps its own.\nSELECT strftime(date_trunc('hour', now() AT TIME ZONE 'UTC'), '%Y-%m-%dT%H:00:00.000Z')",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Window to (brush; last six hours by default)",
+          "multi": false,
+          "name": "t1",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- The brush's window when the dashboard opens: the last six hours, whole\n-- hours in UTC. The brush and the map overwrite it (custom values allowed),\n-- and a shared link keeps its own.\nSELECT strftime(date_trunc('hour', now() AT TIME ZONE 'UTC'), '%Y-%m-%dT%H:00:00.000Z')"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
           "sort": "disabled"
         }
       }

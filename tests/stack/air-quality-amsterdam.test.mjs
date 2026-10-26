@@ -52,6 +52,25 @@ test('a station in the URL shows it in "Selected station"', { skip }, async () =
   assert.ok(text.includes(top.station) && text.includes(top.name), text.slice(0, 200));
 });
 
+test('the brush opens on the last six hours, and a step moves the window by an hour', { skip }, async () => {
+  const view = await open();
+  const window = () => {
+    const url = new URL(view.page.url());
+    return ['var-t0', 'var-t1'].map((name) => Date.parse(url.searchParams.get(name)));
+  };
+  const [t0, t1] = window();
+  assert.equal(t1 - t0, 6 * 3_600_000, `window ${t0}..${t1}`);
+
+  // The brush floats at the foot of the page; its bar carries the buttons.
+  const before = new URL(view.page.url()).searchParams.get('var-t0');
+  await view.page.locator('button[aria-label="One bucket back"]').first().click();
+  await view.page.waitForFunction((t0) => new URL(location.href).searchParams.get('var-t0') !== t0, before, {
+    timeout: 10_000,
+  });
+  assert.deepEqual(window(), [t0 - 3_600_000, t1 - 3_600_000]);
+  assert.equal(await view.panelErrors(), 0);
+});
+
 // Luchtmeetnet is read server side, through the gateway: an hour's request
 // goes upstream once, then comes from the cache. The gateway serves it with or
 // without the dashboard, so these run either way.
