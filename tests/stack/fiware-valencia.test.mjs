@@ -127,6 +127,8 @@ test('a Time Brush per tab: an instant ($t) on the overview, one window ($slot_f
   assert.equal(brushes.length, 4);
   const instants = brushes.filter((b) => b.selection === 'instant');
   assert.deepEqual(instants.map((b) => b.instantVariable), ['t']);
+  // The overview's map and figures follow the instant as it is dragged, paced like a play.
+  assert.equal(instants[0].publishWhileDragging, true);
   for (const b of brushes.filter((b) => b.selection !== 'instant')) assert.deepEqual(b.variables, { from: 'slot_from', to: 'slot_to' });
   // Grafana re-runs a panel whose SQL names a variable, comments included: the filters variable changes with the
   // window, so naming it would query the brush's own histogram on every move of its window.

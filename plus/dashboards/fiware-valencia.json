@@ -4952,6 +4952,7 @@
                 "pinnedPosition": "floating",
                 "pinnedStyle": "solid",
                 "publishIntervalMs": 400,
+                "publishWhileDragging": true,
                 "publishWhilePlaying": true,
                 "scale": "linear",
                 "selection": "instant",
