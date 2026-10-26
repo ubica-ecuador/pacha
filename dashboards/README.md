@@ -32,7 +32,7 @@ needs it; the other facets change only with the stack.
 
 - **Engine, at least one:** `chaski` (queries in the browser), `duckdb`
   (queries on the server), `infinity` (reads HTTP or JSON).
-- **Visualization:** `kepler`, `business-charts`,
+- **Visualization:** `kepler`, `mosaic` (Chaski's Mosaic panel), `business-charts`,
   `business-table`, `business-text`.
 - **Theme and behaviour:** `seismic`, `mobility`, `transit`, `energy`,
   `air-quality`, `gps`, `weather`, `migration`, `maritime`, `aviation`,

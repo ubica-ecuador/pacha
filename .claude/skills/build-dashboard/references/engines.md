@@ -147,8 +147,9 @@ Chaski traps:
 - `SUM(BIGINT)` is `HUGEINT`, which DuckDB-WASM sends as an object, not a number: cast sums to
   `DOUBLE`.
 - Native `barchart` (and a monthly-bar `timeseries`) over Chaski frames drew nothing in
-  `spain-daily-mobility` (legend, no bars; cause unknown), while a daily `timeseries` works in
-  `earthquakes`. For bar charts over Chaski use Business Charts; stat and table are fine.
+  `spain-daily-mobility` (legend, no bars; cause unknown), while a daily `timeseries` drew fine
+  (`earthquakes` had one). For bar charts over Chaski use Business Charts or a Mosaic panel; stat
+  and table are fine.
 - Memory limit is 1 GB per viewer: reduce on the server first.
 - Point in a drawn polygon without `spatial`: an `area` filter with `$__crossfilter` (above);
   `assets/area-filter.sql` is the hand-written form, for a dataset with no filters variable.

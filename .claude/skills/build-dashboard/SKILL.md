@@ -52,7 +52,7 @@ nothing) are already in it.
 
 | You need | Copy from | Why |
 |---|---|---|
-| Points from a public GeoJSON feed, all in the browser, cross-filtered by map, brush and draw | `dashboards/gallery/earthquakes.json` | Chaski datasets, a `filters` variable with `$__crossfilter` and a filter bar, `areaVariable`, brush histogram, `timeSync: variables` |
+| Points from a public GeoJSON feed, all in the browser, cross-filtered by map, brush and draw | `dashboards/gallery/earthquakes.json` | Chaski datasets, a `filters` variable with `$__crossfilter`, the Chaski filters panel as a sidebar and as a Timeline that plays, a Mosaic plot on the same selection, `areaVariable`, `timeSync: variables` |
 | Linked histograms, rasters or density over many rows in the browser, brushes that drive the other panels | `mosaic-gallery`, `mosaic-nyc-taxi` (Chaski repo, read-only) | Mosaic panel on Chaski datasets, brushes written to variables, kepler viewport and drawn area read back ([mosaic.md](references/mosaic.md)) |
 | A server query over a large file into a browser dataset, then many small panels | `plus/dashboards/geolife-mobility.json` | `source.type: datasource`, a dataset built per instance (`datasets/geolife`), H3 on the server, flows, stops |
 | Live vehicle positions (GTFS-RT, ADS-B, AIS) | `gtfs-rt-mbta-fleet`, `trimet-live-fleet`, `air-traffic-world` | Fleet layer, refresh, feeds through the gateway, recorder history |

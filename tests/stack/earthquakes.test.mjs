@@ -56,10 +56,11 @@ test('a magnitude filter in the URL gives a lower count than the page\'s own unf
   const filtered = await view.statNumber('Earthquakes');
   const baseline = Number((await view.chaski(baselineSql))[0].n);
   assert.ok(filtered < baseline, `${filtered} !< ${baseline}`);
-  // The filter bar names the filter and its range ($__filters), with the same count.
-  const bar = await view.page.locator('.fbar').innerText();
-  assert.match(bar, /Magnitude\s+5 – 10/);
-  assert.ok(bar.includes(`${filtered.toLocaleString('en-US')} of`), bar);
+  // The filters panel shows the filter and its range, with the same count.
+  const filters = await (await view.panel('Filters')).innerText();
+  assert.match(filters, /Magnitude\s+5 – 10/);
+  const counted = await view.page.getByTestId('filters-count').first().innerText();
+  assert.ok(counted.startsWith(`${filtered.toLocaleString('en-US')} of`), counted);
 });
 
 test('selecting a quake via the URL shows it in "Selected earthquake"', async () => {

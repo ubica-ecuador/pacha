@@ -62,228 +62,23 @@
           }
         }
       },
-      "panel-daily": {
+      "panel-depth-mag": {
         "kind": "Panel",
         "spec": {
           "data": {
             "kind": "QueryGroup",
             "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT $__timeGroup(time, 1d) AS time, count(*) AS \"All\" FROM $quakes WHERE $__timeFilter(time) GROUP BY 1 ORDER BY 1"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                },
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT $__timeGroup(time, 1d) AS time, count(*) AS \"Filtered\"\nFROM $quakes\nWHERE $__timeFilter(time) AND $__crossfilter($quakeFilters, -time)\nGROUP BY 1 ORDER BY 1"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "B"
-                  }
-                }
-              ],
+              "queries": [],
               "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "Every earthquake per day in grey, and those the magnitude, depth and area filters leave in colour. It ignores the map's time slider: this is the month the slider moves through.",
-          "id": 8,
+          "description": "Every earthquake the filters leave, by magnitude and depth: the depth axis stretches the shallow kilometres, where most quakes are, and stops at 300 km like the depth filter. Drawn by Mosaic from the same dataset.",
+          "id": 16,
           "links": [],
-          "title": "Earthquakes per day",
+          "title": "Depth and magnitude",
           "vizConfig": {
-            "group": "timeseries",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "bars",
-                    "fillOpacity": 80,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 1,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "auto",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  }
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "All"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#8E8E8E",
-                          "mode": "fixed"
-                        }
-                      },
-                      {
-                        "id": "custom.fillOpacity",
-                        "value": 30
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Filtered"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "orange",
-                          "mode": "fixed"
-                        }
-                      },
-                      {
-                        "id": "custom.fillOpacity",
-                        "value": 90
-                      }
-                    ]
-                  }
-                ]
-              },
-              "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "none"
-                }
-              }
-            },
-            "version": "13.2.1"
-          }
-        }
-      },
-      "panel-depth": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT floor(greatest(least(depth, 299.9), 0) / 10) * 10 AS bin, count(*) AS n\nFROM $quakes\nWHERE $__timeFilter(time)\nGROUP BY 1 ORDER BY 1"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "all"
-                  }
-                },
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT floor(depth_axis / 10) * 10 AS bin, count(*) AS n\nFROM $quakes\nWHERE $__timeFilter(time) AND $__crossfilter($quakeFilters, -depth)\nGROUP BY 1 ORDER BY 1"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "selected"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "Drag across the bars to filter the dashboard by depth. Grey is every earthquake in the time range; colour is what the other filters leave. Depths beyond 300 km are counted in the last bar.",
-          "id": 4,
-          "links": [],
-          "title": "Depth (km)",
-          "vizConfig": {
-            "group": "volkovlabs-echarts-panel",
+            "group": "ubica-chaski-mosaic-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
@@ -291,37 +86,13 @@
                 "overrides": []
               },
               "options": {
-                "baidu": {
-                  "callback": "bmapReady",
-                  "key": ""
-                },
-                "editor": {
-                  "format": "auto"
-                },
-                "editorMode": "code",
-                "gaode": {
-                  "key": "",
-                  "plugin": "AMap.Scale,AMap.ToolBar"
-                },
-                "getOption": "// A histogram whose brush filters the rest of the dashboard.\n//\n// Dragging across it writes the selected range to two dashboard variables\n// (LO and HI); the other panels filter on them, and this one does not, so it\n// keeps showing the whole distribution the other filters leave. Two query\n// frames feed it: `all` (grey, the context) and `selected` (colour, what the\n// other filters leave). Each has columns `bin` (the bin's lower edge) and `n`.\n//\n// A dashboard changes only the constants block below.\n// @constants begin\nconst LO = 'depth_lo';\nconst HI = 'depth_hi';\nconst STEP = 10;\nconst DOMAIN = [0, 300];\nconst UNIT = 'km';\nconst COLOR = 'blue';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\n\nconst points = (refId) =\u003e {\n  const frame = context.panel.data.series.find((f) =\u003e f.refId === refId);\n  if (!frame) {\n    return [];\n  }\n  const bins = frame.fields.find((f) =\u003e f.name === 'bin').values;\n  const counts = frame.fields.find((f) =\u003e f.name === 'n').values;\n  return Array.from(bins, (b, i) =\u003e [Number(b) + STEP / 2, Number(counts[i])]);\n};\nconst all = points('all');\nconst selected = points('selected');\nconst domain = DOMAIN || [Math.min(...all.map((p) =\u003e p[0] - STEP / 2)), Math.max(...all.map((p) =\u003e p[0] + STEP / 2))];\n\n// Whole bins only: a range that cuts a bar in two would count half of it.\nconst snap = (range) =\u003e {\n  const lo = Math.floor(range[0] / STEP) * STEP;\n  const hi = Math.max(Math.ceil(range[1] / STEP) * STEP, lo + STEP);\n  return [lo, hi];\n};\nconst drawBrush = (range) =\u003e\n  chart.dispatchAction({ type: 'brush', areas: range ? [{ brushType: 'lineX', xAxisIndex: 0, coordRange: range }] : [] });\nconst publish = (range) =\u003e {\n  location.partial({ ['var-' + LO]: range ? String(range[0]) : '', ['var-' + HI]: range ? String(range[1]) : '' }, true);\n};\n\nchart.off('brushEnd');\nchart.off('brush');\nchart.on('brushEnd', (event) =\u003e {\n  const area = event.areas[0];\n  if (!area || !area.coordRange) {\n    publish(undefined);\n    return;\n  }\n  const range = snap(area.coordRange);\n  publish(range);\n  setTimeout(() =\u003e drawBrush(range), 0);\n});\nchart.on('brush', (event) =\u003e {\n  if (event.command === 'clear') {\n    publish(undefined);\n  }\n});\n\n// Every redraw (setOption without merge) wipes the brush: draw it back from\n// the variables, which is also how a shared link arrives with its range.\nconst current = [\n  parseFloat(context.grafana.replaceVariables('${' + LO + '}')),\n  parseFloat(context.grafana.replaceVariables('${' + HI + '}')),\n];\nsetTimeout(() =\u003e {\n  chart.dispatchAction({ type: 'takeGlobalCursor', key: 'brush', brushOption: { brushType: 'lineX', brushMode: 'single' } });\n  if (current.every(Number.isFinite)) {\n    drawBrush(current);\n  }\n}, 0);\n\nconst accent = theme.visualization.getColorByName(COLOR);\nconst muted = theme.colors.text.secondary;\n\nreturn {\n  animation: false,\n  // The axis name sits under the axis labels, centred: at the end of the axis\n  // it ran past the grid's right edge and was clipped (\"ma\" for magnitude).\n  // `containLabel` leaves the name out, so `bottom` makes room for it.\n  grid: { left: 8, right: 16, top: 30, bottom: 22, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'none' },\n    formatter: (items) =\u003e {\n      const x = items[0].value[0] - STEP / 2;\n      const rows = items.map((it) =\u003e `${it.marker}${it.seriesName}: \u003cb\u003e${it.value[1]}\u003c/b\u003e`).join('\u003cbr/\u003e');\n      return `${x}–${x + STEP} ${UNIT}\u003cbr/\u003e${rows}`;\n    },\n  },\n  toolbox: {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: { brush: { type: ['lineX', 'clear'], title: { lineX: 'Select a range', clear: 'Clear the filter' } } },\n  },\n  brush: {\n    xAxisIndex: 0,\n    seriesIndex: [1],\n    brushType: 'lineX',\n    brushMode: 'single',\n    transformable: true,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.12)', borderColor: muted, borderWidth: 1 },\n    outOfBrush: { colorAlpha: 0.25 },\n  },\n  xAxis: { type: 'value', min: domain[0], max: domain[1], name: UNIT, nameLocation: 'middle', nameGap: 24, nameTextStyle: { color: muted }, axisLabel: { color: muted }, splitLine: { show: false } },\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { opacity: 0.15 } } },\n  series: [\n    { name: 'All', type: 'bar', data: all, barWidth: '94%', silent: true, itemStyle: { color: 'rgba(128, 128, 128, 0.22)' } },\n    { name: 'Filtered', type: 'bar', data: selected, barWidth: '94%', barGap: '-100%', itemStyle: { color: accent } },\n  ],\n};\n",
-                "google": {
-                  "callback": "gmapReady",
-                  "key": ""
-                },
-                "map": "none",
-                "renderer": "canvas",
-                "themeEditor": {
-                  "config": "{}",
-                  "name": "default"
-                },
-                "visualEditor": {
-                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
-                  "dataset": [],
-                  "series": []
-                }
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  quakeFilters: { select: crossfilter }\nplot:\n  - mark: dot\n    data: { from: quakes, filterBy: $quakeFilters }\n    x: mag\n    y: depth_axis\n    r: 1.6\n    fill: '#FF9830'\n    fillOpacity: 0.35\n    stroke: none\nxDomain: Fixed\nyDomain: [0, 300]\nyScale: sqrt\nyReverse: true\nyTicks: [0, 10, 35, 70, 150, 300]\nxLabel: Magnitude →\nyLabel: ↓ Depth (km)\nmarginLeft: 40\n",
+                "variables": ""
               }
             },
-            "version": "7.2.5"
+            "version": "2.2.0"
           }
         }
       },
@@ -405,62 +176,23 @@
           }
         }
       },
-      "panel-filter-bar": {
+      "panel-filters": {
         "kind": "Panel",
         "spec": {
           "data": {
             "kind": "QueryGroup",
             "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT name, label, value, variables, active FROM $__filters($quakeFilters)",
-                        "refId": "filters"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "filters"
-                  }
-                },
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT count(*) FILTER (WHERE $__crossfilter($quakeFilters))::DOUBLE AS shown,\n       count(*) FILTER (WHERE $__crossfilter($quakeFilters, -time))::DOUBLE AS without_time,\n       count(*)::DOUBLE AS total\nFROM $quakes WHERE $__timeFilter(time)",
-                        "refId": "count"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "count"
-                  }
-                }
-              ],
+              "queries": [],
               "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "What filters the dashboard now. Each chip clears its filter; Clear all clears every one.",
-          "id": 13,
+          "description": "Every filter on the earthquakes, each counted under the others: brush a histogram, or draw an area on the map. A × clears one, Clear all clears them all.",
+          "id": 15,
           "links": [],
-          "title": "",
+          "title": "Filters",
           "vizConfig": {
-            "group": "marcusolsson-dynamictext-panel",
+            "group": "ubica-chaski-filters-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
@@ -468,27 +200,20 @@
                 "overrides": []
               },
               "options": {
-                "afterRender": "// A filter bar for Business Text (renderMode \"data\"): the dashboard's active\n// filters as chips, a × on each to clear it, \"Clear all\", and how many rows\n// the filters leave.\n//\n// Two query frames feed it, both from Chaski:\n//   FILTERS: SELECT name, label, value, variables, active FROM $__filters($quakeFilters)\n//   COUNT:   SELECT count(*) FILTER (WHERE $__crossfilter($quakeFilters))::DOUBLE AS shown,\n//                   count(*) FILTER (WHERE $__crossfilter($quakeFilters, -time))::DOUBLE AS without_time,\n//                   count(*)::DOUBLE AS total FROM $quakes WHERE $__timeFilter(time)\n// A `without_\u003cname\u003e` column hides that filter's chip while it removes no rows: a kepler\n// map publishes its whole time window on load, which is active but narrows nothing.\n// A chip's × empties its filter's variables; \"Clear all\" empties every one.\n// Text goes in with textContent only: a variable's value is never markup.\n//\n// The panel's content is \u003cdiv class=\"fbar\"\u003e\u003c/div\u003e; styles in filter-bar.css.\n// A dashboard changes only the constants block below.\n// @constants begin\nconst FILTERS = 'filters';\nconst COUNT = 'count';\nconst NOUN = 'earthquakes';\nconst HINT = \"No filter yet: brush a histogram, draw an area or move the map's time slider.\";\n// @constants end\n\nconst frames = context.panelData.series;\nconst frame = (ref) =\u003e frames.find((f) =\u003e f.refId === ref);\nconst column = (f, name) =\u003e (f \u0026\u0026 f.fields.find((x) =\u003e x.name === name)?.values) || [];\nconst filters = frame(FILTERS);\nconst rows = Array.from(column(filters, 'label'), (label, i) =\u003e ({\n  name: column(filters, 'name')[i],\n  label,\n  value: column(filters, 'value')[i],\n  active: Boolean(column(filters, 'active')[i]),\n  vars: String(column(filters, 'variables')[i] || '').split(',').filter(Boolean),\n}));\nconst count = frame(COUNT);\nconst shown = column(count, 'shown')[0];\nconst total = column(count, 'total')[0];\nconst fmt = (n) =\u003e (n === undefined ? '…' : Number(n).toLocaleString('en-US'));\nconst clear = (vars) =\u003e\n  context.grafana.locationService.partial(Object.fromEntries(vars.map((v) =\u003e ['var-' + v, ''])), true);\n\nconst box = context.element.querySelector('.fbar');\nif (!box) {\n  return;\n}\nbox.replaceChildren();\nconst add = (parent, tag, cls, text) =\u003e {\n  const el = document.createElement(tag);\n  if (cls) {\n    el.className = cls;\n  }\n  if (text !== undefined) {\n    el.textContent = text;\n  }\n  parent.appendChild(el);\n  return el;\n};\nadd(box, 'span', 'fbar-count', `${fmt(shown)} of ${fmt(total)} ${NOUN}`);\n// Active, and narrowing: a filter with a `without_\u003cname\u003e` count equal to `shown` removes nothing.\nconst narrows = (r) =\u003e {\n  const without = column(count, `without_${r.name}`)[0];\n  return without === undefined || without !== shown;\n};\nconst on = rows.filter((r) =\u003e r.active \u0026\u0026 narrows(r));\nif (on.length === 0) {\n  add(box, 'span', 'fbar-hint', HINT);\n}\nfor (const r of on) {\n  const chip = add(box, 'span', 'fbar-chip');\n  add(chip, 'b', '', r.label);\n  add(chip, 'span', '', r.value);\n  const x = add(chip, 'button', '', '×');\n  x.type = 'button';\n  x.title = `Clear ${r.label}`;\n  x.onclick = () =\u003e clear(r.vars);\n}\nif (on.length \u003e 0) {\n  const all = add(box, 'button', 'fbar-clear', 'Clear all');\n  all.type = 'button';\n  all.onclick = () =\u003e clear(rows.flatMap((r) =\u003e r.vars));\n}\n",
-                "content": "\u003cdiv class=\"fbar\"\u003e\u003c/div\u003e",
-                "contentPartials": [],
-                "defaultContent": "\u003cdiv class=\"fbar\"\u003e\u003c/div\u003e",
-                "editor": {
-                  "format": "auto",
-                  "language": "html"
-                },
-                "editors": [
-                  "styles",
-                  "afterRender"
-                ],
-                "externalStyles": [],
-                "helpers": "",
-                "renderMode": "data",
-                "status": "",
-                "styles": ".fbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 100%; font-size: 13px; }\n.fbar-count { font-weight: 600; margin-right: 4px; }\n.fbar-hint { opacity: 0.7; }\n.fbar-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 2px 2px 10px; border-radius: 12px; border: 1px solid rgba(128, 128, 128, 0.45); }\n.fbar-chip button, .fbar-clear { background: none; border: none; color: inherit; cursor: pointer; line-height: 1; padding: 3px 7px; border-radius: 10px; }\n.fbar-chip button { font-size: 15px; }\n.fbar-chip button:hover, .fbar-clear:hover { background: rgba(128, 128, 128, 0.2); }\n.fbar-clear { font-size: 12px; text-decoration: underline; }\n",
-                "wrap": false
+                "bins": 40,
+                "filters": "quakeFilters",
+                "layout": "auto",
+                "maxValues": 8,
+                "noun": "earthquakes",
+                "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 800,
+                "timeColumn": "time",
+                "timeline": ""
               }
             },
-            "version": "6.3.0"
+            "version": "2.2.0"
           }
         }
       },
@@ -521,106 +246,11 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "**Click an earthquake** on the map, or a row in *Most exposed*, to see who lives near it.\n\n**Drag** across the magnitude or depth bars, **draw** an area on the map, move the map's **time slider**, or **play** the timeline under the map: every panel follows, answered in your browser.",
+                "content": "**Click an earthquake** on the map, or a row in *Most exposed*, to see who lives near it.\n\n**Drag** across the bars in *Filters*, **draw** an area on the map, move the map's **time slider**, or **play** the timeline under the map: every panel follows, answered in your browser.",
                 "mode": "markdown"
               }
             },
             "version": "13.2.1"
-          }
-        }
-      },
-      "panel-magnitude": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT floor(mag / 0.5) * 0.5 AS bin, count(*) AS n\nFROM $quakes\nWHERE $__timeFilter(time)\nGROUP BY 1 ORDER BY 1"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "all"
-                  }
-                },
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT floor(mag / 0.5) * 0.5 AS bin, count(*) AS n\nFROM $quakes\nWHERE $__timeFilter(time) AND $__crossfilter($quakeFilters, -mag)\nGROUP BY 1 ORDER BY 1"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "selected"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "Drag across the bars to filter the dashboard by magnitude. Grey is every earthquake in the time range; colour is what the other filters leave.",
-          "id": 3,
-          "links": [],
-          "title": "Magnitude",
-          "vizConfig": {
-            "group": "volkovlabs-echarts-panel",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {},
-                "overrides": []
-              },
-              "options": {
-                "baidu": {
-                  "callback": "bmapReady",
-                  "key": ""
-                },
-                "editor": {
-                  "format": "auto"
-                },
-                "editorMode": "code",
-                "gaode": {
-                  "key": "",
-                  "plugin": "AMap.Scale,AMap.ToolBar"
-                },
-                "getOption": "// A histogram whose brush filters the rest of the dashboard.\n//\n// Dragging across it writes the selected range to two dashboard variables\n// (LO and HI); the other panels filter on them, and this one does not, so it\n// keeps showing the whole distribution the other filters leave. Two query\n// frames feed it: `all` (grey, the context) and `selected` (colour, what the\n// other filters leave). Each has columns `bin` (the bin's lower edge) and `n`.\n//\n// A dashboard changes only the constants block below.\n// @constants begin\nconst LO = 'mag_lo';\nconst HI = 'mag_hi';\nconst STEP = 0.5;\nconst DOMAIN = [-1.5, 9];\nconst UNIT = 'magnitude';\nconst COLOR = 'orange';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\n\nconst points = (refId) =\u003e {\n  const frame = context.panel.data.series.find((f) =\u003e f.refId === refId);\n  if (!frame) {\n    return [];\n  }\n  const bins = frame.fields.find((f) =\u003e f.name === 'bin').values;\n  const counts = frame.fields.find((f) =\u003e f.name === 'n').values;\n  return Array.from(bins, (b, i) =\u003e [Number(b) + STEP / 2, Number(counts[i])]);\n};\nconst all = points('all');\nconst selected = points('selected');\nconst domain = DOMAIN || [Math.min(...all.map((p) =\u003e p[0] - STEP / 2)), Math.max(...all.map((p) =\u003e p[0] + STEP / 2))];\n\n// Whole bins only: a range that cuts a bar in two would count half of it.\nconst snap = (range) =\u003e {\n  const lo = Math.floor(range[0] / STEP) * STEP;\n  const hi = Math.max(Math.ceil(range[1] / STEP) * STEP, lo + STEP);\n  return [lo, hi];\n};\nconst drawBrush = (range) =\u003e\n  chart.dispatchAction({ type: 'brush', areas: range ? [{ brushType: 'lineX', xAxisIndex: 0, coordRange: range }] : [] });\nconst publish = (range) =\u003e {\n  location.partial({ ['var-' + LO]: range ? String(range[0]) : '', ['var-' + HI]: range ? String(range[1]) : '' }, true);\n};\n\nchart.off('brushEnd');\nchart.off('brush');\nchart.on('brushEnd', (event) =\u003e {\n  const area = event.areas[0];\n  if (!area || !area.coordRange) {\n    publish(undefined);\n    return;\n  }\n  const range = snap(area.coordRange);\n  publish(range);\n  setTimeout(() =\u003e drawBrush(range), 0);\n});\nchart.on('brush', (event) =\u003e {\n  if (event.command === 'clear') {\n    publish(undefined);\n  }\n});\n\n// Every redraw (setOption without merge) wipes the brush: draw it back from\n// the variables, which is also how a shared link arrives with its range.\nconst current = [\n  parseFloat(context.grafana.replaceVariables('${' + LO + '}')),\n  parseFloat(context.grafana.replaceVariables('${' + HI + '}')),\n];\nsetTimeout(() =\u003e {\n  chart.dispatchAction({ type: 'takeGlobalCursor', key: 'brush', brushOption: { brushType: 'lineX', brushMode: 'single' } });\n  if (current.every(Number.isFinite)) {\n    drawBrush(current);\n  }\n}, 0);\n\nconst accent = theme.visualization.getColorByName(COLOR);\nconst muted = theme.colors.text.secondary;\n\nreturn {\n  animation: false,\n  // The axis name sits under the axis labels, centred: at the end of the axis\n  // it ran past the grid's right edge and was clipped (\"ma\" for magnitude).\n  // `containLabel` leaves the name out, so `bottom` makes room for it.\n  grid: { left: 8, right: 16, top: 30, bottom: 22, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'none' },\n    formatter: (items) =\u003e {\n      const x = items[0].value[0] - STEP / 2;\n      const rows = items.map((it) =\u003e `${it.marker}${it.seriesName}: \u003cb\u003e${it.value[1]}\u003c/b\u003e`).join('\u003cbr/\u003e');\n      return `${x}–${x + STEP} ${UNIT}\u003cbr/\u003e${rows}`;\n    },\n  },\n  toolbox: {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: { brush: { type: ['lineX', 'clear'], title: { lineX: 'Select a range', clear: 'Clear the filter' } } },\n  },\n  brush: {\n    xAxisIndex: 0,\n    seriesIndex: [1],\n    brushType: 'lineX',\n    brushMode: 'single',\n    transformable: true,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.12)', borderColor: muted, borderWidth: 1 },\n    outOfBrush: { colorAlpha: 0.25 },\n  },\n  xAxis: { type: 'value', min: domain[0], max: domain[1], name: UNIT, nameLocation: 'middle', nameGap: 24, nameTextStyle: { color: muted }, axisLabel: { color: muted }, splitLine: { show: false } },\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { opacity: 0.15 } } },\n  series: [\n    { name: 'All', type: 'bar', data: all, barWidth: '94%', silent: true, itemStyle: { color: 'rgba(128, 128, 128, 0.22)' } },\n    { name: 'Filtered', type: 'bar', data: selected, barWidth: '94%', barGap: '-100%', itemStyle: { color: accent } },\n  ],\n};\n",
-                "google": {
-                  "callback": "gmapReady",
-                  "key": ""
-                },
-                "map": "none",
-                "renderer": "canvas",
-                "themeEditor": {
-                  "config": "{}",
-                  "name": "default"
-                },
-                "visualEditor": {
-                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
-                  "dataset": [],
-                  "series": []
-                }
-              }
-            },
-            "version": "7.2.5"
           }
         }
       },
@@ -690,8 +320,10 @@
                 "clickArea": false,
                 "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
+                "dimUnselected": false,
                 "flowRenderMode": "straight",
                 "followGrafanaTheme": true,
+                "haloStyle": "auto",
                 "hoverMaxAgeSeconds": 60,
                 "hoverPublishSpike": false,
                 "hoverSync": false,
@@ -700,20 +332,144 @@
                     "mapState": {
                       "bearing": 0,
                       "dragRotate": false,
-                      "latitude": 10,
-                      "longitude": -40,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 18.04012100430916,
+                      "longitude": -7.045944084106269,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
                       "pitch": 0,
-                      "zoom": 1.3
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 1.3808482624607958
                     },
                     "mapStyle": {
-                      "styleType": "dark-matter"
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-fiord",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
                     },
                     "visState": {
                       "animationConfig": {
                         "speed": 1
                       },
-                      "filters": [],
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "owptfgsu",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "defaultTimeFormat": "L  H A",
+                            "interval": "6-hour",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            1790776800000,
+                            1791068400000
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "groupBys": [],
                       "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
                         "brush": {
                           "enabled": false,
                           "size": 0.5
@@ -722,9 +478,21 @@
                           "enabled": false
                         },
                         "geocoder": {
-                          "enabled": false
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
                         },
                         "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
                           "config": {
                             "compareMode": false,
                             "compareType": "absolute",
@@ -759,13 +527,75 @@
                               ]
                             }
                           },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "id"
+                              },
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              },
+                              {
+                                "name": "mag"
+                              },
+                              {
+                                "name": "depth"
+                              },
+                              {
+                                "name": "depth_axis"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "country"
+                              },
+                              {
+                                "name": "pop_max"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [
+                            {
+                              "id": "zdbq4j9",
+                              "layerIds": [
+                                "me0gpco"
+                              ],
+                              "stops": {
+                                "appear": 0,
+                                "fade": 4.9,
+                                "full": 0,
+                                "gone": 6.5
+                              }
+                            },
+                            {
+                              "id": "uvnj83m",
+                              "layerIds": [
+                                "o2fwb7"
+                              ],
+                              "stops": {
+                                "appear": 4.6,
+                                "fade": 24,
+                                "full": 9.3,
+                                "gone": 24
+                              }
+                            }
+                          ],
                           "enabled": true
                         }
                       },
+                      "joins": [],
                       "layerBlending": "normal",
                       "layerOrder": [
-                        "quakes",
-                        "places"
+                        "o2fwb7",
+                        "me0gpco",
+                        "w6rj0qh"
                       ],
                       "layers": [
                         {
@@ -781,9 +611,50 @@
                               "lng": "longitude"
                             },
                             "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
                             "isVisible": true,
-                            "label": "Earthquakes",
+                            "label": "Points Earthquakes",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
                             "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
                               "colorRange": {
                                 "category": "Uber",
                                 "colors": [
@@ -805,10 +676,26 @@
                               "radiusRange": [
                                 3,
                                 45
-                              ]
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
                             }
                           },
-                          "id": "quakes",
+                          "id": "o2fwb7",
                           "type": "point",
                           "visualChannels": {
                             "colorField": {
@@ -818,6 +705,114 @@
                             "colorScale": "quantile",
                             "sizeField": {
                               "name": "mag",
+                              "type": "real"
+                            },
+                            "sizeScale": "sqrt",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              231,
+                              29,
+                              37
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Earthquakes",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "colorAggregation": "average",
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#0198BD",
+                                  "#42C1BC",
+                                  "#9CE3B1",
+                                  "#F5B272",
+                                  "#EB7053",
+                                  "#D50255"
+                                ],
+                                "name": "Ice And Fire",
+                                "type": "diverging"
+                              },
+                              "coverage": 1,
+                              "elevationPercentile": [
+                                0,
+                                100
+                              ],
+                              "elevationScale": 5,
+                              "enable3d": false,
+                              "enableElevationZoomFactor": true,
+                              "fixedHeight": false,
+                              "opacity": 0.8,
+                              "percentile": [
+                                0,
+                                100
+                              ],
+                              "resolution": 8,
+                              "sizeAggregation": "maximum",
+                              "sizeRange": [
+                                0,
+                                500
+                              ],
+                              "worldUnitSize": 178.0828
+                            }
+                          },
+                          "id": "me0gpco",
+                          "type": "hexagon",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "mag",
+                              "type": "real"
+                            },
+                            "colorScale": "quantile",
+                            "sizeField": {
+                              "name": "depth",
                               "type": "real"
                             },
                             "sizeScale": "sqrt"
@@ -836,36 +831,83 @@
                               "lng": "longitude"
                             },
                             "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
                             "isVisible": true,
                             "label": "Populated places",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
                             "visConfig": {
-                              "filled": true,
-                              "fixedRadius": false,
-                              "opacity": 0.75,
-                              "outline": false,
-                              "radius": 3,
-                              "radiusRange": [
-                                2,
-                                16
-                              ]
+                              "aggregation": "SUM",
+                              "colorRange": {
+                                "category": "ColorBrewer",
+                                "colors": [
+                                  "#40004B",
+                                  "#9A6DAA",
+                                  "#E4D2E6",
+                                  "#D6EED1",
+                                  "#5CAD65",
+                                  "#00441B"
+                                ],
+                                "name": "PRGn",
+                                "type": "diverging"
+                              },
+                              "intensity": 1.301,
+                              "opacity": 0.18,
+                              "radius": 17.9,
+                              "threshold": 0.302
                             }
                           },
-                          "id": "places",
-                          "type": "point",
+                          "id": "w6rj0qh",
+                          "type": "heatmap",
                           "visualChannels": {
-                            "sizeField": {
-                              "name": "pop_max",
-                              "type": "integer"
-                            },
-                            "sizeScale": "sqrt"
+                            "weightScale": "linear"
                           }
                         }
                       ],
+                      "overlayBlending": "normal",
                       "splitMaps": []
                     }
                   },
                   "version": "v1"
                 },
+                "mosaicArea": true,
+                "mosaicViewport": false,
                 "peerTimeSync": false,
                 "publishIntervalMs": 1500,
                 "publishWhilePlaying": false,
@@ -904,7 +946,7 @@
                 ]
               }
             },
-            "version": "1.1.0"
+            "version": "1.5.0"
           }
         }
       },
@@ -2104,11 +2146,14 @@
                 "maxValues": 8,
                 "noun": "earthquakes",
                 "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
                 "stepMs": 800,
                 "timeColumn": "time",
                 "timeline": "time"
               }
-            }
+            },
+            "version": "2.2.0"
           }
         }
       }
@@ -2138,9 +2183,9 @@
                                 "spec": {
                                   "element": {
                                     "kind": "ElementReference",
-                                    "name": "panel-filter-bar"
+                                    "name": "panel-timeline"
                                   },
-                                  "height": 2,
+                                  "height": 5,
                                   "width": 24,
                                   "x": 0,
                                   "y": 0
@@ -2151,12 +2196,25 @@
                                 "spec": {
                                   "element": {
                                     "kind": "ElementReference",
+                                    "name": "panel-filters"
+                                  },
+                                  "height": 14,
+                                  "width": 5,
+                                  "x": 0,
+                                  "y": 5
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
                                     "name": "panel-map"
                                   },
-                                  "height": 16,
-                                  "width": 16,
-                                  "x": 0,
-                                  "y": 2
+                                  "height": 14,
+                                  "width": 13,
+                                  "x": 5,
+                                  "y": 5
                                 }
                               },
                               {
@@ -2167,9 +2225,9 @@
                                     "name": "panel-people"
                                   },
                                   "height": 3,
-                                  "width": 3,
-                                  "x": 16,
-                                  "y": 2
+                                  "width": 6,
+                                  "x": 18,
+                                  "y": 5
                                 }
                               },
                               {
@@ -2180,9 +2238,9 @@
                                     "name": "panel-strongest"
                                   },
                                   "height": 3,
-                                  "width": 3,
-                                  "x": 19,
-                                  "y": 2
+                                  "width": 6,
+                                  "x": 18,
+                                  "y": 8
                                 }
                               },
                               {
@@ -2193,47 +2251,8 @@
                                     "name": "panel-earthquakes"
                                   },
                                   "height": 3,
-                                  "width": 2,
-                                  "x": 22,
-                                  "y": 2
-                                }
-                              },
-                              {
-                                "kind": "GridLayoutItem",
-                                "spec": {
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-magnitude"
-                                  },
-                                  "height": 6,
-                                  "width": 4,
-                                  "x": 16,
-                                  "y": 5
-                                }
-                              },
-                              {
-                                "kind": "GridLayoutItem",
-                                "spec": {
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-depth"
-                                  },
-                                  "height": 6,
-                                  "width": 4,
-                                  "x": 20,
-                                  "y": 5
-                                }
-                              },
-                              {
-                                "kind": "GridLayoutItem",
-                                "spec": {
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-daily"
-                                  },
-                                  "height": 7,
-                                  "width": 8,
-                                  "x": 16,
+                                  "width": 6,
+                                  "x": 18,
                                   "y": 11
                                 }
                               },
@@ -2242,12 +2261,12 @@
                                 "spec": {
                                   "element": {
                                     "kind": "ElementReference",
-                                    "name": "panel-timeline"
+                                    "name": "panel-depth-mag"
                                   },
-                                  "height": 6,
-                                  "width": 24,
-                                  "x": 0,
-                                  "y": 18
+                                  "height": 5,
+                                  "width": 6,
+                                  "x": 18,
+                                  "y": 14
                                 }
                               }
                             ]
@@ -2428,7 +2447,7 @@
     "tags": [
       "chaski",
       "kepler",
-      "business-charts",
+      "mosaic",
       "business-table",
       "seismic"
     ],

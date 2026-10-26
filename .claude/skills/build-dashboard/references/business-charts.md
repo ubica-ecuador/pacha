@@ -77,7 +77,8 @@ only when its code or query names the variable, and a name built from strings do
 **Brush a range into two variables**: `assets/brush-histogram.js`. Two frames, `all`
 (context, grey) and `selected` (what the other filters leave), columns `bin` and `n`. The
 histogram does not filter itself on its own range. Bins snap to whole steps; the brush is
-redrawn from the variables after every refresh. Used in `earthquakes` (magnitude, depth).
+redrawn from the variables after every refresh. Over a Chaski dataset with a `filters` variable,
+the Chaski filters panel draws these brushes with no code (`earthquakes` replaced its two with it).
 
 **Legend toggles as a filter**: `chart.on('legendselectchanged', ...)` writing the selected
 series to a variable (`animal-movement-tracking`, `nyc-taxi-trips`).
