@@ -1,8 +1,9 @@
 // The fiware-valencia dashboard: València's open real-time data (traffic by
 // segment, air quality, weather and Valenbisi) as NGSI-LD entities in a
 // Stellio context broker, read on the server through its public NGSI-LD API
-// (now) and the Parquet exports of its history, held in the browser by Chaski
-// and drawn by a Kepler Plus map and Business Charts that filter each other.
+// (now) and the Parquet exports of its history, held in the browser by Chaski.
+// An overview tab follows one instant of a Time Brush; a tab per kind of data
+// follows one shared window, with Kepler Plus maps, Chaski filters and Mosaic.
 // The data is live, so the checks are about shape and freshness, not numbers.
 // It needs Kepler Plus (compose.plus.yaml): without it, the browser tests are
 // skipped.
@@ -10,12 +11,11 @@ import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { api, duckdb } from '../lib/grafana.mjs';
 import { findAll, loadDashboard, panelsByType, panelTitled } from '../lib/dashboards.mjs';
-import { brushHistogramBody, withConstants } from '../lib/templates.mjs';
 import { STACK_URL } from '../lib/stack.mjs';
 import { openDashboard } from '../lib/browser.mjs';
 
 const UID = 'fiware-valencia';
-const DATASETS = ['segments', 'traffic', 'bikes', 'bikes_hist', 'readings'];
+const DATASETS = ['segments', 'traffic', 'traffic_top', 'bikes', 'bikes_hist', 'readings'];
 const dashboard = loadDashboard(`plus/dashboards/${UID}.json`);
 const serverSql = (name) => findAll(dashboard, (n) => n.kind === 'dataset' && n.name === name)[0].source.query.rawSql;
 // The last 24 hours, as Grafana writes ${__from} and ${__to} into the query.
@@ -23,7 +23,8 @@ const NOW = Date.now();
 const lastDay = (sql) => sql.replaceAll('${__from}', String(NOW - 86_400_000)).replaceAll('${__to}', String(NOW));
 // Inside València's municipal area (the Albufera weather station is its south end), with margin.
 const inValencia = (r) => r.latitude > 39.27 && r.latitude < 39.6 && r.longitude > -0.55 && r.longitude < -0.25;
-const [map] = panelsByType(dashboard, 'ubica-keplerplus-panel');
+const options = (title) => panelTitled(dashboard, title).vizConfig.spec.options;
+const layerTypes = (title) => options(title).mapConfig.config.visState.layers.map((l) => l.type).sort();
 
 let view;
 after(async () => view && view.browser.close());
@@ -95,22 +96,50 @@ test('the air and weather readings share one table, each kind with its measures'
   for (const r of rows) assert.ok(inValencia({ latitude: r.lat0, longitude: r.lng0 }) && inValencia({ latitude: r.lat1, longitude: r.lng1 }), r.kind);
 });
 
-test('the map has the four Plus layers and publishes its clicks', () => {
-  const { variableMappings, timeSync } = map.vizConfig.spec.options;
-  assert.deepEqual(variableMappings.map((m) => [m.field, m.variable]), [['segment_id', 'segment'], ['bike', 'bike'], ['station', 'station']]);
-  assert.equal(timeSync, 'toMap');
-  const layers = map.vizConfig.spec.options.mapConfig.config.visState.layers;
-  assert.deepEqual(layers.map((l) => l.type).sort(), ['gauge', 'pipeline', 'sparkline', 'surface']);
+test('an overview, then a tab per kind of data, then the sources', () => {
+  const { layout } = dashboard.spec;
+  assert.equal(layout.kind, 'TabsLayout');
+  assert.deepEqual(layout.spec.tabs.map((t) => t.spec.title), ['Vista general', 'Tráfico', 'Valenbisi', 'Aire y meteorología', 'Sobre los datos']);
 });
 
-test('the two histograms carry the brush template, changed only in their constants', () => {
-  const code = (title) => panelTitled(dashboard, title).vizConfig.spec.options.getOption;
-  const body = brushHistogramBody();
-  assert.equal(code('Parte del tiempo con incidencia, por tramo'),
-    withConstants(body, "const LO = 'jam_lo';\nconst HI = 'jam_hi';\nconst STEP = 5;\nconst DOMAIN = [0, 100];\nconst UNIT = '% del tiempo con incidencia';\nconst COLOR = 'orange';").trim());
-  assert.equal(code('Estaciones por anclajes con bici'),
-    withConstants(body, "const LO = 'bikes_lo';\nconst HI = 'bikes_hi';\nconst STEP = 10;\nconst DOMAIN = [0, 100];\nconst UNIT = '% de anclajes con bici';\nconst COLOR = 'green';").trim());
-  assert.ok(panelsByType(dashboard, 'volkovlabs-echarts-panel').length >= 5);
+test('the overview map has the four Plus layers, publishes its clicks and follows the instant in its queries', () => {
+  const map = options('Tráfico, Valenbisi y aire en el momento elegido');
+  assert.deepEqual(map.variableMappings.map((m) => [m.field, m.variable]), [['segment_id', 'segment'], ['bike', 'bike'], ['station', 'station']]);
+  assert.equal(map.timeSync, 'off');
+  assert.deepEqual(layerTypes('Tráfico, Valenbisi y aire en el momento elegido'), ['gauge', 'pipeline', 'sparkline', 'surface']);
+  const sql = findAll(panelTitled(dashboard, 'Tráfico, Valenbisi y aire en el momento elegido'), (n) => typeof n.rawSql === 'string');
+  assert.equal(sql.length, 3);
+  for (const { rawSql } of sql) assert.match(rawSql, /\$t AS TIMESTAMP/);
+});
+
+test('each tab map draws its own layers; the air one moves with the window in the browser', () => {
+  assert.deepEqual(layerTypes('Tráfico por tramo en la ventana'), ['pipeline']);
+  assert.deepEqual(layerTypes('Estaciones Valenbisi al final de la ventana'), ['gauge']);
+  assert.deepEqual(layerTypes('${metric:text} en la ventana'), ['sparkline', 'surface']);
+  const air = options('${metric:text} en la ventana');
+  assert.equal(air.timeSync, 'variables');
+  assert.deepEqual(air.timeVariables, { from: 'slot_from', to: 'slot_to' });
+  assert.equal(air.mosaicSelection, 'air');
+});
+
+test('a Time Brush per tab: an instant ($t) on the overview, one window ($slot_from, $slot_to) in the tabs', () => {
+  const brushes = panelsByType(dashboard, 'ubica-timebrush-panel').map((p) => p.vizConfig.spec.options);
+  assert.equal(brushes.length, 4);
+  const instants = brushes.filter((b) => b.selection === 'instant');
+  assert.deepEqual(instants.map((b) => b.instantVariable), ['t']);
+  for (const b of brushes.filter((b) => b.selection !== 'instant')) assert.deepEqual(b.variables, { from: 'slot_from', to: 'slot_to' });
+  // Grafana re-runs a panel whose SQL names a variable, comments included: the filters variable changes with the
+  // window, so naming it would query the brush's own histogram on every move of its window.
+  const traffic = panelTitled(dashboard, 'Ventana de tiempo · tramos con incidencia por cuarto de hora');
+  assert.equal(traffic.vizConfig.spec.options.mosaicSelection, 'traffic');
+  assert.doesNotMatch(findAll(traffic, (n) => typeof n.rawSql === 'string')[0].rawSql, /trafficFilters/);
+});
+
+test('the Mosaic panels read datasets of the dashboard', () => {
+  const specs = panelsByType(dashboard, 'ubica-chaski-mosaic-panel').map((p) => p.vizConfig.spec.options.spec);
+  assert.equal(specs.length, 2);
+  assert.ok(specs.some((s) => s.includes('from: traffic_top')));
+  assert.ok(specs.some((s) => s.includes('from: bikes_hist')));
 });
 
 test('is provisioned in Plus', { skip }, () => {
