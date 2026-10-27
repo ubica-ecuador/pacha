@@ -27,9 +27,77 @@
       }
     ],
     "cursorSync": "Crosshair",
-    "description": "The City of Melbourne's street sensors: some 6,300 parking bays as they are now, about 100 pedestrian counters hour by hour, and the microclimate stations' temperature, noise and particles; reloaded every 5 minutes.",
+    "description": "The City of Melbourne's street sensors on Chaski and Mosaic: some 6,300 parking bays as they are now, filtered on the map by status, street, time held and drawn area; about 100 pedestrian counters hour by hour, filtered by hour of day and weekday; and the microclimate stations' temperature, humidity, noise and particles; one pinned Time Brush picks the hours of both; reloaded every 5 minutes.",
     "editable": true,
     "elements": {
+      "card-ped-mean": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "People past a counter in a mean hour, under the pedestrian brushes.",
+          "id": 30,
+          "links": [],
+          "title": "A counter's mean hour",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  pedFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: peds, filterBy: $pedFilters }\n    text: { sql: \"format('{:,}', round(avg(people))::BIGINT)\" }\n    frameAnchor: middle\n    fill: currentColor\n    fontSize: 34\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "card-ped-sum": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "People counted by every counter in the hours the pedestrian brushes keep.",
+          "id": 29,
+          "links": [],
+          "title": "People counted",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  pedFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: peds, filterBy: $pedFilters }\n    text: { sql: \"format('{:,}', sum(people)::BIGINT)\" }\n    frameAnchor: middle\n    fill: currentColor\n    fontSize: 34\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
       "panel-about": {
         "kind": "Panel",
         "spec": {
@@ -59,8 +127,284 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### Where the data comes from\n\nThe City of Melbourne publishes what its sensors measure as open data, on [its portal](https://data.melbourne.vic.gov.au/), with no key. This dashboard reads three of its networks, in the city centre and around it:\n\n- **[On-street parking bay sensors](https://data.melbourne.vic.gov.au/explore/dataset/on-street-parking-bay-sensors/)**: a sensor in the road surface under each of some 6,300 bays says whether a car is over it. The portal holds each bay's latest state and when it last changed, refreshed every few minutes. The streets come from the [bays' register](https://data.melbourne.vic.gov.au/explore/dataset/on-street-parking-bays/) and, failing that, from the [bay's parking zone](https://data.melbourne.vic.gov.au/explore/dataset/parking-zones-linked-to-street-segments/).\n- **[Pedestrian counting system](https://data.melbourne.vic.gov.au/explore/dataset/pedestrian-counting-system-monthly-counts-per-hour/)**: about 100 counters (laser and thermal sensors on poles and awnings) count the people walking past each way, hour by hour, around the clock since 2009. The counts are loaded once a day, so the latest hours are a day or two old.\n- **[Microclimate sensors](https://data.melbourne.vic.gov.au/explore/dataset/microclimate-sensors-data/)**: a dozen stations on poles and rooftops measure temperature, humidity, wind, fine particles and noise about every 15 minutes. Only some still report: those silent in the time range do not show.\n\n### How to read it\n\n- A bay's state is now; the time range does not change it. A sensor that has not changed in a week is shown grey and left out of the counts: in the city centre a bay is not taken, or free, that long, so the sensor is taken as broken or switched off. A bay with no sensor does not show at all.\n- The pedestrian counts are the time range's, up to its last 31 days; the microclimate readings, up to its last 14.\n- Noise is in decibels (dB): 55 dB is a quiet street, 70 dB a busy one with traffic.\n\n### How it works\n\nGrafana's DuckDB reads the three datasets through the stack's gateway, which keeps each a while (the bays and the microclimate two minutes, the counts an hour), so the portal is asked once whoever is looking. DuckDB running in your browser (the Chaski data source) then answers every panel and every click. The map is the Kepler Geospatial Maps Plus panel, with its Sparkline layer. The dashboard reloads every five minutes.",
+                "content": "### Where the data comes from\n\nThe City of Melbourne publishes what its sensors measure as open data, on [its portal](https://data.melbourne.vic.gov.au/), with no key. This dashboard reads three of its networks, in the city centre and around it:\n\n- **[On-street parking bay sensors](https://data.melbourne.vic.gov.au/explore/dataset/on-street-parking-bay-sensors/)**: a sensor in the road surface under each of some 6,300 bays says whether a car is over it. The portal holds each bay's latest state and when it last changed, refreshed every few minutes. The streets come from the [bays' register](https://data.melbourne.vic.gov.au/explore/dataset/on-street-parking-bays/) and, failing that, from the [bay's parking zone](https://data.melbourne.vic.gov.au/explore/dataset/parking-zones-linked-to-street-segments/).\n- **[Pedestrian counting system](https://data.melbourne.vic.gov.au/explore/dataset/pedestrian-counting-system-monthly-counts-per-hour/)**: about 100 counters (laser and thermal sensors on poles and awnings) count the people walking past each way, hour by hour, around the clock since 2009. The counts are loaded once a day, so the latest hours are a day or two old.\n- **[Microclimate sensors](https://data.melbourne.vic.gov.au/explore/dataset/microclimate-sensors-data/)**: a dozen stations on poles and rooftops measure temperature, humidity, wind, fine particles and noise about every 15 minutes. Only five still report. The portal sometimes stops updating for days (it has held nothing newer than 18 October 2026 since then): the stations then show their last 14 days or the time range's length, ending at the latest reading, and *Stations last reported* says how old it is.\n\n### How to read it\n\n- A bay's state is now; the time range does not change it. A sensor that has not changed in a week is shown grey and left out of the counts: in the city centre a bay is not taken, or free, that long, so the sensor is taken as broken or switched off. A bay with no sensor does not show at all.\n- The pedestrian counts are the time range's, up to its last 31 days; the microclimate readings, up to its last 14.\n- **Everything is a filter.** Pick a status or a street, brush how long bays have held, or draw an area on the map: the map filters the bays on the GPU and the cards and the streets follow. The *Time Brush* pinned at the foot of the page picks the hours: the map's counters take their mean hour in them and its stations and surface their last reading, and the pedestrian and microclimate cards, charts and tables follow; press play to slide it. Drag a box on *When the city walks* to keep some hours of the day and days of the week. The filters are [Mosaic](https://idl.uw.edu/mosaic/) selections, answered in your browser.\n- Noise is in decibels (dB): 55 dB is a quiet street, 70 dB a busy one with traffic.\n\n### How it works\n\nGrafana's DuckDB reads the three datasets through the stack's gateway, which keeps each a while (the bays and the microclimate two minutes, the counts an hour), so the portal is asked once whoever is looking. DuckDB running in your browser (the Chaski data source) then answers every panel and every click. The map is the Kepler Geospatial Maps Plus panel, with its Sparkline layer; the linked charts and the filters are Chaski's Mosaic and filters panels. The dashboard reloads every five minutes.",
                 "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-bayfilters": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every parking filter, each counted under the others: pick a status or a street, brush how long the bays have held their state, or draw an area on the map. A × clears one, Clear all clears them all.",
+          "id": 26,
+          "links": [],
+          "title": "Parking filters",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 24,
+                "filters": "bayFilters",
+                "layout": "auto",
+                "maxValues": 6,
+                "noun": "bays",
+                "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 800,
+                "timeColumn": "",
+                "timeline": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-brush": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- People an hour on the bars (under the hour and weekday box of When the city\n-- walks, read from its variables: a macro over pedFilters would re-run this on\n-- every move of the window it writes) and every hour in grey behind; the median\n-- temperature of the stations as a line. The domain is the data, not the time\n-- range: the microclimate portal can lag days behind the counters.\nWITH p AS (\n  SELECT time_bucket(INTERVAL 1 HOUR, time::TIMESTAMP) AS time, sum(people)::DOUBLE AS every,\n         (sum(people) FILTER (WHERE hour BETWEEN coalesce(try_cast($pedHourLo AS DOUBLE), -1) AND coalesce(try_cast($pedHourHi AS DOUBLE), 99)\n                                AND dow BETWEEN coalesce(try_cast($pedDowLo AS DOUBLE), 0) AND coalesce(try_cast($pedDowHi AS DOUBLE), 9)))::DOUBLE AS kept\n  FROM $peds GROUP BY 1\n),\nc AS (\n  SELECT time_bucket(INTERVAL 1 HOUR, time::TIMESTAMP) AS time, median(temperature) AS temp\n  FROM $climate GROUP BY 1\n)\nSELECT coalesce(p.time, c.time) AS time, p.every AS \"Every hour\", coalesce(p.kept, 0) AS \"People an hour\", c.temp AS \"Temperature\"\nFROM p FULL JOIN c ON p.time = c.time\nORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The window every view takes: drag it, resize it by its handles or draw a new one, step it hour by hour, or press play. Bars: people counted an hour by every counter under the hour and weekday box, grey behind them every hour; the line: the median temperature of the microclimate stations. The map counters take their mean hour in it, the stations and the surface their last reading in it.",
+          "id": 27,
+          "links": [],
+          "title": "Hours on the map",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#5794F2",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "aggregation": "sum",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "decimals": 0,
+                  "unit": "short"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Every hour"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.context",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Temperature"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "line"
+                      },
+                      {
+                        "id": "custom.aggregation",
+                        "value": "mean"
+                      },
+                      {
+                        "id": "unit",
+                        "value": "celsius"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#FF9830",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "backgroundColor": "#111827",
+                "backgroundTransparency": 5,
+                "barsColor": "series",
+                "bucket": "1h",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "density": "comfortable",
+                "domain": "data",
+                "floatingPlace": {
+                  "anchorX": "center",
+                  "anchorY": "bottom",
+                  "dx": 0,
+                  "dy": 8,
+                  "height": 105,
+                  "width": 0.6
+                },
+                "followLatest": false,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "loop": true,
+                "mosaicColumn": "time",
+                "mosaicSelection": "pedFilters",
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "always",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "floating",
+                "pinnedStyle": "solid",
+                "publishIntervalMs": 1500,
+                "publishWhileDragging": false,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 1200,
+                "variables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "windowMode": "free"
+              },
+              "pluginVersion": ""
+            }
+          }
+        }
+      },
+      "panel-climlast": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT epoch_ms(max(time)) AS \"Last reading\" FROM $climate"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "When the portal's latest microclimate reading was taken. The portal has gone days without updating; the charts and the map then end at that reading.",
+          "id": 34,
+          "links": [],
+          "title": "Stations last reported",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
             "version": "13.2.1"
@@ -196,7 +540,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH last AS (WITH days AS (SELECT day, count(DISTINCT hour) AS hours FROM $peds GROUP BY day)\nSELECT max(day) AS day FROM days WHERE hours = 24),\nfull_days AS (SELECT day FROM $peds GROUP BY day HAVING count(DISTINCT hour) = 24)\nSELECT name AS \"Counter\",\n       sum(people) FILTER (WHERE day = (SELECT day FROM last))::BIGINT AS \"Latest full day\",\n       (sum(people) FILTER (WHERE day IN (SELECT day FROM full_days))\n          / nullif(count(DISTINCT day) FILTER (WHERE day IN (SELECT day FROM full_days)), 0))::BIGINT AS \"Mean day\",\n       max(people) AS \"Busiest hour\",\n       arg_max(time, people) AS \"When\"\nFROM $peds\nGROUP BY name\nORDER BY \"Latest full day\" DESC NULLS LAST"
+                        "rawSql": "WITH sel AS (SELECT * FROM $peds WHERE $__crossfilter($pedFilters))\nSELECT name AS \"Counter\",\n       sum(people)::BIGINT AS \"People\",\n       round(avg(people))::BIGINT AS \"Mean hour\",\n       max(people) AS \"Busiest hour\",\n       arg_max(time, people) AS \"When\"\nFROM sel\nGROUP BY name\nORDER BY \"People\" DESC NULLS LAST"
                       },
                       "version": "v0"
                     },
@@ -208,7 +552,7 @@
               "transformations": []
             }
           },
-          "description": "Every counter: people past it on the latest full day, its mean day over the full days of the time range, and its busiest hour in the range.",
+          "description": "Each counter under the pedestrian brushes: the people it counted, its mean hour, and its busiest hour with when.",
           "id": 16,
           "links": [],
           "title": "Pedestrian counters, busiest first",
@@ -258,7 +602,7 @@
                   {
                     "matcher": {
                       "id": "byName",
-                      "options": "Latest full day"
+                      "options": "People"
                     },
                     "properties": [
                       {
@@ -472,80 +816,31 @@
           "data": {
             "kind": "QueryGroup",
             "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT count(*) FILTER (WHERE status = 'Free') AS \"Free\" FROM $bays"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
+              "queries": [],
               "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "Bays whose sensor says free, of those that have changed in the last week.",
-          "id": 2,
+          "description": "Bays whose sensor reads free, under every parking filter.",
+          "id": 22,
           "links": [],
-          "title": "Bays free now",
+          "title": "Bays free",
           "vizConfig": {
-            "group": "stat",
+            "group": "ubica-chaski-mosaic-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "fixedColor": "#3D8FE0",
-                    "mode": "fixed"
-                  },
-                  "decimals": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  }
-                },
+                "defaults": {},
                 "overrides": []
               },
               "options": {
-                "colorMode": "value",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "value",
-                "wideLayout": true
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  bayFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: bays, filterBy: $bayFilters }\n    text: { sql: \"format('{:,}', count(*) FILTER (WHERE status = 'Free'))\" }\n    frameAnchor: middle\n    fill: '#73BF69'\n    fontSize: 34\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\ncolorScale: identity\n",
+                "variables": ""
               }
             },
-            "version": "13.2.1"
+            "version": "2.2.0"
           }
         }
       },
@@ -567,7 +862,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Every bay, coloured by what its sensor says now.\nSELECT bay, zone, street, segment, status, since, latitude, longitude FROM $bays"
+                        "rawSql": "-- Every bay, coloured by what its sensor says now. Status, street, how long\n-- it has held and a drawn area are filtered in the map, on the GPU, where the\n-- clauses of the bayFilters selection land.\nSELECT bay, zone, street, segment, status, since, minutes, latitude, longitude FROM $bays"
                       },
                       "version": "v0"
                     },
@@ -585,7 +880,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Every counter, hour by hour, for the cards.\nSELECT sensor, name, latitude, longitude, time, people FROM $peds ORDER BY sensor, time"
+                        "rawSql": "-- The mean hour of each counter under the pedestrian brushes (the hours on\n-- the timeline, the hour of day and the day of the week): people is the mean\n-- count an hour, total the people counted, hours the hours it counted. No\n-- quote marks in these comments: Chaski would read a macro after one as text.\nSELECT sensor, any_value(name) AS name, any_value(latitude) AS latitude, any_value(longitude) AS longitude,\n       round(avg(people))::BIGINT AS people, sum(people)::BIGINT AS total, count(*) AS hours\nFROM $peds\nWHERE $__crossfilter($pedFilters)\nGROUP BY sensor"
                       },
                       "version": "v0"
                     },
@@ -603,7 +898,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- The last day of readings, one row each: the time filter picks the moment, and\n-- the Measure picker the column drawn as \"value\" (Chaski quotes a variable's\n-- value; :raw gives the bare column name). A day, not the whole range: the colour\n-- scale spans the rows it gets, and a week of temperatures (5 to 28 °C) would\n-- paint the degree or two between stations at one moment in a single band. A\n-- station that lacks the measure (Royal Park has no noise or particles) drops out.\nSELECT station, place, time, temperature, humidity, wind, noise, pm25,\n       ${metric:raw} AS value,\n       printf('%.1f', ${metric:raw})\n         || CASE ${metric} WHEN 'temperature' THEN ' °C' WHEN 'humidity' THEN ' %' WHEN 'noise' THEN ' dB'\n                           WHEN 'pm25' THEN ' µg/m³' ELSE '' END AS reading,\n       latitude, longitude\nFROM $climate\nWHERE ${metric:raw} IS NOT NULL AND time \u003e (SELECT max(time) FROM $climate) - INTERVAL 24 HOUR\nORDER BY station, time"
+                        "rawSql": "-- The readings of the Time Brush window or, with no window or none in it,\n-- of the last day of readings, one row each: the Surface takes the last\n-- reading of each station, the cards chart them. The colours span these rows\n-- only: a week of temperatures (5 to 28 °C) would paint the degree or two\n-- between stations at one moment in a single band. The Measure picker gives\n-- the column drawn as \"value\" (Chaski quotes the value of a variable; :raw\n-- gives the bare column name). A station that lacks the measure (Royal Park\n-- has no noise or particles) drops out.\nWITH r AS (SELECT * FROM $climate WHERE ${metric:raw} IS NOT NULL),\nwin AS (SELECT * FROM r WHERE $t0 \u003c\u003e '' AND $__crossfilter($climateFilters)),\npick AS (\n  SELECT * FROM win\n  UNION ALL\n  SELECT * FROM r WHERE NOT EXISTS (SELECT 1 FROM win) AND time \u003e (SELECT max(time) FROM r) - INTERVAL 24 HOUR\n)\nSELECT station, place, time, temperature, humidity, wind, noise, pm25,\n       ${metric:raw} AS value,\n       printf('%.1f', ${metric:raw})\n         || CASE ${metric} WHEN 'temperature' THEN ' °C' WHEN 'humidity' THEN ' %' WHEN 'noise' THEN ' dB'\n                           WHEN 'pm25' THEN ' µg/m³' ELSE '' END AS reading,\n       latitude, longitude\nFROM pick\nORDER BY station, time"
                       },
                       "version": "v0"
                     },
@@ -645,6 +940,7 @@
                 "alerts": {
                   "show": false
                 },
+                "areaVariable": "bayArea",
                 "basemap": "dark-matter",
                 "clickArea": false,
                 "clickAreaSizeMetres": 6000,
@@ -766,38 +1062,7 @@
                         "visible": true
                       },
                       "effects": [],
-                      "filters": [
-                        {
-                          "animationWindow": "free",
-                          "dataId": [
-                            "grafana-C",
-                            "grafana-B"
-                          ],
-                          "enabled": true,
-                          "id": "time-window",
-                          "name": [
-                            "time",
-                            "time"
-                          ],
-                          "plotType": {
-                            "aggregation": "average",
-                            "colorsByDataId": {
-                              "grafana-B": "#547A82",
-                              "grafana-C": "#3EACA8"
-                            },
-                            "defaultTimeFormat": "L LT",
-                            "interval": "15-minute",
-                            "type": "histogram"
-                          },
-                          "speed": 1,
-                          "type": "timeRange",
-                          "value": [
-                            1791786406000,
-                            1791927747000
-                          ],
-                          "view": "enlarged"
-                        }
-                      ],
+                      "filters": [],
                       "interactionConfig": {
                         "brush": {
                           "enabled": false,
@@ -837,7 +1102,10 @@
                                 "name": "people"
                               },
                               {
-                                "name": "time"
+                                "name": "total"
+                              },
+                              {
+                                "name": "hours"
                               }
                             ],
                             "grafana-C": [
@@ -898,7 +1166,7 @@
                               255
                             ],
                             "isVisible": true,
-                            "label": "Microclimate stations, latest reading",
+                            "label": "Microclimate stations, in the window",
                             "textLabel": [],
                             "visConfig": {
                               "allowHover": true,
@@ -997,34 +1265,12 @@
                               255
                             ],
                             "isVisible": true,
-                            "label": "Pedestrians, hourly",
+                            "label": "Pedestrians, mean an hour",
                             "textLabel": [],
                             "visConfig": {
                               "angleDegrees": 0,
                               "colorRange": {
                                 "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    1,
-                                    "#11439F"
-                                  ],
-                                  [
-                                    5,
-                                    "#297EE8"
-                                  ],
-                                  [
-                                    15,
-                                    "#95C6C9"
-                                  ],
-                                  [
-                                    20,
-                                    "#FECE5A"
-                                  ],
-                                  [
-                                    null,
-                                    "#FFDDBF"
-                                  ]
-                                ],
                                 "colors": [
                                   "#11439F",
                                   "#297EE8",
@@ -1032,8 +1278,8 @@
                                   "#FECE5A",
                                   "#FFDDBF"
                                 ],
-                                "name": "color.customPalette.custom.people",
-                                "type": "custom"
+                                "name": "Pedestrians",
+                                "type": "sequential"
                               },
                               "declutter": false,
                               "declutterSpacingPx": 40,
@@ -1087,7 +1333,7 @@
                               "name": "people",
                               "type": "integer"
                             },
-                            "colorScale": "custom",
+                            "colorScale": "quantile",
                             "sizeScale": "linear"
                           }
                         },
@@ -1247,7 +1493,7 @@
                               255
                             ],
                             "isVisible": true,
-                            "label": "Surface - Microclimate stations, latest reading",
+                            "label": "Surface - Microclimate stations, in the window",
                             "textLabel": [],
                             "visConfig": {
                               "allowHover": false,
@@ -1329,6 +1575,10 @@
                   },
                   "version": "v1"
                 },
+                "mosaicArea": true,
+                "mosaicColumns": "longitude, latitude",
+                "mosaicSelection": "bayFilters",
+                "mosaicViewport": false,
                 "peerTimeSync": false,
                 "places": {},
                 "publishIntervalMs": 1500,
@@ -1371,7 +1621,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH latest AS (SELECT station, max(time) AS t, arg_max(noise, time) AS v FROM $climate\n                WHERE noise IS NOT NULL GROUP BY station)\nSELECT median(v) AS \"Noise\" FROM latest WHERE t \u003e (SELECT max(t) FROM latest) - INTERVAL 1 HOUR"
+                        "rawSql": "WITH w AS (SELECT * FROM $climate WHERE $__crossfilter($climateFilters)),\nlatest AS (SELECT station, arg_max(noise, time) AS v FROM w WHERE noise IS NOT NULL GROUP BY station)\nSELECT median(v) AS \"Noise\" FROM latest"
                       },
                       "version": "v0"
                     },
@@ -1383,10 +1633,10 @@
               "transformations": []
             }
           },
-          "description": "The median of the latest noise readings, in decibels, of the stations that measure it and reported in the last hour. 55 dB is a quiet street, 70 dB a busy one.",
+          "description": "The median of the stations' last readings in the window brushed on the microclimate charts or, with none, their latest.",
           "id": 9,
           "links": [],
-          "title": "Street noise now",
+          "title": "Street noise",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -1439,79 +1689,31 @@
           "data": {
             "kind": "QueryGroup",
             "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT 100.0 * count(*) FILTER (WHERE status = 'Occupied') / nullif(count(*), 0) AS \"Occupancy\"\nFROM $bays WHERE status \u003c\u003e 'Silent for a week'"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
+              "queries": [],
               "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "Occupied bays as a share of the bays reporting: free and occupied, not the silent ones.",
-          "id": 4,
+          "description": "Occupied bays as a share of those whose sensor still reports, under every parking filter.",
+          "id": 24,
           "links": [],
           "title": "Occupancy",
           "vizConfig": {
-            "group": "stat",
+            "group": "ubica-chaski-mosaic-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "decimals": 0,
-                  "max": 100,
-                  "min": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "percent"
-                },
+                "defaults": {},
                 "overrides": []
               },
               "options": {
-                "colorMode": "none",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "value",
-                "wideLayout": true
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  bayFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: bays, filterBy: $bayFilters }\n    text: { sql: \"coalesce(printf('%.0f %%', 100.0 * count(*) FILTER (WHERE status = 'Occupied') / nullif(count(*) FILTER (WHERE status \u003c\u003e 'Silent for a week'), 0)), '–')\" }\n    frameAnchor: middle\n    fill: currentColor\n    fontSize: 34\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
               }
             },
-            "version": "13.2.1"
+            "version": "2.2.0"
           }
         }
       },
@@ -1521,6 +1723,40 @@
           "data": {
             "kind": "QueryGroup",
             "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Bays whose sensor reads a car, under every parking filter.",
+          "id": 23,
+          "links": [],
+          "title": "Bays occupied",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  bayFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: bays, filterBy: $bayFilters }\n    text: { sql: \"format('{:,}', count(*) FILTER (WHERE status = 'Occupied'))\" }\n    frameAnchor: middle\n    fill: '#FF9830'\n    fontSize: 34\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\ncolorScale: identity\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-pm25now": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
               "queries": [
                 {
                   "kind": "PanelQuery",
@@ -1533,7 +1769,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT count(*) FILTER (WHERE status = 'Occupied') AS \"Occupied\" FROM $bays"
+                        "rawSql": "WITH w AS (SELECT * FROM $climate WHERE $__crossfilter($climateFilters)),\nlatest AS (SELECT station, arg_max(pm25, time) AS v FROM w WHERE pm25 IS NOT NULL GROUP BY station)\nSELECT median(v) AS \"PM2.5\" FROM latest"
                       },
                       "version": "v0"
                     },
@@ -1545,262 +1781,17 @@
               "transformations": []
             }
           },
-          "description": "Bays whose sensor says a car is there, of those that have changed in the last week.",
-          "id": 3,
+          "description": "The median of the stations' last readings in the window brushed on the microclimate charts or, with none, their latest.",
+          "id": 33,
           "links": [],
-          "title": "Bays occupied now",
+          "title": "Fine particles (PM2.5)",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
                 "defaults": {
-                  "color": {
-                    "fixedColor": "#D0782A",
-                    "mode": "fixed"
-                  },
-                  "decimals": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  }
-                },
-                "overrides": []
-              },
-              "options": {
-                "colorMode": "value",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "value",
-                "wideLayout": true
-              }
-            },
-            "version": "13.2.1"
-          }
-        }
-      },
-      "panel-people": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT time, sum(people)::BIGINT AS people FROM $peds GROUP BY time ORDER BY time"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "People counted in each hour past all the counters together. The city loads a day's counts once a day, so the line stops a day or two before now.",
-          "id": 11,
-          "links": [],
-          "title": "Pedestrians by the hour, every counter",
-          "vizConfig": {
-            "group": "timeseries",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "fixedColor": "#3987e5",
-                    "mode": "fixed"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 0,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": 3600000,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 2,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "displayName": "Every counter",
-                  "min": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "short"
-                },
-                "overrides": []
-              },
-              "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "desc"
-                }
-              }
-            },
-            "version": "13.2.1"
-          }
-        }
-      },
-      "panel-pm25": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT time, place, pm25 FROM $climate WHERE pm25 IS NOT NULL ORDER BY time"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": [
-                {
-                  "group": "prepareTimeSeries",
-                  "kind": "Transformation",
-                  "spec": {
-                    "options": {
-                      "format": "multi"
-                    }
-                  }
-                }
-              ]
-            }
-          },
-          "description": "Each station's PM2.5, in µg/m³, from low-cost sensors: good for when it rises, less so for how much. The WHO's guideline for a 24-hour mean is 15 µg/m³.",
-          "id": 15,
-          "links": [],
-          "title": "Fine particles (PM2.5)",
-          "vizConfig": {
-            "group": "timeseries",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 0,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": 3600000,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 2,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "displayName": "${__field.labels.place}",
+                  "decimals": 1,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -1819,81 +1810,6 @@
                 "overrides": []
               },
               "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "desc"
-                }
-              }
-            },
-            "version": "13.2.1"
-          }
-        }
-      },
-      "panel-silent": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT count(*) FILTER (WHERE status = 'Silent for a week') AS \"Silent\" FROM $bays"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "Bay sensors that have not changed in a week: a bay in the city centre does not stay taken, or free, that long, so these are taken as broken or switched off.",
-          "id": 5,
-          "links": [],
-          "title": "Sensors silent",
-          "vizConfig": {
-            "group": "stat",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "decimals": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  }
-                },
-                "overrides": []
-              },
-              "options": {
                 "colorMode": "none",
                 "graphMode": "none",
                 "justifyMode": "auto",
@@ -1915,7 +1831,41 @@
           }
         }
       },
-      "panel-soundlevel": {
+      "panel-silent": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Sensors that have not changed in a week, taken as gone quiet, under every parking filter.",
+          "id": 25,
+          "links": [],
+          "title": "Sensors silent",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  bayFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: bays, filterBy: $bayFilters }\n    text: { sql: \"format('{:,}', count(*) FILTER (WHERE status = 'Silent for a week'))\" }\n    frameAnchor: middle\n    fill: '#8e8e8e'\n    fontSize: 34\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\ncolorScale: identity\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-stations": {
         "kind": "Panel",
         "spec": {
           "data": {
@@ -1933,7 +1883,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT time, place, noise FROM $climate WHERE noise IS NOT NULL ORDER BY time"
+                        "rawSql": "SELECT place AS \"Station\",\n       min(temperature) AS \"Coolest °C\", max(temperature) AS \"Warmest °C\",\n       avg(humidity) AS \"Humidity %\",\n       avg(noise) AS \"Mean noise dB\", max(noise) AS \"Loudest dB\",\n       avg(pm25) AS \"PM2.5 µg/m³\",\n       max(time) AS \"Last reading\"\nFROM $climate WHERE $__crossfilter($climateFilters)\nGROUP BY place ORDER BY place"
                       },
                       "version": "v0"
                     },
@@ -1942,67 +1892,30 @@
                 }
               ],
               "queryOptions": {},
-              "transformations": [
-                {
-                  "group": "prepareTimeSeries",
-                  "kind": "Transformation",
-                  "spec": {
-                    "options": {
-                      "format": "multi"
-                    }
-                  }
-                }
-              ]
+              "transformations": []
             }
           },
-          "description": "Each station's noise level, in decibels. The Royal Park weather station does not measure it.",
-          "id": 14,
+          "description": "Each station over the window brushed on the microclimate charts (or every reading): the range of temperature, mean humidity, the loudest and mean noise, and mean fine particles.",
+          "id": 35,
           "links": [],
-          "title": "Street noise",
+          "title": "Stations in the window",
           "vizConfig": {
-            "group": "timeseries",
+            "group": "table",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
                 "defaults": {
-                  "color": {
-                    "mode": "palette-classic"
-                  },
                   "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 0,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
                     },
-                    "insertNulls": 3600000,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 2,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
+                    "footer": {
+                      "reducers": []
                     },
-                    "showPoints": "never",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
+                    "inspect": false
                   },
-                  "displayName": "${__field.labels.place}",
+                  "decimals": 1,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -2015,23 +1928,45 @@
                         "value": 80
                       }
                     ]
-                  },
-                  "unit": "dB"
+                  }
                 },
-                "overrides": []
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Station"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 420
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Last reading"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "dateTimeAsLocal"
+                      }
+                    ]
+                  }
+                ]
               },
               "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "desc"
-                }
+                "cellHeight": "sm",
+                "frameIndex": 0,
+                "showHeader": true,
+                "sortBy": [
+                  {
+                    "desc": true,
+                    "displayName": "Occupancy"
+                  }
+                ]
               }
             },
             "version": "13.2.1"
@@ -2056,7 +1991,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT street AS \"Street\",\n       count(*) FILTER (WHERE status = 'Occupied') AS \"Taken\",\n       100.0 * count(*) FILTER (WHERE status = 'Occupied') / count(*) AS \"Occupancy\"\nFROM $bays WHERE status \u003c\u003e 'Silent for a week' AND street \u003c\u003e 'Unknown'\nGROUP BY street HAVING count(*) \u003e= 10\nORDER BY \"Occupancy\" DESC"
+                        "rawSql": "SELECT street AS \"Street\",\n       count(*) FILTER (WHERE status = 'Occupied') AS \"Taken\",\n       100.0 * count(*) FILTER (WHERE status = 'Occupied') / count(*) AS \"Occupancy\"\nFROM $bays WHERE status \u003c\u003e 'Silent for a week' AND street \u003c\u003e 'Unknown' AND $__crossfilter($bayFilters)\nGROUP BY street HAVING count(*) \u003e= 10\nORDER BY \"Occupancy\" DESC"
                       },
                       "version": "v0"
                     },
@@ -2068,7 +2003,7 @@
               "transformations": []
             }
           },
-          "description": "Every street with at least ten bays reporting, by the share of them taken now: how many are taken, and what share of those reporting. Silent sensors are left out.",
+          "description": "Streets with ten bays or more under the parking filters, by the share taken now. Bays whose sensor is silent are left out.",
           "id": 10,
           "links": [],
           "title": "Streets, fullest first",
@@ -2202,7 +2137,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH latest AS (SELECT station, max(time) AS t, arg_max(temperature, time) AS v FROM $climate GROUP BY station)\nSELECT median(v) AS \"Temperature\" FROM latest WHERE t \u003e (SELECT max(t) FROM latest) - INTERVAL 1 HOUR"
+                        "rawSql": "WITH w AS (SELECT * FROM $climate WHERE $__crossfilter($climateFilters)),\nlatest AS (SELECT station, arg_max(temperature, time) AS v FROM w WHERE temperature IS NOT NULL GROUP BY station)\nSELECT median(v) AS \"Temperature\" FROM latest"
                       },
                       "version": "v0"
                     },
@@ -2214,10 +2149,10 @@
               "transformations": []
             }
           },
-          "description": "The median of the microclimate stations' latest readings, of those that reported in the last hour.",
+          "description": "The median of the stations' last readings in the window brushed on the microclimate charts or, with none, their latest.",
           "id": 8,
           "links": [],
-          "title": "Air temperature now",
+          "title": "Air temperature",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -2270,120 +2205,65 @@
           "data": {
             "kind": "QueryGroup",
             "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT time, place, temperature FROM $climate WHERE temperature IS NOT NULL ORDER BY time"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
+              "queries": [],
               "queryOptions": {},
-              "transformations": [
-                {
-                  "group": "prepareTimeSeries",
-                  "kind": "Transformation",
-                  "spec": {
-                    "options": {
-                      "format": "multi"
-                    }
-                  }
-                }
-              ]
+              "transformations": []
             }
           },
-          "description": "Each microclimate station's air temperature, reading by reading, about every 15 minutes.",
-          "id": 13,
+          "description": "Each station's readings (15 minutes apart) of temperature, humidity, street noise and fine particles, in colour inside the Time Brush window and grey outside it. The map's stations and surface take each station's last reading in the window, their colours span it, and the cards and the station table follow.",
+          "id": 32,
           "links": [],
-          "title": "Air temperature",
+          "title": "Microclimate, station by station",
           "vizConfig": {
-            "group": "timeseries",
+            "group": "ubica-chaski-mosaic-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 0,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": 3600000,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 2,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "displayName": "${__field.labels.place}",
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "celsius"
-                },
+                "defaults": {},
                 "overrides": []
               },
               "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "desc"
-                }
+                "preaggregate": true,
+                "reads": "- param: climWindow\n  column: time\n  from: t0\n  to: t1\n",
+                "spec": "params:\n  climWindow: { select: crossfilter }\nvconcat:\n  - legend: color\n    for: temperature\n  - name: temperature\n    plot:\n      - mark: lineY\n        data: { from: climate }\n        x: time\n        y: temperature\n        z: place\n        stroke: 'rgba(128, 128, 128, 0.35)'\n        strokeWidth: 1\n      - mark: lineY\n        data: { from: climate, filterBy: $climWindow }\n        x: time\n        y: temperature\n        z: place\n        stroke: place\n        strokeWidth: 1.3\n    xDomain: Fixed\n    yLabel: ↑ Temperature (°C)\n    xLabel: null\n    xAxis: null\n    marginLeft: 48\n    marginBottom: 4\n  - name: humidity\n    plot:\n      - mark: lineY\n        data: { from: climate }\n        x: time\n        y: humidity\n        z: place\n        stroke: 'rgba(128, 128, 128, 0.35)'\n        strokeWidth: 1\n      - mark: lineY\n        data: { from: climate, filterBy: $climWindow }\n        x: time\n        y: humidity\n        z: place\n        stroke: place\n        strokeWidth: 1.3\n    xDomain: Fixed\n    yLabel: ↑ Humidity (%)\n    xLabel: null\n    xAxis: null\n    marginLeft: 48\n    marginBottom: 4\n  - name: noise\n    plot:\n      - mark: lineY\n        data: { from: climate }\n        x: time\n        y: noise\n        z: place\n        stroke: 'rgba(128, 128, 128, 0.35)'\n        strokeWidth: 1\n      - mark: lineY\n        data: { from: climate, filterBy: $climWindow }\n        x: time\n        y: noise\n        z: place\n        stroke: place\n        strokeWidth: 1.3\n    xDomain: Fixed\n    yLabel: ↑ Street noise (dB)\n    xLabel: null\n    xAxis: null\n    marginLeft: 48\n    marginBottom: 4\n  - name: pm25\n    plot:\n      - mark: lineY\n        data: { from: climate }\n        x: time\n        y: pm25\n        z: place\n        stroke: 'rgba(128, 128, 128, 0.35)'\n        strokeWidth: 1\n      - mark: lineY\n        data: { from: climate, filterBy: $climWindow }\n        x: time\n        y: pm25\n        z: place\n        stroke: place\n        strokeWidth: 1.3\n    xDomain: Fixed\n    yLabel: ↑ PM2.5 (µg/m³)\n    xLabel: null\n    marginLeft: 48\n    marginBottom: 24\ncolorScheme: tableau10\n",
+                "variables": ""
               }
             },
-            "version": "13.2.1"
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-week": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "People counted by hour of day (x) and day of the week (y, 1 Monday to 7 Sunday) in the Time Brush window. Drag a box to pick hours and days, say weekday mornings.",
+          "id": 28,
+          "links": [],
+          "title": "When the city walks",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "- param: pedFilters\n  column: time\n  from: t0\n  to: t1\n",
+                "spec": "params:\n  pedFilters: { select: crossfilter }\nplot:\n  - mark: rect\n    data: { from: peds, filterBy: $pedFilters }\n    x: { bin: hour, step: 1 }\n    y: { bin: dow, step: 1 }\n    fill: { sum: people }\n    inset: 0.5\n  - select: intervalXY\n    as: $pedFilters\n    brush: { fillOpacity: 0.06, stroke: currentColor, strokeOpacity: 0.7 }\nxDomain: [0, 24]\nyDomain: [1, 8]\nyReverse: true\ncolorScheme: viridis\nxLabel: Hour of day →\nyLabel: ↓ Day (1 Mon … 7 Sun)\nxTicks: [0, 3, 6, 9, 12, 15, 18, 21, 24]\nyTicks: [1, 2, 3, 4, 5, 6, 7]\nyTickFormat: d\nxTickFormat: d\nmarginLeft: 48\n",
+                "variables": "- param: pedFilters\n  column: [hour, dow]\n  from: [pedHourLo, pedDowLo]\n  to: [pedHourHi, pedDowHi]\n"
+              }
+            },
+            "version": "2.2.0"
           }
         }
       }
@@ -2408,7 +2288,7 @@
                           "kind": "ElementReference",
                           "name": "panel-map"
                         },
-                        "height": 24,
+                        "height": 26,
                         "width": 16,
                         "x": 0,
                         "y": 0
@@ -2471,51 +2351,12 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-day"
+                          "name": "panel-bayfilters"
                         },
-                        "height": 3,
-                        "width": 4,
+                        "height": 11,
+                        "width": 8,
                         "x": 16,
                         "y": 6
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-dayname"
-                        },
-                        "height": 3,
-                        "width": 4,
-                        "x": 20,
-                        "y": 6
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-temp"
-                        },
-                        "height": 3,
-                        "width": 4,
-                        "x": 16,
-                        "y": 9
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-noise"
-                        },
-                        "height": 3,
-                        "width": 4,
-                        "x": 20,
-                        "y": 9
                       }
                     },
                     {
@@ -2525,10 +2366,23 @@
                           "kind": "ElementReference",
                           "name": "panel-streets"
                         },
-                        "height": 12,
+                        "height": 7,
                         "width": 8,
                         "x": 16,
-                        "y": 12
+                        "y": 17
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-brush"
+                        },
+                        "height": 2,
+                        "width": 8,
+                        "x": 16,
+                        "y": 24
                       }
                     }
                   ]
@@ -2551,12 +2405,77 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-people"
+                          "name": "card-ped-sum"
                         },
-                        "height": 8,
-                        "width": 24,
+                        "height": 3,
+                        "width": 6,
                         "x": 0,
                         "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "card-ped-mean"
+                        },
+                        "height": 3,
+                        "width": 6,
+                        "x": 6,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-day"
+                        },
+                        "height": 3,
+                        "width": 6,
+                        "x": 12,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-dayname"
+                        },
+                        "height": 3,
+                        "width": 6,
+                        "x": 18,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-week"
+                        },
+                        "height": 11,
+                        "width": 10,
+                        "x": 0,
+                        "y": 3
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-counters"
+                        },
+                        "height": 11,
+                        "width": 14,
+                        "x": 10,
+                        "y": 3
                       }
                     }
                   ]
@@ -2624,10 +2543,10 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-temperature"
+                          "name": "panel-temp"
                         },
-                        "height": 8,
-                        "width": 8,
+                        "height": 3,
+                        "width": 6,
                         "x": 0,
                         "y": 0
                       }
@@ -2637,11 +2556,11 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-soundlevel"
+                          "name": "panel-noise"
                         },
-                        "height": 8,
-                        "width": 8,
-                        "x": 8,
+                        "height": 3,
+                        "width": 6,
+                        "x": 6,
                         "y": 0
                       }
                     },
@@ -2650,12 +2569,51 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-pm25"
+                          "name": "panel-pm25now"
                         },
-                        "height": 8,
-                        "width": 8,
-                        "x": 16,
+                        "height": 3,
+                        "width": 6,
+                        "x": 12,
                         "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-climlast"
+                        },
+                        "height": 3,
+                        "width": 6,
+                        "x": 18,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-temperature"
+                        },
+                        "height": 16,
+                        "width": 24,
+                        "x": 0,
+                        "y": 3
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-stations"
+                        },
+                        "height": 7,
+                        "width": 24,
+                        "x": 0,
+                        "y": 19
                       }
                     }
                   ]
@@ -2678,24 +2636,11 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-counters"
-                        },
-                        "height": 12,
-                        "width": 14,
-                        "x": 0,
-                        "y": 0
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
                           "name": "panel-about"
                         },
                         "height": 12,
-                        "width": 10,
-                        "x": 14,
+                        "width": 24,
+                        "x": 0,
                         "y": 0
                       }
                     }
@@ -2713,6 +2658,7 @@
     "preload": false,
     "tags": [
       "chaski",
+      "mosaic",
       "duckdb",
       "plus",
       "kepler",
@@ -2859,7 +2805,7 @@
                   "editorMode": "code",
                   "format": 1,
                   "rawQuery": true,
-                  "rawSql": "-- Server side: every pedestrian counter's hourly count over the time range,\n-- through the gateway (see gateway/feeds.conf). The city loads the counts\n-- once a day, so the latest hours are a day or two old. Whole days in\n-- Melbourne, at most the last 31, so one URL stands for a day and the cache\n-- can answer it. (A table function takes no subquery, so the dates are\n-- written out in place.) A row's time is the start of its hour; day and hour\n-- are Melbourne's. dir_1 and dir_2 are the two ways past the counter, named by\n-- way_1 and way_2.\nWITH counts AS (\n  SELECT * FROM read_parquet('http://feeds/melbourne/pedestrian-counting-system-monthly-counts-per-hour.parquet?select=location_id,sensing_date,hourday,direction_1,direction_2,pedestriancount\u0026where=sensing_date%3E%3D%22'\n                             || strftime(greatest(timezone('Australia/Melbourne', make_timestamptz(CAST(${__from} AS BIGINT) * 1000)), timezone('Australia/Melbourne', make_timestamptz(CAST(${__to} AS BIGINT) * 1000)) - INTERVAL 31 DAY), '%Y-%m-%d')\n                             || '%22%20and%20sensing_date%3C%3D%22' || strftime(timezone('Australia/Melbourne', make_timestamptz(CAST(${__to} AS BIGINT) * 1000)), '%Y-%m-%d') || '%22')\n),\nplaces AS (\n  SELECT location_id, sensor_description, direction_1 AS way_1, direction_2 AS way_2, latitude, longitude\n  FROM read_parquet('http://feeds/melbourne/pedestrian-counting-system-sensor-locations.parquet')\n)\nSELECT c.location_id::VARCHAR                                                   AS sensor,\n       coalesce(p.sensor_description, 'Sensor ' || c.location_id)            AS name,\n       timezone('Australia/Melbourne', c.sensing_date + to_hours(c.hourday))  AS time,\n       strftime(c.sensing_date, '%Y-%m-%d')                                   AS day,\n       c.hourday                                                              AS hour,\n       c.pedestriancount                                                      AS people,\n       c.direction_1 AS dir_1, c.direction_2 AS dir_2, p.way_1, p.way_2,\n       p.latitude, p.longitude\nFROM counts AS c LEFT JOIN places AS p USING (location_id)\nWHERE p.latitude IS NOT NULL",
+                  "rawSql": "-- Server side: every pedestrian counter's hourly count over the time range,\n-- through the gateway (see gateway/feeds.conf). The city loads the counts\n-- once a day, so the latest hours are a day or two old. Whole days in\n-- Melbourne, at most the last 31, so one URL stands for a day and the cache\n-- can answer it. (A table function takes no subquery, so the dates are\n-- written out in place.) A row's time is the start of its hour; day and hour\n-- are Melbourne's (dow: 1 Monday to 7 Sunday). dir_1 and dir_2 are the two ways past the counter, named by\n-- way_1 and way_2.\nWITH counts AS (\n  SELECT * FROM read_parquet('http://feeds/melbourne/pedestrian-counting-system-monthly-counts-per-hour.parquet?select=location_id,sensing_date,hourday,direction_1,direction_2,pedestriancount\u0026where=sensing_date%3E%3D%22'\n                             || strftime(greatest(timezone('Australia/Melbourne', make_timestamptz(CAST(${__from} AS BIGINT) * 1000)), timezone('Australia/Melbourne', make_timestamptz(CAST(${__to} AS BIGINT) * 1000)) - INTERVAL 31 DAY), '%Y-%m-%d')\n                             || '%22%20and%20sensing_date%3C%3D%22' || strftime(timezone('Australia/Melbourne', make_timestamptz(CAST(${__to} AS BIGINT) * 1000)), '%Y-%m-%d') || '%22')\n),\nplaces AS (\n  SELECT location_id, sensor_description, direction_1 AS way_1, direction_2 AS way_2, latitude, longitude\n  FROM read_parquet('http://feeds/melbourne/pedestrian-counting-system-sensor-locations.parquet')\n)\nSELECT c.location_id::VARCHAR                                                   AS sensor,\n       coalesce(p.sensor_description, 'Sensor ' || c.location_id)            AS name,\n       timezone('Australia/Melbourne', c.sensing_date + to_hours(c.hourday))  AS time,\n       strftime(c.sensing_date, '%Y-%m-%d')                                   AS day,\n       c.hourday                                                              AS hour,\n       isodow(c.sensing_date)                                                 AS dow,\n       c.pedestriancount                                                      AS people,\n       c.direction_1 AS dir_1, c.direction_2 AS dir_2, p.way_1, p.way_2,\n       p.latitude, p.longitude\nFROM counts AS c LEFT JOIN places AS p USING (location_id)\nWHERE p.latitude IS NOT NULL",
                   "refId": "peds"
                 },
                 "type": "datasource"
@@ -2911,7 +2857,7 @@
                   "editorMode": "code",
                   "format": 1,
                   "rawQuery": true,
-                  "rawSql": "-- Server side: the readings of the city's microclimate stations over the time\n-- range, at most its last 14 days, through the gateway (see gateway/feeds.conf).\n-- A station reports every 15 minutes or so; some have gone quiet, and only\n-- those reporting in the range show up. Whole hours, so one URL stands for an\n-- hour. The Royal Park weather station measures no noise or particles.\nSELECT device_id                                   AS station,\n       sensorlocation                              AS place,\n       received_at                                 AS time,\n       airtemperature                              AS temperature,\n       relativehumidity                            AS humidity,\n       averagewindspeed                            AS wind,\n       gustwindspeed                               AS gust,\n       pm25, pm10, noise,\n       ST_Y(latlong) AS latitude, ST_X(latlong) AS longitude\nFROM read_parquet('http://feeds/melbourne/microclimate-sensors-data.parquet?where=received_at%3E%3D%22'\n                  || strftime(greatest(date_trunc('hour', make_timestamp(CAST(${__from} AS BIGINT) * 1000)),\n                                       date_trunc('hour', make_timestamp(CAST(${__to} AS BIGINT) * 1000)) - INTERVAL 14 DAY), '%Y-%m-%dT%H:00:00Z')\n                  || '%22%20and%20received_at%3C%22'\n                  || strftime(date_trunc('hour', make_timestamp(CAST(${__to} AS BIGINT) * 1000)) + INTERVAL 1 HOUR, '%Y-%m-%dT%H:00:00Z') || '%22')",
+                  "rawSql": "-- Server side: the readings of the city's microclimate stations through the\n-- gateway (see gateway/feeds.conf). A station reports every 15 minutes or so;\n-- some have gone quiet, and only those reporting show up. The portal has also\n-- stopped updating for days at a time (from 18 October 2026, for one), so the\n-- window ends at the latest reading it holds when that is before the time\n-- range's end: as long as the range, at most 14 days, never empty. The latest\n-- reading is asked first (one row, ordered by the portal). Whole hours, so one\n-- URL stands for an hour. The Royal Park weather station measures no noise or\n-- particles.\nSET VARIABLE last_reading = (\n  SELECT max(received_at)\n  FROM read_parquet('http://feeds/melbourne/microclimate-sensors-data.parquet?select=received_at\u0026order_by=received_at%20desc\u0026limit=1'));\nSET VARIABLE window_end = date_trunc('hour', least(make_timestamp(CAST(${__to} AS BIGINT) * 1000),\n                                                   coalesce(getvariable('last_reading')::TIMESTAMP, make_timestamp(CAST(${__to} AS BIGINT) * 1000))))\n                          + INTERVAL 1 HOUR;\nSET VARIABLE window_start = getvariable('window_end')\n                            - to_milliseconds(least(CAST(${__to} AS BIGINT) - CAST(${__from} AS BIGINT), 14 * 86400000))\n                            - INTERVAL 1 HOUR;\nSELECT device_id                                   AS station,\n       sensorlocation                              AS place,\n       received_at                                 AS time,\n       airtemperature                              AS temperature,\n       relativehumidity                            AS humidity,\n       averagewindspeed                            AS wind,\n       gustwindspeed                               AS gust,\n       pm25, pm10, noise,\n       ST_Y(latlong) AS latitude, ST_X(latlong) AS longitude\nFROM read_parquet('http://feeds/melbourne/microclimate-sensors-data.parquet?where=received_at%3E%3D%22'\n                  || strftime(getvariable('window_start'), '%Y-%m-%dT%H:00:00Z')\n                  || '%22%20and%20received_at%3C%22'\n                  || strftime(getvariable('window_end'), '%Y-%m-%dT%H:00:00Z') || '%22')\nWHERE latlong IS NOT NULL",
                   "refId": "climate"
                 },
                 "type": "datasource"
@@ -2920,6 +2866,382 @@
             "version": "v0"
           },
           "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Parking: status",
+          "multi": true,
+          "name": "bayStatus",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "bayStatus",
+              "sql": "SELECT DISTINCT status AS value FROM $bays ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Parking: street",
+          "multi": true,
+          "name": "bayStreet",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "bayStreet",
+              "sql": "SELECT DISTINCT street AS value FROM $bays WHERE street \u003c\u003e 'Unknown' ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Parking: unchanged for, from (min)",
+          "name": "bayMinLo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Parking: unchanged for, to (min)",
+          "name": "bayMinHi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Parking: drawn area",
+          "name": "bayArea",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The parking filters: the sidebar, the cards, the streets and the map (on the GPU) follow them.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "bayFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$bays",
+              "filters": [
+                {
+                  "column": "status",
+                  "label": "Status",
+                  "name": "status",
+                  "type": "in",
+                  "variable": "$bayStatus"
+                },
+                {
+                  "column": "street",
+                  "label": "Street",
+                  "name": "street",
+                  "type": "in",
+                  "variable": "$bayStreet"
+                },
+                {
+                  "column": "minutes",
+                  "from": "$bayMinLo",
+                  "label": "Unchanged for (minutes)",
+                  "name": "minutes",
+                  "to": "$bayMinHi",
+                  "type": "range"
+                },
+                {
+                  "label": "Area",
+                  "lat": "latitude",
+                  "lng": "longitude",
+                  "name": "area",
+                  "type": "area",
+                  "variable": "$bayArea"
+                }
+              ],
+              "kind": "filters",
+              "refId": "bayFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Window from (Time Brush)",
+          "name": "t0",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Window to (Time Brush)",
+          "name": "t1",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Pedestrians: hour from",
+          "name": "pedHourLo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Pedestrians: hour to",
+          "name": "pedHourHi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Pedestrians: weekday from",
+          "name": "pedDowLo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Pedestrians: weekday to",
+          "name": "pedDowHi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The pedestrian filters (the Time Brush window, hour of day by weekday) as SQL filters.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "pedFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$peds",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$t0",
+                  "label": "Time",
+                  "name": "time",
+                  "to": "$t1",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "hour",
+                  "from": "$pedHourLo",
+                  "label": "Hour of day",
+                  "name": "hour",
+                  "to": "$pedHourHi",
+                  "type": "range"
+                },
+                {
+                  "column": "dow",
+                  "from": "$pedDowLo",
+                  "label": "Day of the week",
+                  "name": "dow",
+                  "to": "$pedDowHi",
+                  "type": "range"
+                }
+              ],
+              "kind": "filters",
+              "refId": "pedFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The Time Brush window over the microclimate readings, as an SQL filter.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "climateFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$climate",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$t0",
+                  "label": "Time",
+                  "name": "time",
+                  "to": "$t1",
+                  "type": "range",
+                  "upper": "closed"
+                }
+              ],
+              "kind": "filters",
+              "refId": "climateFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
           "regex": "",
           "regexApplyTo": "value",
           "skipUrlSync": true,
