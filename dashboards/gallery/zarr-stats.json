@@ -13,9 +13,6 @@
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "legacyOptions": {
-            "type": "dashboard"
-          },
           "name": "Annotations \u0026 Alerts",
           "query": {
             "datasource": {
@@ -44,6 +41,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 1,
           "links": [],
           "title": "",
@@ -56,11 +54,16 @@
                 "overrides": []
               },
               "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
                 "content": "# Statistics of what you draw, over a pyramided Zarr\n\nMonthly mean temperature from CarbonPlan's climate demo. **Draw** a polygon with the map's tool and **drag the time bar**: the numbers measure that area in that month.\n\nThis store is written **for maps** — a six-level pyramid, 128×128 chunks, already in Web Mercator — and it shows in both halves:\n\n| | Drawing a tile | Measuring an area |\n|---|---|---|\n| This store | 0.22–2.2 s, flat at every zoom | **1.0–1.5 s** |\n| GPCP, no pyramid | 1.2–17.5 s, worse as you zoom out | 6.9–21.1 s |\n\nThe four panels on the right **share a single request**: the table makes it, and the two figures reuse it through the `-- Dashboard --` datasource. One more figure costs zero requests.\n\nThe chain is the same as ever: the map publishes the shape as WKT, a query variable turns it into GeoJSON with DuckDB, and Infinity sends it to `/zarr/statistics` with the same `sel` the layer uses.\n\n**The map's clock is in charge** (`Time range sync: Slider writes variables`): on releasing the bar, the panel writes the window into `mapFrom`/`mapTo`, that recomputes the month, and the three panels refresh. In any other mode the variables are not published and the statistics stay pinned to the end of the dashboard's range.",
                 "mode": "markdown"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -96,6 +99,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 2,
           "links": [],
           "title": "Monthly mean temperature · draw an area and drag the time bar",
@@ -109,21 +113,304 @@
               },
               "options": {
                 "areaVariable": "area",
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
                 "mapConfig": {
                   "config": {
                     "mapState": {
                       "bearing": 0,
                       "dragRotate": false,
-                      "latitude": -8,
-                      "longitude": -62,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 10.947102247859034,
+                      "longitude": 10.63515025040233,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
                       "pitch": 0,
-                      "zoom": 3
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 1.7546024422240554
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-liberty",
+                      "threeDBuildingColor": [
+                        12.887291085429352,
+                        12.887291085429352,
+                        12.887291085429352
+                      ],
+                      "topLayerGroups": {
+                        "border": true,
+                        "label": true
+                      },
+                      "visibleLayerGroups": {
+                        "3d building": true,
+                        "border": true,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "fczrdhz",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "defaultTimeFormat": "L",
+                            "interval": "1-month",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            1593757703000,
+                            1602225262000
+                          ],
+                          "view": "enlarged"
+                        }
+                      ],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 2.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              },
+                              {
+                                "name": "zarr_url"
+                              },
+                              {
+                                "name": "zarr_variable"
+                              },
+                              {
+                                "name": "zarr_levels"
+                              },
+                              {
+                                "name": "zarr_sel"
+                              }
+                            ],
+                            "grafana-A-zarr": [],
+                            "grafana-A-zarr-times": [
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "grafana-A-zarr-layer"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              179,
+                              173,
+                              158
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-A-zarr",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "A",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "opacity": 0.8,
+                              "zarrLabel": "10"
+                            }
+                          },
+                          "id": "grafana-A-zarr-layer",
+                          "type": "zarr",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
                     }
                   },
                   "version": "v1"
                 },
+                "mosaicArea": true,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "publishIntervalMs": 1500,
                 "publishWhilePlaying": false,
+                "rasterBands": "",
                 "rasterColormap": "magma",
+                "rasterPainted": false,
                 "rasterServerUrl": "/titiler",
                 "showSidePanel": false,
                 "timeSync": "variables",
@@ -131,10 +418,11 @@
                   "from": "mapFrom",
                   "to": "mapTo"
                 },
+                "tripLayerMode": "table",
                 "zarrRescale": "-20,40"
               }
             },
-            "version": ""
+            "version": "1.5.0"
           }
         }
       },
@@ -183,21 +471,42 @@
                     "mode": "fixed"
                   },
                   "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "celsius"
                 },
                 "overrides": []
               },
               "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
                   ],
                   "fields": "/^media$/",
                   "values": false
-                }
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -246,21 +555,42 @@
                     "mode": "fixed"
                   },
                   "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "celsius"
                 },
                 "overrides": []
               },
               "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
                   ],
                   "fields": "/^máx$/",
                   "values": false
-                }
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -363,12 +693,39 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
-              "options": {}
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -417,21 +774,42 @@
                     "mode": "fixed"
                   },
                   "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "celsius"
                 },
                 "overrides": []
               },
               "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
                   ],
                   "fields": "/^mín$/",
                   "values": false
-                }
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -539,7 +917,7 @@
                 "kind": "ElementReference",
                 "name": "panel-2"
               },
-              "height": 21,
+              "height": 18,
               "width": 15,
               "x": 0,
               "y": 11
@@ -565,7 +943,7 @@
                 "kind": "ElementReference",
                 "name": "panel-3"
               },
-              "height": 5,
+              "height": 4,
               "width": 9,
               "x": 15,
               "y": 17
@@ -578,10 +956,10 @@
                 "kind": "ElementReference",
                 "name": "panel-6"
               },
-              "height": 5,
+              "height": 4,
               "width": 9,
               "x": 15,
-              "y": 22
+              "y": 21
             }
           },
           {
@@ -591,10 +969,10 @@
                 "kind": "ElementReference",
                 "name": "panel-4"
               },
-              "height": 5,
+              "height": 4,
               "width": 9,
               "x": 15,
-              "y": 27
+              "y": 25
             }
           },
           {
@@ -607,7 +985,7 @@
               "height": 9,
               "width": 24,
               "x": 0,
-              "y": 32
+              "y": 29
             }
           }
         ]
@@ -656,7 +1034,7 @@
           "label": "store",
           "name": "store",
           "query": "https://carbonplan-maps.s3.us-west-2.amazonaws.com/v2/demo/4d/tavg-prec-month",
-          "skipUrlSync": false
+          "skipUrlSync": true
         }
       },
       {
@@ -729,6 +1107,7 @@
           },
           "refresh": "onTimeRangeChanged",
           "regex": "",
+          "regexApplyTo": "value",
           "skipUrlSync": false,
           "sort": "disabled"
         }
@@ -761,6 +1140,7 @@
           },
           "refresh": "onTimeRangeChanged",
           "regex": "",
+          "regexApplyTo": "value",
           "skipUrlSync": false,
           "sort": "disabled"
         }
