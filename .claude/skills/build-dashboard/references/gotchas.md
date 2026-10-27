@@ -18,6 +18,7 @@ here, in the same shape: symptom, cause, fix.
 | Clicks publish nothing, `clickConfirm` opens no popup, on every layer of the map | the map has a **Trip** layer: kepler never sets `visState.clicked` then | select from a table row data link instead, with an "All …" row that clears |
 | Every point of a filtered map gets an amber ring | the panel rings rows whose clicked column equals the variable; the map is already filtered to the selection | don't feed the selection back into the map's query |
 | The map filters itself and cannot widen again | its own published variable (area, viewport, click) is in its own query | only other panels read it; the map filters with kepler filters |
+| "`takeoff` doesnt exist in dataset grafana-A" in the console; a saved filter or a Mosaic clause on that time column does nothing | the panel's time role renames the first time column to `time` when none is called that | keep a column named `time` in the query (the one the map animates on), and other time columns keep their names |
 | Flow layer stays yellow whatever `colorRange` says | flow layer ignores the palette | accept it, or use a Traffic layer; readable with `flowLinesRenderingMode: straight`, `flowLineThicknessScale` ~0.35 |
 | Fleet trails join thousands of assets into scribbles | `fleetAssetField: auto` picked a low-cardinality string column | set `fleetAssetField` and `fleetTimeField` explicitly |
 | A line across the whole world | track crosses the antimeridian | unwrap longitudes per asset in SQL, then shift so the newest point is in [-180, 180] |
@@ -49,6 +50,7 @@ here, in the same shape: symptom, cause, fix.
 | A dropdown value `11388.0` in URLs and cache keys | Chaski `values` hand integers back as doubles | `col::BIGINT::VARCHAR` for value and text |
 | A sum renders as `[object Object]` or breaks a chart | `SUM(BIGINT)` → `HUGEINT`, serialised by DuckDB-WASM as an object | cast sums to `DOUBLE` |
 | `h3_*` not found in Chaski | no H3 in the browser | compute on the server in the dataset's source query |
+| Every Mosaic panel goes blank for seconds when a picker changes | a Chaski dataset whose SQL reads the picker reloads, and any dataset reload rebuilds every Mosaic panel of the dashboard | keep pickers out of dataset SQL: put the pick in the filters variable (`equals` on the column) or a Mosaic `reads`, and filter the one dataset in panel queries (`drone-delivery-flights`) |
 | Two variables break each other | a Chaski dataset and another variable share a name | unique names |
 | Native barchart over Chaski shows a legend and no bars | unknown | Business Charts for bars over Chaski |
 | `array_extract(VARCHAR[], DOUBLE)` binder error in Chaski on `list[n + 1]` | every numeric column of a server-fed dataset reaches the browser as DOUBLE | cast the index: `list[(n + 1)::BIGINT]` |

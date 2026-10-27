@@ -27,7 +27,7 @@
       }
     ],
     "cursorSync": "Off",
-    "description": "CMU's package-delivery quadcopter, 209 flights: replay one on the fleet layer with its height, speed, power and voltage, and compare the energy per kilometre of all of them against speed, payload and wind.",
+    "description": "CMU's package-delivery quadcopter, 209 flights, every second of them in the browser: filter by route, payload, speed, energy and wind and watch the map, the energy charts and the totals follow; replay one on the fleet layer with a timeline that drives the drone and its height, speed, power and voltage.",
     "editable": true,
     "elements": {
       "panel-1": {
@@ -60,7 +60,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### One delivery drone, 209 flights\n\nCarnegie Mellon flew a **DJI Matrice 100** quadcopter autonomously around Pittsburgh between April and October 2019 to measure what a small-package delivery costs in energy. Each flight was set up with a **route**, a **commanded speed**, a **payload** and a **cruise altitude**; the drone logged its GPS position, orientation, battery voltage and current and the wind (from an anemometer on board) about five times a second.\n\nPick a flight above, or click one in the table at the bottom. The **map** replays it on the fleet layer: the drone flies at its real height, turned to its heading, with its trail coloured by battery power. The curves on the left follow the map's time bar. **Comparing the flights** puts the picked one among all the others: how much energy a kilometre takes against speed, payload and wind.\n\nIt is one drone, not a fleet: every flight here is the same aircraft. Data: Rodrigues, Patrikar, Choudhry, Feldgoise, Arcot, Gahlaut, Lau, Moon, Wagner, Matthews, Scherer and Samaras, *In-flight positional and energy use data set of a DJI Matrice 100 quadcopter for small package delivery*, Scientific Data 8, 155 (2021) — [KiltHub](https://kilthub.cmu.edu/articles/dataset/Data_Collected_with_Package_Delivery_Quadcopter_Drone/12683453), CC BY 4.0. The server reads the 107 MB file once a month through its cache and DuckDB sends the browser only the flight on screen and one row per flight; Chaski answers every panel from there.",
+                "content": "### One delivery drone, 209 flights\n\nCarnegie Mellon flew a **DJI Matrice 100** quadcopter autonomously around Pittsburgh between April and October 2019 to measure what a small-package delivery costs in energy. Each flight was set up with a **route**, a **commanded speed**, a **payload** and a **cruise altitude**; the drone logged its GPS position, orientation, battery voltage and current and the wind (from an anemometer on board) about five times a second.\n\n**Every flight** puts all of them in your browser, one row per second. Pick a route, a payload or a speed on the left, or brush a chart: the map, the charts, the totals and the table follow at once. The map flies every second at its real height, coloured by battery power; **click a point** to replay its flight below. **The picked flight** replays one on the fleet layer: press play on its timeline, or brush a stretch of the flight on the timeline or the curves, and the drone, its trail and the energy used in that window follow.\n\nIt is one drone, not a fleet: every flight here is the same aircraft. Data: Rodrigues, Patrikar, Choudhry, Feldgoise, Arcot, Gahlaut, Lau, Moon, Wagner, Matthews, Scherer and Samaras, *In-flight positional and energy use data set of a DJI Matrice 100 quadcopter for small package delivery*, Scientific Data 8, 155 (2021) — [KiltHub](https://kilthub.cmu.edu/articles/dataset/Data_Collected_with_Package_Delivery_Quadcopter_Drone/12683453), CC BY 4.0. The server reads the 107 MB file once a month through the gateway's cache and sends the browser one row per second (38,820 rows); everything after that runs in DuckDB in your browser (Chaski), drawn by Mosaic and Kepler.",
                 "mode": "markdown"
               }
             },
@@ -86,7 +86,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT flight::INTEGER AS \"Flight\", takeoff AS \"Take-off\", route AS \"Route\", speed_ms AS \"Speed\",\n       payload_g::INTEGER AS \"Payload\", altitude_m AS \"Altitude\", duration_s AS \"Duration\",\n       distance_m AS \"Distance\", energy_wh AS \"Energy\", wh_per_km AS \"Energy per km\",\n       wind_ms AS \"Mean wind\", max_height_m AS \"Highest\"\nFROM $flights ORDER BY flight"
+                        "rawSql": "SELECT flight::INTEGER AS \"Flight\", takeoff AS \"Take-off\", route AS \"Route\", speed_ms AS \"Speed\",\n       payload_g::INTEGER AS \"Payload\", altitude_m AS \"Altitude\", duration_s AS \"Duration\",\n       distance_m AS \"Distance\", energy_wh AS \"Energy\", wh_per_km AS \"Energy per km\",\n       wind_ms AS \"Mean wind\", max_height_m AS \"Highest\"\nFROM $flights\nWHERE $__crossfilter($droneFilters)\nORDER BY flight"
                       },
                       "version": "v0"
                     },
@@ -101,7 +101,7 @@
           "description": "Click a row to show that flight above. Routes: R1 is the main delivery loop (most flights); R2 to R7 other loops; A1 to A3 altitude tests and H hovering, which barely move. Altitude: the commanded cruise altitude.",
           "id": 10,
           "links": [],
-          "title": "All flights",
+          "title": "Flights kept",
           "vizConfig": {
             "group": "table",
             "kind": "VizConfig",
@@ -146,7 +146,7 @@
                           {
                             "targetBlank": false,
                             "title": "Show this flight",
-                            "url": "/d/drone-delivery-flights${__url.params:exclude:var-flight}\u0026var-flight=${__data.fields.Flight}"
+                            "url": "/d/drone-delivery-flights${__url.params:exclude:var-flight,var-t0,var-t1}\u0026var-flight=${__data.fields.Flight}"
                           }
                         ]
                       }
@@ -326,6 +326,859 @@
           }
         }
       },
+      "panel-11": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "What each flight was set up with, and its energy, wind and day. Click a value to keep it (Shift-click to add), drag across a histogram to keep a range: every panel of this row follows, and the counts here show what each pick would leave.",
+          "id": 11,
+          "links": [],
+          "title": "Filters",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 30,
+                "filters": "droneFilters",
+                "layout": "auto",
+                "maxValues": 8,
+                "noun": "flights",
+                "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 800,
+                "timeColumn": "",
+                "timeline": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-12": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*)::DOUBLE AS flights\nFROM $flights WHERE $__crossfilter($droneFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Flights the filters keep, of 209.",
+          "id": 12,
+          "links": [],
+          "title": "Flights",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#1f60c4",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "panel-13": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT sum(duration_s) AS seconds\nFROM $flights WHERE $__crossfilter($droneFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Their flight time, take-off to landing, added up.",
+          "id": 13,
+          "links": [],
+          "title": "Time aloft",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#1f60c4",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "s"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "panel-14": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT sum(distance_m) / 1000 AS km\nFROM $flights WHERE $__crossfilter($droneFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Their distance flown, from the GPS fixes.",
+          "id": 14,
+          "links": [],
+          "title": "Distance",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#1f60c4",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "lengthkm"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "panel-15": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT sum(energy_wh) AS wh\nFROM $flights WHERE $__crossfilter($droneFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The battery energy they used, take-offs and landings included.",
+          "id": 15,
+          "links": [],
+          "title": "Energy",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#1f60c4",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "Wh"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "panel-16": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT sum(energy_wh) / nullif(sum(distance_m) / 1000, 0) AS wh_km\nFROM $flights WHERE $__crossfilter($droneFilters) AND wh_per_km IS NOT NULL"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Energy over distance of the flights that cruised (hover and altitude tests barely move).",
+          "id": 16,
+          "links": [],
+          "title": "Per km",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#1f60c4",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "suffix: Wh/km"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "panel-17": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every second of the flights with a position, at its height over the take-off\n-- point. The filters reach the map through its Mosaic selection and it filters\n-- on the GPU, with no query in between: the flight's columns are here for that.\n-- `time` (since take-off) keeps the panel from renaming `takeoff` to `time`.\nSELECT flight::INTEGER AS flight, time, elapsed_s, latitude, longitude, height_m AS altitude,\n       power_w, speed_kmh, takeoff, route, payload, cmd_speed, cruise, wind_ms, wh_per_km\nFROM $fixes\nWHERE latitude IS NOT NULL\nORDER BY flight, elapsed_s"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "One point per second flown, at its height over the take-off point, coloured by battery power: climbs burn the most. Most flights fly route R1, so its shape is drawn many times over. Click a point to replay its flight below.",
+          "id": 17,
+          "links": [],
+          "title": "Every second of the flights kept, by battery power",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "hoverMaxAgeSeconds": 10,
+                "hoverPublishSpike": true,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -25,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 40.4584,
+                      "longitude": -79.7822,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 55,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 17.1
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "grafana-satellite",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "charts": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "takeoff",
+                          "name": [
+                            "takeoff"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "defaultTimeFormat": "L",
+                            "interval": "1-day",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "timezone": "America/New_York",
+                          "type": "timeRange",
+                          "value": [
+                            0,
+                            4102444800000
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "flight"
+                              },
+                              {
+                                "name": "route"
+                              },
+                              {
+                                "name": "payload"
+                              },
+                              {
+                                "name": "cmd_speed"
+                              },
+                              {
+                                "name": "power_w"
+                              },
+                              {
+                                "name": "altitude"
+                              },
+                              {
+                                "name": "elapsed_s"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "seconds"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              152,
+                              48
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "altitude",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              0,
+                              229,
+                              255,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Every second, by battery power",
+                            "textLabel": [],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.85,
+                              "outline": false,
+                              "radius": 2.2,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "thickness": 2
+                            }
+                          },
+                          "id": "seconds",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "power_w",
+                              "type": "real"
+                            },
+                            "colorScale": "quantile",
+                            "sizeField": null,
+                            "sizeScale": "linear",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicSelection": "droneFilters",
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 250,
+                "publishWhilePlaying": true,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 0,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "flight",
+                    "source": "click",
+                    "variable": "flight"
+                  }
+                ]
+              }
+            },
+            "version": "0.1.0"
+          }
+        }
+      },
+      "panel-18": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each flight that cruised, at the speed it was commanded (spread a little so they do not hide each other). Faster costs less per kilometre: the trip is shorter and the rotors work in cleaner air. Brush up or down to keep an energy range.",
+          "id": 18,
+          "links": [],
+          "title": "Energy per km against commanded speed",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "- param: picked\n  column: flight\n  values: flight\n",
+                "spec": "# One dot per flight that cruised, coloured by payload (grey: every flight; in\n# colour: those the filters keep; ringed: the picked one). Brush up or down to keep an energy range.\nparams:\n  droneFilters: { select: crossfilter }\n  picked: { select: intersect }\nvconcat:\n  - legend: color\n    for: by_speed\n  - name: by_speed\n    plot:\n      - mark: dot\n        data: { from: flights }\n        x: speed_jitter\n        y: wh_per_km\n        fill: 'rgba(128, 128, 128, 0.25)'\n        r: 3.5\n      - mark: dot\n        data: { from: flights, filterBy: $droneFilters }\n        x: speed_jitter\n        y: wh_per_km\n        fill: payload\n        fillOpacity: 0.85\n        r: 3.5\n      - mark: dot\n        data: { from: flights, filterBy: $picked }\n        x: speed_jitter\n        y: wh_per_km\n        stroke: '#00E5FF'\n        strokeWidth: 2.5\n        r: 7\n      - select: intervalY\n        as: $droneFilters\n        brush: { fillOpacity: 0.06, stroke: currentColor, strokeOpacity: 0.6 }\n    xDomain: [3, 13]\n    yDomain: [20, 80]\n    xLabel: Commanded speed (m/s) →\n    yLabel: ↑ Energy per km (Wh/km)\n    marginLeft: 44\n    colorDomain: [No payload, 250 g, 500 g, 750 g]\n    colorRange: ['#73BF69', '#FADE2A', '#F2495C', '#B877D9']\n",
+                "variables": "- param: droneFilters\n  column: wh_per_km\n  from: whkm_lo\n  to: whkm_hi\n"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-19": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The same flights against the mean wind measured on board (which includes the airflow of the drone's own motion). Brush across to keep a wind range.",
+          "id": 19,
+          "links": [],
+          "title": "Energy per km against mean wind",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# One dot per flight that cruised, coloured by payload (grey: every flight; in\n# colour: those the filters keep; ringed: the picked one). Brush across to keep a wind range.\nparams:\n  droneFilters: { select: crossfilter }\n  picked: { select: intersect }\nvconcat:\n  - legend: color\n    for: by_wind\n  - name: by_wind\n    plot:\n      - mark: dot\n        data: { from: flights }\n        x: wind_ms\n        y: wh_per_km\n        fill: 'rgba(128, 128, 128, 0.25)'\n        r: 3.5\n      - mark: dot\n        data: { from: flights, filterBy: $droneFilters }\n        x: wind_ms\n        y: wh_per_km\n        fill: payload\n        fillOpacity: 0.85\n        r: 3.5\n      - mark: dot\n        data: { from: flights, filterBy: $picked }\n        x: wind_ms\n        y: wh_per_km\n        stroke: '#00E5FF'\n        strokeWidth: 2.5\n        r: 7\n      - select: intervalX\n        as: $droneFilters\n        brush: { fillOpacity: 0.06, stroke: currentColor, strokeOpacity: 0.6 }\n    xDomain: Fixed\n    yDomain: [20, 80]\n    xLabel: Mean wind on board (m/s) →\n    yLabel: ↑ Energy per km (Wh/km)\n    marginLeft: 44\n    colorDomain: [No payload, 250 g, 500 g, 750 g]\n    colorRange: ['#73BF69', '#FADE2A', '#F2495C', '#B877D9']\n",
+                "variables": "- param: droneFilters\n  column: wind_ms\n  from: wind_lo\n  to: wind_hi\n"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
       "panel-2": {
         "kind": "Panel",
         "spec": {
@@ -344,7 +1197,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT printf('%d min %02d s', duration_s::INTEGER // 60, duration_s::INTEGER % 60) AS \"Duration\", distance_m AS \"Distance\", energy_wh AS \"Energy\",\n       wh_per_km AS \"Energy per km\", max_height_m AS \"Highest\", wind_ms AS \"Mean wind\"\nFROM $flights WHERE flight = ${flight:raw}"
+                        "rawSql": "SELECT takeoff_local AS \"Take-off (local)\", printf('%d min %02d s', duration_s::INTEGER // 60, duration_s::INTEGER % 60) AS \"Duration\", distance_m AS \"Distance\", energy_wh AS \"Energy\",\n       wh_per_km AS \"Energy per km\", max_height_m AS \"Highest\", wind_ms AS \"Mean wind\"\nFROM $flights WHERE flight = ${flight:raw}"
                       },
                       "version": "v0"
                     },
@@ -483,6 +1336,270 @@
           }
         }
       },
+      "panel-20": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every second of the flights the filters keep, binned by ground speed and battery power (brighter: more seconds). Hovering, taking off and landing sit at the left; a cruise at speed draws less than a hover.",
+          "id": 20,
+          "links": [],
+          "title": "Battery power against ground speed, every second",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# Every second of the flights kept, as a density: how hard the battery works at\n# each ground speed. Hovering and climbing sit on the left; cruise on the right.\nparams:\n  droneFilters: { select: crossfilter }\nplot:\n  - mark: raster\n    data: { from: fixes, filterBy: $droneFilters }\n    x: speed_kmh\n    y: power_w\n    fill: density\n    bandwidth: 2\n    pixelSize: 3\nxDomain: [0, 46]\nyDomain: [0, 900]\ncolorScheme: magma\ncolorScale: symlog\nxLabel: Ground speed (km/h) →\nyLabel: ↑ Battery power (W)\nmarginLeft: 44\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-21": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every flight the filters keep: climb to the cruise altitude it was set to, cruise, descend. In cyan, the picked flight.",
+          "id": 21,
+          "links": [],
+          "title": "Height through each flight",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# Each flight kept, as its height over the take-off point against the seconds\n# flown, coloured by payload; the picked flight on top.\nparams:\n  droneFilters: { select: crossfilter }\n  picked: { select: intersect }\nplot:\n  - mark: lineY\n    data: { from: fixes, filterBy: $droneFilters }\n    x: elapsed_s\n    y: height_m\n    z: flight\n    stroke: payload\n    strokeOpacity: 0.35\n    strokeWidth: 1\n  - mark: lineY\n    data: { from: fixes, filterBy: $picked }\n    x: elapsed_s\n    y: height_m\n    stroke: '#00E5FF'\n    strokeWidth: 2.5\nxDomain: [0, 430]\nyDomain: [-15, 110]\ncolorDomain: [No payload, 250 g, 500 g, 750 g]\ncolorRange: ['#73BF69', '#FADE2A', '#F2495C', '#B877D9']\nxLabel: Seconds since take-off →\nyLabel: ↑ Height (m)\nmarginLeft: 44\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-22": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The picked flight (its pill picks another), one bar per few seconds, on a clock of time since take-off (it reads 00:00 at take-off, whatever the day). Press play: the drone flies from take-off, its trail and the curves grow with it. Or drag across a stretch of the flight.",
+          "id": 22,
+          "links": [],
+          "title": "Timeline",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 60,
+                "filters": "flightFilters",
+                "layout": "timeline",
+                "maxValues": 8,
+                "noun": "seconds of all flights",
+                "playMode": "grow",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 800,
+                "timeColumn": "",
+                "timeline": "time"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-23": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT printf('%d min %02d s', count(*)::INTEGER // 60, count(*)::INTEGER % 60) AS \"Time\", sum(m) AS \"Distance\", sum(wh) AS \"Energy\", avg(power_w) AS \"Mean power\"\nFROM $fixes WHERE $__crossfilter($flightFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "What the drone did in the window the timeline or a curve holds (the whole flight when none).",
+          "id": 23,
+          "links": [],
+          "title": "In the window",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#8f3bb8",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Distance"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "lengthm"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Energy"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "Wh"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Mean power"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "watt"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "panel-24": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The picked flight second by second. The box is the window the timeline holds, which grows as it plays; brush any curve to hold a stretch of the flight, and the map, the timeline and the window's totals follow.",
+          "id": 24,
+          "links": [],
+          "title": "Height, speed, power and voltage",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# The picked flight, second by second. The box is the window the timeline or a\n# brush holds, on all four curves; brush any of them to hold another.\nparams:\n  flightFilters: { select: crossfilter }\nvconcat:\n  - plot:\n      - mark: lineY\n        data: { from: fixes, filterBy: $flightFilters }\n        x: time\n        y: height_m\n        stroke: '#73BF69'\n        strokeWidth: 2\n      - select: intervalX\n        as: $flightFilters\n        brush: { fillOpacity: 0.06, stroke: currentColor, strokeOpacity: 0.6 }\n    yLabel: ↑ Height (m)\n    marginLeft: 48\n    xAxis: null\n    marginBottom: 6\n  - plot:\n      - mark: lineY\n        data: { from: fixes, filterBy: $flightFilters }\n        x: time\n        y: speed_kmh\n        stroke: '#5794F2'\n        strokeWidth: 2\n      - select: intervalX\n        as: $flightFilters\n        brush: { fillOpacity: 0.06, stroke: currentColor, strokeOpacity: 0.6 }\n    yLabel: ↑ Ground speed (km/h)\n    marginLeft: 48\n    xAxis: null\n    marginBottom: 6\n  - plot:\n      - mark: lineY\n        data: { from: fixes, filterBy: $flightFilters }\n        x: time\n        y: power_w\n        stroke: '#FF9830'\n        strokeWidth: 2\n      - select: intervalX\n        as: $flightFilters\n        brush: { fillOpacity: 0.06, stroke: currentColor, strokeOpacity: 0.6 }\n    yLabel: ↑ Battery power (W)\n    marginLeft: 48\n    xAxis: null\n    marginBottom: 6\n  - plot:\n      - mark: lineY\n        data: { from: fixes, filterBy: $flightFilters }\n        x: time\n        y: voltage_v\n        stroke: '#B877D9'\n        strokeWidth: 2\n      - select: intervalX\n        as: $flightFilters\n        brush: { fillOpacity: 0.06, stroke: currentColor, strokeOpacity: 0.6 }\n    yLabel: ↑ Battery voltage (V)\n    marginLeft: 48\n    xLabel: Time since take-off (min:s) →\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
       "panel-3": {
         "kind": "Panel",
         "spec": {
@@ -501,7 +1618,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT * FROM $track ORDER BY time"
+                        "rawSql": "-- The picked flight, second by second: a query of this panel, not a dataset, so\n-- picking another flight reloads nothing else. `drone` is the fleet layer's\n-- asset and `type` gives it the drone silhouette; `time` is the time since\n-- take-off (see the dataset's SQL), on which the timeline's window lands.\nSELECT time, elapsed_s, 'M100' AS drone, 'drone' AS type,\n       latitude, longitude, height_m, heading, speed_kmh, power_w, voltage_v,\n       round(sum(wh) OVER (ORDER BY elapsed_s), 2) AS energy_wh\nFROM $fixes\nWHERE flight = ${flight:raw}\nORDER BY elapsed_s"
                       },
                       "version": "v0"
                     },
@@ -510,41 +1627,10 @@
                 }
               ],
               "queryOptions": {},
-              "transformations": [
-                {
-                  "group": "filterByValue",
-                  "kind": "Transformation",
-                  "spec": {
-                    "options": {
-                      "filters": [
-                        {
-                          "config": {
-                            "id": "greaterOrEqual",
-                            "options": {
-                              "value": "$__from"
-                            }
-                          },
-                          "fieldName": "time"
-                        },
-                        {
-                          "config": {
-                            "id": "lowerOrEqual",
-                            "options": {
-                              "value": "$__to"
-                            }
-                          },
-                          "fieldName": "time"
-                        }
-                      ],
-                      "match": "all",
-                      "type": "include"
-                    }
-                  }
-                }
-              ]
+              "transformations": []
             }
           },
-          "description": "The picked flight on the fleet layer, at its real height above the take-off point and turned to its heading. The trail is coloured by battery power. Play or drag the time bar: the curves on the left mark the same moment.",
+          "description": "The picked flight on the fleet layer: the drone at its real height, turned to its heading, with its trail coloured by battery power. It follows the timeline and the curves: the drone stands at the end of the window they hold.",
           "id": 3,
           "links": [],
           "title": "Flight replay",
@@ -716,7 +1802,7 @@
                       "effects": [],
                       "filters": [
                         {
-                          "animationWindow": "incremental",
+                          "animationWindow": "free",
                           "dataId": [
                             "grafana-A"
                           ],
@@ -733,13 +1819,13 @@
                           },
                           "speed": 4,
                           "syncTimelineMode": 1,
-                          "timezone": "America/New_York",
+                          "timezone": "UTC",
                           "type": "timeRange",
                           "value": [
-                            1554648480000,
-                            1554648540000
+                            0,
+                            4102444800000
                           ],
-                          "view": "minified",
+                          "view": "side",
                           "yAxis": {
                             "name": "power_w",
                             "type": "integer"
@@ -959,6 +2045,7 @@
                   },
                   "version": "v1"
                 },
+                "mosaicSelection": "flightFilters",
                 "peerTimeSync": false,
                 "places": {},
                 "publishIntervalMs": 250,
@@ -968,1095 +2055,11 @@
                 "rasterPainted": false,
                 "saveRequest": 7,
                 "showSidePanel": false,
-                "timeSync": "variables",
-                "timeVariables": {
-                  "from": "brush_from",
-                  "to": "brush_to"
-                },
+                "timeSync": "off",
                 "tripLayerMode": "table"
               }
             },
             "version": "0.1.0"
-          }
-        }
-      },
-      "panel-4": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "WITH pos AS (\n  SELECT max(time) AS t FROM $track WHERE time \u003c= try_cast(rtrim($brush_to, 'Z') AS TIMESTAMP)\n)\nSELECT elapsed_s AS \"Seconds since take-off\", height_m AS \"Height (m)\",\n       CASE WHEN time = pos.t THEN height_m END AS \"Map position\"\nFROM $track, pos\nORDER BY elapsed_s"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "Metres above the take-off point, from GPS altitude: a few metres of noise near the ground.",
-          "id": 4,
-          "links": [],
-          "title": "Height (m)",
-          "vizConfig": {
-            "group": "trend",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "fixedColor": "#73bf69",
-                    "mode": "fixed"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "axisWidth": 64,
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 15,
-                    "gradientMode": "opacity",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 2,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "lengthm"
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Map position"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.drawStyle",
-                        "value": "points"
-                      },
-                      {
-                        "id": "custom.pointSize",
-                        "value": 14
-                      },
-                      {
-                        "id": "custom.showPoints",
-                        "value": "always"
-                      },
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "rgba(0, 229, 255, 1)",
-                          "mode": "fixed"
-                        }
-                      },
-                      {
-                        "id": "custom.hideFrom",
-                        "value": {
-                          "legend": true,
-                          "tooltip": true,
-                          "viz": false
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Seconds since take-off"
-                    },
-                    "properties": [
-                      {
-                        "id": "unit",
-                        "value": "suffix: s"
-                      },
-                      {
-                        "id": "decimals",
-                        "value": 0
-                      }
-                    ]
-                  }
-                ]
-              },
-              "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": false
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "none"
-                },
-                "xField": "Seconds since take-off"
-              }
-            },
-            "version": "13.2.1"
-          }
-        }
-      },
-      "panel-5": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "WITH pos AS (\n  SELECT max(time) AS t FROM $track WHERE time \u003c= try_cast(rtrim($brush_to, 'Z') AS TIMESTAMP)\n)\nSELECT elapsed_s AS \"Seconds since take-off\", speed_kmh AS \"Ground speed (km/h)\",\n       CASE WHEN time = pos.t THEN speed_kmh END AS \"Map position\"\nFROM $track, pos\nORDER BY elapsed_s"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "Horizontal speed from the velocity the drone reports.",
-          "id": 5,
-          "links": [],
-          "title": "Ground speed (km/h)",
-          "vizConfig": {
-            "group": "trend",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "fixedColor": "#5794f2",
-                    "mode": "fixed"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "axisWidth": 64,
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 15,
-                    "gradientMode": "opacity",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 2,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "velocitykmh"
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Map position"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.drawStyle",
-                        "value": "points"
-                      },
-                      {
-                        "id": "custom.pointSize",
-                        "value": 14
-                      },
-                      {
-                        "id": "custom.showPoints",
-                        "value": "always"
-                      },
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "rgba(0, 229, 255, 1)",
-                          "mode": "fixed"
-                        }
-                      },
-                      {
-                        "id": "custom.hideFrom",
-                        "value": {
-                          "legend": true,
-                          "tooltip": true,
-                          "viz": false
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Seconds since take-off"
-                    },
-                    "properties": [
-                      {
-                        "id": "unit",
-                        "value": "suffix: s"
-                      },
-                      {
-                        "id": "decimals",
-                        "value": 0
-                      }
-                    ]
-                  }
-                ]
-              },
-              "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": false
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "none"
-                },
-                "xField": "Seconds since take-off"
-              }
-            },
-            "version": "13.2.1"
-          }
-        }
-      },
-      "panel-6": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "WITH pos AS (\n  SELECT max(time) AS t FROM $track WHERE time \u003c= try_cast(rtrim($brush_to, 'Z') AS TIMESTAMP)\n)\nSELECT elapsed_s AS \"Seconds since take-off\", power_w AS \"Battery power (W)\",\n       CASE WHEN time = pos.t THEN power_w END AS \"Map position\"\nFROM $track, pos\nORDER BY elapsed_s"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "Voltage × current. Climbing and hovering cost the most; cruise is cheaper per second, and faster cruise cheaper per kilometre.",
-          "id": 6,
-          "links": [],
-          "title": "Battery power (W)",
-          "vizConfig": {
-            "group": "trend",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "fixedColor": "#ff9830",
-                    "mode": "fixed"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "axisWidth": 64,
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 15,
-                    "gradientMode": "opacity",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 2,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "watt"
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Map position"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.drawStyle",
-                        "value": "points"
-                      },
-                      {
-                        "id": "custom.pointSize",
-                        "value": 14
-                      },
-                      {
-                        "id": "custom.showPoints",
-                        "value": "always"
-                      },
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "rgba(0, 229, 255, 1)",
-                          "mode": "fixed"
-                        }
-                      },
-                      {
-                        "id": "custom.hideFrom",
-                        "value": {
-                          "legend": true,
-                          "tooltip": true,
-                          "viz": false
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Seconds since take-off"
-                    },
-                    "properties": [
-                      {
-                        "id": "unit",
-                        "value": "suffix: s"
-                      },
-                      {
-                        "id": "decimals",
-                        "value": 0
-                      }
-                    ]
-                  }
-                ]
-              },
-              "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": false
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "none"
-                },
-                "xField": "Seconds since take-off"
-              }
-            },
-            "version": "13.2.1"
-          }
-        }
-      },
-      "panel-7": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "WITH pos AS (\n  SELECT max(time) AS t FROM $track WHERE time \u003c= try_cast(rtrim($brush_to, 'Z') AS TIMESTAMP)\n)\nSELECT elapsed_s AS \"Seconds since take-off\", voltage_v AS \"Battery voltage (V)\",\n       CASE WHEN time = pos.t THEN voltage_v END AS \"Map position\"\nFROM $track, pos\nORDER BY elapsed_s"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "The 6-cell pack under load: it sags when the motors draw hard and recovers on landing.",
-          "id": 7,
-          "links": [],
-          "title": "Battery voltage (V)",
-          "vizConfig": {
-            "group": "trend",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "fixedColor": "#b877d9",
-                    "mode": "fixed"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "axisWidth": 64,
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 15,
-                    "gradientMode": "opacity",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 2,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "volt"
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Map position"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.drawStyle",
-                        "value": "points"
-                      },
-                      {
-                        "id": "custom.pointSize",
-                        "value": 14
-                      },
-                      {
-                        "id": "custom.showPoints",
-                        "value": "always"
-                      },
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "rgba(0, 229, 255, 1)",
-                          "mode": "fixed"
-                        }
-                      },
-                      {
-                        "id": "custom.hideFrom",
-                        "value": {
-                          "legend": true,
-                          "tooltip": true,
-                          "viz": false
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Seconds since take-off"
-                    },
-                    "properties": [
-                      {
-                        "id": "unit",
-                        "value": "suffix: s"
-                      },
-                      {
-                        "id": "decimals",
-                        "value": 0
-                      }
-                    ]
-                  }
-                ]
-              },
-              "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": false
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "none"
-                },
-                "xField": "Seconds since take-off"
-              }
-            },
-            "version": "13.2.1"
-          }
-        }
-      },
-      "panel-8": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "-- Flights that cruised (speed above 0), one point each, coloured by payload.\n-- The picked flight is drawn again on top.\nSELECT speed_ms AS \"Commanded speed\",\n  CASE WHEN payload_g = 0 THEN wh_per_km END AS \"No payload\",\n  CASE WHEN payload_g = 250 THEN wh_per_km END AS \"250 g\",\n  CASE WHEN payload_g = 500 THEN wh_per_km END AS \"500 g\",\n  CASE WHEN payload_g = 750 THEN wh_per_km END AS \"750 g\",\n  CASE WHEN flight = ${flight:raw} THEN wh_per_km END AS \"Picked flight\"\nFROM $flights WHERE wh_per_km IS NOT NULL\nORDER BY 1"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "Each point a flight that cruised (the hover and altitude tests, at speed 0, are left out). A quadcopter spends most of its energy staying up, so the faster it covers the route the less each kilometre costs; payload lifts the whole curve.",
-          "id": 8,
-          "links": [],
-          "title": "Energy per km against commanded speed",
-          "vizConfig": {
-            "group": "xychart",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "fillOpacity": 60,
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "pointShape": "circle",
-                    "pointSize": {
-                      "fixed": 7
-                    },
-                    "pointStrokeWidth": 1,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "show": "points"
-                  },
-                  "decimals": 1,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "suffix: Wh/km"
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Commanded speed"
-                    },
-                    "properties": [
-                      {
-                        "id": "unit",
-                        "value": "velocityms"
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "No payload"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#73bf69",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "250 g"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#fade2a",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "500 g"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#f2495c",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "750 g"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#b877d9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Picked flight"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "rgba(0, 229, 255, 1)",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              },
-              "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "mapping": "auto",
-                "series": [
-                  {
-                    "frame": {
-                      "matcher": {
-                        "id": "byIndex",
-                        "options": 0
-                      }
-                    },
-                    "x": {
-                      "matcher": {
-                        "id": "byName",
-                        "options": "Commanded speed"
-                      }
-                    }
-                  }
-                ],
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
-                }
-              }
-            },
-            "version": "13.2.1"
-          }
-        }
-      },
-      "panel-9": {
-        "kind": "Panel",
-        "spec": {
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT wind_ms AS \"Mean wind\",\n  CASE WHEN payload_g = 0 THEN wh_per_km END AS \"No payload\",\n  CASE WHEN payload_g = 250 THEN wh_per_km END AS \"250 g\",\n  CASE WHEN payload_g = 500 THEN wh_per_km END AS \"500 g\",\n  CASE WHEN payload_g = 750 THEN wh_per_km END AS \"750 g\",\n  CASE WHEN flight = ${flight:raw} THEN wh_per_km END AS \"Picked flight\"\nFROM $flights WHERE wh_per_km IS NOT NULL\nORDER BY 1"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
-              "queryOptions": {},
-              "transformations": []
-            }
-          },
-          "description": "The wind the anemometer on board measured, averaged over the flight. It includes the airflow of the drone's own motion, so faster flights read windier.",
-          "id": 9,
-          "links": [],
-          "title": "Energy per km against mean wind",
-          "vizConfig": {
-            "group": "xychart",
-            "kind": "VizConfig",
-            "spec": {
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "fillOpacity": 60,
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "pointShape": "circle",
-                    "pointSize": {
-                      "fixed": 7
-                    },
-                    "pointStrokeWidth": 1,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "show": "points"
-                  },
-                  "decimals": 1,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "suffix: Wh/km"
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Mean wind"
-                    },
-                    "properties": [
-                      {
-                        "id": "unit",
-                        "value": "velocityms"
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "No payload"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#73bf69",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "250 g"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#fade2a",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "500 g"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#f2495c",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "750 g"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#b877d9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Picked flight"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "rgba(0, 229, 255, 1)",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              },
-              "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "mapping": "auto",
-                "series": [
-                  {
-                    "frame": {
-                      "matcher": {
-                        "id": "byIndex",
-                        "options": 0
-                      }
-                    },
-                    "x": {
-                      "matcher": {
-                        "id": "byName",
-                        "options": "Mean wind"
-                      }
-                    }
-                  }
-                ],
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
-                }
-              }
-            },
-            "version": "13.2.1"
           }
         }
       }
@@ -2080,7 +2083,7 @@
                           "kind": "ElementReference",
                           "name": "panel-1"
                         },
-                        "height": 6,
+                        "height": 7,
                         "width": 24,
                         "x": 0,
                         "y": 0
@@ -2091,83 +2094,161 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-2"
+                          "name": "panel-11"
+                        },
+                        "height": 31,
+                        "width": 5,
+                        "x": 0,
+                        "y": 7
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-12"
                         },
                         "height": 4,
+                        "width": 4,
+                        "x": 5,
+                        "y": 7
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-13"
+                        },
+                        "height": 4,
+                        "width": 4,
+                        "x": 9,
+                        "y": 7
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-14"
+                        },
+                        "height": 4,
+                        "width": 4,
+                        "x": 13,
+                        "y": 7
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-15"
+                        },
+                        "height": 4,
+                        "width": 4,
+                        "x": 17,
+                        "y": 7
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-16"
+                        },
+                        "height": 4,
+                        "width": 3,
+                        "x": 21,
+                        "y": 7
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-17"
+                        },
+                        "height": 18,
+                        "width": 11,
+                        "x": 5,
+                        "y": 11
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-18"
+                        },
+                        "height": 9,
+                        "width": 8,
+                        "x": 16,
+                        "y": 11
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-19"
+                        },
+                        "height": 9,
+                        "width": 8,
+                        "x": 16,
+                        "y": 20
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-20"
+                        },
+                        "height": 9,
+                        "width": 9,
+                        "x": 5,
+                        "y": 29
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-21"
+                        },
+                        "height": 9,
+                        "width": 10,
+                        "x": 14,
+                        "y": 29
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-10"
+                        },
+                        "height": 11,
                         "width": 24,
                         "x": 0,
-                        "y": 6
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-4"
-                        },
-                        "height": 6,
-                        "width": 10,
-                        "x": 0,
-                        "y": 10
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-3"
-                        },
-                        "height": 24,
-                        "width": 14,
-                        "x": 10,
-                        "y": 10
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-5"
-                        },
-                        "height": 6,
-                        "width": 10,
-                        "x": 0,
-                        "y": 16
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-6"
-                        },
-                        "height": 6,
-                        "width": 10,
-                        "x": 0,
-                        "y": 22
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-7"
-                        },
-                        "height": 6,
-                        "width": 10,
-                        "x": 0,
-                        "y": 28
+                        "y": 38
                       }
                     }
                   ]
                 }
               },
-              "title": "The picked flight"
+              "title": "Every flight"
             }
           },
           {
@@ -2183,44 +2264,70 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-8"
+                          "name": "panel-2"
                         },
-                        "height": 11,
-                        "width": 12,
-                        "x": 0,
-                        "y": 0
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-9"
-                        },
-                        "height": 11,
-                        "width": 12,
-                        "x": 12,
-                        "y": 0
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-10"
-                        },
-                        "height": 12,
+                        "height": 5,
                         "width": 24,
                         "x": 0,
-                        "y": 11
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-22"
+                        },
+                        "height": 5,
+                        "width": 16,
+                        "x": 0,
+                        "y": 5
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-23"
+                        },
+                        "height": 5,
+                        "width": 8,
+                        "x": 16,
+                        "y": 5
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-3"
+                        },
+                        "height": 22,
+                        "width": 14,
+                        "x": 0,
+                        "y": 10
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-24"
+                        },
+                        "height": 22,
+                        "width": 10,
+                        "x": 14,
+                        "y": 10
                       }
                     }
                   ]
                 }
               },
-              "title": "Comparing the flights"
+              "title": "The picked flight"
             }
           }
         ]
@@ -2232,10 +2339,11 @@
     "tags": [
       "chaski",
       "duckdb",
+      "energy",
       "kepler",
-      "plus",
       "mobility",
-      "energy"
+      "mosaic",
+      "plus"
     ],
     "timeSettings": {
       "autoRefresh": "",
@@ -2269,6 +2377,57 @@
           },
           "hide": "hideVariable",
           "includeAll": false,
+          "label": "Every second of every flight",
+          "multi": false,
+          "name": "fixes",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "fixes",
+              "refId": "fixes",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: every flight of CMU's package-delivery\n-- quadcopter (DJI Matrice 100, Pittsburgh, April to October 2019; KiltHub,\n-- CC BY 4.0), one row per second flown, read through the gateway's month-long\n-- cache of flights.csv (about 258,000 fixes at ~5 Hz become 38,820 seconds).\n-- Each second keeps the energy and the distance flown in it (battery voltage ×\n-- current over each step, haversine between fixes), so sums over seconds are\n-- the flight's own. Each row also carries what its flight was set up with and\n-- the flight's totals: the filters pick flights, and the map and the charts of\n-- seconds follow them. Nine altitude tests (A1–A3) logged no GPS, so they have\n-- no position. Heading is the yaw of the orientation quaternion as a compass\n-- bearing (it matches the GPS course in cruise), at the end of the second.\nWITH r AS (\n  SELECT flight, time AS t,\n         CASE WHEN position_x \u003c\u003e 0 THEN position_x END AS lon,\n         CASE WHEN position_y \u003c\u003e 0 THEN position_y END AS lat,\n         position_z AS z, battery_voltage AS volts, battery_voltage * battery_current AS w, wind_speed,\n         sqrt(velocity_x * velocity_x + velocity_y * velocity_y) AS v,\n         (360 - degrees(atan2(2 * (orientation_w * orientation_z + orientation_x * orientation_y),\n                              1 - 2 * (orientation_y * orientation_y + orientation_z * orientation_z)))) % 360 AS yaw,\n         speed, payload, altitude, route, date, time_day\n  FROM read_csv('http://feeds/figshare/files/26385151', types = {'altitude': 'VARCHAR'})\n),\ns AS (\n  SELECT *,\n    coalesce(t - lag(t) OVER f, 0) AS dt,\n    coalesce(2 * 6371000 * asin(sqrt(\n      pow(sin(radians(lat - lag(lat) OVER f) / 2), 2) +\n      cos(radians(lat)) * cos(radians(lag(lat) OVER f)) * pow(sin(radians(lon - lag(lon) OVER f) / 2), 2))), 0) AS dm,\n    z - first(z) OVER f AS h\n  FROM r WINDOW f AS (PARTITION BY flight ORDER BY t)\n),\nsec AS (\n  SELECT flight, floor(t)::INTEGER AS elapsed_s,\n    avg(lat) AS latitude, avg(lon) AS longitude, avg(h) AS height_m, max(h) AS top_m,\n    avg(v) * 3.6 AS speed_kmh, avg(w) AS power_w, avg(volts) AS voltage_v, arg_max(yaw, t) AS heading,\n    sum(w * dt) / 3600 AS wh, sum(dm) AS m, avg(wind_speed) AS wind, max(t) AS tmax,\n    any_value(speed) AS speed_ms, any_value(payload) AS payload_g, any_value(altitude) AS altitude_m,\n    any_value(route) AS route, any_value(date) AS date, any_value(time_day) AS time_day\n  FROM s GROUP BY ALL\n)\nSELECT\n  flight, elapsed_s,\n  -- `time` is the time since take-off, counted from midnight on 1 January 2000\n  -- (UTC): the same clock for every flight, so a window held on the timeline keeps\n  -- its meaning when another flight is picked (the first 30 s are a take-off on\n  -- any flight). `takeoff` is when the flight took off, in UTC.\n  TIMESTAMP '2000-01-01' + to_seconds(elapsed_s) AS time,\n  timezone('UTC', timezone('America/New_York', date + CAST(time_day AS TIME))) AS takeoff,\n  strftime(date + CAST(time_day AS TIME), '%Y-%m-%d %H:%M') AS takeoff_local,\n  route,\n  speed_ms, speed_ms::INTEGER || ' m/s' AS cmd_speed,\n  payload_g::INTEGER AS payload_g,\n  CASE WHEN payload_g = 0 THEN 'No payload' ELSE payload_g::INTEGER || ' g' END AS payload,\n  altitude_m, altitude_m || ' m' AS cruise,\n  round(latitude, 7) AS latitude, round(longitude, 7) AS longitude,\n  round(height_m, 1) AS height_m, round(speed_kmh, 1) AS speed_kmh, round(power_w) AS power_w,\n  round(voltage_v, 2) AS voltage_v, round(heading) AS heading,\n  wh, m,\n  round(max(tmax) OVER g) AS duration_s,\n  -- Hover and altitude tests (speed 0) barely move: no Wh/km for them.\n  CASE WHEN speed_ms \u003e 0 THEN round(sum(wh) OVER g / (sum(m) OVER g / 1000), 1) END AS wh_per_km,\n  round(avg(wind) OVER g, 1) AS wind_ms,\n  round(max(top_m) OVER g) AS max_height_m\nFROM sec WINDOW g AS (PARTITION BY flight)\nORDER BY flight, elapsed_s",
+                  "refId": "fixes"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
           "label": "Flights (one row each)",
           "multi": false,
           "name": "flights",
@@ -2284,21 +2443,8 @@
               "name": "flights",
               "refId": "flights",
               "source": {
-                "datasource": {
-                  "type": "motherduck-duckdb-datasource",
-                  "uid": "duckdb"
-                },
-                "query": {
-                  "datasource": {
-                    "type": "motherduck-duckdb-datasource",
-                    "uid": "duckdb"
-                  },
-                  "editorMode": "code",
-                  "format": 1,
-                  "rawQuery": true,
-                  "rawSql": "-- Server side, once per visit: one row per flight of CMU's package-delivery\n-- quadcopter (DJI Matrice 100, Pittsburgh, April to October 2019; KiltHub,\n-- CC BY 4.0), read through the gateway's month-long cache of flights.csv.\n-- Energy is battery voltage × current integrated over each ~5 Hz step;\n-- distance is the haversine sum of the GPS fixes. `altitude` is text because\n-- two flights climb through a profile (\"25-50-100-25\").\nWITH r AS (\n  SELECT flight, time AS t, position_x AS lon, position_y AS lat, position_z AS z,\n         battery_voltage * battery_current AS w, wind_speed,\n         speed, payload, altitude, route, date, time_day\n  FROM read_csv('http://feeds/figshare/files/26385151', types = {'altitude': 'VARCHAR'})\n),\ns AS (\n  SELECT *,\n    t - lag(t) OVER f AS dt,\n    2 * 6371000 * asin(sqrt(\n      pow(sin(radians(lat - lag(lat) OVER f) / 2), 2) +\n      cos(radians(lat)) * cos(radians(lag(lat) OVER f)) * pow(sin(radians(lon - lag(lon) OVER f) / 2), 2))) AS dm\n  FROM r WINDOW f AS (PARTITION BY flight ORDER BY t)\n)\nSELECT\n  flight,\n  timezone('UTC', timezone('America/New_York', any_value(date) + CAST(any_value(time_day) AS TIME))) AS takeoff,\n  any_value(route) AS route,\n  any_value(speed) AS speed_ms,\n  CAST(any_value(payload) AS INTEGER) AS payload_g,\n  any_value(altitude) AS altitude_m,\n  round(max(t)) AS duration_s,\n  round(sum(dm)) AS distance_m,\n  round(sum(w * dt) / 3600, 1) AS energy_wh,\n  -- Hover and altitude tests (speed 0) barely move: no Wh/km for them.\n  CASE WHEN any_value(speed) \u003e 0 THEN round(sum(w * dt) / 3600 / (sum(dm) / 1000), 1) END AS wh_per_km,\n  round(avg(wind_speed), 1) AS wind_ms,\n  round(max(z) - arg_min(z, t)) AS max_height_m\nFROM s GROUP BY flight ORDER BY flight",
-                  "refId": "flights"
-                }
+                "sql": "-- In your browser: one row per flight, from its seconds. What it was set up\n-- with (route, commanded speed, payload, cruise altitude), its take-off and its\n-- totals.\n-- `speed_jitter` spreads the flights at one commanded speed a little apart, so\n-- that on the chart they do not hide each other.\nSELECT flight,\n  any_value(takeoff) AS takeoff, any_value(takeoff_local) AS takeoff_local, any_value(route) AS route,\n  any_value(speed_ms) AS speed_ms, any_value(cmd_speed) AS cmd_speed,\n  any_value(payload_g) AS payload_g, any_value(payload) AS payload,\n  any_value(altitude_m) AS altitude_m, any_value(cruise) AS cruise,\n  any_value(duration_s) AS duration_s,\n  round(sum(m)) AS distance_m, round(sum(wh), 1) AS energy_wh,\n  any_value(wh_per_km) AS wh_per_km, any_value(wind_ms) AS wind_ms,\n  any_value(max_height_m) AS max_height_m,\n  any_value(speed_ms) + ((flight::INTEGER * 37) % 11 - 5) * 0.09 AS speed_jitter\nFROM $fixes\nGROUP BY flight\nORDER BY flight",
+                "type": "sql"
               }
             },
             "version": "v0"
@@ -2349,14 +2495,18 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
           },
           "hide": "hideVariable",
-          "includeAll": false,
-          "label": "Track of the picked flight",
-          "multi": false,
-          "name": "track",
+          "includeAll": true,
+          "label": "Route",
+          "multi": true,
+          "name": "route",
           "options": [],
           "query": {
             "datasource": {
@@ -2365,26 +2515,123 @@
             "group": "ubica-chaski-datasource",
             "kind": "DataQuery",
             "spec": {
-              "kind": "dataset",
-              "name": "track",
-              "refId": "track",
-              "source": {
-                "datasource": {
-                  "type": "motherduck-duckdb-datasource",
-                  "uid": "duckdb"
-                },
-                "query": {
-                  "datasource": {
-                    "type": "motherduck-duckdb-datasource",
-                    "uid": "duckdb"
-                  },
-                  "editorMode": "code",
-                  "format": 1,
-                  "rawQuery": true,
-                  "rawSql": "-- Server side, on every change of flight: the picked flight only, about a\n-- thousand rows at ~5 Hz, from the same cached flights.csv. `drone` is the\n-- fleet layer's asset and `type` gives it the drone silhouette. Position is\n-- longitude/latitude (position_x/y) and metres above sea level (position_z),\n-- shown as height over the take-off point. Heading is the yaw of the\n-- orientation quaternion as a compass bearing (it matches the GPS course in\n-- cruise); speed is horizontal, from the velocity components. `time` is the\n-- take-off's local time in Pittsburgh plus the seconds flown, in UTC.\nWITH r AS (\n  SELECT *, battery_voltage * battery_current * (time - coalesce(lag(time) OVER (ORDER BY time), time)) AS joules\n  FROM read_csv('http://feeds/figshare/files/26385151', types = {'altitude': 'VARCHAR'})\n  WHERE flight = ${flight:raw}\n)\nSELECT\n  timezone('UTC', timezone('America/New_York', date + CAST(time_day AS TIME)))\n    + to_microseconds(CAST(round(time * 1e6) AS BIGINT)) AS time,\n  round(time, 1) AS elapsed_s,\n  'M100' AS drone,\n  'drone' AS type,\n  position_y AS latitude,\n  position_x AS longitude,\n  round(position_z - first(position_z) OVER w, 1) AS height_m,\n  round((360 - degrees(atan2(2 * (orientation_w * orientation_z + orientation_x * orientation_y),\n                             1 - 2 * (orientation_y * orientation_y + orientation_z * orientation_z)))) % 360) AS heading,\n  round(3.6 * sqrt(velocity_x * velocity_x + velocity_y * velocity_y), 1) AS speed_kmh,\n  round(battery_voltage, 2) AS voltage_v,\n  round(battery_current, 2) AS current_a,\n  round(battery_voltage * battery_current) AS power_w,\n  round(sum(joules) OVER w / 3600, 2) AS energy_wh,\n  round(wind_speed, 1) AS wind_ms,\n  wind_angle AS wind_deg\nFROM r WINDOW w AS (ORDER BY time)\nORDER BY time",
-                  "refId": "track"
-                }
-              }
+              "kind": "values",
+              "refId": "route",
+              "sql": "SELECT DISTINCT route AS value FROM $flights WHERE route IS NOT NULL ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Payload",
+          "multi": true,
+          "name": "payload",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "payload",
+              "sql": "SELECT DISTINCT payload AS value FROM $flights WHERE payload IS NOT NULL ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Commanded speed",
+          "multi": true,
+          "name": "cmd_speed",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "cmd_speed",
+              "sql": "SELECT DISTINCT cmd_speed AS value FROM $flights WHERE cmd_speed IS NOT NULL ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Cruise altitude",
+          "multi": true,
+          "name": "cruise",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "cruise",
+              "sql": "SELECT DISTINCT cruise AS value FROM $flights WHERE cruise IS NOT NULL ORDER BY 1"
             },
             "version": "v0"
           },
@@ -2403,8 +2650,7 @@
             "value": ""
           },
           "hide": "hideVariable",
-          "label": "brush_from",
-          "name": "brush_from",
+          "name": "whkm_lo",
           "query": "",
           "skipUrlSync": false
         }
@@ -2417,10 +2663,228 @@
             "value": ""
           },
           "hide": "hideVariable",
-          "label": "brush_to",
-          "name": "brush_to",
+          "name": "whkm_hi",
           "query": "",
           "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "wind_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "wind_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "day_from",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "day_to",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "droneFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$flights",
+              "filters": [
+                {
+                  "column": "route",
+                  "label": "Route",
+                  "name": "route",
+                  "type": "in",
+                  "variable": "$route"
+                },
+                {
+                  "column": "payload",
+                  "label": "Payload",
+                  "name": "payload",
+                  "type": "in",
+                  "variable": "$payload"
+                },
+                {
+                  "column": "cmd_speed",
+                  "label": "Commanded speed",
+                  "name": "speed",
+                  "type": "in",
+                  "variable": "$cmd_speed"
+                },
+                {
+                  "column": "cruise",
+                  "label": "Cruise altitude",
+                  "name": "cruise",
+                  "type": "in",
+                  "variable": "$cruise"
+                },
+                {
+                  "column": "wh_per_km",
+                  "from": "$whkm_lo",
+                  "label": "Energy per km (Wh/km)",
+                  "name": "whkm",
+                  "to": "$whkm_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "wind_ms",
+                  "from": "$wind_lo",
+                  "label": "Mean wind (m/s)",
+                  "name": "wind",
+                  "to": "$wind_hi",
+                  "type": "range"
+                },
+                {
+                  "as": "time",
+                  "column": "takeoff",
+                  "from": "$day_from",
+                  "label": "Take-off",
+                  "name": "takeoff",
+                  "to": "$day_to",
+                  "type": "range",
+                  "upper": "closed"
+                }
+              ],
+              "kind": "filters",
+              "refId": "droneFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "t0",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "t1",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "flightFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$fixes",
+              "filters": [
+                {
+                  "column": "flight",
+                  "label": "Flight",
+                  "name": "flight",
+                  "type": "equals",
+                  "variable": "$flight"
+                },
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$t0",
+                  "label": "Time",
+                  "name": "time",
+                  "to": "$t1",
+                  "type": "range",
+                  "upper": "closed"
+                }
+              ],
+              "kind": "filters",
+              "refId": "flightFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
         }
       }
     ]
