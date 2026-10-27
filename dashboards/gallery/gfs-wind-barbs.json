@@ -13,9 +13,6 @@
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "legacyOptions": {
-            "type": "dashboard"
-          },
           "name": "Annotations \u0026 Alerts",
           "query": {
             "datasource": {
@@ -44,6 +41,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 1,
           "links": [],
           "title": "What you are looking at",
@@ -65,7 +63,7 @@
                 "mode": "markdown"
               }
             },
-            "version": ""
+            "version": "13.2.1"
           }
         }
       },
@@ -101,6 +99,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 2,
           "links": [],
           "title": "Wind barbs on the data cells",
@@ -114,8 +113,16 @@
               },
               "options": {
                 "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
                 "flowRenderMode": "straight",
                 "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
                 "mapConfig": {
                   "config": {
                     "mapState": {
@@ -168,15 +175,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": 0,
-                      "longitude": -87,
+                      "latitude": -3.5805344226162346,
+                      "longitude": -71.13906390370704,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_2D",
                       "maxPitch": 60,
                       "pitch": 0,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 5.6
+                      "zoom": 3.972517895951226
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -185,7 +192,7 @@
                         0
                       ],
                       "mapStyles": {},
-                      "styleType": "openfreemap-dark",
+                      "styleType": "openfreemap-fiord",
                       "threeDBuildingColor": [
                         9.311499150948377,
                         9.311499150948377,
@@ -193,13 +200,24 @@
                       ],
                       "topLayerGroups": {},
                       "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
                         "label": false,
-                        "road": false
+                        "land": true,
+                        "road": false,
+                        "water": true
                       }
                     },
                     "uiState": {
                       "locale": "en",
                       "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
                         "mapLegend": {
                           "active": false
                         }
@@ -216,8 +234,37 @@
                         "visible": true
                       },
                       "effects": [],
-                      "filters": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "du6z4a3fj",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "defaultTimeFormat": "L  H A",
+                            "interval": "3-hour",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            1793063170976,
+                            1793073970976
+                          ],
+                          "view": "enlarged"
+                        }
+                      ],
+                      "groupBys": [],
                       "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
                         "brush": {
                           "enabled": false,
                           "size": 0.5
@@ -226,8 +273,17 @@
                           "enabled": false
                         },
                         "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
                           "enabled": false,
                           "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
                         },
                         "tooltip": {
                           "compareMode": false,
@@ -243,9 +299,14 @@
                               }
                             ]
                           }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
                         }
                       },
-                      "layerBlending": "normal",
+                      "joins": [],
+                      "layerBlending": "additive",
                       "layerOrder": [
                         "vectorfield-grafana-A"
                       ],
@@ -285,6 +346,7 @@
                                   200,
                                   255
                                 ],
+                                "collisionEnabled": false,
                                 "color": [
                                   255,
                                   255,
@@ -306,7 +368,8 @@
                               }
                             ],
                             "visConfig": {
-                              "colorBySpeed": false,
+                              "calmOpacity": 0.2,
+                              "colorBySpeed": true,
                               "colorRange": {
                                 "category": "Uber",
                                 "colors": [
@@ -321,9 +384,36 @@
                                 "type": "sequential"
                               },
                               "directionConvention": "from",
+                              "elevationScale": 1,
+                              "fixedSpeedRange": false,
+                              "flowContext": {
+                                "camera": {
+                                  "bearing": 0,
+                                  "height": 711,
+                                  "latitude": -3.5805344226162346,
+                                  "longitude": -71.13906390370704,
+                                  "pitch": 0,
+                                  "width": 1499,
+                                  "zoom": 3.972517895951226
+                                },
+                                "tallest": 0
+                              },
+                              "gradientDirection": "downhill",
+                              "heightMeters": 0,
                               "opacity": 0.95,
-                              "placement": "cells",
+                              "opacityBySpeed": false,
+                              "placement": "screen",
+                              "sizeBySpeed": false,
+                              "sizeRange": [
+                                12,
+                                40
+                              ],
                               "smoothing": 0,
+                              "spacingPx": 45,
+                              "speedRange": [
+                                0,
+                                13.6
+                              ],
                               "speedUnit": "m/s",
                               "symbol": "barb",
                               "symbolSize": 38
@@ -343,14 +433,20 @@
                   },
                   "version": "v1"
                 },
+                "mosaicArea": true,
+                "mosaicViewport": false,
                 "peerTimeSync": true,
+                "publishIntervalMs": 1500,
                 "publishWhilePlaying": false,
-                "showSidePanel": true,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
                 "timeSync": "toMap",
                 "tripLayerMode": "table"
               }
             },
-            "version": ""
+            "version": "1.5.0"
           }
         }
       },
@@ -384,6 +480,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 3,
           "links": [],
           "title": "Arrows on a screen grid over the flow field",
@@ -397,8 +494,16 @@
               },
               "options": {
                 "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
                 "flowRenderMode": "straight",
                 "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
                 "mapConfig": {
                   "config": {
                     "mapState": {
@@ -451,15 +556,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": -14,
-                      "longitude": -77,
+                      "latitude": -9.707962493464294,
+                      "longitude": -73.7044125360147,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_2D",
                       "maxPitch": 60,
                       "pitch": 0,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 3.2
+                      "zoom": 3.581151862974309
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -468,7 +573,7 @@
                         0
                       ],
                       "mapStyles": {},
-                      "styleType": "openfreemap-dark",
+                      "styleType": "dark-matter",
                       "threeDBuildingColor": [
                         9.311499150948377,
                         9.311499150948377,
@@ -476,13 +581,25 @@
                       ],
                       "topLayerGroups": {},
                       "visibleLayerGroups": {
+                        "border": false,
+                        "building": false,
                         "label": false,
-                        "road": false
+                        "land": false,
+                        "poi": false,
+                        "road": false,
+                        "water": true
                       }
                     },
                     "uiState": {
                       "locale": "en",
                       "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
                         "mapLegend": {
                           "active": true
                         }
@@ -499,8 +616,37 @@
                         "visible": true
                       },
                       "effects": [],
-                      "filters": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "i7rsjb3ht",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "defaultTimeFormat": "L  H A",
+                            "interval": "3-hour",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            1793063170976,
+                            1793073970976
+                          ],
+                          "view": "enlarged"
+                        }
+                      ],
+                      "groupBys": [],
                       "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
                         "brush": {
                           "enabled": false,
                           "size": 0.5
@@ -509,8 +655,17 @@
                           "enabled": false
                         },
                         "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
                           "enabled": false,
                           "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
                         },
                         "tooltip": {
                           "compareMode": false,
@@ -526,8 +681,13 @@
                               }
                             ]
                           }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
                         }
                       },
+                      "joins": [],
                       "layerBlending": "normal",
                       "layerOrder": [
                         "vectorfield-grafana-A",
@@ -569,6 +729,7 @@
                                   200,
                                   255
                                 ],
+                                "collisionEnabled": false,
                                 "color": [
                                   255,
                                   255,
@@ -590,6 +751,7 @@
                               }
                             ],
                             "visConfig": {
+                              "calmOpacity": 0.2,
                               "colorBySpeed": true,
                               "colorRange": {
                                 "category": "Custom",
@@ -605,8 +767,24 @@
                                 "type": "sequential"
                               },
                               "directionConvention": "from",
+                              "elevationScale": 1,
                               "fixedSpeedRange": true,
+                              "flowContext": {
+                                "camera": {
+                                  "bearing": 0,
+                                  "height": 351,
+                                  "latitude": -9.707962493464294,
+                                  "longitude": -73.7044125360147,
+                                  "pitch": 0,
+                                  "width": 1499,
+                                  "zoom": 3.581151862974309
+                                },
+                                "tallest": 0
+                              },
+                              "gradientDirection": "downhill",
+                              "heightMeters": 0,
                               "opacity": 0.95,
+                              "opacityBySpeed": false,
                               "placement": "screen",
                               "sizeBySpeed": true,
                               "sizeRange": [
@@ -666,6 +844,7 @@
                                   200,
                                   255
                                 ],
+                                "collisionEnabled": false,
                                 "color": [
                                   255,
                                   255,
@@ -687,32 +866,55 @@
                               }
                             ],
                             "visConfig": {
-                              "colorBySpeed": false,
+                              "animate": true,
+                              "calmOpacity": 0.7,
+                              "colorBySpeed": true,
                               "colorRange": {
                                 "category": "Uber",
                                 "colors": [
-                                  "#00939C",
-                                  "#4EA7AD",
-                                  "#78BCBF",
-                                  "#9ED0D2",
-                                  "#C2E5E6",
-                                  "#E6FAFA"
+                                  "#184E77",
+                                  "#146E96",
+                                  "#0090AF",
+                                  "#36B5A5",
+                                  "#90D392",
+                                  "#D9ED92"
                                 ],
-                                "name": "Uber Viz Sequential",
+                                "name": "SummerSky",
                                 "type": "sequential"
                               },
                               "cycleSeconds": 60,
-                              "density": 7000,
+                              "density": 15000,
+                              "directionConvention": "from",
                               "elevationScale": 1,
+                              "fixedSpeedRange": false,
+                              "flowContext": {
+                                "camera": {
+                                  "bearing": 0,
+                                  "height": 351,
+                                  "latitude": -9.707962493464294,
+                                  "longitude": -73.7044125360147,
+                                  "pitch": 0,
+                                  "width": 1499,
+                                  "zoom": 3.581151862974309
+                                },
+                                "tallest": 0
+                              },
+                              "gradientDirection": "downhill",
                               "heightMeters": 0,
-                              "lifeFraction": 0.4,
+                              "lifeFraction": 0.25,
                               "lineLength": 30,
                               "opacity": 0.5,
+                              "opacityBySpeed": true,
                               "seamlessLoop": true,
-                              "smoothing": 1,
-                              "speedContrast": 0.5,
+                              "smoothing": 2,
+                              "speedContrast": 0.35,
                               "thickness": 1.2,
-                              "trailShare": 8,
+                              "trailShare": 23.5,
+                              "widthBySpeed": true,
+                              "widthRange": [
+                                1.5,
+                                4
+                              ],
                               "zoomResponse": 0.4
                             }
                           },
@@ -730,14 +932,20 @@
                   },
                   "version": "v1"
                 },
+                "mosaicArea": true,
+                "mosaicViewport": false,
                 "peerTimeSync": true,
+                "publishIntervalMs": 1500,
                 "publishWhilePlaying": false,
-                "showSidePanel": true,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
                 "timeSync": "toMap",
                 "tripLayerMode": "table"
               }
             },
-            "version": ""
+            "version": "1.5.0"
           }
         }
       }
@@ -766,8 +974,8 @@
                 "kind": "ElementReference",
                 "name": "panel-2"
               },
-              "height": 20,
-              "width": 24,
+              "height": 19,
+              "width": 12,
               "x": 0,
               "y": 11
             }
@@ -779,10 +987,10 @@
                 "kind": "ElementReference",
                 "name": "panel-3"
               },
-              "height": 26,
-              "width": 24,
-              "x": 0,
-              "y": 31
+              "height": 19,
+              "width": 12,
+              "x": 12,
+              "y": 11
             }
           }
         ]
