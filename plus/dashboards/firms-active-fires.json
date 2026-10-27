@@ -27,7 +27,7 @@
       }
     ],
     "cursorSync": "Crosshair",
-    "description": "Every active fire NASA satellites detected in the last eight days, read in the browser from the Portolan FIRMS mirror: a time brush by satellite, a map of fire radiative power, and countries, satellites and fire intensity that filter one another. Under the fire cells, CAMS organic-matter aerosol optical depth (omaod550) plays day by day with the same time window as the brush.",
+    "description": "Every active fire NASA satellites detected in the last eight days, read in the browser from the Portolan FIRMS mirror: a time brush by satellite, a strip of cross-filters, a map of fire radiative power, and countries, satellites, fire intensity and a latitude-by-hour raster that filter one another as you brush. Under the fire cells, CAMS organic-matter aerosol optical depth (omaod550) plays day by day with the same time window as the brush.",
     "editable": true,
     "elements": {
       "panel-about": {
@@ -59,7 +59,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "**NASA FIRMS active fire detections**, from the [Portolan mirror](https://portolan-mirrors.github.io/firms-catalog/) on\n[Source Cooperative](https://source.coop/portolan-mirrors/firms-catalog) (CC0-1.0; NASA LANCE FIRMS is the producer and\nthe authority). This dashboard reads its rolling near-real-time file, `detections/year=YYYY/live.parquet`: every\ndetection of roughly the last eight days, about 1.3 million rows, refreshed by the mirror every hour. Your browser\ndownloads the columns it needs (about 15 MB). The map draws the brushed window as tenth-of-a-degree cells, and the brush counts detections per hour. The charts below the brush read a daily rollup of that table, built once in the browser, so a pick re-answers without a server round\ntrip. Reload the dashboard to read the newest file.\n\n- **A detection is one pixel** flagged as hot on one satellite overpass: not a fire, not its outline, not its size.\n  MODIS pixels are 1 km, VIIRS 375 m; the dot on the map is the pixel's centre.\n- **Counts depend on the fleet.** Five satellites fly MODIS (Terra, Aqua) and VIIRS (Suomi-NPP, NOAA-20, NOAA-21), and\n  each adds overpasses. **Fire radiative power** (FRP, MW) is the rate at which a pixel radiates heat: summing it\n  measures how much was burning, which is why the map, the ranking and the table are by FRP.\n- **Confidence** is published per instrument with no crosswalk (MODIS 0–100, VIIRS low/nominal/high). *Hide low\n  confidence* drops VIIRS `l` and MODIS under 30, the catalogue's suggested starting point.\n- **Near real time:** geolocation is less precise than the science-quality archive that replaces it months later, and\n  NRT rows carry no `type`, so gas flares, volcanoes and industrial heat are included.\n- **Countries** come from [Natural Earth](https://www.naturalearthdata.com/) 1:50m, by quarter-degree cell, computed on\n  the server; cells on no country (offshore platforms) are *Offshore or unassigned*.\n\nThe mirror and its agent guide, with the column meanings and the traps above:\n[catalog](https://browser.portolan-sdi.org/#/external/data.source.coop/portolan-mirrors/firms-catalog/catalog.json). The full archive since 2000 (630 million\ndetections) is there too, partitioned by year; [the archive since 2000](/d/firms-fire-archive) reads its aggregates.\n\n**Credits.** The mirror, its A5 aggregates and the explorer that inspired this dashboard are the work of **Chris Holmes** ([Portolan](https://www.portolan-sdi.org)), who tells how he built them in [Building Portolan: FIRMS](https://www.portolan-sdi.org/es/blog/building-portolan-firms).\n\n**CAMS smoke.** Under the detections, the map draws [CAMS](https://atmosphere.copernicus.eu/) organic-matter aerosol optical depth at 550 nm (`omaod550`) from ECMWF's forecast (Zarr via TiTiler). The catalogue is stamped **hourly** but each hour reuses the latest **daily** analysis (capped at yesterday); a short brush still shows the nearest scene, and the image only changes when that analysis day moves. The **time brush and the map clock share `t0`/`t1**.",
+                "content": "**NASA FIRMS active fire detections**, from the [Portolan mirror](https://portolan-mirrors.github.io/firms-catalog/) on\n[Source Cooperative](https://source.coop/portolan-mirrors/firms-catalog) (CC0-1.0; NASA LANCE FIRMS is the producer and\nthe authority). This dashboard reads its rolling near-real-time file, `detections/year=YYYY/live.parquet`: every\ndetection of roughly the last eight days, about 1.3 million rows, refreshed by the mirror every hour. Your browser\ndownloads the columns it needs (about 15 MB). The map draws the brushed window as tenth-of-a-degree cells, and the brush counts detections per hour. Every filter is declared once (the filters variable `fireFilters`) and every panel applies it in the browser, so a pick re-answers without a server round\ntrip; the filters strip and the two Mosaic charts follow a brush while it moves. Reload the dashboard to read the newest file.\n\n- **A detection is one pixel** flagged as hot on one satellite overpass: not a fire, not its outline, not its size.\n  MODIS pixels are 1 km, VIIRS 375 m; the dot on the map is the pixel's centre.\n- **Counts depend on the fleet.** Five satellites fly MODIS (Terra, Aqua) and VIIRS (Suomi-NPP, NOAA-20, NOAA-21), and\n  each adds overpasses. **Fire radiative power** (FRP, MW) is the rate at which a pixel radiates heat: summing it\n  measures how much was burning, which is why the map, the ranking and the table are by FRP.\n- **Confidence** is published per instrument with no crosswalk (MODIS 0–100, VIIRS low/nominal/high). The\n  *Confidence* filter puts both on one scale: *low* is VIIRS `l` and MODIS under 30 (the catalogue's suggested cut),\n  *high* VIIRS `h` and MODIS 80 and over.\n- **Near real time:** geolocation is less precise than the science-quality archive that replaces it months later, and\n  NRT rows carry no `type`, so gas flares, volcanoes and industrial heat are included.\n- **Countries** come from [Natural Earth](https://www.naturalearthdata.com/) 1:50m, by quarter-degree cell, computed on\n  the server; cells on no country (offshore platforms) are *Offshore or unassigned*.\n\nThe mirror and its agent guide, with the column meanings and the traps above:\n[catalog](https://browser.portolan-sdi.org/#/external/data.source.coop/portolan-mirrors/firms-catalog/catalog.json). The full archive since 2000 (630 million\ndetections) is there too, partitioned by year; [the archive since 2000](/d/firms-fire-archive) reads its aggregates.\n\n**Credits.** The mirror, its A5 aggregates and the explorer that inspired this dashboard are the work of **Chris Holmes** ([Portolan](https://www.portolan-sdi.org)), who tells how he built them in [Building Portolan: FIRMS](https://www.portolan-sdi.org/es/blog/building-portolan-firms).\n\n**CAMS smoke.** Under the detections, the map draws [CAMS](https://atmosphere.copernicus.eu/) organic-matter aerosol optical depth at 550 nm (`omaod550`) from ECMWF's forecast (Zarr via TiTiler). The catalogue is stamped **hourly** but each hour reuses the latest **daily** analysis (capped at yesterday); a short brush still shows the nearest scene, and the image only changes when that analysis day moves. The **time brush and the map clock share `t0`/`t1**.",
                 "mode": "markdown"
               }
             },
@@ -85,7 +85,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Detections per hour, stacked by satellite, for the detections the other\n-- filters leave (map view or drawn area, country, satellite, day or night, FRP\n-- range, confidence); in grey behind, every detection on Earth. The line is\n-- the FRP of those detections summed per hour, in GW. The brush is not\n-- filtered by its own window.\nWITH sel AS (\n  SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1,\n         try_cast($w AS DOUBLE) AS w, try_cast($s AS DOUBLE) AS s,\n         try_cast($e AS DOUBLE) AS e, try_cast($n AS DOUBLE) AS n,\n         try_cast($frp_lo AS DOUBLE) AS lo, try_cast($frp_hi AS DOUBLE) AS hi\n),\narea AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n),\nx AS (\n  SELECT time, satellite, frp, (($scope \u003c\u003e 'view' OR sel.w IS NULL OR (latitude BETWEEN sel.s AND sel.n AND longitude BETWEEN sel.w AND sel.e))\n    AND (len(area.xs) = 0 OR (longitude BETWEEN list_min(area.xs) AND list_max(area.xs)\n    AND latitude BETWEEN list_min(area.ys) AND list_max(area.ys)\n    AND list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n      CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n            AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n           THEN 1 ELSE 0 END)) % 2 = 1))\n    AND ($country = '' OR country = $country)\n    AND ($sat = '' OR satellite = $sat)\n    AND ($dn = '' OR daynight = $dn)\n    AND (sel.lo IS NULL OR frp_bin \u003e= sel.lo) AND (sel.hi IS NULL OR frp_bin \u003c sel.hi)\n    AND ($conf = 'all' OR NOT low_confidence)) AS keep\n  FROM $fires, sel, area\n)\nSELECT date_trunc('hour', time) AS time,\n       count(*)::DOUBLE AS \"All detections\",\n       count(*) FILTER (WHERE keep AND satellite = 'Terra')::DOUBLE AS \"Terra\",\n       count(*) FILTER (WHERE keep AND satellite = 'Aqua')::DOUBLE AS \"Aqua\",\n       count(*) FILTER (WHERE keep AND satellite = 'Suomi-NPP')::DOUBLE AS \"Suomi-NPP\",\n       count(*) FILTER (WHERE keep AND satellite = 'NOAA-20')::DOUBLE AS \"NOAA-20\",\n       count(*) FILTER (WHERE keep AND satellite = 'NOAA-21')::DOUBLE AS \"NOAA-21\",\n       coalesce(sum(frp) FILTER (WHERE keep), 0)::DOUBLE / 1000 AS \"FRP, summed (GW)\"\nFROM x\nGROUP BY 1\nORDER BY 1"
+                        "rawSql": "-- Detections per hour, stacked by satellite, for the detections the other\n-- filters leave (map view or drawn area, country, satellite, day or night,\n-- FRP range, confidence); in grey behind, every detection on Earth. The line\n-- is the FRP of those detections summed per hour, in GW. The brush is not\n-- filtered by its own window (-time).\n-- From the cube while no area is drawn and the charts count the whole Earth;\n-- with either, from every detection (the cube has no place).\nWITH x AS (\n  SELECT time, satellite, n, frp, $__crossfilter($cubeFilters, -time) AS keep FROM $cube\n  WHERE $area = '' AND $viewArea = 'the whole Earth'\n  UNION ALL\n  SELECT date_trunc('hour', time), satellite, 1, frp, $__crossfilter($fireFilters, -time) FROM $fires\n  WHERE NOT ($area = '' AND $viewArea = 'the whole Earth')\n)\nSELECT time,\n       sum(n)::DOUBLE AS \"All detections\",\n       coalesce(sum(n) FILTER (WHERE keep AND satellite = 'Terra'), 0)::DOUBLE AS \"Terra\",\n       coalesce(sum(n) FILTER (WHERE keep AND satellite = 'Aqua'), 0)::DOUBLE AS \"Aqua\",\n       coalesce(sum(n) FILTER (WHERE keep AND satellite = 'Suomi-NPP'), 0)::DOUBLE AS \"Suomi-NPP\",\n       coalesce(sum(n) FILTER (WHERE keep AND satellite = 'NOAA-20'), 0)::DOUBLE AS \"NOAA-20\",\n       coalesce(sum(n) FILTER (WHERE keep AND satellite = 'NOAA-21'), 0)::DOUBLE AS \"NOAA-21\",\n       coalesce(sum(frp) FILTER (WHERE keep), 0)::DOUBLE / 1000 AS \"FRP, summed (GW)\"\nFROM x\nGROUP BY 1\nORDER BY 1"
                       },
                       "version": "v0"
                     },
@@ -327,6 +327,8 @@
                 "hoverTooltip": false,
                 "instantVariable": "t",
                 "loop": false,
+                "mosaicColumn": "time",
+                "mosaicSelection": "fireBrush",
                 "output": "variables",
                 "outsideOpacity": 30,
                 "pinned": "always",
@@ -381,7 +383,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- The quarter-degree cells (about 28 km) with the most FRP summed over the\n-- detections that pass every filter: where the largest fires of the window\n-- are, with when they were first and last seen.\nWITH sel AS (\n  SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1,\n         try_cast($w AS DOUBLE) AS w, try_cast($s AS DOUBLE) AS s,\n         try_cast($e AS DOUBLE) AS e, try_cast($n AS DOUBLE) AS n,\n         try_cast($frp_lo AS DOUBLE) AS lo, try_cast($frp_hi AS DOUBLE) AS hi\n),\narea AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n),\nx AS (\n  SELECT *\n  FROM $fires, sel, area\n  WHERE (sel.t0 IS NULL OR time \u003e= sel.t0) AND (sel.t1 IS NULL OR time \u003c sel.t1)\n  AND ($scope \u003c\u003e 'view' OR sel.w IS NULL OR (latitude BETWEEN sel.s AND sel.n AND longitude BETWEEN sel.w AND sel.e))\n  AND (len(area.xs) = 0 OR (longitude BETWEEN list_min(area.xs) AND list_max(area.xs)\n    AND latitude BETWEEN list_min(area.ys) AND list_max(area.ys)\n    AND list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n      CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n            AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n           THEN 1 ELSE 0 END)) % 2 = 1))\n  AND ($country = '' OR country = $country)\n  AND ($sat = '' OR satellite = $sat)\n  AND ($dn = '' OR daynight = $dn)\n  AND (sel.lo IS NULL OR frp_bin \u003e= sel.lo) AND (sel.hi IS NULL OR frp_bin \u003c sel.hi)\n  AND ($conf = 'all' OR NOT low_confidence)\n)\nSELECT any_value(country) AS country,\n       ((gy + 0.5) / 4)::DOUBLE AS lat, ((gx + 0.5) / 4)::DOUBLE AS lng,\n       count(*)::DOUBLE AS detections, round(sum(frp))::DOUBLE AS frp_mw, max(frp) AS peak_mw,\n       min(time) AS first_seen, max(time) AS last_seen\nFROM x\nGROUP BY gx, gy\nORDER BY frp_mw DESC\nLIMIT 25"
+                        "rawSql": "-- The quarter-degree cells (about 28 km) with the most FRP summed over the\n-- detections that pass every filter: where the largest fires of the window\n-- are, with when they were first and last seen.\nSELECT any_value(country) AS country,\n       ((gy + 0.5) / 4)::DOUBLE AS lat, ((gx + 0.5) / 4)::DOUBLE AS lng,\n       count(*)::DOUBLE AS detections, round(sum(frp))::DOUBLE AS frp_mw, max(frp) AS peak_mw,\n       min(time) AS first_seen, max(time) AS last_seen\nFROM $fires\nWHERE $__crossfilter($fireFilters)\nGROUP BY gx, gy\nORDER BY frp_mw DESC\nLIMIT 25"
                       },
                       "version": "v0"
                     },
@@ -639,7 +641,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Countries by FRP summed over their detections, with every filter but the\n-- country pick; the fifteen largest, and the picked one even when it is not.\n-- latitude/longitude: the FRP-weighted middle of its fire, where the map flies.\n-- Reads the daily rollup, and the points only when the view or a drawn area is on.\nWITH sel AS (\n  SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1,\n         -- The whole days inside [t0, t1): the daily rollup answers those, the\n         -- points answer the cut days at the edges of a brush (02:00-14:00).\n         date_trunc('day', try_cast($t0 AS TIMESTAMP) + INTERVAL 1 DAY - INTERVAL 1 MICROSECOND) AS d0,\n         date_trunc('day', try_cast($t1 AS TIMESTAMP)) AS d1,\n         try_cast($w AS DOUBLE) AS w, try_cast($s AS DOUBLE) AS s,\n         try_cast($e AS DOUBLE) AS e, try_cast($n AS DOUBLE) AS n,\n         try_cast($frp_lo AS DOUBLE) AS lo, try_cast($frp_hi AS DOUBLE) AS hi\n),\narea AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n),\nx AS (\n  SELECT time, satellite, daynight, country, continent, frp_bin, low_confidence, cnt, frp_sum, frp_lat, frp_lng\n  FROM $fires_by_day, sel, area\n  WHERE $scope \u003c\u003e 'view' AND $area = ''\n  AND (sel.d0 IS NULL OR time \u003e= sel.d0) AND (sel.d1 IS NULL OR time \u003c sel.d1)\n  AND ($sat = '' OR satellite = $sat)\n  AND ($dn = '' OR daynight = $dn)\n  AND (sel.lo IS NULL OR frp_bin \u003e= sel.lo) AND (sel.hi IS NULL OR frp_bin \u003c sel.hi)\n  AND ($conf = 'all' OR NOT low_confidence)\n  UNION ALL\n  SELECT date_trunc('day', time), satellite, daynight, country, continent, frp_bin, low_confidence,\n         1::DOUBLE, frp, latitude * frp, longitude * frp\n  FROM $fires, sel, area\n  WHERE ($scope = 'view' OR $area \u003c\u003e ''\n         OR NOT ((sel.d0 IS NULL OR time \u003e= sel.d0) AND (sel.d1 IS NULL OR time \u003c sel.d1)))\n  AND (sel.t0 IS NULL OR time \u003e= sel.t0) AND (sel.t1 IS NULL OR time \u003c sel.t1)\n  AND ($scope \u003c\u003e 'view' OR sel.w IS NULL OR (latitude BETWEEN sel.s AND sel.n AND longitude BETWEEN sel.w AND sel.e))\n  AND (len(area.xs) = 0 OR (longitude BETWEEN list_min(area.xs) AND list_max(area.xs)\n    AND latitude BETWEEN list_min(area.ys) AND list_max(area.ys)\n    AND list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n      CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n            AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n           THEN 1 ELSE 0 END)) % 2 = 1))\n  AND ($sat = '' OR satellite = $sat)\n  AND ($dn = '' OR daynight = $dn)\n  AND (sel.lo IS NULL OR frp_bin \u003e= sel.lo) AND (sel.hi IS NULL OR frp_bin \u003c sel.hi)\n  AND ($conf = 'all' OR NOT low_confidence)\n),\nagg AS (\n  SELECT country, continent, sum(frp_sum)::DOUBLE AS frp_mw, sum(cnt)::DOUBLE AS detections,\n         round(sum(frp_lat) / nullif(sum(frp_sum), 0), 3) AS latitude,\n         round(sum(frp_lng) / nullif(sum(frp_sum), 0), 3) AS longitude\n  FROM x\n  GROUP BY ALL\n)\nSELECT * FROM (SELECT *, row_number() OVER (ORDER BY frp_mw DESC) AS rank FROM agg)\nWHERE rank \u003c= 15 OR country = $country\nORDER BY rank"
+                        "rawSql": "-- Countries by FRP summed over their detections, with every filter but the\n-- country pick (-country); the fifteen largest, and the picked one even when\n-- it is not. latitude/longitude: the FRP-weighted middle of its fire, where\n-- the map flies.\n-- From the cube while no area is drawn and the charts count the whole Earth;\n-- with either, from every detection (the cube has no place). The branch that\n-- does not apply is cut by a constant and costs nothing.\nWITH src AS (\n  SELECT country, continent, n, frp, lat_frp, lng_frp FROM $cube\n  WHERE $area = '' AND $viewArea = 'the whole Earth' AND $__crossfilter($cubeFilters, -country)\n  UNION ALL\n  SELECT country, continent, 1 AS n, frp, latitude * frp, longitude * frp FROM $fires\n  WHERE NOT ($area = '' AND $viewArea = 'the whole Earth') AND $__crossfilter($fireFilters, -country)\n),\nagg AS (\n  SELECT country, continent, sum(frp)::DOUBLE AS frp_mw, sum(n)::DOUBLE AS detections,\n         round(sum(lat_frp) / nullif(sum(frp), 0), 3) AS latitude,\n         round(sum(lng_frp) / nullif(sum(frp), 0), 3) AS longitude\n  FROM src\n  GROUP BY ALL\n)\nSELECT * FROM (SELECT *, row_number() OVER (ORDER BY frp_mw DESC) AS rank FROM agg)\nWHERE rank \u003c= 15 OR country = $country\nORDER BY rank"
                       },
                       "version": "v0"
                     },
@@ -716,7 +718,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Countries with at least one detection that passes every filter.\nWITH sel AS (\n  SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1,\n         -- The whole days inside [t0, t1): the daily rollup answers those, the\n         -- points answer the cut days at the edges of a brush (02:00-14:00).\n         date_trunc('day', try_cast($t0 AS TIMESTAMP) + INTERVAL 1 DAY - INTERVAL 1 MICROSECOND) AS d0,\n         date_trunc('day', try_cast($t1 AS TIMESTAMP)) AS d1,\n         try_cast($w AS DOUBLE) AS w, try_cast($s AS DOUBLE) AS s,\n         try_cast($e AS DOUBLE) AS e, try_cast($n AS DOUBLE) AS n,\n         try_cast($frp_lo AS DOUBLE) AS lo, try_cast($frp_hi AS DOUBLE) AS hi\n),\narea AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n),\nx AS (\n  SELECT time, satellite, daynight, country, continent, frp_bin, low_confidence, cnt, frp_sum, frp_lat, frp_lng\n  FROM $fires_by_day, sel, area\n  WHERE $scope \u003c\u003e 'view' AND $area = ''\n  AND (sel.d0 IS NULL OR time \u003e= sel.d0) AND (sel.d1 IS NULL OR time \u003c sel.d1)\n  AND ($country = '' OR country = $country)\n  AND ($sat = '' OR satellite = $sat)\n  AND ($dn = '' OR daynight = $dn)\n  AND (sel.lo IS NULL OR frp_bin \u003e= sel.lo) AND (sel.hi IS NULL OR frp_bin \u003c sel.hi)\n  AND ($conf = 'all' OR NOT low_confidence)\n  UNION ALL\n  SELECT date_trunc('day', time), satellite, daynight, country, continent, frp_bin, low_confidence,\n         1::DOUBLE, frp, latitude * frp, longitude * frp\n  FROM $fires, sel, area\n  WHERE ($scope = 'view' OR $area \u003c\u003e ''\n         OR NOT ((sel.d0 IS NULL OR time \u003e= sel.d0) AND (sel.d1 IS NULL OR time \u003c sel.d1)))\n  AND (sel.t0 IS NULL OR time \u003e= sel.t0) AND (sel.t1 IS NULL OR time \u003c sel.t1)\n  AND ($scope \u003c\u003e 'view' OR sel.w IS NULL OR (latitude BETWEEN sel.s AND sel.n AND longitude BETWEEN sel.w AND sel.e))\n  AND (len(area.xs) = 0 OR (longitude BETWEEN list_min(area.xs) AND list_max(area.xs)\n    AND latitude BETWEEN list_min(area.ys) AND list_max(area.ys)\n    AND list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n      CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n            AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n           THEN 1 ELSE 0 END)) % 2 = 1))\n  AND ($country = '' OR country = $country)\n  AND ($sat = '' OR satellite = $sat)\n  AND ($dn = '' OR daynight = $dn)\n  AND (sel.lo IS NULL OR frp_bin \u003e= sel.lo) AND (sel.hi IS NULL OR frp_bin \u003c sel.hi)\n  AND ($conf = 'all' OR NOT low_confidence)\n)\nSELECT count(DISTINCT country) FILTER (WHERE country \u003c\u003e 'Offshore or unassigned')::DOUBLE AS countries FROM x"
+                        "rawSql": "-- Countries with a detection that passes every filter.\n-- From the cube while no area is drawn and the charts count the whole Earth;\n-- with either, from every detection (the cube has no place). The branch that\n-- does not apply is cut by a constant and costs nothing.\nSELECT count(DISTINCT country) FILTER (WHERE country \u003c\u003e 'Offshore or unassigned')::DOUBLE AS countries FROM (\n  SELECT country FROM $cube\n  WHERE $area = '' AND $viewArea = 'the whole Earth' AND $__crossfilter($cubeFilters)\n  UNION ALL\n  SELECT country FROM $fires\n  WHERE NOT ($area = '' AND $viewArea = 'the whole Earth') AND $__crossfilter($fireFilters)\n)"
                       },
                       "version": "v0"
                     },
@@ -800,7 +802,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Detections that pass every filter.\nWITH sel AS (\n  SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1,\n         -- The whole days inside [t0, t1): the daily rollup answers those, the\n         -- points answer the cut days at the edges of a brush (02:00-14:00).\n         date_trunc('day', try_cast($t0 AS TIMESTAMP) + INTERVAL 1 DAY - INTERVAL 1 MICROSECOND) AS d0,\n         date_trunc('day', try_cast($t1 AS TIMESTAMP)) AS d1,\n         try_cast($w AS DOUBLE) AS w, try_cast($s AS DOUBLE) AS s,\n         try_cast($e AS DOUBLE) AS e, try_cast($n AS DOUBLE) AS n,\n         try_cast($frp_lo AS DOUBLE) AS lo, try_cast($frp_hi AS DOUBLE) AS hi\n),\narea AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n),\nx AS (\n  SELECT time, satellite, daynight, country, continent, frp_bin, low_confidence, cnt, frp_sum, frp_lat, frp_lng\n  FROM $fires_by_day, sel, area\n  WHERE $scope \u003c\u003e 'view' AND $area = ''\n  AND (sel.d0 IS NULL OR time \u003e= sel.d0) AND (sel.d1 IS NULL OR time \u003c sel.d1)\n  AND ($country = '' OR country = $country)\n  AND ($sat = '' OR satellite = $sat)\n  AND ($dn = '' OR daynight = $dn)\n  AND (sel.lo IS NULL OR frp_bin \u003e= sel.lo) AND (sel.hi IS NULL OR frp_bin \u003c sel.hi)\n  AND ($conf = 'all' OR NOT low_confidence)\n  UNION ALL\n  SELECT date_trunc('day', time), satellite, daynight, country, continent, frp_bin, low_confidence,\n         1::DOUBLE, frp, latitude * frp, longitude * frp\n  FROM $fires, sel, area\n  WHERE ($scope = 'view' OR $area \u003c\u003e ''\n         OR NOT ((sel.d0 IS NULL OR time \u003e= sel.d0) AND (sel.d1 IS NULL OR time \u003c sel.d1)))\n  AND (sel.t0 IS NULL OR time \u003e= sel.t0) AND (sel.t1 IS NULL OR time \u003c sel.t1)\n  AND ($scope \u003c\u003e 'view' OR sel.w IS NULL OR (latitude BETWEEN sel.s AND sel.n AND longitude BETWEEN sel.w AND sel.e))\n  AND (len(area.xs) = 0 OR (longitude BETWEEN list_min(area.xs) AND list_max(area.xs)\n    AND latitude BETWEEN list_min(area.ys) AND list_max(area.ys)\n    AND list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n      CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n            AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n           THEN 1 ELSE 0 END)) % 2 = 1))\n  AND ($country = '' OR country = $country)\n  AND ($sat = '' OR satellite = $sat)\n  AND ($dn = '' OR daynight = $dn)\n  AND (sel.lo IS NULL OR frp_bin \u003e= sel.lo) AND (sel.hi IS NULL OR frp_bin \u003c sel.hi)\n  AND ($conf = 'all' OR NOT low_confidence)\n)\nSELECT sum(cnt)::DOUBLE AS detections FROM x"
+                        "rawSql": "-- Detections that pass every filter.\n-- From the cube while no area is drawn and the charts count the whole Earth;\n-- with either, from every detection (the cube has no place). The branch that\n-- does not apply is cut by a constant and costs nothing.\nSELECT coalesce(sum(n), 0)::DOUBLE AS detections FROM (\n  SELECT n FROM $cube\n  WHERE $area = '' AND $viewArea = 'the whole Earth' AND $__crossfilter($cubeFilters)\n  UNION ALL\n  SELECT 1 AS n FROM $fires\n  WHERE NOT ($area = '' AND $viewArea = 'the whole Earth') AND $__crossfilter($fireFilters)\n)"
                       },
                       "version": "v0"
                     },
@@ -866,6 +868,46 @@
           }
         }
       },
+      "panel-filters": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every filter of the dashboard in one strip, with how many detections are left. Open a pill to brush a range (time, FRP per detection) or pick values (confidence, satellite, day or night, country); each control counts what the other filters leave. The map sets the drawn area and, with Charts count on what the map shows, the view. × clears a filter, Clear all every one.",
+          "id": 18,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 40,
+                "filters": "fireFilters",
+                "layout": "pills",
+                "maxValues": 8,
+                "noun": "detections",
+                "playMode": "slide",
+                "selection": "fireBrush",
+                "stepMs": 800,
+                "timeColumn": "",
+                "timeline": ""
+              }
+            },
+            "version": ""
+          }
+        }
+      },
       "panel-frp": {
         "kind": "Panel",
         "spec": {
@@ -884,7 +926,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- FRP summed over the detections that pass every filter, in GW.\nWITH sel AS (\n  SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1,\n         -- The whole days inside [t0, t1): the daily rollup answers those, the\n         -- points answer the cut days at the edges of a brush (02:00-14:00).\n         date_trunc('day', try_cast($t0 AS TIMESTAMP) + INTERVAL 1 DAY - INTERVAL 1 MICROSECOND) AS d0,\n         date_trunc('day', try_cast($t1 AS TIMESTAMP)) AS d1,\n         try_cast($w AS DOUBLE) AS w, try_cast($s AS DOUBLE) AS s,\n         try_cast($e AS DOUBLE) AS e, try_cast($n AS DOUBLE) AS n,\n         try_cast($frp_lo AS DOUBLE) AS lo, try_cast($frp_hi AS DOUBLE) AS hi\n),\narea AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n),\nx AS (\n  SELECT time, satellite, daynight, country, continent, frp_bin, low_confidence, cnt, frp_sum, frp_lat, frp_lng\n  FROM $fires_by_day, sel, area\n  WHERE $scope \u003c\u003e 'view' AND $area = ''\n  AND (sel.d0 IS NULL OR time \u003e= sel.d0) AND (sel.d1 IS NULL OR time \u003c sel.d1)\n  AND ($country = '' OR country = $country)\n  AND ($sat = '' OR satellite = $sat)\n  AND ($dn = '' OR daynight = $dn)\n  AND (sel.lo IS NULL OR frp_bin \u003e= sel.lo) AND (sel.hi IS NULL OR frp_bin \u003c sel.hi)\n  AND ($conf = 'all' OR NOT low_confidence)\n  UNION ALL\n  SELECT date_trunc('day', time), satellite, daynight, country, continent, frp_bin, low_confidence,\n         1::DOUBLE, frp, latitude * frp, longitude * frp\n  FROM $fires, sel, area\n  WHERE ($scope = 'view' OR $area \u003c\u003e ''\n         OR NOT ((sel.d0 IS NULL OR time \u003e= sel.d0) AND (sel.d1 IS NULL OR time \u003c sel.d1)))\n  AND (sel.t0 IS NULL OR time \u003e= sel.t0) AND (sel.t1 IS NULL OR time \u003c sel.t1)\n  AND ($scope \u003c\u003e 'view' OR sel.w IS NULL OR (latitude BETWEEN sel.s AND sel.n AND longitude BETWEEN sel.w AND sel.e))\n  AND (len(area.xs) = 0 OR (longitude BETWEEN list_min(area.xs) AND list_max(area.xs)\n    AND latitude BETWEEN list_min(area.ys) AND list_max(area.ys)\n    AND list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n      CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n            AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n           THEN 1 ELSE 0 END)) % 2 = 1))\n  AND ($country = '' OR country = $country)\n  AND ($sat = '' OR satellite = $sat)\n  AND ($dn = '' OR daynight = $dn)\n  AND (sel.lo IS NULL OR frp_bin \u003e= sel.lo) AND (sel.hi IS NULL OR frp_bin \u003c sel.hi)\n  AND ($conf = 'all' OR NOT low_confidence)\n)\nSELECT coalesce(sum(frp_sum), 0)::DOUBLE / 1000 AS frp FROM x"
+                        "rawSql": "-- FRP summed over the detections that pass every filter, in GW.\n-- From the cube while no area is drawn and the charts count the whole Earth;\n-- with either, from every detection (the cube has no place). The branch that\n-- does not apply is cut by a constant and costs nothing.\nSELECT coalesce(sum(frp), 0)::DOUBLE / 1000 AS frp FROM (\n  SELECT frp FROM $cube\n  WHERE $area = '' AND $viewArea = 'the whole Earth' AND $__crossfilter($cubeFilters)\n  UNION ALL\n  SELECT frp FROM $fires\n  WHERE NOT ($area = '' AND $viewArea = 'the whole Earth') AND $__crossfilter($fireFilters)\n)"
                       },
                       "version": "v0"
                     },
@@ -956,54 +998,17 @@
           "data": {
             "kind": "QueryGroup",
             "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "-- Context, in grey: every detection in the brushed window, by quarter decade of FRP.\nWITH sel AS (\n  SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1,\n         -- The whole days inside [t0, t1): the daily rollup answers those, the\n         -- points answer the cut days at the edges of a brush (02:00-14:00).\n         date_trunc('day', try_cast($t0 AS TIMESTAMP) + INTERVAL 1 DAY - INTERVAL 1 MICROSECOND) AS d0,\n         date_trunc('day', try_cast($t1 AS TIMESTAMP)) AS d1\n),\nx AS (\n  SELECT frp_bin, cnt FROM $fires_by_day, sel\n  WHERE (sel.d0 IS NULL OR time \u003e= sel.d0) AND (sel.d1 IS NULL OR time \u003c sel.d1)\n  UNION ALL\n  SELECT frp_bin, 1::DOUBLE FROM $fires, sel\n  WHERE NOT ((sel.d0 IS NULL OR time \u003e= sel.d0) AND (sel.d1 IS NULL OR time \u003c sel.d1))\n  AND (sel.t0 IS NULL OR time \u003e= sel.t0) AND (sel.t1 IS NULL OR time \u003c sel.t1)\n)\nSELECT frp_bin AS bin, sum(cnt)::DOUBLE AS n FROM x GROUP BY 1 ORDER BY 1"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "all"
-                  }
-                },
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "-- In colour: the detections every filter but the FRP range leaves, by quarter decade of FRP.\nWITH sel AS (\n  SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1,\n         -- The whole days inside [t0, t1): the daily rollup answers those, the\n         -- points answer the cut days at the edges of a brush (02:00-14:00).\n         date_trunc('day', try_cast($t0 AS TIMESTAMP) + INTERVAL 1 DAY - INTERVAL 1 MICROSECOND) AS d0,\n         date_trunc('day', try_cast($t1 AS TIMESTAMP)) AS d1,\n         try_cast($w AS DOUBLE) AS w, try_cast($s AS DOUBLE) AS s,\n         try_cast($e AS DOUBLE) AS e, try_cast($n AS DOUBLE) AS n,\n         try_cast($frp_lo AS DOUBLE) AS lo, try_cast($frp_hi AS DOUBLE) AS hi\n),\narea AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n),\nx AS (\n  SELECT time, satellite, daynight, country, continent, frp_bin, low_confidence, cnt, frp_sum, frp_lat, frp_lng\n  FROM $fires_by_day, sel, area\n  WHERE $scope \u003c\u003e 'view' AND $area = ''\n  AND (sel.d0 IS NULL OR time \u003e= sel.d0) AND (sel.d1 IS NULL OR time \u003c sel.d1)\n  AND ($country = '' OR country = $country)\n  AND ($sat = '' OR satellite = $sat)\n  AND ($dn = '' OR daynight = $dn)\n  AND ($conf = 'all' OR NOT low_confidence)\n  UNION ALL\n  SELECT date_trunc('day', time), satellite, daynight, country, continent, frp_bin, low_confidence,\n         1::DOUBLE, frp, latitude * frp, longitude * frp\n  FROM $fires, sel, area\n  WHERE ($scope = 'view' OR $area \u003c\u003e ''\n         OR NOT ((sel.d0 IS NULL OR time \u003e= sel.d0) AND (sel.d1 IS NULL OR time \u003c sel.d1)))\n  AND (sel.t0 IS NULL OR time \u003e= sel.t0) AND (sel.t1 IS NULL OR time \u003c sel.t1)\n  AND ($scope \u003c\u003e 'view' OR sel.w IS NULL OR (latitude BETWEEN sel.s AND sel.n AND longitude BETWEEN sel.w AND sel.e))\n  AND (len(area.xs) = 0 OR (longitude BETWEEN list_min(area.xs) AND list_max(area.xs)\n    AND latitude BETWEEN list_min(area.ys) AND list_max(area.ys)\n    AND list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n      CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n            AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n           THEN 1 ELSE 0 END)) % 2 = 1))\n  AND ($country = '' OR country = $country)\n  AND ($sat = '' OR satellite = $sat)\n  AND ($dn = '' OR daynight = $dn)\n  AND ($conf = 'all' OR NOT low_confidence)\n)\nSELECT frp_bin AS bin, sum(cnt)::DOUBLE AS n FROM x GROUP BY 1 ORDER BY 1"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "selected"
-                  }
-                }
-              ],
+              "queries": [],
               "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "Detections in the window by their FRP, on a log axis in MW: grey is every detection in the window, orange what the other filters leave. Drag across it to keep an FRP range (the strongest fires sit on the right); the toolbox clears it.",
+          "description": "Detections by their FRP, on a log axis in decades of MW (0 = 1 MW, 1 = 10 MW, 2 = 100 MW, 3 = 1 GW), for what every other filter leaves. Drag across it to keep an FRP range (the strongest fires sit on the right); click outside the brush to clear it. Its brush is the same as the FRP pill of the filters strip: move one and the other follows.",
           "id": 10,
           "links": [],
           "title": "Fire radiative power per detection",
           "vizConfig": {
-            "group": "volkovlabs-echarts-panel",
+            "group": "ubica-chaski-mosaic-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
@@ -1011,37 +1016,47 @@
                 "overrides": []
               },
               "options": {
-                "baidu": {
-                  "callback": "bmapReady",
-                  "key": ""
-                },
-                "editor": {
-                  "format": "auto"
-                },
-                "editorMode": "code",
-                "gaode": {
-                  "key": "",
-                  "plugin": "AMap.Scale,AMap.ToolBar"
-                },
-                "getOption": "// Fire radiative power per detection: a histogram whose brush filters the\n// rest of the dashboard.\n//\n// Dragging across it writes the selected range to two dashboard variables\n// (LO and HI); the other panels filter on them, and this one does not, so it\n// keeps showing the whole distribution the other filters leave. Two query\n// frames feed it: `all` (grey, the context) and `selected` (colour, what the\n// other filters leave). Each has columns `bin` (the bin's lower edge) and `n`.\n//\n// Here the bins are quarter decades of FRP per detection (log10 of MW), so a\n// detection of 0.1 MW and one of 1,000 MW share one axis; the axis and the\n// tooltip read in MW. That labelling (`mw` below) and a wider right margin for\n// the last label are the changes to the template outside the constants block.\n// @constants begin\nconst LO = 'frp_lo';\nconst HI = 'frp_hi';\nconst STEP = 0.25;\nconst DOMAIN = [-1, 4];\nconst UNIT = 'MW per detection';\nconst COLOR = 'orange';\n// @constants end\nconst mw = (log) =\u003e {\n  const v = 10 ** log;\n  return v \u003e= 10 ? Math.round(v).toLocaleString() : String(Number(v.toPrecision(2)));\n};\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\n\nconst points = (refId) =\u003e {\n  const frame = context.panel.data.series.find((f) =\u003e f.refId === refId);\n  if (!frame) {\n    return [];\n  }\n  const bins = frame.fields.find((f) =\u003e f.name === 'bin').values;\n  const counts = frame.fields.find((f) =\u003e f.name === 'n').values;\n  return Array.from(bins, (b, i) =\u003e [Number(b) + STEP / 2, Number(counts[i])]);\n};\nconst all = points('all');\nconst selected = points('selected');\nconst domain = DOMAIN || [Math.min(...all.map((p) =\u003e p[0] - STEP / 2)), Math.max(...all.map((p) =\u003e p[0] + STEP / 2))];\n\n// Whole bins only: a range that cuts a bar in two would count half of it.\nconst snap = (range) =\u003e {\n  const lo = Math.floor(range[0] / STEP) * STEP;\n  const hi = Math.max(Math.ceil(range[1] / STEP) * STEP, lo + STEP);\n  return [lo, hi];\n};\nconst drawBrush = (range) =\u003e\n  chart.dispatchAction({ type: 'brush', areas: range ? [{ brushType: 'lineX', xAxisIndex: 0, coordRange: range }] : [] });\nconst publish = (range) =\u003e {\n  location.partial({ ['var-' + LO]: range ? String(range[0]) : '', ['var-' + HI]: range ? String(range[1]) : '' }, true);\n};\n\nchart.off('brushEnd');\nchart.off('brush');\nchart.on('brushEnd', (event) =\u003e {\n  const area = event.areas[0];\n  if (!area || !area.coordRange) {\n    publish(undefined);\n    return;\n  }\n  const range = snap(area.coordRange);\n  publish(range);\n  setTimeout(() =\u003e drawBrush(range), 0);\n});\nchart.on('brush', (event) =\u003e {\n  if (event.command === 'clear') {\n    publish(undefined);\n  }\n});\n\n// Every redraw (setOption without merge) wipes the brush: draw it back from\n// the variables, which is also how a shared link arrives with its range.\nconst current = [\n  parseFloat(context.grafana.replaceVariables('${' + LO + '}')),\n  parseFloat(context.grafana.replaceVariables('${' + HI + '}')),\n];\nsetTimeout(() =\u003e {\n  chart.dispatchAction({ type: 'takeGlobalCursor', key: 'brush', brushOption: { brushType: 'lineX', brushMode: 'single' } });\n  if (current.every(Number.isFinite)) {\n    drawBrush(current);\n  }\n}, 0);\n\nconst accent = theme.visualization.getColorByName(COLOR);\nconst muted = theme.colors.text.secondary;\n\nreturn {\n  animation: false,\n  // The axis name sits under the axis labels, centred: at the end of the axis\n  // it ran past the grid's right edge and was clipped (\"ma\" for magnitude).\n  // `containLabel` leaves the name out, so `bottom` makes room for it.\n  grid: { left: 8, right: 28, top: 30, bottom: 22, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'none' },\n    formatter: (items) =\u003e {\n      const x = items[0].value[0] - STEP / 2;\n      const rows = items.map((it) =\u003e `${it.marker}${it.seriesName}: \u003cb\u003e${it.value[1]}\u003c/b\u003e`).join('\u003cbr/\u003e');\n      return `${mw(x)}–${mw(x + STEP)} ${UNIT}\u003cbr/\u003e${rows}`;\n    },\n  },\n  toolbox: {\n    right: 8,\n    top: 0,\n    itemSize: 14,\n    feature: { brush: { type: ['lineX', 'clear'], title: { lineX: 'Select a range', clear: 'Clear the filter' } } },\n  },\n  brush: {\n    xAxisIndex: 0,\n    seriesIndex: [1],\n    brushType: 'lineX',\n    brushMode: 'single',\n    transformable: true,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.12)', borderColor: muted, borderWidth: 1 },\n    outOfBrush: { colorAlpha: 0.25 },\n  },\n  xAxis: { type: 'value', min: domain[0], max: domain[1], name: UNIT, nameLocation: 'middle', nameGap: 24, nameTextStyle: { color: muted }, axisLabel: { color: muted, formatter: mw }, interval: 1, splitLine: { show: false } },\n  yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { opacity: 0.15 } } },\n  series: [\n    { name: 'All', type: 'bar', data: all, barWidth: '94%', silent: true, itemStyle: { color: 'rgba(128, 128, 128, 0.22)' } },\n    { name: 'Filtered', type: 'bar', data: selected, barWidth: '94%', barGap: '-100%', itemStyle: { color: accent } },\n  ],\n};\n",
-                "google": {
-                  "callback": "gmapReady",
-                  "key": ""
-                },
-                "map": "none",
-                "renderer": "canvas",
-                "themeEditor": {
-                  "config": "{}",
-                  "name": "default"
-                },
-                "visualEditor": {
-                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
-                  "dataset": [],
-                  "series": []
-                }
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  fireBrush: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: fires, filterBy: $fireBrush }\n    x: { bin: frp_log, steps: 40 }\n    y: { count: }\n    fill: '#FF9830'\n    inset: 0.5\n  - select: intervalX\n    as: $fireBrush\nxDomain: [-1, 4]\nyTickFormat: '~s'\nxLabel: FRP per detection, log₁₀ MW →\nyLabel: null\nmarginLeft: 40\n",
+                "variables": "- param: fireBrush\n  column: frp_log\n  from: frp_lo\n  to: frp_hi\n"
               }
             },
-            "version": "7.2.5"
+            "version": ""
+          }
+        }
+      },
+      "panel-hovmoller": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every detection of the eight days placed by its time (across) and its latitude (up), shaded by the FRP it adds to that pixel (symlog, dark to bright), computed in DuckDB in your browser. The dry-season belts show as bands (Africa south of the equator, the Amazon), the overpasses of the satellites as vertical stripes. It follows every other filter. Drag across it to pick a window: the time brush, the map and every panel follow.",
+          "id": 19,
+          "links": [],
+          "title": "Fire radiative power by latitude, hour by hour",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  fireBrush: { select: crossfilter }\nplot:\n  - mark: raster\n    data: { from: fires, filterBy: $fireBrush }\n    x: time\n    y: latitude\n    weight: frp\n    bandwidth: 0\n    pixelSize: 2\n  - select: intervalX\n    as: $fireBrush\ncolorScheme: inferno\ncolorScale: symlog\nxDomain: Fixed\nyDomain: [-60, 75]\nxLabel: null\nyLabel: ↑ Latitude\nmarginLeft: 40\n",
+                "variables": ""
+              }
+            },
+            "version": ""
           }
         }
       },
@@ -1074,7 +1089,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "**How to read it.** The bar at the top is the time brush; it opens on yesterday (UTC), the last complete day. Drag across it to pick another window, drag the window to\nmove it, ▶ plays it; it stays pinned when you scroll. The map shows the fire in that window: draw an area on it to keep\nthat area only. Click a country, a satellite, Day or Night, or brush an FRP range, and every other panel follows.\n*Charts count* switches between the whole Earth and what the map shows as you pan and zoom.\n\nFor every year since 2000, open [the archive](/d/firms-fire-archive).",
+                "content": "**How to read it.** The bar at the top is the time brush; it opens on yesterday (UTC), the last complete day. Drag across it to pick another window, drag the window to\nmove it, ▶ plays it; it stays pinned when you scroll. The map shows the fire in that window: draw an area on it to keep\nthat area only. The strip under the numbers holds every filter: open a pill to brush time or FRP, or pick a confidence, a satellite, day or night, a country. Click a country or a satellite in the charts, or brush the FRP or the latitude-by-hour chart below, and every other panel follows.\n*Charts count* switches between the whole Earth and what the map shows as you pan and zoom.\n\nFor every year since 2000, open [the archive](/d/firms-fire-archive).",
                 "mode": "markdown"
               }
             },
@@ -1183,7 +1198,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- The detections in the brushed window that pass the satellite, day or night,\n-- country, FRP and confidence filters, gathered into cells of a tenth of a\n-- degree (about 11 km): where the fire of the cell sits (the mean of its\n-- detections), how many, their FRP summed and the strongest. Never filtered by\n-- the view or the drawn area of the map itself, so zooming out brings\n-- everything back. last_seen is a label, not a timestamp: a time-shaped\n-- string makes kepler hang a time filter on these cells, and that filter\n-- stays on the previous window when the brush moves. first_day and last_day\n-- (days since 1970: numbers, so kepler hangs no time filter on them either)\n-- are what a click on a fire hands to the Sentinel-2 panel below.\nWITH sel AS (\n  SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1,\n         try_cast($w AS DOUBLE) AS w, try_cast($s AS DOUBLE) AS s,\n         try_cast($e AS DOUBLE) AS e, try_cast($n AS DOUBLE) AS n,\n         try_cast($frp_lo AS DOUBLE) AS lo, try_cast($frp_hi AS DOUBLE) AS hi\n),\nx AS (\n  SELECT *\n  FROM $fires, sel\n  WHERE (sel.t0 IS NULL OR time \u003e= sel.t0) AND (sel.t1 IS NULL OR time \u003c sel.t1)\n  AND ($country = '' OR country = $country)\n  AND ($sat = '' OR satellite = $sat)\n  AND ($dn = '' OR daynight = $dn)\n  AND (sel.lo IS NULL OR frp_bin \u003e= sel.lo) AND (sel.hi IS NULL OR frp_bin \u003c sel.hi)\n  AND ($conf = 'all' OR NOT low_confidence)\n)\nSELECT round(avg(latitude), 4) AS latitude, round(avg(longitude), 4) AS longitude,\n       count(*)::DOUBLE AS detections, round(sum(frp), 1)::DOUBLE AS frp_mw, max(frp) AS peak_mw,\n       any_value(country) AS country,\n       string_agg(DISTINCT satellite, ', ' ORDER BY satellite) AS satellites,\n       strftime(max(time), 'seen %d %b at %H:%M UTC') AS last_seen,\n       (min(time)::DATE - DATE '1970-01-01')::INTEGER AS first_day,\n       (max(time)::DATE - DATE '1970-01-01')::INTEGER AS last_day\nFROM x\nGROUP BY floor(latitude * 10), floor(longitude * 10)\nORDER BY frp_mw"
+                        "rawSql": "-- The detections in the brushed window (t0, t1) that pass every other filter\n-- but the drawn area and the view, gathered into cells: a tenth of a degree\n-- (about 11 km) for a window of two days or less, at the mean of their\n-- detections; a quarter of a degree for a longer one, on the strongest. The\n-- map so never holds more than about 50,000 fires (a map with every cell of\n-- every hour, 450,000 symbols, took so long to find the fire under a click\n-- that the browser no longer counted it as one). Panning and zooming run\n-- nothing; a new window runs this query again, once the Time Brush writes it.\n-- Every filter of fireFilters but the drawn area and the view, which the map\n-- sets itself and applies in the browser. One filters variable per dataset:\n-- a second one on fires took the place of fireFilters for the other panels.\n-- No column here is shaped like a time, so kepler hangs no time filter on the\n-- fires: the window of the map is this SQL. The smoke keeps its own time\n-- filter, which the Time Brush moves through the Mosaic selection fireBrush.\n-- Kept light, since every window runs it: integer cell keys, the satellites\n-- as bits named once per cell at the end, and the branch of the other cell\n-- size cut by a constant. last_seen is a label, not a timestamp; first_day\n-- and last_day (days since 1970) are what a click on a fire hands to the\n-- Sentinel-2 panel below.\nWITH x AS (\n  SELECT latitude, longitude, frp, country, time,\n         CASE satellite WHEN 'Aqua' THEN 1 WHEN 'NOAA-20' THEN 2 WHEN 'NOAA-21' THEN 4\n                        WHEN 'Suomi-NPP' THEN 8 WHEN 'Terra' THEN 16 ELSE 0 END AS sat_bit\n  FROM $fires\n  WHERE $__crossfilter($fireFilters, -drawn, -view)\n),\nfine AS (\n  SELECT round(avg(latitude), 4) AS latitude, round(avg(longitude), 4) AS longitude,\n         count(*)::DOUBLE AS detections, round(sum(frp), 1)::DOUBLE AS frp_mw, max(frp) AS peak_mw,\n         any_value(country) AS country, bit_or(sat_bit) AS sats, min(time) AS t_first, max(time) AS t_last\n  FROM x\n  WHERE coalesce(try_cast($t1 AS TIMESTAMP) - try_cast($t0 AS TIMESTAMP) \u003c= INTERVAL 2 DAY, FALSE)\n  GROUP BY floor(latitude * 10)::INTEGER, floor(longitude * 10)::INTEGER\n),\ncoarse AS (\n  SELECT round(arg_max(latitude, frp), 4) AS latitude, round(arg_max(longitude, frp), 4) AS longitude,\n         count(*)::DOUBLE AS detections, round(sum(frp), 1)::DOUBLE AS frp_mw, max(frp) AS peak_mw,\n         any_value(country) AS country, bit_or(sat_bit) AS sats, min(time) AS t_first, max(time) AS t_last\n  FROM x\n  WHERE NOT coalesce(try_cast($t1 AS TIMESTAMP) - try_cast($t0 AS TIMESTAMP) \u003c= INTERVAL 2 DAY, FALSE)\n  GROUP BY floor(latitude * 4)::INTEGER, floor(longitude * 4)::INTEGER\n)\nSELECT latitude, longitude, detections, frp_mw, peak_mw, country,\n       concat_ws(', ', CASE WHEN sats \u0026 1 \u003e 0 THEN 'Aqua' END, CASE WHEN sats \u0026 2 \u003e 0 THEN 'NOAA-20' END,\n                       CASE WHEN sats \u0026 4 \u003e 0 THEN 'NOAA-21' END, CASE WHEN sats \u0026 8 \u003e 0 THEN 'Suomi-NPP' END,\n                       CASE WHEN sats \u0026 16 \u003e 0 THEN 'Terra' END) AS satellites,\n       strftime(t_last, 'seen %d %b at %H:%M UTC') AS last_seen,\n       (t_first::DATE - DATE '1970-01-01')::INTEGER AS first_day,\n       (t_last::DATE - DATE '1970-01-01')::INTEGER AS last_day\nFROM (SELECT * FROM fine UNION ALL SELECT * FROM coarse)\nORDER BY frp_mw"
                       },
                       "version": "v0"
                     },
@@ -1215,7 +1230,7 @@
               "transformations": []
             }
           },
-          "description": "Each mark is a fire symbol on a cell of a tenth of a degree (about 11 km) with at least one detection in the brushed window, placed at the mean of its detections; its colour is their fire radiative power summed (quantiles, dark red to pale yellow) and its size how many there were. The symbols shrink as the map zooms out. Click a fire to compare Sentinel-2 scenes of its cell, before and after it burned, in the panel below. Under the dots, CAMS smoke (omaod550): hourly stamps that reuse the latest daily analysis (today uses yesterday), so a short brush still has smoke. The time brush above and the map's time bar share the same window (t0/t1): drag either, or play the map, and both stay aligned. It follows the satellite, day or night, country, FRP and confidence picks. Draw a polygon or rectangle to keep that area only; with \"Charts count: what the map shows\", every chart counts what is in view as you pan and zoom.",
+          "description": "Each mark is a fire symbol on a cell with at least one detection in the brushed window: a tenth of a degree (about 11 km) for a window of two days or less, a quarter of a degree for a longer one, placed at the mean of its detections (a quarter-degree cell on its strongest). Panning and zooming are instant; a new window redraws the fires once the Time Brush writes it. Its colour is their fire radiative power summed (quantiles, dark red to pale yellow) and its size how many there were. The symbols shrink as the map zooms out. Click a fire to compare Sentinel-2 scenes of its cell, before and after it burned, in the panel below. Under the dots, CAMS smoke (omaod550): hourly stamps that reuse the latest daily analysis (today uses yesterday), so a short brush still has smoke. The time brush above and the map's time bar share the same window (t0/t1): drag either, or play the map, and both stay aligned. It follows the satellite, day or night, country, FRP and confidence picks. Draw a polygon or rectangle to keep that area only; with \"Charts count: what the map shows\", every chart counts what is in view as you pan and zoom.",
           "id": 2,
           "links": [],
           "title": "Where: fire in the window",
@@ -1387,30 +1402,6 @@
                             1791936000000
                           ],
                           "view": "side"
-                        },
-                        {
-                          "animationWindow": "free",
-                          "dataId": [
-                            "grafana-B"
-                          ],
-                          "enabled": true,
-                          "id": "32ohak8if",
-                          "name": [
-                            "time"
-                          ],
-                          "plotType": {
-                            "aggregation": "average",
-                            "defaultTimeFormat": "L  H A",
-                            "interval": "3-hour",
-                            "type": "histogram"
-                          },
-                          "speed": 1,
-                          "type": "timeRange",
-                          "value": [
-                            1791964800000,
-                            1792004400000
-                          ],
-                          "view": "side"
                         }
                       ],
                       "interactionConfig": {
@@ -1567,7 +1558,7 @@
                               255
                             ],
                             "isVisible": true,
-                            "label": "Fire, FRP summed per 0.1° cell",
+                            "label": "Fire, FRP summed per cell",
                             "textLabel": [
                               {
                                 "alignment": "center",
@@ -1682,6 +1673,7 @@
                   },
                   "version": "v1"
                 },
+                "mosaicSelection": "fireBrush",
                 "peerTimeSync": false,
                 "places": {},
                 "publishIntervalMs": 1200,
@@ -1692,7 +1684,7 @@
                 "rasterServerUrl": "/titiler",
                 "saveRequest": 3,
                 "showSidePanel": false,
-                "timeSync": "variables",
+                "timeSync": "off",
                 "timeVariables": {
                   "from": "t0",
                   "to": "t1"
@@ -1765,7 +1757,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- The share of the detections that pass every filter seen on a night overpass.\nWITH sel AS (\n  SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1,\n         -- The whole days inside [t0, t1): the daily rollup answers those, the\n         -- points answer the cut days at the edges of a brush (02:00-14:00).\n         date_trunc('day', try_cast($t0 AS TIMESTAMP) + INTERVAL 1 DAY - INTERVAL 1 MICROSECOND) AS d0,\n         date_trunc('day', try_cast($t1 AS TIMESTAMP)) AS d1,\n         try_cast($w AS DOUBLE) AS w, try_cast($s AS DOUBLE) AS s,\n         try_cast($e AS DOUBLE) AS e, try_cast($n AS DOUBLE) AS n,\n         try_cast($frp_lo AS DOUBLE) AS lo, try_cast($frp_hi AS DOUBLE) AS hi\n),\narea AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n),\nx AS (\n  SELECT time, satellite, daynight, country, continent, frp_bin, low_confidence, cnt, frp_sum, frp_lat, frp_lng\n  FROM $fires_by_day, sel, area\n  WHERE $scope \u003c\u003e 'view' AND $area = ''\n  AND (sel.d0 IS NULL OR time \u003e= sel.d0) AND (sel.d1 IS NULL OR time \u003c sel.d1)\n  AND ($country = '' OR country = $country)\n  AND ($sat = '' OR satellite = $sat)\n  AND ($dn = '' OR daynight = $dn)\n  AND (sel.lo IS NULL OR frp_bin \u003e= sel.lo) AND (sel.hi IS NULL OR frp_bin \u003c sel.hi)\n  AND ($conf = 'all' OR NOT low_confidence)\n  UNION ALL\n  SELECT date_trunc('day', time), satellite, daynight, country, continent, frp_bin, low_confidence,\n         1::DOUBLE, frp, latitude * frp, longitude * frp\n  FROM $fires, sel, area\n  WHERE ($scope = 'view' OR $area \u003c\u003e ''\n         OR NOT ((sel.d0 IS NULL OR time \u003e= sel.d0) AND (sel.d1 IS NULL OR time \u003c sel.d1)))\n  AND (sel.t0 IS NULL OR time \u003e= sel.t0) AND (sel.t1 IS NULL OR time \u003c sel.t1)\n  AND ($scope \u003c\u003e 'view' OR sel.w IS NULL OR (latitude BETWEEN sel.s AND sel.n AND longitude BETWEEN sel.w AND sel.e))\n  AND (len(area.xs) = 0 OR (longitude BETWEEN list_min(area.xs) AND list_max(area.xs)\n    AND latitude BETWEEN list_min(area.ys) AND list_max(area.ys)\n    AND list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n      CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n            AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n           THEN 1 ELSE 0 END)) % 2 = 1))\n  AND ($country = '' OR country = $country)\n  AND ($sat = '' OR satellite = $sat)\n  AND ($dn = '' OR daynight = $dn)\n  AND (sel.lo IS NULL OR frp_bin \u003e= sel.lo) AND (sel.hi IS NULL OR frp_bin \u003c sel.hi)\n  AND ($conf = 'all' OR NOT low_confidence)\n)\nSELECT 100.0 * sum(cnt) FILTER (WHERE daynight = 'N') / nullif(sum(cnt), 0) AS night FROM x"
+                        "rawSql": "-- The share of the detections that pass every filter made at night.\n-- From the cube while no area is drawn and the charts count the whole Earth;\n-- with either, from every detection (the cube has no place). The branch that\n-- does not apply is cut by a constant and costs nothing.\nSELECT 100.0 * sum(n) FILTER (WHERE daynight = 'Night') / nullif(sum(n), 0) AS night FROM (\n  SELECT n, daynight FROM $cube\n  WHERE $area = '' AND $viewArea = 'the whole Earth' AND $__crossfilter($cubeFilters)\n  UNION ALL\n  SELECT 1 AS n, daynight FROM $fires\n  WHERE NOT ($area = '' AND $viewArea = 'the whole Earth') AND $__crossfilter($fireFilters)\n)"
                       },
                       "version": "v0"
                     },
@@ -1849,7 +1841,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Detections and their FRP summed, per satellite and day or night overpass, with every filter but those two.\nWITH sel AS (\n  SELECT try_cast($t0 AS TIMESTAMP) AS t0, try_cast($t1 AS TIMESTAMP) AS t1,\n         -- The whole days inside [t0, t1): the daily rollup answers those, the\n         -- points answer the cut days at the edges of a brush (02:00-14:00).\n         date_trunc('day', try_cast($t0 AS TIMESTAMP) + INTERVAL 1 DAY - INTERVAL 1 MICROSECOND) AS d0,\n         date_trunc('day', try_cast($t1 AS TIMESTAMP)) AS d1,\n         try_cast($w AS DOUBLE) AS w, try_cast($s AS DOUBLE) AS s,\n         try_cast($e AS DOUBLE) AS e, try_cast($n AS DOUBLE) AS n,\n         try_cast($frp_lo AS DOUBLE) AS lo, try_cast($frp_hi AS DOUBLE) AS hi\n),\narea AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all($area, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n),\nx AS (\n  SELECT time, satellite, daynight, country, continent, frp_bin, low_confidence, cnt, frp_sum, frp_lat, frp_lng\n  FROM $fires_by_day, sel, area\n  WHERE $scope \u003c\u003e 'view' AND $area = ''\n  AND (sel.d0 IS NULL OR time \u003e= sel.d0) AND (sel.d1 IS NULL OR time \u003c sel.d1)\n  AND ($country = '' OR country = $country)\n  AND (sel.lo IS NULL OR frp_bin \u003e= sel.lo) AND (sel.hi IS NULL OR frp_bin \u003c sel.hi)\n  AND ($conf = 'all' OR NOT low_confidence)\n  UNION ALL\n  SELECT date_trunc('day', time), satellite, daynight, country, continent, frp_bin, low_confidence,\n         1::DOUBLE, frp, latitude * frp, longitude * frp\n  FROM $fires, sel, area\n  WHERE ($scope = 'view' OR $area \u003c\u003e ''\n         OR NOT ((sel.d0 IS NULL OR time \u003e= sel.d0) AND (sel.d1 IS NULL OR time \u003c sel.d1)))\n  AND (sel.t0 IS NULL OR time \u003e= sel.t0) AND (sel.t1 IS NULL OR time \u003c sel.t1)\n  AND ($scope \u003c\u003e 'view' OR sel.w IS NULL OR (latitude BETWEEN sel.s AND sel.n AND longitude BETWEEN sel.w AND sel.e))\n  AND (len(area.xs) = 0 OR (longitude BETWEEN list_min(area.xs) AND list_max(area.xs)\n    AND latitude BETWEEN list_min(area.ys) AND list_max(area.ys)\n    AND list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n      CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n            AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n           THEN 1 ELSE 0 END)) % 2 = 1))\n  AND ($country = '' OR country = $country)\n  AND (sel.lo IS NULL OR frp_bin \u003e= sel.lo) AND (sel.hi IS NULL OR frp_bin \u003c sel.hi)\n  AND ($conf = 'all' OR NOT low_confidence)\n)\nSELECT satellite, daynight, sum(cnt)::DOUBLE AS detections, sum(frp_sum)::DOUBLE AS frp_mw\nFROM x\nGROUP BY ALL"
+                        "rawSql": "-- Detections by satellite and day or night, with every filter but those two.\n-- From the cube while no area is drawn and the charts count the whole Earth;\n-- with either, from every detection (the cube has no place). The branch that\n-- does not apply is cut by a constant and costs nothing.\nSELECT satellite, daynight, sum(n)::DOUBLE AS detections, sum(frp)::DOUBLE AS frp_mw FROM (\n  SELECT satellite, daynight, n, frp FROM $cube\n  WHERE $area = '' AND $viewArea = 'the whole Earth' AND $__crossfilter($cubeFilters, -satellite, -daynight)\n  UNION ALL\n  SELECT satellite, daynight, 1 AS n, frp FROM $fires\n  WHERE NOT ($area = '' AND $viewArea = 'the whole Earth') AND $__crossfilter($fireFilters, -satellite, -daynight)\n)\nGROUP BY ALL"
                       },
                       "version": "v0"
                     },
@@ -1886,7 +1878,7 @@
                   "key": "",
                   "plugin": "AMap.Scale,AMap.ToolBar"
                 },
-                "getOption": "// Which satellite saw the detections, split into day and night overpasses.\n// Five satellites carry two instruments: MODIS on Terra and Aqua (1 km\n// pixels, since 2000) and VIIRS on Suomi-NPP, NOAA-20 and NOAA-21 (375 m,\n// since 2012). Each one adds overpasses, so a count says as much about the\n// fleet as about the fire. It follows every other filter but its own.\n//\n// Click a bar: keep that satellite only; click it again to clear. Click Day or\n// Night in the legend: keep the other half only.\n// @constants begin\nconst SAT = 'sat';\nconst DN = 'dn';\nconst ORDER = [\n  ['Terra', 'MODIS'],\n  ['Aqua', 'MODIS'],\n  ['Suomi-NPP', 'VIIRS'],\n  ['NOAA-20', 'VIIRS'],\n  ['NOAA-21', 'VIIRS'],\n];\nconst DAY = '#FFB357';\nconst NIGHT = '#8F3BB8';\n// @constants end\n\nconst chart = context.panel.chart;\nconst theme = context.grafana.theme;\nconst location = context.grafana.locationService;\nconst muted = theme.colors.text.secondary;\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst sats = col('satellite');\nconst halves = col('daynight');\nconst counts = col('detections').map(Number);\nconst frp = col('frp_mw').map(Number);\n\nconst cell = (sat, half, values) =\u003e {\n  let total = 0;\n  sats.forEach((s, i) =\u003e {\n    if (s === sat \u0026\u0026 halves[i] === half) {\n      total += values[i];\n    }\n  });\n  return total;\n};\n\n// ${sat} ${dn}: named literally so the panel redraws when either changes.\nconst pickedSat = context.grafana.replaceVariables('${' + SAT + '}');\nconst pickedHalf = context.grafana.replaceVariables('${' + DN + '}');\n\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const sat = ORDER[event.dataIndex][0];\n  location.partial({ ['var-' + SAT]: sat === pickedSat ? '' : sat }, true);\n});\nchart.off('legendselectchanged');\nchart.on('legendselectchanged', (event) =\u003e {\n  const day = event.selected.Day;\n  const night = event.selected.Night;\n  location.partial({ ['var-' + DN]: day \u0026\u0026 !night ? 'D' : night \u0026\u0026 !day ? 'N' : '' }, true);\n});\n\nconst series = (name, half, color) =\u003e ({\n  name,\n  type: 'bar',\n  stack: 'all',\n  barWidth: '62%',\n  cursor: 'pointer',\n  itemStyle: { color },\n  data: ORDER.map(([sat]) =\u003e ({\n    value: cell(sat, half, counts),\n    frp: cell(sat, half, frp),\n    itemStyle: { color, opacity: pickedSat === '' || sat === pickedSat ? 1 : 0.3 },\n  })),\n});\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  legend: {\n    top: 0,\n    right: 8,\n    textStyle: { color: muted },\n    selected: { Day: pickedHalf !== 'N', Night: pickedHalf !== 'D' },\n  },\n  grid: { left: 8, right: 16, top: 28, bottom: 24, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e\n      `\u003cb\u003e${ORDER[items[0].dataIndex].join(' · ')}\u003c/b\u003e\u003cbr/\u003e` +\n      items\n        .map((it) =\u003e `${it.marker}${it.seriesName}: \u003cb\u003e${it.value.toLocaleString()}\u003c/b\u003e detections, ${(it.data.frp / 1000).toFixed(1)} GW`)\n        .join('\u003cbr/\u003e'),\n  },\n  xAxis: {\n    type: 'value',\n    name: 'detections',\n    nameLocation: 'middle',\n    nameGap: 22,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  yAxis: {\n    type: 'category',\n    inverse: true,\n    data: ORDER.map(([sat, instrument]) =\u003e `${sat} · ${instrument}`),\n    axisLabel: { color: theme.colors.text.primary },\n    axisTick: { show: false },\n  },\n  series: [series('Day', 'D', DAY), series('Night', 'N', NIGHT)],\n};\n",
+                "getOption": "// Which satellite saw the detections, split into day and night overpasses.\n// Five satellites carry two instruments: MODIS on Terra and Aqua (1 km\n// pixels, since 2000) and VIIRS on Suomi-NPP, NOAA-20 and NOAA-21 (375 m,\n// since 2012). Each one adds overpasses, so a count says as much about the\n// fleet as about the fire. It follows every other filter but its own.\n//\n// Click a bar: keep that satellite only; click it again to clear. Click Day or\n// Night in the legend: keep the other half only.\n// @constants begin\nconst SAT = 'sat';\nconst DN = 'dn';\nconst ORDER = [\n  ['Terra', 'MODIS'],\n  ['Aqua', 'MODIS'],\n  ['Suomi-NPP', 'VIIRS'],\n  ['NOAA-20', 'VIIRS'],\n  ['NOAA-21', 'VIIRS'],\n];\nconst DAY = '#FFB357';\nconst NIGHT = '#8F3BB8';\n// @constants end\n\nconst chart = context.panel.chart;\nconst theme = context.grafana.theme;\nconst location = context.grafana.locationService;\nconst muted = theme.colors.text.secondary;\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst sats = col('satellite');\nconst halves = col('daynight');\nconst counts = col('detections').map(Number);\nconst frp = col('frp_mw').map(Number);\n\nconst cell = (sat, half, values) =\u003e {\n  let total = 0;\n  sats.forEach((s, i) =\u003e {\n    if (s === sat \u0026\u0026 halves[i] === half) {\n      total += values[i];\n    }\n  });\n  return total;\n};\n\n// ${sat} ${dn}: named literally so the panel redraws when either changes.\nconst pickedSat = context.grafana.replaceVariables('${' + SAT + '}');\nconst pickedHalf = context.grafana.replaceVariables('${' + DN + '}');\n\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const sat = ORDER[event.dataIndex][0];\n  location.partial({ ['var-' + SAT]: sat === pickedSat ? '' : sat }, true);\n});\nchart.off('legendselectchanged');\nchart.on('legendselectchanged', (event) =\u003e {\n  const day = event.selected.Day;\n  const night = event.selected.Night;\n  location.partial({ ['var-' + DN]: day \u0026\u0026 !night ? 'Day' : night \u0026\u0026 !day ? 'Night' : '' }, true);\n});\n\nconst series = (name, half, color) =\u003e ({\n  name,\n  type: 'bar',\n  stack: 'all',\n  barWidth: '62%',\n  cursor: 'pointer',\n  itemStyle: { color },\n  data: ORDER.map(([sat]) =\u003e ({\n    value: cell(sat, half, counts),\n    frp: cell(sat, half, frp),\n    itemStyle: { color, opacity: pickedSat === '' || sat === pickedSat ? 1 : 0.3 },\n  })),\n});\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  legend: {\n    top: 0,\n    right: 8,\n    textStyle: { color: muted },\n    selected: { Day: pickedHalf !== 'Night', Night: pickedHalf !== 'Day' },\n  },\n  grid: { left: 8, right: 16, top: 28, bottom: 24, containLabel: true },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    formatter: (items) =\u003e\n      `\u003cb\u003e${ORDER[items[0].dataIndex].join(' · ')}\u003c/b\u003e\u003cbr/\u003e` +\n      items\n        .map((it) =\u003e `${it.marker}${it.seriesName}: \u003cb\u003e${it.value.toLocaleString()}\u003c/b\u003e detections, ${(it.data.frp / 1000).toFixed(1)} GW`)\n        .join('\u003cbr/\u003e'),\n  },\n  xAxis: {\n    type: 'value',\n    name: 'detections',\n    nameLocation: 'middle',\n    nameGap: 22,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  yAxis: {\n    type: 'category',\n    inverse: true,\n    data: ORDER.map(([sat, instrument]) =\u003e `${sat} · ${instrument}`),\n    axisLabel: { color: theme.colors.text.primary },\n    axisTick: { show: false },\n  },\n  series: [series('Day', 'Day', DAY), series('Night', 'Night', NIGHT)],\n};\n",
                 "google": {
                   "callback": "gmapReady",
                   "key": ""
@@ -3221,12 +3213,25 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
+                          "name": "panel-filters"
+                        },
+                        "height": 3,
+                        "width": 24,
+                        "x": 0,
+                        "y": 4
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
                           "name": "panel-map"
                         },
                         "height": 17,
                         "width": 16,
                         "x": 0,
-                        "y": 4
+                        "y": 7
                       }
                     },
                     {
@@ -3239,7 +3244,7 @@
                         "height": 10,
                         "width": 8,
                         "x": 16,
-                        "y": 4
+                        "y": 7
                       }
                     },
                     {
@@ -3252,7 +3257,7 @@
                         "height": 7,
                         "width": 8,
                         "x": 16,
-                        "y": 14
+                        "y": 17
                       }
                     }
                   ]
@@ -3391,12 +3396,25 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
+                          "name": "panel-hovmoller"
+                        },
+                        "height": 9,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
                           "name": "panel-frp-hist"
                         },
                         "height": 9,
                         "width": 8,
                         "x": 0,
-                        "y": 0
+                        "y": 9
                       }
                     },
                     {
@@ -3409,7 +3427,7 @@
                         "height": 9,
                         "width": 16,
                         "x": 8,
-                        "y": 0
+                        "y": 9
                       }
                     },
                     {
@@ -3422,7 +3440,7 @@
                         "height": 8,
                         "width": 8,
                         "x": 0,
-                        "y": 9
+                        "y": 18
                       }
                     },
                     {
@@ -3435,7 +3453,7 @@
                         "height": 8,
                         "width": 16,
                         "x": 8,
-                        "y": 9
+                        "y": 18
                       }
                     }
                   ]
@@ -3563,7 +3581,7 @@
               "name": "fires",
               "refId": "fires",
               "source": {
-                "sql": "-- In the browser: every detection of the rolling window that NASA FIRMS\n-- publishes as near real time (about eight days, 1.3 million rows), read\n-- straight from the Portolan mirror on Source Cooperative, which updates it\n-- hourly and sends CORS headers. Only the columns the panels use are read.\n--\n-- The point arrives as WKB bytes (no spatial extension in the browser), so its\n-- two little-endian doubles are decoded by hand: bytes 6-13 are x, 14-21 y.\n-- low_confidence is the starting cut the catalogue suggests, per instrument\n-- (VIIRS l, MODIS under 30), since the two scales have no crosswalk.\n-- frp_bin is a quarter decade of FRP for the histogram.\nWITH raw AS (\n  SELECT acq_datetime, satellite, daynight, frp, confidence, confidence_pct,\n         ('0x' || substr(hex(geometry), 11, 16))::UBIGINT AS lx,\n         ('0x' || substr(hex(geometry), 27, 16))::UBIGINT AS ly\n  FROM read_parquet('https://data.source.coop/portolan-mirrors/firms-catalog/detections/year=' || year(current_date)::VARCHAR || '/live.parquet')\n),\nbits AS (\n  SELECT *, ((((lx \u003e\u003e 0) \u0026 255) \u003c\u003c 56) | (((lx \u003e\u003e 8) \u0026 255) \u003c\u003c 48) | (((lx \u003e\u003e 16) \u0026 255) \u003c\u003c 40) | (((lx \u003e\u003e 24) \u0026 255) \u003c\u003c 32) | (((lx \u003e\u003e 32) \u0026 255) \u003c\u003c 24) | (((lx \u003e\u003e 40) \u0026 255) \u003c\u003c 16) | (((lx \u003e\u003e 48) \u0026 255) \u003c\u003c 8) | (((lx \u003e\u003e 56) \u0026 255) \u003c\u003c 0)) AS ux, ((((ly \u003e\u003e 0) \u0026 255) \u003c\u003c 56) | (((ly \u003e\u003e 8) \u0026 255) \u003c\u003c 48) | (((ly \u003e\u003e 16) \u0026 255) \u003c\u003c 40) | (((ly \u003e\u003e 24) \u0026 255) \u003c\u003c 32) | (((ly \u003e\u003e 32) \u0026 255) \u003c\u003c 24) | (((ly \u003e\u003e 40) \u0026 255) \u003c\u003c 16) | (((ly \u003e\u003e 48) \u0026 255) \u003c\u003c 8) | (((ly \u003e\u003e 56) \u0026 255) \u003c\u003c 0)) AS uy\n  FROM raw\n),\npoints AS (\n  SELECT *, (1 - 2 * (ux \u003e\u003e 63)::INTEGER) * (1 + (ux \u0026 4503599627370495)::DOUBLE / 4503599627370496) * pow(2, ((ux \u003e\u003e 52) \u0026 2047)::INTEGER - 1023) AS longitude, (1 - 2 * (uy \u003e\u003e 63)::INTEGER) * (1 + (uy \u0026 4503599627370495)::DOUBLE / 4503599627370496) * pow(2, ((uy \u003e\u003e 52) \u0026 2047)::INTEGER - 1023) AS latitude\n  FROM bits\n)\nSELECT p.acq_datetime AS time, p.latitude, p.longitude, p.satellite, p.daynight, p.frp,\n       floor(log10(greatest(p.frp, 0.1)) * 4) / 4 AS frp_bin,\n       coalesce(p.confidence = 'l', false) OR coalesce(p.confidence_pct \u003c 30, false) AS low_confidence,\n       floor(p.longitude * 4)::INTEGER AS gx, floor(p.latitude * 4)::INTEGER AS gy,\n       coalesce(c.country, 'Offshore or unassigned') AS country, coalesce(c.continent, 'Ocean') AS continent\nFROM points AS p\nLEFT JOIN $places AS c ON c.gx = floor(p.longitude * 4) AND c.gy = floor(p.latitude * 4)",
+                "sql": "-- In the browser: every detection of the rolling window that NASA FIRMS\n-- publishes as near real time (about eight days, 1.3 million rows), read\n-- straight from the Portolan mirror on Source Cooperative, which updates it\n-- hourly and sends CORS headers. Only the columns the panels use are read.\n--\n-- The point arrives as WKB bytes (no spatial extension in the browser), so its\n-- two little-endian doubles are decoded by hand: bytes 6-13 are x, 14-21 y.\n-- confidence is one scale for both instruments: VIIRS publishes low, nominal\n-- and high (l, n, h), MODIS a percentage, cut where FIRMS cuts it (under 30\n-- low, 80 and over high). frp_log is the FRP in decades of MW (0 = 1 MW,\n-- 2 = 100 MW) for the histograms, whose brushes filter on it.\nWITH raw AS (\n  SELECT acq_datetime, satellite, daynight, frp, confidence, confidence_pct,\n         ('0x' || substr(hex(geometry), 11, 16))::UBIGINT AS lx,\n         ('0x' || substr(hex(geometry), 27, 16))::UBIGINT AS ly\n  FROM read_parquet('https://data.source.coop/portolan-mirrors/firms-catalog/detections/year=' || year(current_date)::VARCHAR || '/live.parquet')\n),\nbits AS (\n  SELECT *, ((((lx \u003e\u003e 0) \u0026 255) \u003c\u003c 56) | (((lx \u003e\u003e 8) \u0026 255) \u003c\u003c 48) | (((lx \u003e\u003e 16) \u0026 255) \u003c\u003c 40) | (((lx \u003e\u003e 24) \u0026 255) \u003c\u003c 32) | (((lx \u003e\u003e 32) \u0026 255) \u003c\u003c 24) | (((lx \u003e\u003e 40) \u0026 255) \u003c\u003c 16) | (((lx \u003e\u003e 48) \u0026 255) \u003c\u003c 8) | (((lx \u003e\u003e 56) \u0026 255) \u003c\u003c 0)) AS ux, ((((ly \u003e\u003e 0) \u0026 255) \u003c\u003c 56) | (((ly \u003e\u003e 8) \u0026 255) \u003c\u003c 48) | (((ly \u003e\u003e 16) \u0026 255) \u003c\u003c 40) | (((ly \u003e\u003e 24) \u0026 255) \u003c\u003c 32) | (((ly \u003e\u003e 32) \u0026 255) \u003c\u003c 24) | (((ly \u003e\u003e 40) \u0026 255) \u003c\u003c 16) | (((ly \u003e\u003e 48) \u0026 255) \u003c\u003c 8) | (((ly \u003e\u003e 56) \u0026 255) \u003c\u003c 0)) AS uy\n  FROM raw\n),\npoints AS (\n  SELECT *, (1 - 2 * (ux \u003e\u003e 63)::INTEGER) * (1 + (ux \u0026 4503599627370495)::DOUBLE / 4503599627370496) * pow(2, ((ux \u003e\u003e 52) \u0026 2047)::INTEGER - 1023) AS longitude, (1 - 2 * (uy \u003e\u003e 63)::INTEGER) * (1 + (uy \u0026 4503599627370495)::DOUBLE / 4503599627370496) * pow(2, ((uy \u003e\u003e 52) \u0026 2047)::INTEGER - 1023) AS latitude\n  FROM bits\n)\nSELECT p.acq_datetime AS time, p.latitude, p.longitude, p.satellite,\n       CASE p.daynight WHEN 'N' THEN 'Night' ELSE 'Day' END AS daynight, p.frp,\n       log10(greatest(p.frp, 0.1)) AS frp_log,\n       CASE WHEN p.confidence = 'l' OR p.confidence_pct \u003c 30 THEN 'low'\n            WHEN p.confidence = 'h' OR p.confidence_pct \u003e= 80 THEN 'high'\n            ELSE 'nominal' END AS confidence,\n       floor(p.longitude * 4)::INTEGER AS gx, floor(p.latitude * 4)::INTEGER AS gy,\n       coalesce(c.country, 'Offshore or unassigned') AS country, coalesce(c.continent, 'Ocean') AS continent\nFROM points AS p\nLEFT JOIN $places AS c ON c.gx = floor(p.longitude * 4) AND c.gy = floor(p.latitude * 4)",
                 "type": "sql"
               }
             },
@@ -3586,9 +3604,9 @@
           },
           "hide": "hideVariable",
           "includeAll": false,
-          "label": "FIRMS detections, per day (browser)",
+          "label": "FIRMS detections per hour and attribute (browser cube)",
           "multi": false,
-          "name": "fires_by_day",
+          "name": "cube",
           "options": [],
           "query": {
             "datasource": {
@@ -3598,10 +3616,10 @@
             "kind": "DataQuery",
             "spec": {
               "kind": "dataset",
-              "name": "fires_by_day",
-              "refId": "fires_by_day",
+              "name": "cube",
+              "refId": "cube",
               "source": {
-                "sql": "-- Once per load, from $fires: one row per day, satellite, day or night,\n-- country, FRP bin and confidence, with the counts and the FRP sums the\n-- charts below the brush add back up for the whole days of the window; the\n-- cut days at its edges they read from $fires. The brush and the map do not\n-- use this table; they read $fires.\nSELECT date_trunc('day', time) AS time,\n       satellite, daynight, country, continent, frp_bin, low_confidence,\n       count(*)::DOUBLE AS cnt,\n       sum(frp)::DOUBLE AS frp_sum,\n       sum(latitude * frp)::DOUBLE AS frp_lat,\n       sum(longitude * frp)::DOUBLE AS frp_lng\nFROM $fires\nGROUP BY 1, 2, 3, 4, 5, 6, 7",
+                "sql": "-- The detections of fires summed per hour, satellite, day or night,\n-- confidence, country and FRP bin (a twentieth of a decade of MW), built in\n-- the browser once fires loads: about ten times fewer rows. The stats, the\n-- two charts and the Time Brush read it while no area is drawn and the charts\n-- count the whole Earth; with an area or the map view they read fires, since\n-- the cube has no place. frp_log is the lower edge of its bin, so here an FRP\n-- brush cuts at bin edges. lat_frp and lng_frp are FRP-weighted sums, for the\n-- middle of the fire of a country.\nSELECT date_trunc('hour', time) AS time, satellite, daynight, confidence, country, continent,\n       floor(frp_log * 20) / 20 AS frp_log,\n       count(*)::DOUBLE AS n, sum(frp)::DOUBLE AS frp,\n       sum(latitude * frp)::DOUBLE AS lat_frp, sum(longitude * frp)::DOUBLE AS lng_frp\nFROM $fires\nGROUP BY ALL",
                 "type": "sql"
               }
             },
@@ -3636,18 +3654,22 @@
       {
         "kind": "CustomVariable",
         "spec": {
-          "allowCustomValue": false,
+          "allowCustomValue": true,
           "current": {
-            "text": "every detection",
-            "value": "all"
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
           },
-          "hide": "dontHide",
-          "includeAll": false,
+          "hide": "hideVariable",
+          "includeAll": true,
           "label": "Confidence",
-          "multi": false,
+          "multi": true,
           "name": "conf",
           "options": [],
-          "query": "every detection : all,hide low confidence : high",
+          "query": "low,nominal,high",
           "skipUrlSync": false,
           "valuesFormat": "csv"
         }
@@ -4076,6 +4098,218 @@
           "query": "0,10,25,50,75,100",
           "skipUrlSync": false,
           "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "the whole Earth",
+            "value": "the whole Earth"
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "What the map shows, as an area (Charts count)",
+          "multi": false,
+          "name": "viewArea",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "viewArea",
+              "sql": "-- What the map shows as a rectangle, for the view filter, only when\n-- Charts count is set to what the map shows; with no numbers in it the\n-- area filter keeps everything.\nSELECT CASE WHEN $scope = 'view' AND try_cast($w AS DOUBLE) IS NOT NULL\n              AND try_cast($n AS DOUBLE) IS NOT NULL\n            THEN printf('POLYGON((%s %s, %s %s, %s %s, %s %s, %s %s))',\n                        $w, $s, $e, $s, $e, $n, $w, $n, $w, $s)\n            ELSE 'the whole Earth' END AS value"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Cross-filters on the detections",
+          "multi": false,
+          "name": "fireFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$fires",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$t0",
+                  "label": "Time (UTC)",
+                  "name": "time",
+                  "to": "$t1",
+                  "type": "range"
+                },
+                {
+                  "column": "frp_log",
+                  "from": "$frp_lo",
+                  "label": "FRP per detection (log₁₀ MW)",
+                  "name": "frp",
+                  "to": "$frp_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "confidence",
+                  "label": "Confidence",
+                  "name": "confidence",
+                  "type": "in",
+                  "variable": "$conf"
+                },
+                {
+                  "column": "satellite",
+                  "label": "Satellite",
+                  "name": "satellite",
+                  "type": "equals",
+                  "variable": "$sat"
+                },
+                {
+                  "column": "daynight",
+                  "label": "Day or night",
+                  "name": "daynight",
+                  "type": "equals",
+                  "variable": "$dn"
+                },
+                {
+                  "column": "country",
+                  "label": "Country",
+                  "name": "country",
+                  "type": "equals",
+                  "variable": "$country"
+                },
+                {
+                  "label": "Drawn area",
+                  "lat": "latitude",
+                  "lng": "longitude",
+                  "name": "drawn",
+                  "type": "area",
+                  "variable": "$area"
+                },
+                {
+                  "label": "Map view",
+                  "lat": "latitude",
+                  "lng": "longitude",
+                  "name": "view",
+                  "type": "area",
+                  "variable": "$viewArea"
+                }
+              ],
+              "kind": "filters",
+              "refId": "fireFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Cross-filters on the cube (no area, no view)",
+          "multi": false,
+          "name": "cubeFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$cube",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$t0",
+                  "label": "Time (UTC)",
+                  "name": "time",
+                  "to": "$t1",
+                  "type": "range"
+                },
+                {
+                  "column": "frp_log",
+                  "from": "$frp_lo",
+                  "label": "FRP per detection (log₁₀ MW)",
+                  "name": "frp",
+                  "to": "$frp_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "confidence",
+                  "label": "Confidence",
+                  "name": "confidence",
+                  "type": "in",
+                  "variable": "$conf"
+                },
+                {
+                  "column": "satellite",
+                  "label": "Satellite",
+                  "name": "satellite",
+                  "type": "equals",
+                  "variable": "$sat"
+                },
+                {
+                  "column": "daynight",
+                  "label": "Day or night",
+                  "name": "daynight",
+                  "type": "equals",
+                  "variable": "$dn"
+                },
+                {
+                  "column": "country",
+                  "label": "Country",
+                  "name": "country",
+                  "type": "equals",
+                  "variable": "$country"
+                }
+              ],
+              "kind": "filters",
+              "refId": "cubeFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
         }
       }
     ]

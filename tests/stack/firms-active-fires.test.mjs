@@ -1,6 +1,8 @@
-// firms-active-fires: FIRMS detections in Chaski, plus CAMS smoke (omaod550)
-// as an hourly Zarr catalogue on the map (each hour reuses the latest daily
-// analysis), sharing t0/t1 with the time brush.
+// firms-active-fires: FIRMS detections in Chaski, cross-filtered by a strip of
+// Mosaic filters and a Time Brush in the Mosaic selection fireBrush, plus CAMS
+// smoke (omaod550) as an hourly Zarr catalogue on the map (each hour reuses the
+// latest daily analysis). The stats, charts and brush read an hourly cube of
+// the detections unless an area or the map view filters them.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { api, rowsOf } from '../lib/grafana.mjs';
@@ -44,8 +46,11 @@ test('follows the dashboards conventions', { skip }, () => {
   assert.ok(dashboard.spec.tags.includes('plus') && dashboard.spec.tags.includes('chaski'));
   assert.equal(opts.rasterServerUrl, '/titiler');
   assert.equal(opts.zarrRescale, '0,1');
-  assert.equal(opts.timeSync, 'variables');
-  assert.deepEqual(opts.timeVariables, { from: 't0', to: 't1' });
+  // The smoke follows the Time Brush through the Mosaic selection alone: with
+  // timeSync on variables as well, a brush on another panel bounced t0/t1
+  // between the brush, the whole range and the domain of the map.
+  assert.equal(opts.mosaicSelection, 'fireBrush');
+  assert.equal(opts.timeSync, 'off');
   // The fire cells are already aggregated for t0/t1 in SQL. A kepler time
   // filter on that dataset stays on the previous window (sync only moves the
   // first filter) and hides the new cells, so the map misses the brush.
@@ -57,9 +62,12 @@ test('follows the dashboards conventions', { skip }, () => {
   const fireSql = map.data.spec.queries.find((q) => q.spec.refId === 'A').spec.query.spec.rawSql;
   assert.match(fireSql, /seen %d %b at %H:%M UTC/);
   assert.doesNotMatch(fireSql, /%Y-%m-%d/);
-  const rollup = dashboard.spec.variables.find((v) => v.spec.name === 'fires_by_day');
-  assert.match(rollup.spec.query.spec.source.sql, /date_trunc\('day', time\)/);
-  assert.match(rollup.spec.query.spec.source.sql, /FROM \$fires\b/);
+  assert.doesNotMatch(fireSql, /\bAS time\b/);
+  // Every filter but the two the map applies itself (drawn area, view).
+  assert.match(fireSql, /\$__crossfilter\(\$fireFilters, -drawn, -view\)/);
+  const cube = dashboard.spec.variables.find((v) => v.spec.name === 'cube');
+  assert.match(cube.spec.query.spec.source.sql, /date_trunc\('hour', time\)/);
+  assert.match(cube.spec.query.spec.source.sql, /FROM \$fires\b/);
   assert.doesNotMatch(JSON.stringify(dashboard), /titiler\.ubica|pacha-titiler/);
 });
 
@@ -74,11 +82,14 @@ test('CAMS smoke is stamped hourly and a short daytime brush still hits a scene'
   assert.ok(rows.every((r) => r.zarr_variable === 'omaod550' && r.zarr_sel === 'time_step=0'));
   assert.ok(rows.every((r) => String(r.zarr_url).includes('cams_global_atmospheric_composition')));
 
-  const t0 = Date.parse('2026-10-13T02:00:00.000Z');
-  const t1 = Date.parse('2026-10-13T08:00:00.000Z');
+  // A night-to-morning brush four days back: inside the eight days, on a day
+  // the store already has an analysis for.
+  const day = new Date(Date.now() - 4 * 864e5).toISOString().slice(0, 10);
+  const t0 = Date.parse(`${day}T02:00:00.000Z`);
+  const t1 = Date.parse(`${day}T08:00:00.000Z`);
   const inWin = rows.filter((r) => r.time >= t0 && r.time <= t1);
   assert.ok(inWin.length >= 3, `brush window hours: ${inWin.length}`);
-  assert.equal(inWin.at(-1).zarr_time_label.slice(0, 10), '2026-10-13');
+  assert.equal(inWin.at(-1).zarr_time_label.slice(0, 10), day);
 
   // Today has no analysis yet and yesterday may not either: the last days
   // repeat the newest day the tiler can draw, never a day it would answer 500.
@@ -165,18 +176,28 @@ test('the Sentinel-2 row opens under the fire map only once a fire is clicked', 
   assert.deepEqual(shownWhen(rows[1]), [['flat', 'equals', '']]);
 });
 
-test('the daily rollup answers whole days only; a brush that cuts a day reads the points', { skip }, () => {
+test('one filters variable per dataset', { skip }, () => {
+  // A second filters variable on fires took the place of fireFilters for every
+  // panel: the brush lost its time filter and the stats counted every day.
+  const filters = dashboard.spec.variables.filter((v) => v.spec.query?.spec?.kind === 'filters');
+  const byDataset = filters.map((v) => v.spec.query.spec.dataset);
+  assert.deepEqual(byDataset.sort(), ['$cube', '$fires']);
+  const cubeFilters = filters.find((v) => v.spec.query.spec.dataset === '$cube').spec.query.spec.filters;
+  assert.ok(cubeFilters.every((f) => f.type !== 'area'), 'the cube has no place to filter');
+});
+
+test('the cube answers while no area or view filters; with one, the detections do', { skip }, () => {
   const users = Object.entries(dashboard.spec.elements)
     .flatMap(([name, el]) => el.spec.data.spec.queries.map((q) => [name, q.spec.query.spec.rawSql ?? '']))
-    .filter(([, sql]) => sql.includes('$fires_by_day'));
-  assert.ok(users.length >= 8, `${users.length} queries read the rollup`);
+    .filter(([, sql]) => sql.includes('$cube'));
+  assert.ok(users.length >= 7, `${users.length} queries read the cube`);
   for (const [name, sql] of users) {
-    // A day stamped 00:00 fails `time >= t0` for t0 = 02:00, and the panel went
-    // to zero: the rollup is cut by d0/d1 (whole days), never by t0/t1.
-    const rollup = sql.slice(sql.indexOf('FROM $fires_by_day'), sql.indexOf('UNION ALL'));
-    assert.match(rollup, /time >= sel\.d0/, name);
-    assert.doesNotMatch(rollup, /time >= sel\.t0/, name);
-    assert.match(sql, /FROM \$fires, sel/, `${name} reads the cut days from the points`);
+    const [cubeSide, firesSide] = sql.split('UNION ALL');
+    assert.ok(firesSide, `${name} has no branch over the detections`);
+    assert.match(cubeSide, /\$area = '' AND \$viewArea = 'the whole Earth'/, name);
+    assert.match(cubeSide, /\$__crossfilter\(\$cubeFilters/, name);
+    assert.match(firesSide, /NOT \(\$area = '' AND \$viewArea = 'the whole Earth'\)/, name);
+    assert.match(firesSide, /\$__crossfilter\(\$fireFilters/, name);
   }
 });
 
