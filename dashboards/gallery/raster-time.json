@@ -13,9 +13,6 @@
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "legacyOptions": {
-            "type": "dashboard"
-          },
           "name": "Annotations \u0026 Alerts",
           "query": {
             "datasource": {
@@ -44,6 +41,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 1,
           "links": [],
           "title": "",
@@ -65,7 +63,7 @@
                 "mode": "markdown"
               }
             },
-            "version": "13.2.0"
+            "version": "13.2.1"
           }
         }
       },
@@ -116,8 +114,16 @@
               },
               "options": {
                 "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
                 "flowRenderMode": "straight",
                 "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
                 "mapConfig": {
                   "config": {
                     "mapState": {
@@ -187,7 +193,7 @@
                         0
                       ],
                       "mapStyles": {},
-                      "styleType": "dark-matter",
+                      "styleType": "openfreemap-positron",
                       "threeDBuildingColor": [
                         15.035172933000911,
                         15.035172933000911,
@@ -207,6 +213,13 @@
                     "uiState": {
                       "locale": "en",
                       "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
                         "mapLegend": {
                           "active": false
                         }
@@ -243,8 +256,8 @@
                           "speed": 1,
                           "type": "timeRange",
                           "value": [
-                            1757000659673,
-                            1788363843233
+                            1791171846601,
+                            1791474252921
                           ],
                           "view": "enlarged",
                           "yAxis": {
@@ -253,7 +266,11 @@
                           }
                         }
                       ],
+                      "groupBys": [],
                       "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
                         "brush": {
                           "enabled": false,
                           "size": 0.5
@@ -262,8 +279,17 @@
                           "enabled": false
                         },
                         "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
                           "enabled": false,
                           "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
                         },
                         "tooltip": {
                           "compareMode": false,
@@ -287,8 +313,13 @@
                             ],
                             "grafana-A-raster": []
                           }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
                         }
                       },
+                      "joins": [],
                       "layerBlending": "normal",
                       "layerOrder": [
                         "9ici1nr"
@@ -323,6 +354,7 @@
                                   200,
                                   255
                                 ],
+                                "collisionEnabled": false,
                                 "color": [
                                   255,
                                   255,
@@ -344,6 +376,8 @@
                               }
                             ],
                             "visConfig": {
+                              "_stacQuery": "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/17/M/QS/2026/10/S2C_17MQS_20261007_0_L2A/TCI.tif",
+                              "allowHover": false,
                               "colorRange": {
                                 "category": "Uber",
                                 "colors": [
@@ -397,8 +431,12 @@
                   },
                   "version": "v1"
                 },
+                "mosaicArea": true,
+                "mosaicViewport": false,
                 "peerTimeSync": false,
+                "publishIntervalMs": 1500,
                 "publishWhilePlaying": false,
+                "rasterBands": "",
                 "rasterColormap": "",
                 "rasterPainted": false,
                 "rasterServerUrl": "/titiler",
@@ -412,7 +450,7 @@
                 "tripLayerMode": "table"
               }
             },
-            "version": "1.0.0"
+            "version": "1.5.0"
           }
         }
       },
@@ -503,7 +541,7 @@
                 "showHeader": true
               }
             },
-            "version": "13.2.0"
+            "version": "13.2.1"
           }
         }
       },
@@ -727,7 +765,8 @@
             }
           ],
           "query": "10 % : 10,20 % : 20,30 % : 30,50 % : 50,60 % : 60,80 % : 80,All (100 %) : 100",
-          "skipUrlSync": false
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
         }
       },
       {
