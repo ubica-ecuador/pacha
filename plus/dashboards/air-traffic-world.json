@@ -472,7 +472,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -481,15 +495,17 @@
                 "clickArea": false,
                 "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
+                "dimUnselected": false,
                 "flowRenderMode": "straight",
                 "followGrafanaTheme": true,
+                "haloStyle": "auto",
                 "hoverMaxAgeSeconds": 60,
                 "hoverPublishSpike": false,
                 "hoverSync": false,
                 "mapConfig": {
                   "config": {
                     "mapState": {
-                      "bearing": 36.893778252114316,
+                      "bearing": 34.011856971260414,
                       "dragRotate": true,
                       "globe": {
                         "config": {
@@ -538,15 +554,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": 32.739986810725625,
-                      "longitude": -117.2036270536995,
+                      "latitude": 32.69279653109675,
+                      "longitude": -117.15604023700303,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_2D",
                       "maxPitch": 85,
-                      "pitch": 60,
+                      "pitch": 64.04411764705883,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 15.885202961439253
+                      "zoom": 8.982742839774593
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -577,6 +593,10 @@
                       "mapControls": {
                         "chart": {
                           "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
                         },
                         "mapLegend": {
                           "active": false
@@ -616,13 +636,17 @@
                           "timezone": "UTC",
                           "type": "timeRange",
                           "value": [
-                            1791862214413,
-                            1791864014413
+                            1793070713753,
+                            1793072513753
                           ],
                           "view": "minified"
                         }
                       ],
+                      "groupBys": [],
                       "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
                         "brush": {
                           "enabled": false,
                           "size": 0.5
@@ -631,8 +655,17 @@
                           "enabled": false
                         },
                         "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
                           "enabled": false,
                           "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
                         },
                         "tooltip": {
                           "compareMode": false,
@@ -682,8 +715,13 @@
                               }
                             ]
                           }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
                         }
                       },
+                      "joins": [],
                       "layerBlending": "normal",
                       "layerOrder": [
                         "aircraft",
@@ -970,6 +1008,8 @@
                   ],
                   "version": "v1"
                 },
+                "mosaicArea": true,
+                "mosaicViewport": false,
                 "peerTimeSync": false,
                 "places": {},
                 "publishIntervalMs": 1500,
@@ -990,7 +1030,7 @@
                 ]
               }
             },
-            "version": "1.0.0"
+            "version": "1.4.1"
           }
         }
       },
@@ -1035,7 +1075,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -1044,8 +1098,10 @@
                 "clickArea": false,
                 "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
+                "dimUnselected": false,
                 "flowRenderMode": "straight",
                 "followGrafanaTheme": true,
+                "haloStyle": "auto",
                 "hoverMaxAgeSeconds": 60,
                 "hoverPublishSpike": false,
                 "hoverSync": false,
@@ -1149,6 +1205,8 @@
                   },
                   "version": "v1"
                 },
+                "mosaicArea": true,
+                "mosaicViewport": false,
                 "peerTimeSync": false,
                 "places": {},
                 "publishIntervalMs": 1500,
@@ -1162,7 +1220,7 @@
                 "variableMappings": []
               }
             },
-            "version": "1.0.0"
+            "version": "1.4.1"
           }
         }
       },
@@ -1207,7 +1265,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -1217,8 +1289,10 @@
                 "clickArea": false,
                 "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
+                "dimUnselected": false,
                 "flowRenderMode": "straight",
                 "followGrafanaTheme": true,
+                "haloStyle": "auto",
                 "hoverMaxAgeSeconds": 60,
                 "hoverPublishSpike": false,
                 "hoverSync": false,
@@ -1278,6 +1352,8 @@
                   },
                   "version": "v1"
                 },
+                "mosaicArea": true,
+                "mosaicViewport": false,
                 "peerTimeSync": false,
                 "places": {},
                 "publishIntervalMs": 1500,
@@ -1297,7 +1373,7 @@
                 ]
               }
             },
-            "version": "1.0.0"
+            "version": "1.4.1"
           }
         }
       },
