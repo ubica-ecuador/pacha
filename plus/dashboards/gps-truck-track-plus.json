@@ -26,8 +26,8 @@
         }
       }
     ],
-    "cursorSync": "Crosshair",
-    "description": "A truck's GPS track on the map, with its speed and elevation over time. Hover a curve, the track or the time bar, and the others follow.",
+    "cursorSync": "Off",
+    "description": "A truck's 30-minute GPS track on a real road, cross-filtered in your browser: brush a window on the Time Brush and press play to drive the truck in 3D with a chase camera, while the whole road rises as a curtain as tall as the truck was fast; brush the coloured elevation profile or the speed and braking histograms, draw an area, and the maps and the totals follow.",
     "editable": true,
     "elements": {
       "panel-1": {
@@ -48,73 +48,46 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "SELECT * FROM $gps ORDER BY time"
+                        "rawSql": "-- The truck: the whole trip; the bar above moves its time window, whose end is now.\n-- Its columns are renamed so no other filter of the Selection lands on it.\nSELECT time, latitude, longitude, speed_kmh AS speed, elevation_m AS elevation\nFROM $truck\nORDER BY time"
                       },
                       "version": "v0"
                     },
                     "refId": "A"
                   }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The road beneath, painted by speed.\nSELECT latitude, longitude, speed_kmh FROM $truck"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
                 }
               ],
               "queryOptions": {},
-              "transformations": [
-                {
-                  "group": "filterByValue",
-                  "kind": "Transformation",
-                  "spec": {
-                    "options": {
-                      "filters": [
-                        {
-                          "config": {
-                            "id": "greaterOrEqual",
-                            "options": {
-                              "value": "$__from"
-                            }
-                          },
-                          "fieldName": "time"
-                        },
-                        {
-                          "config": {
-                            "id": "lowerOrEqual",
-                            "options": {
-                              "value": "$__to"
-                            }
-                          },
-                          "fieldName": "time"
-                        }
-                      ],
-                      "match": "all",
-                      "type": "include"
-                    }
-                  }
-                }
-              ]
+              "transformations": []
             }
           },
-          "description": "Route © OpenStreetMap contributors (ODbL), routed by OSRM; speed and elevation are synthetic. Hover a graph, the track or the time bar: the others follow.",
+          "description": "The truck, in 3D over satellite imagery, at the end of the window brushed on the bar above, with the camera chasing it and its last minute as a trail in the speed colours; the road beneath is painted by speed. Pick another camera (follow, orbit, chase) on its chip.",
           "id": 1,
           "links": [],
-          "title": "GPS position",
+          "title": "Behind the wheel",
           "vizConfig": {
             "group": "ubica-keplerplus-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  }
-                },
+                "defaults": {},
                 "overrides": []
               },
               "options": {
@@ -185,10 +158,10 @@
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_3D",
                       "maxPitch": 85,
-                      "pitch": 60,
+                      "pitch": 68,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 16
+                      "zoom": 16.5
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -221,7 +194,7 @@
                           "active": false
                         },
                         "mapLegend": {
-                          "active": true
+                          "active": false
                         }
                       },
                       "theme": "dark"
@@ -263,12 +236,12 @@
                       "effects": [],
                       "filters": [
                         {
-                          "animationWindow": "incremental",
+                          "animationWindow": "free",
                           "dataId": [
                             "grafana-A"
                           ],
                           "enabled": true,
-                          "id": "5f4ydce56",
+                          "id": "drive-window",
                           "name": [
                             "time"
                           ],
@@ -278,17 +251,16 @@
                             "interval": "1-minute",
                             "type": "lineChart"
                           },
-                          "speed": 0.2,
-                          "syncTimelineMode": 1,
+                          "speed": 1,
                           "timezone": "America/New_York",
                           "type": "timeRange",
                           "value": [
-                            1768313444000,
-                            1768313720654
+                            0,
+                            4102444800000
                           ],
-                          "view": "minified",
+                          "view": "side",
                           "yAxis": {
-                            "name": "speed_kmh",
+                            "name": "speed",
                             "type": "real"
                           }
                         }
@@ -312,13 +284,15 @@
                           "fieldsToShow": {
                             "grafana-A": [
                               {
+                                "name": "speed"
+                              },
+                              {
+                                "name": "elevation"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
                                 "name": "speed_kmh"
-                              },
-                              {
-                                "name": "elevation_m"
-                              },
-                              {
-                                "name": "distance_km"
                               }
                             ]
                           }
@@ -326,7 +300,8 @@
                       },
                       "layerBlending": "normal",
                       "layerOrder": [
-                        "7ae6r9q"
+                        "truck",
+                        "road"
                       ],
                       "layers": [
                         {
@@ -350,7 +325,7 @@
                               255
                             ],
                             "isVisible": true,
-                            "label": "gps",
+                            "label": "Truck",
                             "textLabel": [
                               {
                                 "alignment": "center",
@@ -387,37 +362,65 @@
                               "allowHover": true,
                               "billboard": false,
                               "colorRange": {
-                                "category": "Uber",
-                                "colors": [
-                                  "#7400B8",
-                                  "#6055CC",
-                                  "#3D82DC",
-                                  "#4CA7DE",
-                                  "#52CCE2",
-                                  "#72EFDD"
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    15,
+                                    "#E02F44"
+                                  ],
+                                  [
+                                    30,
+                                    "#FF7A2F"
+                                  ],
+                                  [
+                                    45,
+                                    "#FADE2A"
+                                  ],
+                                  [
+                                    60,
+                                    "#A6E05A"
+                                  ],
+                                  [
+                                    75,
+                                    "#3FC97A"
+                                  ],
+                                  [
+                                    null,
+                                    "#22D3EE"
+                                  ]
                                 ],
-                                "name": "ViovetOcean",
-                                "type": "sequential"
+                                "colors": [
+                                  "#E02F44",
+                                  "#FF7A2F",
+                                  "#FADE2A",
+                                  "#A6E05A",
+                                  "#3FC97A",
+                                  "#22D3EE"
+                                ],
+                                "name": "Speed bands",
+                                "type": "custom"
                               },
                               "filled": true,
                               "fixedRadius": false,
                               "fleetAltitudeField": "none",
                               "fleetAssetField": "auto",
                               "fleetCard": true,
+                              "fleetCardField": "elevation",
                               "fleetCardMinutes": 60,
                               "fleetCardOpacity": 0.9,
                               "fleetCardSize": "M",
+                              "fleetCardUnit": "m",
                               "fleetCardWindow": "auto",
                               "fleetChangeColours": "risingBad",
                               "fleetCrossValue": true,
                               "fleetCrosshair": true,
                               "fleetDisplay": "3d",
-                              "fleetFollow": "gps",
-                              "fleetFollowMode": "orbit",
+                              "fleetFollow": "Truck",
+                              "fleetFollowMode": "chase",
                               "fleetGhost": true,
                               "fleetHeadingField": "auto",
                               "fleetHeadingFrom": "auto",
-                              "fleetIcons": "{\"\":{\"preset\":\"tractor\"}}",
+                              "fleetIcons": "{\"\":{\"preset\":\"delivery\"}}",
                               "fleetLabel": "none",
                               "fleetLabelColor": [
                                 255,
@@ -431,10 +434,10 @@
                               "fleetModelColours": "original",
                               "fleetOrbitSecs": 60,
                               "fleetPinned": [
-                                "gps"
+                                "Truck"
                               ],
                               "fleetPublishCrosshair": true,
-                              "fleetPulseBy": "speed_kmh",
+                              "fleetPulseBy": "speed",
                               "fleetPulseCycle": 3,
                               "fleetPulseLength": 0.3,
                               "fleetPulseRange": [
@@ -447,13 +450,13 @@
                               "fleetSize": 87,
                               "fleetSmooth": true,
                               "fleetSmoothMs": 1000,
-                              "fleetSpeedField": "auto",
+                              "fleetSpeedField": "speed",
                               "fleetSpeedUnit": "km/h",
                               "fleetStaleAfter": 5,
                               "fleetStatusFrom": "column",
                               "fleetStem": true,
                               "fleetStopSpeed": 2,
-                              "fleetTimeField": "auto",
+                              "fleetTimeField": "time",
                               "fleetTimeRef": "history",
                               "fleetTrail": 1,
                               "fleetTrailAnimate": true,
@@ -493,15 +496,139 @@
                               "thickness": 2
                             }
                           },
-                          "id": "7ae6r9q",
+                          "id": "truck",
                           "type": "fleet",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "speed",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              120,
+                              120,
+                              120
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Road, by speed",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": false,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    15,
+                                    "#E02F44"
+                                  ],
+                                  [
+                                    30,
+                                    "#FF7A2F"
+                                  ],
+                                  [
+                                    45,
+                                    "#FADE2A"
+                                  ],
+                                  [
+                                    60,
+                                    "#A6E05A"
+                                  ],
+                                  [
+                                    75,
+                                    "#3FC97A"
+                                  ],
+                                  [
+                                    null,
+                                    "#22D3EE"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#E02F44",
+                                  "#FF7A2F",
+                                  "#FADE2A",
+                                  "#A6E05A",
+                                  "#3FC97A",
+                                  "#22D3EE"
+                                ],
+                                "name": "Speed bands",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.7,
+                              "outline": false,
+                              "radius": 2,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "thickness": 2
+                            }
+                          },
+                          "id": "road",
+                          "type": "point",
                           "visualChannels": {
                             "colorField": {
                               "name": "speed_kmh",
                               "type": "real"
                             },
-                            "colorScale": "quantile",
+                            "colorScale": "custom",
+                            "sizeField": null,
                             "sizeScale": "linear",
+                            "strokeColorField": null,
                             "strokeColorScale": "quantile"
                           }
                         }
@@ -512,6 +639,7 @@
                   },
                   "version": "v1"
                 },
+                "mosaicSelection": "",
                 "peerTimeSync": false,
                 "places": {},
                 "publishIntervalMs": 250,
@@ -523,13 +651,13 @@
                 "showSidePanel": false,
                 "timeSync": "variables",
                 "timeVariables": {
-                  "from": "brush_from",
-                  "to": "brush_to"
+                  "from": "t0",
+                  "to": "t1"
                 },
                 "tripLayerMode": "table"
               }
             },
-            "version": "0.1.0"
+            "version": "1.4.1"
           }
         }
       },
@@ -546,12 +674,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "-- Dashboard --"
+                        "name": "duckdbwasm"
                       },
-                      "group": "datasource",
+                      "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "panelId": 1
+                        "rawSql": "SELECT time, sum(step_km) OVER (ORDER BY time) AS km\nFROM $truck\nWHERE $__timeFilter(time) AND $__crossfilter($truckFilters)\nORDER BY time"
                       },
                       "version": "v0"
                     },
@@ -560,41 +688,10 @@
                 }
               ],
               "queryOptions": {},
-              "transformations": [
-                {
-                  "group": "filterByValue",
-                  "kind": "Transformation",
-                  "spec": {
-                    "options": {
-                      "filters": [
-                        {
-                          "config": {
-                            "id": "greaterOrEqual",
-                            "options": {
-                              "value": "$__from"
-                            }
-                          },
-                          "fieldName": "time"
-                        },
-                        {
-                          "config": {
-                            "id": "lowerOrEqual",
-                            "options": {
-                              "value": "$__to"
-                            }
-                          },
-                          "fieldName": "time"
-                        }
-                      ],
-                      "match": "all",
-                      "type": "include"
-                    }
-                  }
-                }
-              ]
+              "transformations": []
             }
           },
-          "description": "",
+          "description": "Kilometres driven in the selection: the sum of the steps between the fixes it keeps, climbing through it.",
           "id": 10,
           "links": [],
           "title": "Distance",
@@ -605,38 +702,23 @@
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "fixedColor": "#1e88e5",
+                    "fixedColor": "#1F60C4",
                     "mode": "fixed"
                   },
                   "decimals": 1,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
                   "unit": "lengthkm"
                 },
                 "overrides": []
               },
               "options": {
                 "colorMode": "background",
-                "graphMode": "none",
+                "graphMode": "area",
                 "justifyMode": "center",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
-                    "range"
+                    "lastNotNull"
                   ],
-                  "fields": "/^distance_km$/",
+                  "fields": "",
                   "values": false
                 },
                 "showPercentChange": false,
@@ -644,7 +726,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.1"
+            "version": ""
           }
         }
       },
@@ -661,12 +743,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "-- Dashboard --"
+                        "name": "duckdbwasm"
                       },
-                      "group": "datasource",
+                      "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "panelId": 1
+                        "rawSql": "SELECT count(*)::DOUBLE AS seconds\nFROM $truck\nWHERE $__timeFilter(time) AND $__crossfilter($truckFilters)"
                       },
                       "version": "v0"
                     },
@@ -675,41 +757,10 @@
                 }
               ],
               "queryOptions": {},
-              "transformations": [
-                {
-                  "group": "filterByValue",
-                  "kind": "Transformation",
-                  "spec": {
-                    "options": {
-                      "filters": [
-                        {
-                          "config": {
-                            "id": "greaterOrEqual",
-                            "options": {
-                              "value": "$__from"
-                            }
-                          },
-                          "fieldName": "time"
-                        },
-                        {
-                          "config": {
-                            "id": "lowerOrEqual",
-                            "options": {
-                              "value": "$__to"
-                            }
-                          },
-                          "fieldName": "time"
-                        }
-                      ],
-                      "match": "all",
-                      "type": "include"
-                    }
-                  }
-                }
-              ]
+              "transformations": []
             }
           },
-          "description": "",
+          "description": "Time in the selection: one fix a second.",
           "id": 11,
           "links": [],
           "title": "Duration",
@@ -720,37 +771,22 @@
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "fixedColor": "#3949ab",
+                    "fixedColor": "#3949AB",
                     "mode": "fixed"
-                  },
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
                   },
                   "unit": "dtdurations"
                 },
                 "overrides": []
               },
               "options": {
-                "colorMode": "background",
+                "colorMode": "background_solid",
                 "graphMode": "none",
                 "justifyMode": "center",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
-                    "range"
+                    "lastNotNull"
                   ],
-                  "fields": "/^elapsed_s$/",
+                  "fields": "",
                   "values": false
                 },
                 "showPercentChange": false,
@@ -758,7 +794,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.1"
+            "version": ""
           }
         }
       },
@@ -775,12 +811,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "-- Dashboard --"
+                        "name": "duckdbwasm"
                       },
-                      "group": "datasource",
+                      "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "panelId": 1
+                        "rawSql": "SELECT sum(step_km) / nullif(count(*) FILTER (WHERE NOT at_stop), 0) * 3600 AS kmh\nFROM $truck\nWHERE $__timeFilter(time) AND $__crossfilter($truckFilters)"
                       },
                       "version": "v0"
                     },
@@ -789,44 +825,13 @@
                 }
               ],
               "queryOptions": {},
-              "transformations": [
-                {
-                  "group": "filterByValue",
-                  "kind": "Transformation",
-                  "spec": {
-                    "options": {
-                      "filters": [
-                        {
-                          "config": {
-                            "id": "greaterOrEqual",
-                            "options": {
-                              "value": "$__from"
-                            }
-                          },
-                          "fieldName": "time"
-                        },
-                        {
-                          "config": {
-                            "id": "lowerOrEqual",
-                            "options": {
-                              "value": "$__to"
-                            }
-                          },
-                          "fieldName": "time"
-                        }
-                      ],
-                      "match": "all",
-                      "type": "include"
-                    }
-                  }
-                }
-              ]
+              "transformations": []
             }
           },
-          "description": "",
+          "description": "Distance over the time the truck was not at a stop.",
           "id": 12,
           "links": [],
-          "title": "Average speed",
+          "title": "Moving speed",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -834,38 +839,23 @@
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "fixedColor": "#43a047",
+                    "fixedColor": "#37872D",
                     "mode": "fixed"
                   },
                   "decimals": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
                   "unit": "velocitykmh"
                 },
                 "overrides": []
               },
               "options": {
-                "colorMode": "background",
+                "colorMode": "background_solid",
                 "graphMode": "none",
                 "justifyMode": "center",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
-                    "mean"
+                    "lastNotNull"
                   ],
-                  "fields": "/^speed_kmh$/",
+                  "fields": "",
                   "values": false
                 },
                 "showPercentChange": false,
@@ -873,7 +863,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.1"
+            "version": ""
           }
         }
       },
@@ -890,12 +880,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "-- Dashboard --"
+                        "name": "duckdbwasm"
                       },
-                      "group": "datasource",
+                      "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "panelId": 1
+                        "rawSql": "SELECT time_bucket(INTERVAL 10 SECOND, time) AS time, max(speed_kmh) AS kmh\nFROM $truck\nWHERE $__timeFilter(time) AND $__crossfilter($truckFilters)\nGROUP BY 1\nORDER BY 1"
                       },
                       "version": "v0"
                     },
@@ -904,41 +894,10 @@
                 }
               ],
               "queryOptions": {},
-              "transformations": [
-                {
-                  "group": "filterByValue",
-                  "kind": "Transformation",
-                  "spec": {
-                    "options": {
-                      "filters": [
-                        {
-                          "config": {
-                            "id": "greaterOrEqual",
-                            "options": {
-                              "value": "$__from"
-                            }
-                          },
-                          "fieldName": "time"
-                        },
-                        {
-                          "config": {
-                            "id": "lowerOrEqual",
-                            "options": {
-                              "value": "$__to"
-                            }
-                          },
-                          "fieldName": "time"
-                        }
-                      ],
-                      "match": "all",
-                      "type": "include"
-                    }
-                  }
-                }
-              ]
+              "transformations": []
             }
           },
-          "description": "",
+          "description": "The highest speed in the selection, over the fastest of every ten seconds.",
           "id": 13,
           "links": [],
           "title": "Max speed",
@@ -949,38 +908,23 @@
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "fixedColor": "#fb8c00",
+                    "fixedColor": "#FA6400",
                     "mode": "fixed"
                   },
                   "decimals": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
                   "unit": "velocitykmh"
                 },
                 "overrides": []
               },
               "options": {
                 "colorMode": "background",
-                "graphMode": "none",
+                "graphMode": "area",
                 "justifyMode": "center",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "max"
                   ],
-                  "fields": "/^speed_kmh$/",
+                  "fields": "",
                   "values": false
                 },
                 "showPercentChange": false,
@@ -988,7 +932,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.1"
+            "version": ""
           }
         }
       },
@@ -1005,12 +949,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "-- Dashboard --"
+                        "name": "duckdbwasm"
                       },
-                      "group": "datasource",
+                      "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "panelId": 1
+                        "rawSql": "SELECT time, sum(greatest(step_climb_m, 0)) OVER (ORDER BY time) AS m\nFROM $truck\nWHERE $__timeFilter(time) AND $__crossfilter($truckFilters)\nORDER BY time"
                       },
                       "version": "v0"
                     },
@@ -1019,44 +963,13 @@
                 }
               ],
               "queryOptions": {},
-              "transformations": [
-                {
-                  "group": "filterByValue",
-                  "kind": "Transformation",
-                  "spec": {
-                    "options": {
-                      "filters": [
-                        {
-                          "config": {
-                            "id": "greaterOrEqual",
-                            "options": {
-                              "value": "$__from"
-                            }
-                          },
-                          "fieldName": "time"
-                        },
-                        {
-                          "config": {
-                            "id": "lowerOrEqual",
-                            "options": {
-                              "value": "$__to"
-                            }
-                          },
-                          "fieldName": "time"
-                        }
-                      ],
-                      "match": "all",
-                      "type": "include"
-                    }
-                  }
-                }
-              ]
+              "transformations": []
             }
           },
-          "description": "",
+          "description": "Metres climbed in the selection, adding up along it.",
           "id": 14,
           "links": [],
-          "title": "Elevation gain",
+          "title": "Climb",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -1064,38 +977,23 @@
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "fixedColor": "#8d6e63",
+                    "fixedColor": "#8F3BB8",
                     "mode": "fixed"
                   },
                   "decimals": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
                   "unit": "lengthm"
                 },
                 "overrides": []
               },
               "options": {
                 "colorMode": "background",
-                "graphMode": "none",
+                "graphMode": "area",
                 "justifyMode": "center",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
-                    "range"
+                    "lastNotNull"
                   ],
-                  "fields": "/^climb_m$/",
+                  "fields": "",
                   "values": false
                 },
                 "showPercentChange": false,
@@ -1103,7 +1001,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.1"
+            "version": ""
           }
         }
       },
@@ -1120,12 +1018,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "-- Dashboard --"
+                        "name": "duckdbwasm"
                       },
-                      "group": "datasource",
+                      "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "panelId": 1
+                        "rawSql": "SELECT count(DISTINCT stop_id) FILTER (WHERE at_stop)::DOUBLE AS stops\nFROM $truck\nWHERE $__timeFilter(time) AND $__crossfilter($truckFilters)"
                       },
                       "version": "v0"
                     },
@@ -1134,44 +1032,13 @@
                 }
               ],
               "queryOptions": {},
-              "transformations": [
-                {
-                  "group": "filterByValue",
-                  "kind": "Transformation",
-                  "spec": {
-                    "options": {
-                      "filters": [
-                        {
-                          "config": {
-                            "id": "greaterOrEqual",
-                            "options": {
-                              "value": "$__from"
-                            }
-                          },
-                          "fieldName": "time"
-                        },
-                        {
-                          "config": {
-                            "id": "lowerOrEqual",
-                            "options": {
-                              "value": "$__to"
-                            }
-                          },
-                          "fieldName": "time"
-                        }
-                      ],
-                      "match": "all",
-                      "type": "include"
-                    }
-                  }
-                }
-              ]
+              "transformations": []
             }
           },
-          "description": "",
+          "description": "Stops of 15 s or more under 3 km/h touched by the selection.",
           "id": 15,
           "links": [],
-          "title": "Max elevation",
+          "title": "Stops",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -1179,38 +1046,23 @@
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "fixedColor": "#6d4c41",
+                    "fixedColor": "#C4162A",
                     "mode": "fixed"
                   },
                   "decimals": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "lengthm"
+                  "unit": "none"
                 },
                 "overrides": []
               },
               "options": {
-                "colorMode": "background",
+                "colorMode": "background_solid",
                 "graphMode": "none",
                 "justifyMode": "center",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
-                    "max"
+                    "lastNotNull"
                   ],
-                  "fields": "/^elevation_m$/",
+                  "fields": "",
                   "values": false
                 },
                 "showPercentChange": false,
@@ -1218,7 +1070,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.1"
+            "version": ""
           }
         }
       },
@@ -1240,11 +1092,65 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH pos AS (\n  SELECT max(time) AS t FROM $gps WHERE time \u003c= try_cast(rtrim($brush_to, 'Z') AS TIMESTAMP)\n)\nSELECT time, speed_kmh, CASE WHEN time = pos.t THEN speed_kmh END AS \"Map position\"\nFROM $gps, pos\nORDER BY time"
+                        "rawSql": "-- The whole track, once: the filters reach the map through its Mosaic selection,\n-- and it filters on the GPU, with no query in between.\nSELECT time, latitude, longitude, speed_kmh, elevation_m, distance_km, accel\nFROM $truck"
                       },
                       "version": "v0"
                     },
                     "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The whole track, unfiltered, under it.\nSELECT latitude, longitude FROM $truck"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The truck: only the time window lands on it (a filter over A and C), so it sits at\n-- the end of the window whatever the other filters keep.\nSELECT time, latitude, longitude, speed_kmh AS speed FROM $truck ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- One row per stop, where it was and how long it lasted.\nSELECT avg(latitude) AS latitude, avg(longitude) AS longitude, count(*)::DOUBLE AS seconds,\n       strftime(min(time), '%H:%M') AS at\nFROM $truck WHERE at_stop GROUP BY stop_id ORDER BY min(time)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
                   }
                 }
               ],
@@ -1252,128 +1158,779 @@
               "transformations": []
             }
           },
-          "description": "",
+          "description": "Every fix the filters keep rises as tall as the truck was fast, in the speed colours, over the whole trip in grey; violet pillars are the stops, as tall as they were long, and the small truck is where the window ends. It filters on the GPU through the truckFilters selection. Draw an area and every other panel keeps to it.",
           "id": 2,
           "links": [],
-          "title": "Speed (km/h)",
+          "title": "The whole road, speed as a curtain",
           "vizConfig": {
-            "group": "timeseries",
+            "group": "ubica-keplerplus-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "continuous-GrYlRd"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "axisWidth": 64,
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 20,
-                    "gradientMode": "scheme",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 2,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  },
-                  "max": 90,
-                  "min": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "velocitykmh"
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Map position"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.drawStyle",
-                        "value": "points"
-                      },
-                      {
-                        "id": "custom.pointSize",
-                        "value": 14
-                      },
-                      {
-                        "id": "custom.showPoints",
-                        "value": "always"
-                      },
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "rgba(0, 229, 255, 1)",
-                          "mode": "fixed"
-                        }
-                      },
-                      {
-                        "id": "custom.hideFrom",
-                        "value": {
-                          "legend": true,
-                          "tooltip": true,
-                          "viz": false
-                        }
-                      }
-                    ]
-                  }
-                ]
+                "defaults": {},
+                "overrides": []
               },
               "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": false
+                "alerts": {},
+                "areaVariable": "track_area",
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 10,
+                "hoverPublishSpike": true,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -12,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 40.452,
+                      "longitude": -75.957,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 60,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 11.15
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "dark-matter",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "charts": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A",
+                            "grafana-C"
+                          ],
+                          "enabled": true,
+                          "id": "drive-window",
+                          "name": [
+                            "time",
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "defaultTimeFormat": "L  LT",
+                            "interval": "1-minute",
+                            "type": "lineChart"
+                          },
+                          "speed": 1,
+                          "timezone": "America/New_York",
+                          "type": "timeRange",
+                          "value": [
+                            0,
+                            4102444800000
+                          ],
+                          "view": "side",
+                          "yAxis": {
+                            "name": "speed_kmh",
+                            "type": "real"
+                          }
+                        }
+                      ],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "speed_kmh"
+                              },
+                              {
+                                "name": "elevation_m"
+                              },
+                              {
+                                "name": "distance_km"
+                              },
+                              {
+                                "name": "accel"
+                              }
+                            ],
+                            "grafana-D": [
+                              {
+                                "name": "seconds"
+                              },
+                              {
+                                "name": "at"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "truck",
+                        "stops",
+                        "curtain",
+                        "trackall"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              77,
+                              193,
+                              156
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Truck",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    15,
+                                    "#E02F44"
+                                  ],
+                                  [
+                                    30,
+                                    "#FF7A2F"
+                                  ],
+                                  [
+                                    45,
+                                    "#FADE2A"
+                                  ],
+                                  [
+                                    60,
+                                    "#A6E05A"
+                                  ],
+                                  [
+                                    75,
+                                    "#3FC97A"
+                                  ],
+                                  [
+                                    null,
+                                    "#22D3EE"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#E02F44",
+                                  "#FF7A2F",
+                                  "#FADE2A",
+                                  "#A6E05A",
+                                  "#3FC97A",
+                                  "#22D3EE"
+                                ],
+                                "name": "Speed bands",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "fleetAltitudeField": "none",
+                              "fleetAssetField": "auto",
+                              "fleetCard": false,
+                              "fleetCardField": "",
+                              "fleetCardMinutes": 60,
+                              "fleetCardOpacity": 0.9,
+                              "fleetCardSize": "M",
+                              "fleetCardUnit": "",
+                              "fleetCardWindow": "auto",
+                              "fleetChangeColours": "risingBad",
+                              "fleetCrossValue": true,
+                              "fleetCrosshair": true,
+                              "fleetDisplay": "3d",
+                              "fleetFollow": "",
+                              "fleetFollowMode": "chase",
+                              "fleetGhost": true,
+                              "fleetHeadingField": "auto",
+                              "fleetHeadingFrom": "auto",
+                              "fleetIcons": "{\"\":{\"preset\":\"delivery\"}}",
+                              "fleetLabel": "none",
+                              "fleetLabelColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "fleetLabelOffset": -1,
+                              "fleetLabelOutline": true,
+                              "fleetLabelSize": 12,
+                              "fleetMarker": "silhouette",
+                              "fleetModelColours": "original",
+                              "fleetOrbitSecs": 60,
+                              "fleetPinned": [],
+                              "fleetPublishCrosshair": true,
+                              "fleetPulseBy": "speed",
+                              "fleetPulseCycle": 3,
+                              "fleetPulseLength": 0.3,
+                              "fleetPulseRange": [
+                                1,
+                                4
+                              ],
+                              "fleetRemember": "off",
+                              "fleetRememberMin": 10,
+                              "fleetShadow": true,
+                              "fleetSize": 45,
+                              "fleetSmooth": true,
+                              "fleetSmoothMs": 1000,
+                              "fleetSpeedField": "speed",
+                              "fleetSpeedUnit": "km/h",
+                              "fleetStaleAfter": 5,
+                              "fleetStatusFrom": "column",
+                              "fleetStem": true,
+                              "fleetStopSpeed": 2,
+                              "fleetTimeField": "time",
+                              "fleetTimeRef": "history",
+                              "fleetTrail": 1,
+                              "fleetTrailAnimate": true,
+                              "fleetTrailDashLength": 0.5,
+                              "fleetTrailFade": true,
+                              "fleetTrailOpacity": 1,
+                              "fleetTrailShow": true,
+                              "fleetTrailSpacing": 18,
+                              "fleetTrailStyle": "dashes",
+                              "fleetTrailWidth": 4.5,
+                              "fleetTypeField": "auto",
+                              "fleetZoomRate": 0.35,
+                              "fleetZoomRef": 12.8,
+                              "fleetZoomScale": true,
+                              "opacity": 0.8,
+                              "outline": false,
+                              "radius": 25.2,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "truck",
+                          "type": "fleet",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "speed",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              184,
+                              119,
+                              217
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-D",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Stops",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "opacity": 0.95,
+                              "prismAngle": 0,
+                              "prismHeight": 200,
+                              "prismHeightMode": "raw",
+                              "prismHeightMultiplier": 45,
+                              "prismLabel": true,
+                              "prismLabelSize": 13,
+                              "prismLabelUnit": " s stop",
+                              "prismShape": "cylinder",
+                              "prismSquareBase": true,
+                              "prismUnits": "m",
+                              "prismWidth": 140,
+                              "rowsAsset": "auto",
+                              "rowsPerPlace": "all"
+                            }
+                          },
+                          "id": "stops",
+                          "type": "prism",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "heightField": {
+                              "name": "seconds",
+                              "type": "real"
+                            },
+                            "heightScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              34,
+                              211,
+                              238
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Speed curtain",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    15,
+                                    "#E02F44"
+                                  ],
+                                  [
+                                    30,
+                                    "#FF7A2F"
+                                  ],
+                                  [
+                                    45,
+                                    "#FADE2A"
+                                  ],
+                                  [
+                                    60,
+                                    "#A6E05A"
+                                  ],
+                                  [
+                                    75,
+                                    "#3FC97A"
+                                  ],
+                                  [
+                                    null,
+                                    "#22D3EE"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#E02F44",
+                                  "#FF7A2F",
+                                  "#FADE2A",
+                                  "#A6E05A",
+                                  "#3FC97A",
+                                  "#22D3EE"
+                                ],
+                                "name": "Speed bands",
+                                "type": "custom"
+                              },
+                              "opacity": 0.92,
+                              "prismAngle": 0,
+                              "prismHeight": 200,
+                              "prismHeightMode": "raw",
+                              "prismHeightMultiplier": 25,
+                              "prismLabel": false,
+                              "prismShape": "box",
+                              "prismSquareBase": true,
+                              "prismUnits": "m",
+                              "prismWidth": 55,
+                              "prismWidthMode": "scaled",
+                              "rowsAsset": "auto",
+                              "rowsPerPlace": "all"
+                            }
+                          },
+                          "id": "curtain",
+                          "type": "prism",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "speed_kmh",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "heightField": {
+                              "name": "speed_kmh",
+                              "type": "real"
+                            },
+                            "heightScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              150,
+                              150,
+                              150
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Whole trip",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": false,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    15,
+                                    "#E02F44"
+                                  ],
+                                  [
+                                    30,
+                                    "#FF7A2F"
+                                  ],
+                                  [
+                                    45,
+                                    "#FADE2A"
+                                  ],
+                                  [
+                                    60,
+                                    "#A6E05A"
+                                  ],
+                                  [
+                                    75,
+                                    "#3FC97A"
+                                  ],
+                                  [
+                                    null,
+                                    "#22D3EE"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#E02F44",
+                                  "#FF7A2F",
+                                  "#FADE2A",
+                                  "#A6E05A",
+                                  "#3FC97A",
+                                  "#22D3EE"
+                                ],
+                                "name": "Speed bands",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.35,
+                              "outline": false,
+                              "radius": 6,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "thickness": 2
+                            }
+                          },
+                          "id": "trackall",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "sizeField": null,
+                            "sizeScale": "linear",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
                 },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
-                }
+                "mosaicSelection": "truckFilters",
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 250,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 5,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table"
               }
             },
-            "version": "13.2.1"
+            "version": "1.4.1"
           }
         }
       },
-      "panel-3": {
+      "panel-20": {
         "kind": "Panel",
         "spec": {
           "data": {
@@ -1391,7 +1948,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "WITH pos AS (\n  SELECT max(time) AS t FROM $gps WHERE time \u003c= try_cast(rtrim($brush_to, 'Z') AS TIMESTAMP)\n)\nSELECT time, elevation_m, CASE WHEN time = pos.t THEN elevation_m END AS \"Map position\"\nFROM $gps, pos\nORDER BY time"
+                        "rawSql": "-- Seconds per 20 s, stacked by speed band in the colours of the maps, for the fixes\n-- the other filters keep (profile, histograms, drawn area); in grey behind, the\n-- whole trip. The brush is not filtered by its own window (-time).\nWITH x AS (\n  SELECT time, band, $__crossfilter($truckFilters, -time) AS keep FROM $truck\n)\nSELECT time_bucket(INTERVAL 20 SECOND, time) AS time,\n       count(*)::DOUBLE AS \"Whole trip\",\n       count(*) FILTER (WHERE keep AND band = 'Under 15 km/h')::DOUBLE AS \"Under 15 km/h\",\n       count(*) FILTER (WHERE keep AND band = '15–30 km/h')::DOUBLE AS \"15–30 km/h\",\n       count(*) FILTER (WHERE keep AND band = '30–45 km/h')::DOUBLE AS \"30–45 km/h\",\n       count(*) FILTER (WHERE keep AND band = '45–60 km/h')::DOUBLE AS \"45–60 km/h\",\n       count(*) FILTER (WHERE keep AND band = '60–75 km/h')::DOUBLE AS \"60–75 km/h\",\n       count(*) FILTER (WHERE keep AND band = '75+ km/h')::DOUBLE AS \"75+ km/h\"\nFROM x\nGROUP BY 1\nORDER BY 1"
                       },
                       "version": "v0"
                     },
@@ -1403,102 +1960,188 @@
               "transformations": []
             }
           },
-          "description": "",
-          "id": 3,
+          "description": "Every 20 seconds of the trip in its speed colours. Brush a window and press play: the truck drives it on the left map, the window lights up the road on the right, and the totals and charts follow.",
+          "id": 20,
           "links": [],
-          "title": "Elevation (m)",
+          "title": "Drive the trip: brush a window and press play",
           "vizConfig": {
-            "group": "timeseries",
+            "group": "ubica-timebrush-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "fixedColor": "#8d6e63",
-                    "mode": "fixed"
+                    "mode": "palette-classic"
                   },
                   "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "axisWidth": 64,
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 35,
-                    "gradientMode": "opacity",
+                    "aggregation": "auto",
+                    "context": false,
+                    "drawStyle": "bars",
                     "hideFrom": {
                       "legend": false,
                       "tooltip": false,
                       "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 2,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
                     }
-                  },
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "lengthm"
+                  }
                 },
                 "overrides": [
                   {
                     "matcher": {
                       "id": "byName",
-                      "options": "Map position"
+                      "options": "Whole trip"
                     },
                     "properties": [
                       {
-                        "id": "custom.drawStyle",
-                        "value": "points"
+                        "id": "custom.context",
+                        "value": true
                       },
                       {
-                        "id": "custom.pointSize",
-                        "value": 14
-                      },
-                      {
-                        "id": "custom.showPoints",
-                        "value": "always"
+                        "id": "custom.aggregation",
+                        "value": "sum"
                       },
                       {
                         "id": "color",
                         "value": {
-                          "fixedColor": "rgba(0, 229, 255, 1)",
+                          "fixedColor": "rgba(128, 128, 128, 0.35)",
                           "mode": "fixed"
                         }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Under 15 km/h"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "bars"
                       },
                       {
-                        "id": "custom.hideFrom",
+                        "id": "custom.aggregation",
+                        "value": "sum"
+                      },
+                      {
+                        "id": "color",
                         "value": {
-                          "legend": true,
-                          "tooltip": true,
-                          "viz": false
+                          "fixedColor": "#E02F44",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "15–30 km/h"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "bars"
+                      },
+                      {
+                        "id": "custom.aggregation",
+                        "value": "sum"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#FF7A2F",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "30–45 km/h"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "bars"
+                      },
+                      {
+                        "id": "custom.aggregation",
+                        "value": "sum"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#FADE2A",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "45–60 km/h"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "bars"
+                      },
+                      {
+                        "id": "custom.aggregation",
+                        "value": "sum"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#A6E05A",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "60–75 km/h"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "bars"
+                      },
+                      {
+                        "id": "custom.aggregation",
+                        "value": "sum"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#3FC97A",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "75+ km/h"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "bars"
+                      },
+                      {
+                        "id": "custom.aggregation",
+                        "value": "sum"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#22D3EE",
+                          "mode": "fixed"
                         }
                       }
                     ]
@@ -1506,20 +2149,193 @@
                 ]
               },
               "options": {
-                "legend": {
-                  "calcs": [],
-                  "displayMode": "list",
-                  "placement": "bottom",
-                  "showLegend": false
+                "accentColor": "",
+                "backgroundColor": "#111827",
+                "backgroundTransparency": 5,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "20s",
+                "cursorColor": "",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "density": "comfortable",
+                "domain": "dashboard",
+                "followLatest": false,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "instantVariable": "t",
+                "loop": true,
+                "mosaicColumn": "time",
+                "mosaicSelection": "truckFilters",
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "scrolled",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "top",
+                "pinnedStyle": "solid",
+                "publishIntervalMs": 400,
+                "publishWhileDragging": true,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 500,
+                "stickyOffset": 0,
+                "valueGuides": false,
+                "variables": {
+                  "from": "t0",
+                  "to": "t1"
                 },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
-                }
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "free",
+                "zoomToExternal": false
               }
             },
-            "version": "13.2.1"
+            "version": "1.4.1"
+          }
+        }
+      },
+      "panel-21": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The elevation of the road as one bar per second of driving, in the speed colours, and the speed along it, drawn by Mosaic. Brush a stretch of road and the maps, the histograms and the totals keep to it.",
+          "id": 21,
+          "links": [],
+          "title": "The road, coloured by speed",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# The road's elevation as one bar per fix, in its speed colour (grey: the whole trip;\n# coloured: the fixes every other filter keeps), and the speed along the road.\n# Brush a stretch of road on either.\nparams:\n  truckFilters: { select: crossfilter }\nvconcat:\n  - legend: color\n    for: elevation\n    columns: 6\n  - name: elevation\n    plot:\n      - mark: ruleX\n        data: { from: truck }\n        x: distance_km\n        y1: 40\n        y2: elevation_m\n        stroke: 'rgba(128, 128, 128, 0.22)'\n      - mark: ruleX\n        data: { from: truck, filterBy: $truckFilters }\n        x: distance_km\n        y1: 40\n        y2: elevation_m\n        stroke: band\n        strokeWidth: 1.4\n      - select: intervalX\n        as: $truckFilters\n        brush: { fillOpacity: 0.08, stroke: currentColor, strokeOpacity: 0.7 }\n    xDomain: Fixed\n    yDomain: [40, 160]\n    colorDomain: [\"Under 15 km/h\", \"15–30 km/h\", \"30–45 km/h\", \"45–60 km/h\", \"60–75 km/h\", \"75+ km/h\"]\n    colorRange: [\"#E02F44\", \"#FF7A2F\", \"#FADE2A\", \"#A6E05A\", \"#3FC97A\", \"#22D3EE\"]\n    xAxis: null\n    yLabel: ↑ Elevation (m)\n    marginLeft: 44\n    marginBottom: 6\n    height: 190\n  - plot:\n      - mark: lineY\n        data: { from: truck }\n        x: distance_km\n        y: speed_kmh\n        stroke: 'rgba(128, 128, 128, 0.45)'\n      - mark: dot\n        data: { from: truck, filterBy: $truckFilters }\n        x: distance_km\n        y: speed_kmh\n        r: 1.5\n        fill: band\n        stroke: none\n      - select: intervalX\n        as: $truckFilters\n        brush: { fillOpacity: 0.08, stroke: currentColor, strokeOpacity: 0.7 }\n    xDomain: Fixed\n    yDomain: [0, 100]\n    colorDomain: [\"Under 15 km/h\", \"15–30 km/h\", \"30–45 km/h\", \"45–60 km/h\", \"60–75 km/h\", \"75+ km/h\"]\n    colorRange: [\"#E02F44\", \"#FF7A2F\", \"#FADE2A\", \"#A6E05A\", \"#3FC97A\", \"#22D3EE\"]\n    xLabel: Distance along the road (km) →\n    yLabel: ↑ Speed (km/h)\n    marginLeft: 44\n",
+                "variables": "- param: truckFilters\n  column: distance_km\n  from: km_lo\n  to: km_hi\n"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-22": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Seconds spent at each speed, in the speed colours. Brush the red bars to find the stops on the maps, the cyan ones to find where the truck ran fastest.",
+          "id": 22,
+          "links": [],
+          "title": "Time at each speed",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  truckFilters: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: truck }\n    x: { bin: speed_kmh, step: 5 }\n    y: { count: }\n    fill: 'rgba(128, 128, 128, 0.3)'\n    inset: 0.5\n  - mark: rectY\n    data: { from: truck, filterBy: $truckFilters }\n    x: { bin: speed_kmh, step: 5 }\n    y: { count: }\n    fill: band\n    inset: 0.5\n  - select: intervalX\n    as: $truckFilters\n    brush: { fillOpacity: 0.08, stroke: currentColor, strokeOpacity: 0.7 }\nxDomain: [0, 100]\nyScale: sqrt\ncolorDomain: [\"Under 15 km/h\", \"15–30 km/h\", \"30–45 km/h\", \"45–60 km/h\", \"60–75 km/h\", \"75+ km/h\"]\ncolorRange: [\"#E02F44\", \"#FF7A2F\", \"#FADE2A\", \"#A6E05A\", \"#3FC97A\", \"#22D3EE\"]\nxLabel: Speed (km/h) →\nyLabel: ↑ Seconds\nmarginLeft: 44\n",
+                "variables": "- param: truckFilters\n  column: speed_kmh\n  from: spd_lo\n  to: spd_hi\n"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-23": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Seconds at each acceleration, from the change of speed over four seconds: red where the truck braked (0.4 m/s² or more), green where it sped up. Brush the left tail to see where it braked hard.",
+          "id": 23,
+          "links": [],
+          "title": "Braking and accelerating",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  truckFilters: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: truck }\n    x: { bin: accel, step: 0.1 }\n    y: { count: }\n    fill: 'rgba(128, 128, 128, 0.3)'\n    inset: 0.5\n  - mark: rectY\n    data: { from: truck, filterBy: $truckFilters }\n    x: { bin: accel, step: 0.1 }\n    y: { count: }\n    fill: accel_kind\n    inset: 0.5\n  - select: intervalX\n    as: $truckFilters\n    brush: { fillOpacity: 0.08, stroke: currentColor, strokeOpacity: 0.7 }\nxDomain: [-2, 1]\nyScale: sqrt\ncolorDomain: [\"Braking\", \"Steady\", \"Accelerating\"]\ncolorRange: [\"#E02F44\", \"#8AB8FF\", \"#73BF69\"]\nxLabel: ← Braking · Accelerating → (m/s²)\nyLabel: ↑ Seconds\nmarginLeft: 44\n",
+                "variables": "- param: truckFilters\n  column: accel\n  from: acc_lo\n  to: acc_hi\n"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-24": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 24,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "content": "### Where the data comes from\n\nA **real road** with a **made-up truck**. The route, 27.5 km from Hamburg to Reading, Pennsylvania, along PA-61, was routed by [OSRM](https://project-osrm.org/) over [OpenStreetMap](https://www.openstreetmap.org/copyright) (© OpenStreetMap contributors, ODbL). Speed, stops, GPS jitter and elevation are synthetic and seeded, one fix a second for 30 minutes: built by `testdata/make-gps-truck.py` in the [Kepler panel's repository](https://github.com/ubica-ecuador/keplergl-grafana-panel). The elevation is a smooth profile, not a terrain model.\n\n### How it works\n\nThe 1,812 fixes ride in the dashboard (an inline CSV through Infinity) and are loaded once into DuckDB in your browser (Chaski), which adds the acceleration, the stops and the speed bands. The Time Brush, the profile and the histograms are views of one Mosaic selection, `truckFilters`: each brush filters the others, the right-hand map (on the GPU) and the totals, without a round trip to the server. The left-hand map takes only the time window: the Kepler Plus **Fleet** layer puts the truck at its end, so playing the bar drives it. The curtain and the stop pillars are the Plus **3D Shape** layer. A **stop** is 15 s or more under 3 km/h.",
+                "mode": "markdown"
+              }
+            },
+            "version": ""
           }
         }
       }
@@ -1611,10 +2427,10 @@
             "spec": {
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-2"
+                "name": "panel-20"
               },
-              "height": 10,
-              "width": 10,
+              "height": 6,
+              "width": 24,
               "x": 0,
               "y": 4
             }
@@ -1627,9 +2443,9 @@
                 "name": "panel-1"
               },
               "height": 21,
-              "width": 14,
-              "x": 10,
-              "y": 4
+              "width": 15,
+              "x": 0,
+              "y": 10
             }
           },
           {
@@ -1637,12 +2453,64 @@
             "spec": {
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-3"
+                "name": "panel-2"
               },
-              "height": 11,
-              "width": 10,
+              "height": 21,
+              "width": 9,
+              "x": 15,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-21"
+              },
+              "height": 12,
+              "width": 12,
               "x": 0,
-              "y": 14
+              "y": 31
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-22"
+              },
+              "height": 12,
+              "width": 6,
+              "x": 12,
+              "y": 31
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-23"
+              },
+              "height": 12,
+              "width": 6,
+              "x": 18,
+              "y": 31
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-24"
+              },
+              "height": 8,
+              "width": 24,
+              "x": 0,
+              "y": 43
             }
           }
         ]
@@ -1652,8 +2520,10 @@
     "liveNow": false,
     "preload": false,
     "tags": [
+      "chaski",
       "infinity",
       "kepler",
+      "mosaic",
       "plus",
       "gps"
     ],
@@ -1690,7 +2560,7 @@
           "hide": "hideVariable",
           "includeAll": false,
           "multi": false,
-          "name": "gps",
+          "name": "track",
           "options": [],
           "query": {
             "datasource": {
@@ -1700,8 +2570,8 @@
             "kind": "DataQuery",
             "spec": {
               "kind": "dataset",
-              "name": "gps",
-              "refId": "gps",
+              "name": "track",
+              "refId": "track",
               "source": {
                 "datasource": {
                   "type": "yesoreyeram-infinity-datasource",
@@ -1757,11 +2627,48 @@
                   },
                   "format": "table",
                   "parser": "backend",
-                  "refId": "gps",
+                  "refId": "track",
                   "source": "inline",
                   "type": "csv"
                 },
                 "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "truck",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "truck",
+              "refId": "truck",
+              "source": {
+                "sql": "-- One row a second, with what the panels filter on: the step since the last fix,\n-- the acceleration over four seconds, the stops (15 s or more under 3 km/h),\n-- and the speed band and kind of acceleration every view colours by.\nWITH t AS (\n  SELECT time::TIMESTAMP AS time, latitude, longitude, speed_kmh, elevation_m, distance_km,\n         climb_m, elapsed_s::INTEGER AS elapsed_s, speed_kmh \u003c 3 AS stopped\n  FROM $track\n),\nsteps AS (\n  SELECT *,\n         distance_km - coalesce(lag(distance_km) OVER w, distance_km) AS step_km,\n         climb_m - coalesce(lag(climb_m) OVER w, climb_m) AS step_climb_m,\n         coalesce(round((lead(speed_kmh, 2) OVER w - lag(speed_kmh, 2) OVER w) / 3.6 / 4, 2), 0) AS accel,\n         sum(CASE WHEN stopped THEN 0 ELSE 1 END) OVER w AS run\n  FROM t\n  WINDOW w AS (ORDER BY elapsed_s)\n)\nSELECT time, latitude, longitude, speed_kmh, elevation_m, distance_km, elapsed_s, step_km, step_climb_m, accel,\n       stopped AND count(*) FILTER (WHERE stopped) OVER (PARTITION BY run) \u003e= 15 AS at_stop,\n       CASE WHEN stopped THEN run END AS stop_id,\n       CASE WHEN speed_kmh \u003c 15 THEN 'Under 15 km/h' WHEN speed_kmh \u003c 30 THEN '15–30 km/h' WHEN speed_kmh \u003c 45 THEN '30–45 km/h' WHEN speed_kmh \u003c 60 THEN '45–60 km/h' WHEN speed_kmh \u003c 75 THEN '60–75 km/h' ELSE '75+ km/h' END AS band,\n       CASE WHEN accel \u003c= -0.4 THEN 'Braking' WHEN accel \u003e= 0.4 THEN 'Accelerating' ELSE 'Steady' END AS accel_kind\nFROM steps\nORDER BY elapsed_s",
+                "type": "sql"
               }
             },
             "version": "v0"
@@ -1781,8 +2688,7 @@
             "value": ""
           },
           "hide": "hideVariable",
-          "label": "brush_from",
-          "name": "brush_from",
+          "name": "t0",
           "query": "",
           "skipUrlSync": false
         }
@@ -1795,10 +2701,177 @@
             "value": ""
           },
           "hide": "hideVariable",
-          "label": "brush_to",
-          "name": "brush_to",
+          "name": "t1",
           "query": "",
           "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "km_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "km_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "spd_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "spd_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "acc_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "acc_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "track_area",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "truckFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$truck",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$t0",
+                  "label": "Time",
+                  "name": "time",
+                  "to": "$t1",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "distance_km",
+                  "from": "$km_lo",
+                  "label": "Distance (km)",
+                  "name": "distance",
+                  "to": "$km_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "speed_kmh",
+                  "from": "$spd_lo",
+                  "label": "Speed (km/h)",
+                  "name": "speed",
+                  "to": "$spd_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "accel",
+                  "from": "$acc_lo",
+                  "label": "Acceleration (m/s²)",
+                  "name": "accel",
+                  "to": "$acc_hi",
+                  "type": "range"
+                },
+                {
+                  "label": "Area",
+                  "lat": "latitude",
+                  "lng": "longitude",
+                  "name": "area",
+                  "type": "area",
+                  "variable": "$track_area"
+                }
+              ],
+              "kind": "filters",
+              "refId": "truckFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
         }
       }
     ]
