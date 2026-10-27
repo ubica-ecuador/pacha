@@ -96,7 +96,8 @@
                 "spec": "params:\n  bikeFilters: { select: crossfilter }\nplot:\n  - mark: barX\n    data: { from: bikes, filterBy: $bikeFilters }\n    x: { sum: bikes }\n    y: arrondissement\n    fill: '#5794F2'\n  - select: toggleY\n    as: $bikeFilters\nyDomain: ['1er', '2e', '3e', '4e', '5e', '6e', '7e', '8e', '9e', '10e', '11e', '12e', '13e', '14e', '15e', '16e', '17e', '18e', '19e', '20e', 'Outside Paris']\nxLabel: Bikes →\nyLabel: null\nxTickFormat: s\nmarginLeft: 84\n",
                 "variables": ""
               }
-            }
+            },
+            "version": "2.3.1"
           }
         }
       },
@@ -129,7 +130,8 @@
                 "spec": "params:\n  bikeFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: bikes, filterBy: $bikeFilters }\n    text: { sql: \"coalesce(format('{:,} bikes', max(bikes)::BIGINT), '–')\" }\n    frameAnchor: middle\n    dy: -9\n    fill: '#FDE725'\n    fontSize: 30\n    fontWeight: 500\n  - mark: text\n    data: { from: bikes, filterBy: $bikeFilters }\n    text: { sql: \"coalesce(regexp_replace(arg_max(name, bikes), '^(Totem|Face au) ', '') || ' · ' || strftime(arg_max(time, bikes), '%a %d %H:00'), '')\" }\n    frameAnchor: middle\n    dy: 16\n    fill: currentColor\n    fontSize: 11\nxAxis: null\nyAxis: null\nmargin: 0\ncolorScale: identity\n",
                 "variables": ""
               }
-            }
+            },
+            "version": "2.3.1"
           }
         }
       },
@@ -162,7 +164,8 @@
                 "spec": "params:\n  bikeFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: bikes, filterBy: $bikeFilters }\n    text: { sql: \"format('{:,}', sum(bikes)::BIGINT)\" }\n    frameAnchor: middle\n    fill: '#5794F2'\n    fontSize: 40\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\ncolorScale: identity\n",
                 "variables": ""
               }
-            }
+            },
+            "version": "2.3.1"
           }
         }
       },
@@ -195,7 +198,8 @@
                 "spec": "params:\n  bikeFilters: { select: crossfilter }\n  softmax: 150\nvconcat:\n  - input: slider\n    label: Soft max (bikes an hour)\n    as: $softmax\n    min: 0\n    max: 1700\n    step: 10\n  - legend: color\n    for: grid\n    label: The hour over the larger of the counter's busiest hour and the soft max\n  - name: grid\n    plot:\n      - mark: raster\n        data: { from: bikes, filterBy: $bikeFilters }\n        x: time\n        y: lane\n        fill: { sql: \"max(bikes / greatest(peak, $softmax))\" }\n        fillOpacity: { count: }\n        width: 670\n        height: 126\n        pad: 0.99\n        imageRendering: pixelated\n      - mark: text\n        data: { from: bikes }\n        x: { min: time }\n        y: { min: lane }\n        text: arrondissement\n        textAnchor: end\n        lineAnchor: top\n        dx: -6\n        dy: -3\n        fill: currentColor\n        fontSize: 10\n      - mark: ruleY\n        data: { from: bikes }\n        y: lane\n        title: name\n        strokeOpacity: 0\n        tip: { pointer: y }\n      - select: intervalX\n        as: $bikeFilters\n        field: time\n    colorScheme: viridis\n    colorDomain: [0, 1]\n    opacityDomain: [0, 1]\n    opacityClamp: true\n    xDomain: Fixed\n    yDomain: [1, 126]\n    yReverse: true\n    yAxis: null\n    xLabel: null\n    xTickFormat: '%a %d'\n    marginLeft: 84\n    marginRight: 4\n    marginTop: 6\n    marginBottom: 24\n",
                 "variables": ""
               }
-            }
+            },
+            "version": "2.3.1"
           }
         }
       },
@@ -309,14 +313,29 @@
           "links": [],
           "title": "The counters at the window’s last hour",
           "vizConfig": {
-            "group": "ubica-keplergl-panel",
+            "group": "ubica-keplerplus-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
+                "alerts": {},
                 "areaVariable": "bike_area",
                 "basemap": "dark-matter",
                 "clickArea": false,
@@ -461,8 +480,8 @@
                           "speed": 1,
                           "type": "timeRange",
                           "value": [
-                            0,
-                            4102444800000
+                            1790647200000,
+                            1793055600000
                           ],
                           "view": "side"
                         }
@@ -629,7 +648,7 @@
                               "radius": 6,
                               "radiusRange": [
                                 2,
-                                18
+                                25
                               ],
                               "showHighlightColor": true,
                               "showNeighborOnHover": false,
@@ -659,10 +678,10 @@
                             "colorScale": "quantize",
                             "sizeField": {
                               "name": "bikes",
-                              "type": "real"
+                              "type": "integer"
                             },
                             "sizeScale": "sqrt",
-                            "strokeColorScale": "quantize"
+                            "strokeColorScale": "quantile"
                           }
                         }
                       ],
@@ -676,6 +695,7 @@
                 "mosaicSelection": "bikeFilters",
                 "mosaicViewport": false,
                 "peerTimeSync": false,
+                "places": {},
                 "publishIntervalMs": 1500,
                 "publishWhilePlaying": false,
                 "rasterBands": "",
@@ -720,7 +740,8 @@
                 "spec": "params:\n  bikeFilters: { select: crossfilter }\nvconcat:\n  - legend: color\n    for: profile\n  - name: profile\n    plot:\n      - mark: lineY\n        data: { from: bikes, filterBy: $bikeFilters }\n        x: hour\n        y: { sql: \"sum(bikes) / count(DISTINCT time::DATE)\" }\n        stroke: day_type\n        strokeWidth: 2\n        curve: monotone-x\n    colorDomain: [Weekday, Weekend]\n    colorRange: ['#5794F2', '#FF9830']\n    xDomain: [0, 23]\n    xTicks: 12\n    xLabel: Hour of the day (Paris) →\n    yLabel: ↑ Bikes an hour, all counters\n    yTickFormat: s\n",
                 "variables": ""
               }
-            }
+            },
+            "version": "2.3.1"
           }
         }
       },
@@ -798,7 +819,7 @@
                 "timeline": "time"
               }
             },
-            "version": "2.2.0"
+            "version": "2.3.1"
           }
         }
       }
