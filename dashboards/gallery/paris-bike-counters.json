@@ -1,0 +1,1190 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "paris-bike-counters"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Paris’s 108 bike counters over the last 28 days, hour by hour: every counter in one heatmap, grouped by arrondissement, with a soft maximum that moves the colour from each counter’s own scale to one shared by all; a timeline with play, a map of the counters, bikes by arrondissement and the average day, all filtering each other in the browser.",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 10,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Where the data comes from\n\n- **Bike counts**: [Comptage vélo — données compteurs](https://opendata.paris.fr/explore/dataset/comptage-velo-donnees-compteurs/) on Paris Data, the City of Paris’s open data portal (Licence ODbL). The counters are Eco-Counter loops in the cycle lanes; each direction of travel is a counter of its own. The City publishes the hourly counts once a day, up to the evening before, and keeps the last 13 months.\n- **Arrondissements**: [Arrondissements](https://opendata.paris.fr/explore/dataset/arrondissements/) on Paris Data. Two counters on the quai d’Issy are just outside the city, in Issy-les-Moulineaux: they are *Outside Paris*.\n\n### How it is computed\n\n- **The last 28 days**, hour by hour, on the **Paris clock** (the time a rush hour keeps all year). On the night the clocks go back, the two 2 a.m. hours are added together.\n- **Each counter’s busiest hour** of the 28 days is its peak. The heatmap colours each hour over the larger of that peak and the **soft max** of the slider: at 0 every counter is on its own scale, so a quiet street’s rush hour reads like the boulevard de Sébastopol’s; raised, the quiet counters stay pale; past the busiest hour of all, every counter is on one scale. The map colours each hour over the counter’s own peak.\n- **Missing is not zero**: an hour the City did not publish is an empty cell; an hour with no bike is the darkest colour. Whole days are sometimes missing for every counter.\n- **Rows** are grouped by arrondissement, busiest counter first, with an empty row between two arrondissements.\n\n### How it works\n\nThe server reads the counts from Paris Data (one request, about 70,000 hours) and places each counter in its arrondissement with DuckDB’s spatial extension; it hands them to your browser (Chaski). The filters, play, the map, the heatmap and the charts (Mosaic) are answered there, without going back to the server. **Reload the page** to bring in a new day.\n\nThe heatmap borrows from the [Mosaic Plot](https://github.com/boazreicher/mosaic-plot) panel (no relation to UW’s Mosaic): many series in little space, grouped with gaps, and a soft maximum for the colour.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-arr": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Bikes counted in each arrondissement, in the window and area the filters leave. The 6th and the 9th have no counter. Click a bar to keep an arrondissement, Shift+click to add another.",
+          "id": 8,
+          "links": [],
+          "title": "Bikes by arrondissement",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  bikeFilters: { select: crossfilter }\nplot:\n  - mark: barX\n    data: { from: bikes, filterBy: $bikeFilters }\n    x: { sum: bikes }\n    y: arrondissement\n    fill: '#5794F2'\n  - select: toggleY\n    as: $bikeFilters\nyDomain: ['1er', '2e', '3e', '4e', '5e', '6e', '7e', '8e', '9e', '10e', '11e', '12e', '13e', '14e', '15e', '16e', '17e', '18e', '19e', '20e', 'Outside Paris']\nxLabel: Bikes →\nyLabel: null\nxTickFormat: s\nmarginLeft: 84\n",
+                "variables": ""
+              }
+            }
+          }
+        }
+      },
+      "panel-busiest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The most bikes one counter saw in one hour, among those the filters leave.",
+          "id": 2,
+          "links": [],
+          "title": "Busiest hour",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  bikeFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: bikes, filterBy: $bikeFilters }\n    text: { sql: \"coalesce(format('{:,} bikes', max(bikes)::BIGINT), '–')\" }\n    frameAnchor: middle\n    dy: -9\n    fill: '#FDE725'\n    fontSize: 30\n    fontWeight: 500\n  - mark: text\n    data: { from: bikes, filterBy: $bikeFilters }\n    text: { sql: \"coalesce(regexp_replace(arg_max(name, bikes), '^(Totem|Face au) ', '') || ' · ' || strftime(arg_max(time, bikes), '%a %d %H:00'), '')\" }\n    frameAnchor: middle\n    dy: 16\n    fill: currentColor\n    fontSize: 11\nxAxis: null\nyAxis: null\nmargin: 0\ncolorScale: identity\n",
+                "variables": ""
+              }
+            }
+          }
+        }
+      },
+      "panel-count": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Bikes past the counters the filters leave, in both directions: a bike passing two counters is counted twice.",
+          "id": 1,
+          "links": [],
+          "title": "Bikes counted",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  bikeFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: bikes, filterBy: $bikeFilters }\n    text: { sql: \"format('{:,}', sum(bikes)::BIGINT)\" }\n    frameAnchor: middle\n    fill: '#5794F2'\n    fontSize: 40\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\ncolorScale: identity\n",
+                "variables": ""
+              }
+            }
+          }
+        }
+      },
+      "panel-heatmap": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "One row per counter (a direction of travel), grouped by arrondissement with a gap between two, busiest first; one column per hour, Paris time. The colour is each hour over the larger of the counter’s busiest hour of the 28 days and the soft max: at 0 every counter is on its own scale and a quiet street’s rush hour looks like Sébastopol’s; raise it and the quiet counters fade, until past the busiest hour of all (about 1,600) every counter is on the same scale. Empty cells are hours with no data, not zero. Drag across the hours to filter the rest of the dashboard.",
+          "id": 6,
+          "links": [],
+          "title": "Every counter, hour by hour",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  bikeFilters: { select: crossfilter }\n  softmax: 150\nvconcat:\n  - input: slider\n    label: Soft max (bikes an hour)\n    as: $softmax\n    min: 0\n    max: 1700\n    step: 10\n  - legend: color\n    for: grid\n    label: The hour over the larger of the counter's busiest hour and the soft max\n  - name: grid\n    plot:\n      - mark: raster\n        data: { from: bikes, filterBy: $bikeFilters }\n        x: time\n        y: lane\n        fill: { sql: \"max(bikes / greatest(peak, $softmax))\" }\n        fillOpacity: { count: }\n        width: 670\n        height: 126\n        pad: 0.99\n        imageRendering: pixelated\n      - mark: text\n        data: { from: bikes }\n        x: { min: time }\n        y: { min: lane }\n        text: arrondissement\n        textAnchor: end\n        lineAnchor: top\n        dx: -6\n        dy: -3\n        fill: currentColor\n        fontSize: 10\n      - mark: ruleY\n        data: { from: bikes }\n        y: lane\n        title: name\n        strokeOpacity: 0\n        tip: { pointer: y }\n      - select: intervalX\n        as: $bikeFilters\n        field: time\n    colorScheme: viridis\n    colorDomain: [0, 1]\n    opacityDomain: [0, 1]\n    opacityClamp: true\n    xDomain: Fixed\n    yDomain: [1, 126]\n    yReverse: true\n    yAxis: null\n    xLabel: null\n    xTickFormat: '%a %d'\n    marginLeft: 84\n    marginRight: 4\n    marginTop: 6\n    marginBottom: 24\n",
+                "variables": ""
+              }
+            }
+          }
+        }
+      },
+      "panel-latest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT max(latest) AS time FROM $bikes"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The newest hour Paris Data has published. It publishes once a day, up to the evening before.",
+          "id": 3,
+          "links": [],
+          "title": "Latest data",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "text",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every hour of every counter, oldest first, so a counter shows the latest hour the time\n-- window holds on top. The time, arrondissement and area filters reach the map from the Mosaic\n-- selection (mosaicSelection) and filter it on the GPU; the counter search is here.\nSELECT counter, name, arrondissement, latitude, longitude, time, bikes, share\nFROM $bikes\nWHERE contains(lower(name), lower(${search:sqlstring}))\nORDER BY time, lane"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each counter at the last hour of the window: its size the bikes that hour, its colour that hour over its own busiest hour. Draw an area to filter the rest of the dashboard.",
+          "id": 7,
+          "links": [],
+          "title": "The counters at the window’s last hour",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "areaVariable": "bike_area",
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 48.858,
+                      "longitude": 2.345,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 11.3
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-fiord",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "time",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "defaultTimeFormat": "L  H A",
+                            "interval": "1-hour",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            0,
+                            4102444800000
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {
+                              "grafana-A": [
+                                {
+                                  "name": "name"
+                                },
+                                {
+                                  "name": "arrondissement"
+                                },
+                                {
+                                  "format": "L LT",
+                                  "name": "time"
+                                },
+                                {
+                                  "name": "bikes"
+                                },
+                                {
+                                  "name": "share"
+                                }
+                              ]
+                            }
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "arrondissement"
+                              },
+                              {
+                                "format": "L LT",
+                                "name": "time"
+                              },
+                              {
+                                "name": "bikes"
+                              },
+                              {
+                                "name": "share"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "bikes"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              42,
+                              120,
+                              142
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Bike counters",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#440154",
+                                  "#414487",
+                                  "#2A788E",
+                                  "#22A884",
+                                  "#7AD151",
+                                  "#FDE725"
+                                ],
+                                "name": "Share of its busiest hour",
+                                "type": "sequential"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.95,
+                              "outline": false,
+                              "radius": 6,
+                              "radiusRange": [
+                                2,
+                                18
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#440154",
+                                  "#414487",
+                                  "#2A788E",
+                                  "#22A884",
+                                  "#7AD151",
+                                  "#FDE725"
+                                ],
+                                "name": "Share of its busiest hour",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "bikes",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "share",
+                              "type": "real"
+                            },
+                            "colorScale": "quantize",
+                            "sizeField": {
+                              "name": "bikes",
+                              "type": "real"
+                            },
+                            "sizeScale": "sqrt",
+                            "strokeColorScale": "quantize"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": true,
+                "mosaicSelection": "bikeFilters",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.5.0"
+          }
+        }
+      },
+      "panel-profile": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Bikes an hour past all the counters the filters leave, on an average weekday and an average weekend day: the two rush hours of commuting against one long afternoon.",
+          "id": 9,
+          "links": [],
+          "title": "An average day, weekdays and weekends",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  bikeFilters: { select: crossfilter }\nvconcat:\n  - legend: color\n    for: profile\n  - name: profile\n    plot:\n      - mark: lineY\n        data: { from: bikes, filterBy: $bikeFilters }\n        x: hour\n        y: { sql: \"sum(bikes) / count(DISTINCT time::DATE)\" }\n        stroke: day_type\n        strokeWidth: 2\n        curve: monotone-x\n    colorDomain: [Weekday, Weekend]\n    colorRange: ['#5794F2', '#FF9830']\n    xDomain: [0, 23]\n    xTicks: 12\n    xLabel: Hour of the day (Paris) →\n    yLabel: ↑ Bikes an hour, all counters\n    yTickFormat: s\n",
+                "variables": ""
+              }
+            }
+          }
+        }
+      },
+      "panel-read": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 4,
+          "links": [],
+          "title": "How to read it",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Rows**: counters by arrondissement · **Colour**: the hour over its busiest, or the soft max · **Gaps**: no data",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-timeline": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Bikes counted through the 28 days (Paris time), with the other filters as pills. Drag to pick a window, or press play: the window travels through the days, the map shows each counter at its end and the heatmap keeps only its hours.",
+          "id": 5,
+          "links": [],
+          "title": "The last 28 days",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 168,
+                "filters": "bikeFilters",
+                "layout": "timeline",
+                "maxValues": 8,
+                "noun": "hours",
+                "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 800,
+                "timeColumn": "",
+                "timeline": "time"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "RowsLayout",
+      "spec": {
+        "rows": [
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-count"
+                        },
+                        "height": 3,
+                        "width": 6,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-busiest"
+                        },
+                        "height": 3,
+                        "width": 6,
+                        "x": 6,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-latest"
+                        },
+                        "height": 3,
+                        "width": 4,
+                        "x": 12,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-read"
+                        },
+                        "height": 3,
+                        "width": 8,
+                        "x": 16,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-timeline"
+                        },
+                        "height": 5,
+                        "width": 24,
+                        "x": 0,
+                        "y": 3
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-heatmap"
+                        },
+                        "height": 21,
+                        "width": 15,
+                        "x": 0,
+                        "y": 8
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-map"
+                        },
+                        "height": 12,
+                        "width": 9,
+                        "x": 15,
+                        "y": 8
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-arr"
+                        },
+                        "height": 9,
+                        "width": 9,
+                        "x": 15,
+                        "y": 20
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-profile"
+                        },
+                        "height": 8,
+                        "width": 24,
+                        "x": 0,
+                        "y": 29
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Counters"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-about"
+                        },
+                        "height": 13,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Data"
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "kepler",
+      "mosaic",
+      "mobility"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-28d",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Paris by bike — every counter, hour by hour",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "bikes",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "bikes",
+              "refId": "bikes",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the City of Paris's bike counters (Eco-Counter loops in the cycle lanes, one\n-- per direction of travel) over the last 28 days, hour by hour, from Paris Data, which\n-- publishes each day up to the evening before. Each counter is put in its arrondissement\n-- (the City's own outlines, with spatial on the server) and its hours on the Paris clock,\n-- the time a rush hour keeps all year.\n--\n-- lane is the counter's row in the heatmap: arrondissement by arrondissement, the busiest\n-- first, with an empty lane between two arrondissements so the groups read apart.\n-- peak is the counter's busiest hour of the 28 days and share each hour over it: the\n-- heatmap divides by the larger of peak and a soft maximum it lets you choose.\nSET VARIABLE since = strftime(current_date - 28, '%Y-%m-%d');\nSET VARIABLE counts_url = 'https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/comptage-velo-donnees-compteurs/exports/parquet'\n  || '?select=id_compteur,nom_compteur,date,sum_counts,coordinates'\n  || '\u0026where=date%3E%3D%27' || getvariable('since') || '%27';\nLOAD spatial;\nWITH arrondissements AS (\n  SELECT c_ar AS arr_no, geom\n  FROM read_parquet('https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/arrondissements/exports/parquet?select=c_ar,geom')\n), counts AS (\n  SELECT id_compteur AS counter, nom_compteur AS name, coordinates AS geom,\n         date AS time_utc,\n         (date AT TIME ZONE 'Europe/Paris') AS time,\n         sum_counts AS bikes\n  FROM read_parquet(getvariable('counts_url'))\n  WHERE sum_counts IS NOT NULL\n), counters AS (\n  SELECT c.counter, any_value(c.name) AS name,\n         any_value(ST_Y(c.geom)) AS latitude, any_value(ST_X(c.geom)) AS longitude,\n         coalesce(any_value(a.arr_no), 21) AS arr_no,\n         max(c.bikes) AS peak, sum(c.bikes) AS total\n  FROM counts c LEFT JOIN arrondissements a ON ST_Within(c.geom, a.geom)\n  GROUP BY c.counter\n), lanes AS (\n  SELECT *,\n         CASE WHEN arr_no = 21 THEN 'Outside Paris'\n              WHEN arr_no = 1 THEN '1er' ELSE arr_no || 'e' END AS arrondissement,\n         row_number() OVER (ORDER BY arr_no, total DESC, counter) + dense_rank() OVER (ORDER BY arr_no) - 1 AS lane\n  FROM counters\n)\nSELECT l.counter, l.name, l.arrondissement, l.arr_no::DOUBLE AS arr_no, l.lane::DOUBLE AS lane,\n       l.latitude, l.longitude,\n       h.time,\n       hour(h.time)::DOUBLE AS hour,\n       CASE WHEN isodow(h.time) \u003e= 6 THEN 'Weekend' ELSE 'Weekday' END AS day_type,\n       h.bikes::DOUBLE AS bikes,\n       l.peak::DOUBLE AS peak,\n       round(h.bikes / greatest(l.peak, 1), 3) AS share,\n       h.latest\nFROM (SELECT counter, time, sum(bikes) AS bikes, max(time_utc) AS latest FROM counts GROUP BY ALL) h\nJOIN lanes l USING (counter)\nORDER BY h.time, l.lane",
+                  "refId": "bikes"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "bike_from",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "bike_to",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "arrs",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "search",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "bike_area",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "bikeFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$bikes",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$bike_from",
+                  "label": "Time (Paris)",
+                  "name": "time",
+                  "to": "$bike_to",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "arrondissement",
+                  "label": "Arrondissement",
+                  "name": "arrondissement",
+                  "type": "in",
+                  "variable": "$arrs"
+                },
+                {
+                  "column": "name",
+                  "label": "Counter",
+                  "name": "name",
+                  "type": "search",
+                  "variable": "$search"
+                },
+                {
+                  "label": "Area",
+                  "lat": "latitude",
+                  "lng": "longitude",
+                  "name": "area",
+                  "type": "area",
+                  "variable": "$bike_area"
+                }
+              ],
+              "kind": "filters",
+              "refId": "bikeFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
