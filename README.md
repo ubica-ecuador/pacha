@@ -33,7 +33,7 @@ Pacha is the showcase and the test bench of three Grafana plugins made by
 |--------|------------|---------|
 | [Kepler Geospatial Maps](https://github.com/ubica-ecuador/keplergl-grafana-panel) | [kepler.gl](https://kepler.gl) maps in a Grafana panel, fed by any data source: points, trips, origin–destination flows, H3, cloud-native imagery. [Documentation](https://docs.ubica.dev) | Apache-2.0, baked into the image |
 | [Chaski](https://github.com/ubica-ecuador/chaski) | DuckDB in the browser (DuckDB-WASM) as a Grafana data source: load a dashboard's data once, then filter, group and join it in milliseconds. An app that also brings a [Mosaic](https://idl.uw.edu/mosaic/) panel: linked views whose brushes filter each other in the browser. | Apache-2.0, baked into the image |
-| [Kepler Geospatial Maps Plus](https://docs.ubica.dev/plus/) | The commercial edition of the Kepler panel, for operations maps: gauges, sparkline cards, live fleets, network links and 3D tiles, each drawn with its own time series. | Commercial, closed source; **not** in this repository or its images |
+| [Kepler Geospatial Maps Plus](https://docs.ubica.dev/plus/) | The commercial edition of the Kepler panel, for operations maps: gauges, sparkline cards, live fleets, network links and 3D tiles, each drawn with its own time series. [In the Grafana plugin catalog](https://grafana.com/grafana/plugins/ubica-keplerplus-app/) | Commercial, closed source; **not** in this repository or its images |
 
 Around them the image bakes in the
 [DuckDB data source](https://github.com/motherduckdb/grafana-duckdb-datasource) for queries on
@@ -131,7 +131,10 @@ PLUS_DIST=/path/to/ubica-keplerplus-app docker compose -f compose.yaml -f compos
 ```
 
 Without the overlay the Plus folder is not created and the free stack is complete on its own.
-To get Plus, see [docs.ubica.dev/plus](https://docs.ubica.dev/plus/).
+Plus is in the Grafana plugin catalog as
+[Kepler Geospatial Maps Plus](https://grafana.com/grafana/plugins/ubica-keplerplus-app/)
+(`ubica-keplerplus-app`); what it adds and how to set it up are at
+[docs.ubica.dev/plus](https://docs.ubica.dev/plus/).
 
 ## Working on the Kepler panel
 
