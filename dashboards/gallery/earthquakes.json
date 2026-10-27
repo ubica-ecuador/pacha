@@ -102,26 +102,7 @@
           "data": {
             "kind": "QueryGroup",
             "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT count(*) AS \"Earthquakes\"\nFROM $quakes\nWHERE $__timeFilter(time) AND $__crossfilter($quakeFilters)"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
+              "queries": [],
               "queryOptions": {},
               "transformations": []
             }
@@ -131,48 +112,21 @@
           "links": [],
           "title": "Earthquakes",
           "vizConfig": {
-            "group": "stat",
+            "group": "ubica-chaski-mosaic-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "decimals": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "red",
-                        "value": 80
-                      }
-                    ]
-                  },
-                  "unit": "none"
-                },
+                "defaults": {},
                 "overrides": []
               },
               "options": {
-                "colorMode": "none",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "value",
-                "wideLayout": true
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  quakeFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: quakes, filterBy: $quakeFilters }\n    text: { count: }\n    frameAnchor: middle\n    fill: currentColor\n    fontSize: 48\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
               }
             },
-            "version": "13.2.1"
+            "version": "2.2.0"
           }
         }
       },
@@ -2025,26 +1979,7 @@
           "data": {
             "kind": "QueryGroup",
             "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "hidden": false,
-                    "query": {
-                      "datasource": {
-                        "name": "duckdbwasm"
-                      },
-                      "group": "ubica-chaski-datasource",
-                      "kind": "DataQuery",
-                      "spec": {
-                        "rawSql": "SELECT round(max(mag), 1) AS \"Strongest\"\nFROM $quakes\nWHERE $__timeFilter(time) AND $__crossfilter($quakeFilters)"
-                      },
-                      "version": "v0"
-                    },
-                    "refId": "A"
-                  }
-                }
-              ],
+              "queries": [],
               "queryOptions": {},
               "transformations": []
             }
@@ -2054,52 +1989,21 @@
           "links": [],
           "title": "Strongest",
           "vizConfig": {
-            "group": "stat",
+            "group": "ubica-chaski-mosaic-panel",
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {
-                  "decimals": 1,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "color": "green",
-                        "value": 0
-                      },
-                      {
-                        "color": "yellow",
-                        "value": 5
-                      },
-                      {
-                        "color": "red",
-                        "value": 6.5
-                      }
-                    ]
-                  },
-                  "unit": "none"
-                },
+                "defaults": {},
                 "overrides": []
               },
               "options": {
-                "colorMode": "value",
-                "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ],
-                  "fields": "",
-                  "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "value",
-                "wideLayout": true
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  quakeFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: quakes, filterBy: $quakeFilters }\n    text: { sql: \"coalesce(printf('%.1f', max(mag)), '–')\" }\n    frameAnchor: middle\n    fill: { sql: \"CASE WHEN max(mag) \u003e= 6.5 THEN '#F2495C' WHEN max(mag) \u003e= 5 THEN '#FADE2A' ELSE '#73BF69' END\" }\n    fontSize: 48\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\ncolorScale: identity\n",
+                "variables": ""
               }
             },
-            "version": "13.2.1"
+            "version": "2.2.0"
           }
         }
       },
