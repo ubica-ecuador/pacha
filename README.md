@@ -4,7 +4,8 @@
 
 Spatiotemporal visualization in Grafana, in one command: maps of moving things, sensors and
 imagery, queried with DuckDB on the server or in the browser, from data read where it is
-published.
+published. Made for the questions of [smart cities, digital twins, accessibility, mobility and
+fleets](#what-it-is-for).
 
 **🌍 [Live gallery](https://pacha.ubica.dev)**: every dashboard in this repository, running.
 No account needed.
@@ -23,6 +24,56 @@ No account needed.
 <td><a href="https://pacha.ubica.dev/d/nyc-skyline-plus"><img src="home/screenshots/nyc-skyline-plus.jpg" alt="Manhattan by height and by subway, in 3D"></a><br><sub><b>Manhattan by height and by subway, in 3D</b> · Plus</sub></td>
 </tr>
 </table>
+
+## What it is for
+
+The questions a city, a utility or a fleet operator asks of data that has a place and a time,
+answered in Grafana, live or over history. Each example runs in the
+[live gallery](https://pacha.ubica.dev); those marked *Plus* need Kepler Plus.
+
+**Smart cities.** A city's sensors, counters and open-data feeds on one map, under one time
+window. [València on FIWARE](https://pacha.ubica.dev/d/fiware-valencia) (*Plus*) reads traffic,
+air quality, weather and shared bikes as NGSI-LD entities from a FIWARE context broker;
+[Melbourne's street sensors](https://pacha.ubica.dev/d/melbourne-city-sensors) (*Plus*) its
+parking bays, pedestrian counters and microclimate stations;
+[Los Angeles freeways](https://pacha.ubica.dev/d/caltrans-la-cameras) (*Plus*) every traffic
+camera with its live video, the lane closures and the message signs;
+[Paris by bike](https://pacha.ubica.dev/d/paris-bike-counters) every bike counter, hour by hour.
+
+**Digital twins.** The place in 3D, with its networks and what happens on them.
+[Manhattan in 3D](https://pacha.ubica.dev/d/nyc-skyline-plus) (*Plus*) raises 22,324 buildings to
+their roof heights with the subway running above them;
+[AGI headquarters](https://pacha.ubica.dev/d/agi-hq-grid-cameras) (*Plus*) lays a simulated grid and
+the field of view of every security camera on a photogrammetric 3D Tiles mesh;
+[Wildfires near the power grid](https://pacha.ubica.dev/d/wildfires-power-grid) (*Plus*) measures
+every satellite fire detection against the high-voltage lines.
+
+**Accessibility analysis.** Who reaches what, and how fast.
+[Cuenca accessibility analysis](https://pacha.ubica.dev/d/cuenca-accessibility) (*Plus*) has R5
+(Conveyal) time every street from two places you drag, or from one place in two ways of
+travelling (by bike, on foot, by bus and tram, with or without the slope of the terrain), and
+counts the people, stops, parks, schools and hospitals within reach, minute by minute; it needs
+an R5 instance, which pacha.ubica.dev has.
+[Manhattan, by height and by subway](https://pacha.ubica.dev/d/nyc-skyline) shows how much of the
+city stands within walking distance of a train.
+
+**Mobility.** How people and vehicles move, from raw positions to flows.
+[Spain on the move](https://pacha.ubica.dev/d/spain-daily-mobility) (*Plus*) maps every trip
+between Spain's municipalities on a day, counted from mobile phones;
+[GeoLife](https://pacha.ubica.dev/d/geolife-mobility) (*Plus*) cleans 24.9 million GPS fixes into
+trips, stops and flows; [Ships around Denmark](https://pacha.ubica.dev/d/denmark-ais-trajectories)
+(*Plus*) turns AIS positions into stops, trips and encounters at sea;
+[New York City taxis, live](https://pacha.ubica.dev/d/nyc-taxi-live) replays a week of trips as
+flows between neighbourhoods.
+
+**Fleet monitoring.** Every vehicle where it is now, with its recent history and its telemetry.
+[MBTA](https://pacha.ubica.dev/d/gtfs-rt-mbta-fleet) and
+[TriMet](https://pacha.ubica.dev/d/trimet-live-fleet) (both *Plus*) follow buses and trains from GTFS
+Realtime, with punctuality, service changes and alerts;
+[Air traffic, worldwide](https://pacha.ubica.dev/d/air-traffic-world) (*Plus*) every aircraft
+adsb.lol hears; [Delivery drone flights](https://pacha.ubica.dev/d/drone-delivery-flights) and
+[a GPS truck](https://pacha.ubica.dev/d/gps-truck-track-plus) (both *Plus*) replay each trip with
+its speed and height, and the drone's energy.
 
 ## The plugins
 
