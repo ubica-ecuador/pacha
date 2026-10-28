@@ -1,6 +1,7 @@
 // The nyc-skyline dashboard (Gallery, free Kepler panel): Manhattan's buildings
 // by height against the subway. Its data is a public GeoLens catalogue, read by
-// DuckDB on the server through the gateway's cache; the Plus version is
+// DuckDB on the server through the gateway's cache into Chaski, where the
+// filters, Mosaic and the map answer every brush; the Plus version is
 // plus/dashboards/nyc-skyline-plus.json.
 import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,12 +12,9 @@ import { openDashboard } from '../lib/browser.mjs';
 
 const dashboard = loadDashboard('dashboards/gallery/nyc-skyline.json');
 const sqls = findAll(dashboard, (n) => typeof n.rawSql === 'string').map((n) => n.rawSql);
+const dataset = (name) => findAll(dashboard, (n) => n.kind === 'dataset' && n.name === name)[0];
 const map = panelTitled(dashboard, 'Every building, raised to its own height');
 const sqlOf = (panel, refId = 'A') => panel.data.spec.queries.find((q) => q.spec.refId === refId).spec.query.spec.rawSql;
-const ERAS = ['Pre-1900', '1900-1929', '1930-1949', '1950-1979', '1980-1999', '2000-2014', '2015+', 'Unknown'];
-// The variables at their defaults: 400 m, any height, every era.
-const fill = (sql, eras = ERAS) =>
-  sql.replaceAll('$radius', '400').replaceAll('$minHeight', '0').replaceAll('${era:singlequote}', eras.map((e) => `'${e}'`).join(','));
 
 let current;
 after(async () => current && current.browser.close());
@@ -24,8 +22,20 @@ after(async () => current && current.browser.close());
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, 'nyc-skyline');
   assert.ok(dashboard.spec.description);
-  for (const tag of ['business-charts', 'duckdb', 'kepler', 'transit']) assert.ok(dashboard.spec.tags.includes(tag), tag);
+  for (const tag of ['business-charts', 'chaski', 'duckdb', 'kepler', 'mosaic', 'transit']) assert.ok(dashboard.spec.tags.includes(tag), tag);
   assert.ok(!dashboard.spec.tags.includes('plus'));
+  for (const name of ['buildings', 'stations']) {
+    const { source } = dataset(name);
+    assert.equal(source.type, 'datasource', name);
+    assert.equal(source.datasource.uid, 'duckdb', name);
+    // The filters write these; a dataset reading one would reload on every brush.
+    for (const v of ['bldgFrom', 'bldgTo', 'd_lo', 'd_hi', 'h_lo', 'h_hi', 'era', 'station', 'bldgArea']) {
+      assert.doesNotMatch(source.query.rawSql, new RegExp(`\\$\\{?${v}\\b`), `${name} reads $${v}`);
+    }
+  }
+  // The map filters on the GPU from the Selection, so its queries leave the filters out.
+  assert.equal(map.vizConfig.spec.options.mosaicSelection, 'bldgFilters');
+  for (const q of map.data.spec.queries) assert.doesNotMatch(q.spec.query.spec.rawSql, /\$__crossfilter/);
 });
 
 test('reads every parquet through the gateway, none from the bench', () => {
@@ -42,18 +52,21 @@ test('is provisioned in Gallery', async () => {
   assert.equal(json.meta.folderUid, 'gallery');
 });
 
-test('the map gets every building, 29 services and 496 stations, all in New York', async () => {
-  const buildings = await duckdb(STACK_URL, fill(sqlOf(map, 'A')));
+test('every building gets its nearest of 496 stations; 29 services; three in four within 400 m', { timeout: 120_000 }, async () => {
+  const buildings = await duckdb(STACK_URL, dataset('buildings').source.query.rawSql);
   assert.equal(buildings.length, 22324);
   assert.ok(buildings.every((b) => b.height_m >= 0 && b.height_m < 600 && b.geom.startsWith('MULTIPOLYGON')));
-  assert.equal((await duckdb(STACK_URL, fill(sqlOf(map, 'B')))).length, 29);
-  const stations = await duckdb(STACK_URL, fill(sqlOf(map, 'C')));
+  assert.ok(buildings.every((b) => b.station && b.dist_m >= 0 && b.dist_m < 3000), 'nearest station');
+  const near = buildings.filter((b) => b.dist_m <= 400).length / buildings.length;
+  assert.ok(near > 0.7 && near < 0.82, `${(near * 100).toFixed(1)} % within 400 m`);
+  assert.equal((await duckdb(STACK_URL, sqlOf(map, 'B'))).length, 29);
+  const stations = await duckdb(STACK_URL, dataset('stations').source.query.rawSql);
   assert.equal(stations.length, 496);
   assert.ok(stations.every((s) => s.latitude > 40.4 && s.latitude < 41 && s.longitude > -74.3 && s.longitude < -73.6));
 });
 
-test('loads for an anonymous visitor, with no panel in error', async () => {
-  current = await openDashboard('/d/nyc-skyline', { chaski: false, timeoutMs: 90_000 });
+test('loads for an anonymous visitor, with no panel in error', { timeout: 240_000 }, async () => {
+  current = await openDashboard('/d/nyc-skyline', { datasets: ['buildings', 'stations'], timeoutMs: 120_000 });
   assert.equal(await current.panelErrors(), 0);
-  assert.ok((await current.statNumber('Within 400 m of a station')) > 0);
+  assert.ok((await current.statNumber('Buildings shown')) > 20000);
 });

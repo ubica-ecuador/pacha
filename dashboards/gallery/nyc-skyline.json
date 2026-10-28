@@ -30,7 +30,7 @@
       }
     ],
     "cursorSync": "Off",
-    "description": "Manhattan's 22,324 buildings raised to their surveyed roof height and coloured by era, against the MTA subway's lines and stations: how much of the city stands within walking distance of a train. Data from a public GeoLens catalogue.",
+    "description": "Manhattan's 22,324 buildings raised to their surveyed roof height and coloured by era, against the MTA subway's lines and stations: how much of the city stands within walking distance of a train. The buildings load once into the browser with their nearest station, and Chaski and Mosaic filter the 3D map, the figures, the station catchments and the charts at once, by distance, height, year, era, station or a drawn area; a timeline plays the city rising since 1719. Data from a public GeoLens catalogue.",
     "editable": true,
     "elements": {
       "panel-1": {
@@ -57,7 +57,7 @@
                 "overrides": []
               },
               "options": {
-                "content": "# Manhattan, by height and by subway\n\nTwo open datasets and one question: how much of Manhattan is actually within\nwalking distance of a train?\n\nThe buildings are NYC Open Data's footprints — 22,324 across Lower and Midtown,\neach with a surveyed roof height and a year of construction. The subway is the\nMTA's own open data: 29 services and 496 stations, with step-free access marked\non each. Neither was downloaded from its publisher: both came through a public\n[GeoLens](https://datasets.geolibre.app) catalogue, found by following a shared\nGeoLibre project, and are read here from its Parquet exports, through the\ngateway's cache.\n\nThree things worth knowing before you read the map:\n\n- **Press play on the map's clock.** Every building carries its year, so the\n  timeline runs from 1719 to today and the city rises as it plays.\n- **The years belong to the lot, not to the tower.** The file's second-tallest\n  building, 1,428 ft, is dated 1924 — a year when the tallest thing in New York\n  was the 792 ft Woolworth Building. `construction_year` records the earliest\n  structure on the site, not the one measured here.\n- **The areas here are recomputed.** The file ships a `shape_area` column\n  measured in Web Mercator, which at this latitude inflates every area by about\n  74 %. Every square metre on this dashboard is measured from the geometry in\n  UTM 18N instead.\n\nThe radius, the floor on height and the eras are dashboard variables: the\ncoverage figure, the table and the map all move together.",
+                "content": "# Manhattan, by height and by subway\n\nTwo open datasets and one question: how much of Manhattan is actually within\nwalking distance of a train?\n\nThe buildings are NYC Open Data's footprints — 22,324 across Lower and Midtown,\neach with a surveyed roof height and a year of construction. The subway is the\nMTA's own open data: 29 services and 496 stations, with step-free access marked\non each. Neither was downloaded from its publisher: both came through a public\n[GeoLens](https://datasets.geolibre.app) catalogue, found by following a shared\nGeoLibre project, and are read here from its Parquet exports, through the\ngateway's cache.\n\nThree things worth knowing before you read the map:\n\n- **Press play on the timeline.** Every building carries its year, so the\n  timeline runs from 1719 to today and the city rises as it plays.\n- **The years belong to the lot, not to the tower.** The file's second-tallest\n  building, 1,428 ft, is dated 1924 — a year when the tallest thing in New York\n  was the 792 ft Woolworth Building. `construction_year` records the earliest\n  structure on the site, not the one measured here.\n- **The areas here are recomputed.** The file ships a `shape_area` column\n  measured in Web Mercator, which at this latitude inflates every area by about\n  74 %. Every square metre on this dashboard is measured from the geometry in\n  UTM 18N instead.\n\nEverything is filtered in your browser: brush the distance to the nearest station, the\nroof height or the years in the filters, pick eras on the chart, draw an area on the map, or\nclick a station (on the map or in the table) to keep the buildings it is nearest to. The\nmap, the figures, the table and the charts all follow at once.",
                 "mode": "markdown"
               }
             },
@@ -78,13 +78,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "duckdb"
+                        "name": "duckdbwasm"
                       },
-                      "group": "motherduck-duckdb-datasource",
+                      "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "format": 1,
-                        "rawSql": "SELECT\n  bin,\n  height_roof AS height_ft,\n  height_roof * 0.3048 AS height_m,\n  era,\n  construction_year,\n  -- The map's clock. Years before 1600 are the file's way of saying \"no idea\",\n  -- and a NULL keeps those buildings out of the animation rather than parking\n  -- them all on one impossible date.\n  CASE WHEN construction_year \u003e= 1600\n       THEN make_timestamp(construction_year, 1, 1, 0, 0, 0) END AS time,\n  round(ST_Area(ST_Transform(geometry, 'EPSG:4326', 'EPSG:32618', always_xy := true))) AS footprint_m2,\n  ST_AsText(geometry) AS geom\nFROM read_parquet('http://feeds/geolens/datasets/4a0bd0db-cd92-424a-8a2e-62d270ae918a.parquet')\nWHERE height_roof \u003e= CAST($minHeight AS DOUBLE)\n    AND era IN (${era:singlequote})"
+                        "rawSql": "-- Every building, from the buildings dataset. The filters (years, distance,\n-- height, era, station, drawn area) reach the map as clauses of the Mosaic\n-- selection bldgFilters and filter it on the GPU, so this never runs again.\nSELECT bin, height_ft, height_m, height_axis, era, construction_year, time, footprint_m2,\n       dist_m, station, routes, clat, clng, geom\nFROM $buildings"
                       },
                       "version": "v0"
                     },
@@ -116,13 +115,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "duckdb"
+                        "name": "duckdbwasm"
                       },
-                      "group": "motherduck-duckdb-datasource",
+                      "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "format": 1,
-                        "rawSql": "SELECT\n  stop_name,\n  daytime_routes AS routes,\n  CASE ada WHEN 1 THEN 'Full' WHEN 2 THEN 'Partial' ELSE 'None' END AS step_free,\n  structure,\n  ST_Y(ST_Centroid(geometry)) AS latitude,\n  ST_X(ST_Centroid(geometry)) AS longitude\nFROM read_parquet('http://feeds/geolens/datasets/c646ff35-82eb-442f-a524-efcbb1645023.parquet')"
+                        "rawSql": "-- The stations; a click on one keeps the buildings it is nearest to.\nSELECT station, stop_name, routes, step_free, structure, latitude, longitude FROM $stations"
                       },
                       "version": "v0"
                     },
@@ -134,7 +132,7 @@
               "transformations": []
             }
           },
-          "description": "Colour is the era it went up; height is the surveyed roof, in metres. Press play to watch the city arrive.",
+          "description": "Manhattan's buildings extruded to their roof height and coloured by era, with the subway's services and its stations (green step-free, amber partly, grey not). Everything the filters keep stays standing: brush years, distance or height, pick eras, draw an area, or click a station (or a building) to keep the buildings nearest to that station; click empty ground to let go.",
           "id": 2,
           "links": [],
           "title": "Every building, raised to its own height",
@@ -147,7 +145,8 @@
                 "overrides": []
               },
               "options": {
-                "basemap": "dark-matter",
+                "areaVariable": "bldgArea",
+                "basemap": "openfreemap-dark",
                 "flowRenderMode": "straight",
                 "followGrafanaTheme": false,
                 "mapConfig": {
@@ -161,12 +160,12 @@
                       "zoom": 13.4
                     },
                     "mapStyle": {
-                      "styleType": "dark-matter"
+                      "styleType": "openfreemap-dark"
                     },
                     "visState": {
                       "filters": [
                         {
-                          "animationWindow": "incremental",
+                          "animationWindow": "free",
                           "dataId": [
                             "grafana-A"
                           ],
@@ -179,14 +178,55 @@
                             "interval": "1-year",
                             "type": "histogram"
                           },
-                          "speed": 2,
-                          "timeFormat": "YYYY",
+                          "speed": 1,
                           "type": "timeRange",
                           "value": [
-                            -7920806400000,
-                            1798761600000
+                            -8000000000000,
+                            4102444800000
                           ],
-                          "view": "minified"
+                          "view": "side"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "dist",
+                          "name": [
+                            "dist_m"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "range",
+                          "value": [
+                            0,
+                            5000
+                          ],
+                          "view": "side"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "height",
+                          "name": [
+                            "height_axis"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "range",
+                          "value": [
+                            0,
+                            600
+                          ],
+                          "view": "side"
                         }
                       ],
                       "interactionConfig": {
@@ -219,7 +259,10 @@
                                 "name": "footprint_m2"
                               },
                               {
-                                "name": "bin"
+                                "name": "station"
+                              },
+                              {
+                                "name": "dist_m"
                               }
                             ],
                             "grafana-B": [
@@ -436,13 +479,23 @@
                   },
                   "version": "v1"
                 },
+                "mosaicArea": true,
+                "mosaicColumns": "clng, clat",
+                "mosaicSelection": "bldgFilters",
+                "mosaicViewport": false,
                 "peerTimeSync": false,
                 "publishWhilePlaying": false,
                 "saveRequest": 0,
                 "showSidePanel": false,
                 "timeSync": "off",
                 "tripLayerMode": "table",
-                "variableMappings": [],
+                "variableMappings": [
+                  {
+                    "field": "station",
+                    "source": "click",
+                    "variable": "station"
+                  }
+                ],
                 "viewportVariables": {},
                 "windDensity": 9000
               }
@@ -464,13 +517,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "duckdb"
+                        "name": "duckdbwasm"
                       },
-                      "group": "motherduck-duckdb-datasource",
+                      "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "format": 1,
-                        "rawSql": "WITH b AS (\n  SELECT bin, height_roof,\n         ST_Transform(ST_Centroid(geometry), 'EPSG:4326', 'EPSG:32618', always_xy := true) AS pt,\n         ST_Area(ST_Transform(geometry, 'EPSG:4326', 'EPSG:32618', always_xy := true)) AS footprint_m2\n  FROM read_parquet('http://feeds/geolens/datasets/4a0bd0db-cd92-424a-8a2e-62d270ae918a.parquet')\n  WHERE height_roof \u003e= CAST($minHeight AS DOUBLE)\n    AND era IN (${era:singlequote})\n), s AS (\n  SELECT stop_name, daytime_routes, borough, ada,\n         ST_Transform(geometry, 'EPSG:4326', 'EPSG:32618', always_xy := true) AS pt\n  FROM read_parquet('http://feeds/geolens/datasets/c646ff35-82eb-442f-a524-efcbb1645023.parquet')\n)\n, tagged AS (\n  SELECT EXISTS (\n    SELECT 1 FROM s WHERE ST_DWithin(b.pt, s.pt, CAST($radius AS DOUBLE))\n  ) AS served\n  FROM b\n)\nSELECT\n  round(100.0 * count(*) FILTER (WHERE served) / nullif(count(*), 0), 1) AS \"Within reach\",\n  count(*) FILTER (WHERE served) AS \"Buildings served\",\n  count(*) AS \"Buildings shown\"\nFROM tagged"
+                        "rawSql": "-- Buildings that pass every filter, their footprint and the tallest; and the\n-- share within walking distance: within the distance brushed in the filters\n-- (400 m with none) among the buildings every other filter leaves.\nWITH w AS (\n  SELECT coalesce(try_cast($d_lo AS DOUBLE), 0) AS lo, coalesce(try_cast($d_hi AS DOUBLE), 400) AS hi\n)\nSELECT round(100.0 * count(*) FILTER (WHERE $__crossfilter($bldgFilters, -dist) AND dist_m BETWEEN w.lo AND w.hi)\n             / nullif(count(*) FILTER (WHERE $__crossfilter($bldgFilters, -dist)), 0), 1)::DOUBLE AS \"Within reach\",\n       (count(*) FILTER (WHERE $__crossfilter($bldgFilters)))::DOUBLE AS \"Buildings shown\",\n       round(sum(footprint_m2) FILTER (WHERE $__crossfilter($bldgFilters)) / 10000, 1)::DOUBLE AS \"Footprint (ha)\",\n       max(height_ft) FILTER (WHERE $__crossfilter($bldgFilters))::DOUBLE AS \"Tallest (ft)\"\nFROM $buildings, w\nGROUP BY w.lo, w.hi"
                       },
                       "version": "v0"
                     },
@@ -482,9 +534,10 @@
               "transformations": []
             }
           },
+          "description": "Within reach: the share of the buildings the other filters keep that stand within the distance brushed in the filters, or within 400 m of a station (a five-minute walk) when none is brushed; distances are straight lines from the building's centre to the nearest station. Then the buildings every filter keeps, their footprint in hectares and the tallest.",
           "id": 3,
           "links": [],
-          "title": "Within ${radius:text} of a station",
+          "title": "Within walking distance",
           "vizConfig": {
             "group": "stat",
             "kind": "VizConfig",
@@ -526,8 +579,8 @@
               "options": {
                 "colorMode": "value",
                 "graphMode": "none",
-                "justifyMode": "auto",
-                "orientation": "vertical",
+                "justifyMode": "center",
+                "orientation": "horizontal",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -535,7 +588,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "auto"
+                "text": {
+                  "titleSize": 12,
+                  "valueSize": 24
+                },
+                "textMode": "auto",
+                "wideLayout": true
               }
             },
             "version": ""
@@ -555,13 +613,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "duckdb"
+                        "name": "duckdbwasm"
                       },
-                      "group": "motherduck-duckdb-datasource",
+                      "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "format": 1,
-                        "rawSql": "WITH b AS (\n  SELECT bin, height_roof,\n         ST_Transform(ST_Centroid(geometry), 'EPSG:4326', 'EPSG:32618', always_xy := true) AS pt,\n         ST_Area(ST_Transform(geometry, 'EPSG:4326', 'EPSG:32618', always_xy := true)) AS footprint_m2\n  FROM read_parquet('http://feeds/geolens/datasets/4a0bd0db-cd92-424a-8a2e-62d270ae918a.parquet')\n  WHERE height_roof \u003e= CAST($minHeight AS DOUBLE)\n    AND era IN (${era:singlequote})\n), s AS (\n  SELECT stop_name, daytime_routes, borough, ada,\n         ST_Transform(geometry, 'EPSG:4326', 'EPSG:32618', always_xy := true) AS pt\n  FROM read_parquet('http://feeds/geolens/datasets/c646ff35-82eb-442f-a524-efcbb1645023.parquet')\n)\nSELECT\n  s.stop_name AS \"Station\",\n  s.daytime_routes AS \"Routes\",\n  CASE s.borough WHEN 'M' THEN 'Manhattan' WHEN 'Bk' THEN 'Brooklyn'\n                 WHEN 'Bx' THEN 'Bronx'    WHEN 'Q'  THEN 'Queens'\n                 WHEN 'SI' THEN 'Staten Island' END AS \"Borough\",\n  CASE s.ada WHEN 1 THEN 'Full' WHEN 2 THEN 'Partial' ELSE 'None' END AS \"Step-free\",\n  count(b.bin) AS \"Buildings\",\n  round(max(b.height_roof)) AS \"Tallest (ft)\",\n  round(sum(b.footprint_m2)) AS \"Footprint (m2)\"\nFROM s LEFT JOIN b ON ST_DWithin(s.pt, b.pt, CAST($radius AS DOUBLE))\nGROUP BY 1, 2, 3, 4\nHAVING count(b.bin) \u003e 0\nORDER BY 5 DESC"
+                        "rawSql": "-- The catchment of every station: the buildings it is the nearest station to,\n-- under every filter but the station itself, so the other stations stay\n-- listed. The first row clears the pick; a click on a station keeps its\n-- catchment. No quotes in these comments: one would hide the macros below.\nSELECT '' AS pick, '— All stations —' AS \"Station\", '' AS \"Routes\", '' AS \"Step-free\",\n       count(*)::DOUBLE AS \"Buildings\", round(max(height_ft))::DOUBLE AS \"Tallest (ft)\",\n       round(sum(footprint_m2))::DOUBLE AS \"Footprint (m2)\", round(median(dist_m))::DOUBLE AS \"Median walk (m)\", 0 AS o\nFROM $buildings\nWHERE $__crossfilter($bldgFilters, -station)\nUNION ALL\nSELECT station, station, any_value(routes), any_value(step_free),\n       count(*)::DOUBLE, round(max(height_ft))::DOUBLE, round(sum(footprint_m2))::DOUBLE, round(median(dist_m))::DOUBLE, 1\nFROM $buildings\nWHERE $__crossfilter($bldgFilters, -station)\nGROUP BY station\nORDER BY o, \"Buildings\" DESC"
                       },
                       "version": "v0"
                     },
@@ -573,10 +630,10 @@
               "transformations": []
             }
           },
-          "description": "Buildings whose centre falls within $radius m of the station, and what they add up to.",
+          "description": "Every station with the buildings it is the nearest station to, under the other filters: how many, the tallest, their footprint and the median straight-line walk. Click a station to keep its catchment on the map and in every chart; the first row lets go.",
           "id": 4,
           "links": [],
-          "title": "Stations, by how much of the city they stand in",
+          "title": "Stations, by the buildings they are nearest to",
           "vizConfig": {
             "group": "table",
             "kind": "VizConfig",
@@ -627,6 +684,59 @@
                         "value": "areaM2"
                       }
                     ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "pick"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hidden",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "o"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hidden",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Station"
+                    },
+                    "properties": [
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Keep the buildings nearest to ${__data.fields.Station}",
+                            "url": "/d/${__dashboard.uid}${__url.params:exclude:var-station}\u0026var-station=${__data.fields.pick}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Median walk (m)"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "lengthm"
+                      }
+                    ]
                   }
                 ]
               },
@@ -659,13 +769,12 @@
                     "hidden": false,
                     "query": {
                       "datasource": {
-                        "name": "duckdb"
+                        "name": "duckdbwasm"
                       },
-                      "group": "motherduck-duckdb-datasource",
+                      "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "format": 1,
-                        "rawSql": "-- Every era, whatever the \"Built in\" filter says: the chart is where eras are\n-- picked, so the ones left out stay on it, in grey, to be clicked back.\nSELECT\n  era,\n  count(*) AS buildings,\n  round(avg(height_roof), 1) AS avg_height_ft\nFROM read_parquet('http://feeds/geolens/datasets/4a0bd0db-cd92-424a-8a2e-62d270ae918a.parquet')\nWHERE height_roof \u003e= CAST($minHeight AS DOUBLE)\nGROUP BY era\nORDER BY min(coalesce(construction_year, 9999))"
+                        "rawSql": "-- Every era, whatever the era filter says: the chart is where eras are\n-- picked, so the ones left out stay on it, in grey, to be clicked back. Every\n-- other filter applies.\nSELECT era, count(*)::DOUBLE AS buildings, round(avg(height_ft), 1)::DOUBLE AS avg_height_ft\nFROM $buildings\nWHERE $__crossfilter($bldgFilters, -era)\nGROUP BY era\nORDER BY min(coalesce(construction_year, 9999))"
                       },
                       "version": "v0"
                     },
@@ -723,6 +832,156 @@
             "version": "7.2.5"
           }
         }
+      },
+      "panel-filters": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Brush a histogram to keep a range, click an era or a station, × to clear one, Clear all for every one. Each control shows in grey what the other filters leave.",
+          "id": 6,
+          "links": [],
+          "title": "Filters",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 40,
+                "filters": "bldgFilters",
+                "layout": "auto",
+                "maxValues": 8,
+                "noun": "buildings",
+                "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 800,
+                "timeColumn": "",
+                "timeline": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-side": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each dot is a building the filters keep, placed by how far up the island it stands from the Battery (along the street grid) and by its roof height, coloured by era: the two skylines, the Financial District and Midtown, with the low ground between. Drawn by Mosaic.",
+          "id": 8,
+          "links": [],
+          "title": "Manhattan from the side: every building up the island, at its roof height",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  bldgFilters: { select: crossfilter }\nplot:\n  - mark: dot\n    data: { from: buildings, filterBy: $bldgFilters }\n    x: along_km\n    y: height_ft\n    fill: era\n    r: 1.4\n    fillOpacity: 0.55\n    stroke: none\nxDomain: Fixed\nyDomain: [0, 1600]\nyScale: sqrt\nyTicks: [0, 50, 100, 200, 400, 800, 1200, 1600]\ncolorDomain: [\"Pre-1900\", \"1900-1929\", \"1930-1949\", \"1950-1979\", \"1980-1999\", \"2000-2014\", \"2015+\", \"Unknown\"]\ncolorRange: [\"#2b3a67\", \"#3f6c9c\", \"#5fa0b8\", \"#93c4a0\", \"#e0c26b\", \"#e08a48\", \"#d1495b\", \"#6c6c6c\"]\nxLabel: Up the island from the Battery (km) →\nyLabel: ↑ Roof height (ft)\nmarginLeft: 48\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-timeline": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Buildings by the year of their lot, 1719 to today. Brush a span of years, or press play: the window grows from the first year and the city rises on the map.",
+          "id": 7,
+          "links": [],
+          "title": "Built, year by year",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 80,
+                "filters": "bldgFilters",
+                "layout": "timeline",
+                "maxValues": 8,
+                "noun": "buildings",
+                "playMode": "grow",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 500,
+                "timeColumn": "",
+                "timeline": "time"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-year-height": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each dot is a building the filters keep, by the year of its lot and its roof height (on a log scale), coloured by era. The tall buildings on old lots are the towers that replaced older structures: the year is the lot's, not the tower's. Drawn by Mosaic.",
+          "id": 9,
+          "links": [],
+          "title": "When the lots were built, and how tall they stand now",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  bldgFilters: { select: crossfilter }\nplot:\n  - mark: dot\n    data: { from: buildings, filterBy: $bldgFilters }\n    x: construction_year\n    y: height_ft\n    fill: era\n    r: 1.4\n    fillOpacity: 0.5\n    stroke: none\nxDomain: [1790, 2030]\nyDomain: [5, 1600]\nyScale: log\ncolorDomain: [\"Pre-1900\", \"1900-1929\", \"1930-1949\", \"1950-1979\", \"1980-1999\", \"2000-2014\", \"2015+\", \"Unknown\"]\ncolorRange: [\"#2b3a67\", \"#3f6c9c\", \"#5fa0b8\", \"#93c4a0\", \"#e0c26b\", \"#e08a48\", \"#d1495b\", \"#6c6c6c\"]\nxLabel: Year of the lot →\nyLabel: ↑ Roof height (ft, log)\nxTickFormat: d\nmarginLeft: 48\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
       }
     },
     "layout": {
@@ -747,12 +1006,38 @@
             "spec": {
               "element": {
                 "kind": "ElementReference",
+                "name": "panel-timeline"
+              },
+              "height": 5,
+              "width": 24,
+              "x": 0,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-filters"
+              },
+              "height": 24,
+              "width": 5,
+              "x": 0,
+              "y": 14
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
                 "name": "panel-2"
               },
               "height": 24,
-              "width": 17,
-              "x": 0,
-              "y": 9
+              "width": 13,
+              "x": 5,
+              "y": 14
             }
           },
           {
@@ -762,10 +1047,10 @@
                 "kind": "ElementReference",
                 "name": "panel-3"
               },
-              "height": 7,
-              "width": 7,
-              "x": 17,
-              "y": 9
+              "height": 5,
+              "width": 6,
+              "x": 18,
+              "y": 14
             }
           },
           {
@@ -775,10 +1060,36 @@
                 "kind": "ElementReference",
                 "name": "panel-4"
               },
-              "height": 17,
-              "width": 7,
-              "x": 17,
-              "y": 16
+              "height": 19,
+              "width": 6,
+              "x": 18,
+              "y": 19
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-side"
+              },
+              "height": 10,
+              "width": 24,
+              "x": 0,
+              "y": 38
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-year-height"
+              },
+              "height": 11,
+              "width": 12,
+              "x": 0,
+              "y": 48
             }
           },
           {
@@ -788,10 +1099,10 @@
                 "kind": "ElementReference",
                 "name": "panel-5"
               },
-              "height": 9,
-              "width": 24,
-              "x": 0,
-              "y": 33
+              "height": 11,
+              "width": 12,
+              "x": 12,
+              "y": 48
             }
           }
         ]
@@ -802,8 +1113,10 @@
     "preload": false,
     "tags": [
       "business-charts",
+      "chaski",
       "duckdb",
       "kepler",
+      "mosaic",
       "transit"
     ],
     "timeSettings": {
@@ -821,47 +1134,115 @@
         "1d"
       ],
       "fiscalYearStartMonth": 0,
-      "from": "now-6h",
+      "from": "1700-01-01T00:00:00.000Z",
       "hideTimepicker": true,
       "timezone": "utc",
-      "to": "now"
+      "to": "2030-01-01T00:00:00.000Z"
     },
     "title": "Manhattan, by height and by subway",
     "variables": [
       {
-        "kind": "CustomVariable",
+        "kind": "QueryVariable",
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "400 m",
-            "value": "400"
+            "text": "",
+            "value": ""
           },
-          "hide": "dontHide",
+          "description": "Manhattan's buildings with their nearest subway station and the distance to it, read by the server once per visit.",
+          "hide": "hideVariable",
           "includeAll": false,
-          "label": "Walk to a station",
           "multi": false,
-          "name": "radius",
+          "name": "buildings",
           "options": [],
-          "query": "200 m : 200, 400 m : 400, 800 m : 800",
-          "skipUrlSync": false
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "buildings",
+              "refId": "buildings",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: Manhattan's 22,324 building footprints, each with\n-- the subway station nearest to its centre and how far that is, in metres, in\n-- a straight line, measured in UTM 18N (22,324 buildings against 496 stations,\n-- about a second). The browser then filters them by height, year, distance,\n-- era, station and drawn area without asking the server again. along_km is how\n-- far up the island the building stands, from the Battery along Manhattan's\n-- street grid (29 degrees east of north), for the skyline seen from the side.\n-- Areas come from the geometry in UTM, not from the file's Web Mercator\n-- shape_area, which overstates them by about 74 % at this latitude. Geometry\n-- is rounded to 1e-6 degrees (about 10 cm), a third less to load.\nWITH s AS (\n  SELECT stop_name || ' · ' || daytime_routes AS station, daytime_routes AS routes,\n         CASE ada WHEN 1 THEN 'Full' WHEN 2 THEN 'Partial' ELSE 'None' END AS step_free,\n         ST_Transform(geometry, 'EPSG:4326', 'EPSG:32618', always_xy := true) AS pt\n  FROM read_parquet('http://feeds/geolens/datasets/c646ff35-82eb-442f-a524-efcbb1645023.parquet')\n),\nb AS (\n  SELECT bin, height_roof, era, construction_year, geometry,\n         ST_Transform(geometry, 'EPSG:4326', 'EPSG:32618', always_xy := true) AS g\n  FROM read_parquet('http://feeds/geolens/datasets/4a0bd0db-cd92-424a-8a2e-62d270ae918a.parquet')\n),\nc AS (\n  SELECT bin, height_roof, era, construction_year, geometry, ST_Centroid(g) AS pt, ST_Area(g) AS footprint_m2,\n         ST_Centroid(geometry) AS c4326\n  FROM b\n),\nnear AS (\n  SELECT c.bin, arg_min(s.station, ST_Distance(c.pt, s.pt)) AS station,\n         arg_min(s.routes, ST_Distance(c.pt, s.pt)) AS routes,\n         arg_min(s.step_free, ST_Distance(c.pt, s.pt)) AS step_free,\n         min(ST_Distance(c.pt, s.pt)) AS dist_m\n  FROM c, s\n  GROUP BY c.bin\n),\nbattery AS (\n  SELECT ST_Transform(ST_Point(-74.0170, 40.7033), 'EPSG:4326', 'EPSG:32618', always_xy := true) AS o\n)\nSELECT c.bin,\n       round(c.height_roof, 1)::DOUBLE AS height_ft,\n       round(c.height_roof * 0.3048, 1)::DOUBLE AS height_m,\n       least(round(c.height_roof, 1), 600)::DOUBLE AS height_axis,\n       c.era,\n       c.construction_year::DOUBLE AS construction_year,\n       -- The timeline's clock. Years before 1600 are the file's way of saying\n       -- \"no idea\": NULL keeps those buildings out of a window, not on one date.\n       CASE WHEN c.construction_year \u003e= 1600 THEN make_timestamp(c.construction_year, 1, 1, 0, 0, 0) END AS time,\n       round(c.footprint_m2)::DOUBLE AS footprint_m2,\n       round(n.dist_m)::DOUBLE AS dist_m,\n       n.station, n.routes, n.step_free,\n       round(((ST_X(c.pt) - ST_X(battery.o)) * sin(radians(29)) + (ST_Y(c.pt) - ST_Y(battery.o)) * cos(radians(29))) / 1000, 3)::DOUBLE AS along_km,\n       round(ST_Y(c.c4326), 6) AS clat, round(ST_X(c.c4326), 6) AS clng,\n       ST_AsText(ST_ReducePrecision(c.geometry, 0.000001)) AS geom\nFROM c JOIN near AS n USING (bin), battery\nORDER BY time NULLS LAST",
+                  "refId": "buildings"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
         }
       },
       {
-        "kind": "CustomVariable",
+        "kind": "QueryVariable",
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "anything",
-            "value": "0"
+            "text": "",
+            "value": ""
           },
-          "hide": "dontHide",
+          "description": "The MTA's subway stations, read by the server once per visit.",
+          "hide": "hideVariable",
           "includeAll": false,
-          "label": "Taller than",
           "multi": false,
-          "name": "minHeight",
+          "name": "stations",
           "options": [],
-          "query": "anything : 0, 50 ft : 50, 100 ft : 100, 250 ft : 250, 500 ft : 500",
-          "skipUrlSync": false
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "stations",
+              "refId": "stations",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the MTA's 496 subway stations, named by stop and\n-- daytime routes (four are called Canal St), as the buildings name their\n-- nearest one.\nSELECT stop_name || ' · ' || daytime_routes AS station, stop_name, daytime_routes AS routes,\n       CASE ada WHEN 1 THEN 'Full' WHEN 2 THEN 'Partial' ELSE 'None' END AS step_free,\n       structure,\n       ST_Y(ST_Centroid(geometry)) AS latitude,\n       ST_X(ST_Centroid(geometry)) AS longitude\nFROM read_parquet('http://feeds/geolens/datasets/c646ff35-82eb-442f-a524-efcbb1645023.parquet')",
+                  "refId": "stations"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
         }
       },
       {
@@ -876,7 +1257,7 @@
               "$__all"
             ]
           },
-          "hide": "dontHide",
+          "hide": "hideVariable",
           "includeAll": true,
           "label": "Built in",
           "multi": true,
@@ -884,6 +1265,194 @@
           "options": [],
           "query": "Pre-1900, 1900-1929, 1930-1949, 1950-1979, 1980-1999, 2000-2014, 2015+, Unknown",
           "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "bldgFrom",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "bldgTo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "d_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "d_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "h_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "h_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "station",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "bldgArea",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Filters on the buildings",
+          "multi": false,
+          "name": "bldgFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$buildings",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$bldgFrom",
+                  "label": "Built (year of the lot)",
+                  "name": "time",
+                  "to": "$bldgTo",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "dist_m",
+                  "from": "$d_lo",
+                  "label": "To the nearest station (m, straight line)",
+                  "name": "dist",
+                  "to": "$d_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "height_axis",
+                  "from": "$h_lo",
+                  "label": "Roof height (ft; 600+ in the last bin)",
+                  "name": "height",
+                  "to": "$h_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "era",
+                  "label": "Era",
+                  "name": "era",
+                  "type": "in",
+                  "variable": "$era"
+                },
+                {
+                  "column": "station",
+                  "label": "Nearest station",
+                  "name": "station",
+                  "type": "equals",
+                  "variable": "$station"
+                },
+                {
+                  "label": "Drawn area",
+                  "lat": "clat",
+                  "lng": "clng",
+                  "name": "area",
+                  "type": "area",
+                  "variable": "$bldgArea"
+                }
+              ],
+              "kind": "filters",
+              "refId": "bldgFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
         }
       }
     ]
