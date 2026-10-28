@@ -109,6 +109,12 @@ test('every variable a Mosaic panel or a filter writes or reads is declared, and
   }
 });
 
+test('each tab\'s Fleet layer hides the animals with no position in the time window', () => {
+  const fleets = findAll(dashboard, (n) => n.type === 'fleet' && n.config?.visConfig);
+  assert.equal(fleets.length, 3);
+  for (const f of fleets) assert.equal(f.config.visConfig.fleetSilent, 'hide', f.config.label);
+});
+
 test('the steps: speeds, turns, hours and distances from home within their ranges', async () => {
   for (const name of Object.keys(STEPS)) {
     const [row] = await duckdb(
