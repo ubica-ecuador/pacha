@@ -147,7 +147,7 @@
                     "properties": [
                       {
                         "id": "custom.drawStyle",
-                        "value": "bars"
+                        "value": "area"
                       },
                       {
                         "id": "custom.aggregation",
@@ -170,7 +170,7 @@
                     "properties": [
                       {
                         "id": "custom.drawStyle",
-                        "value": "bars"
+                        "value": "area"
                       },
                       {
                         "id": "custom.aggregation",
@@ -193,7 +193,7 @@
                     "properties": [
                       {
                         "id": "custom.drawStyle",
-                        "value": "bars"
+                        "value": "area"
                       },
                       {
                         "id": "custom.aggregation",
@@ -216,7 +216,7 @@
                     "properties": [
                       {
                         "id": "custom.drawStyle",
-                        "value": "bars"
+                        "value": "area"
                       },
                       {
                         "id": "custom.aggregation",
@@ -239,7 +239,7 @@
                     "properties": [
                       {
                         "id": "custom.drawStyle",
-                        "value": "bars"
+                        "value": "area"
                       },
                       {
                         "id": "custom.aggregation",
@@ -262,7 +262,7 @@
                     "properties": [
                       {
                         "id": "custom.drawStyle",
-                        "value": "bars"
+                        "value": "area"
                       },
                       {
                         "id": "custom.aggregation",
@@ -285,7 +285,7 @@
                     "properties": [
                       {
                         "id": "custom.drawStyle",
-                        "value": "bars"
+                        "value": "area"
                       },
                       {
                         "id": "custom.aggregation",
@@ -308,7 +308,7 @@
                     "properties": [
                       {
                         "id": "custom.drawStyle",
-                        "value": "marks"
+                        "value": "bars"
                       },
                       {
                         "id": "color",
@@ -342,10 +342,10 @@
                 "mosaicSelection": "stormFilters",
                 "output": "variables",
                 "outsideOpacity": 30,
-                "pinned": "scrolled",
+                "pinned": "always",
                 "pinnedControls": "all",
                 "pinnedHeight": 52,
-                "pinnedPosition": "top",
+                "pinnedPosition": "floating",
                 "pinnedStyle": "solid",
                 "playMotion": "smooth",
                 "publishIntervalMs": 500,
@@ -3524,7 +3524,13 @@
               },
               "options": {
                 "cellHeight": "sm",
-                "showHeader": true
+                "showHeader": true,
+                "sortBy": [
+                  {
+                    "desc": false,
+                    "displayName": "Alert"
+                  }
+                ]
               }
             },
             "version": "13.2.1"
@@ -4360,8 +4366,21 @@
                           "name": "panel-17"
                         },
                         "height": 3,
-                        "width": 24,
+                        "width": 17,
                         "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-10"
+                        },
+                        "height": 3,
+                        "width": 7,
+                        "x": 17,
                         "y": 0
                       }
                     },
@@ -4372,23 +4391,10 @@
                           "kind": "ElementReference",
                           "name": "panel-15"
                         },
-                        "height": 4,
+                        "height": 5,
                         "width": 24,
                         "x": 0,
                         "y": 3
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-10"
-                        },
-                        "height": 6,
-                        "width": 24,
-                        "x": 0,
-                        "y": 7
                       }
                     },
                     {
@@ -4401,7 +4407,7 @@
                         "height": 2,
                         "width": 16,
                         "x": 0,
-                        "y": 13
+                        "y": 8
                       }
                     },
                     {
@@ -4414,7 +4420,7 @@
                         "height": 13,
                         "width": 8,
                         "x": 16,
-                        "y": 13
+                        "y": 8
                       }
                     },
                     {
@@ -4424,10 +4430,10 @@
                           "kind": "ElementReference",
                           "name": "panel-11"
                         },
-                        "height": 24,
+                        "height": 21,
                         "width": 16,
                         "x": 0,
-                        "y": 15
+                        "y": 10
                       }
                     },
                     {
@@ -4437,10 +4443,10 @@
                           "kind": "ElementReference",
                           "name": "panel-13"
                         },
-                        "height": 13,
+                        "height": 10,
                         "width": 8,
                         "x": 16,
-                        "y": 26
+                        "y": 21
                       }
                     },
                     {
@@ -4453,7 +4459,7 @@
                         "height": 11,
                         "width": 8,
                         "x": 0,
-                        "y": 39
+                        "y": 31
                       }
                     },
                     {
@@ -4466,7 +4472,7 @@
                         "height": 11,
                         "width": 8,
                         "x": 8,
-                        "y": 39
+                        "y": 31
                       }
                     },
                     {
@@ -4479,7 +4485,7 @@
                         "height": 11,
                         "width": 8,
                         "x": 16,
-                        "y": 39
+                        "y": 31
                       }
                     }
                   ]
