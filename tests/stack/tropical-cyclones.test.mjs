@@ -4,9 +4,10 @@
 // in error. It needs Kepler Plus (compose.plus.yaml): without it, the tests are
 // skipped.
 //
-// The data is live (GDACS's advisories, NOAA GFS on ERDDAP, IBTrACS), so the
-// checks are about shape and sanity, on the storm the dashboard opens on: the
-// first of its list. A quiet fortnight with no storm at all skips them.
+// The data is live (GDACS's advisories, NOAA GFS on ERDDAP, IBTrACS, NASA GIBS,
+// the NHC and JTWC wind chances on Esri's Living Atlas), so the checks are about
+// shape and sanity, on the storm the dashboard opens on: the first of its list.
+// A quiet fortnight with no storm at all skips them.
 //
 // GDACS can take up to 30 s to build an answer, and ERDDAP a GFS box longer
 // than Grafana waits for on a miss. The gateway keeps fetching, so a query is
@@ -33,7 +34,10 @@ const storm = storms[0]?.__value;
 const skip = noPlus || (!storm && 'GDACS has no storm in the last two weeks');
 // The DuckDB datasource quotes a variable's value; so does this.
 const forStorm = (sql, switches = 'on') =>
-  sql.replaceAll('$storm', `'${storm}'`).replaceAll('$rain', `'${switches}'`).replaceAll('$isobars', `'${switches}'`);
+  ['rain', 'isobars', 'satellite', 'windchance'].reduce(
+    (out, name) => out.replaceAll(`$${name}`, `'${switches}'`),
+    sql.replaceAll('$storm', `'${storm}'`)
+  );
 
 const patiently = async (sql) => {
   for (let attempt = 1; ; attempt++) {
@@ -110,6 +114,18 @@ test('the brush opens on the storm: from its first advisory to the present hour,
   assert.ok(Math.abs(lat) <= 60 && Math.abs(lon) <= 180, `${lat} ${lon}`);
 });
 
+test('whichever storm is picked, its card stays open and the camera follows it from afar', () => {
+  const config = map.vizConfig.spec.options.mapConfig;
+  const layers = (typeof config === 'string' ? JSON.parse(config) : config).config.visState.layers;
+  const vc = layers.find((l) => l.id === 'storm').config.visConfig;
+  // Kepler Plus's Keep every card open and Follow the first asset: no saved storm name to go stale.
+  assert.equal(vc.fleetPinAll, true);
+  assert.equal(vc.fleetFollowFirst, true);
+  assert.equal(vc.fleetFollow, '');
+  // Custom keeps the map's zoom; the other modes zoom in to street level.
+  assert.equal(vc.fleetFollowMode, 'custom');
+});
+
 test('the rain and isobar switches: rows when on, one with no place when off', { skip, timeout: 10 * 60_000 }, async () => {
   for (const refId of ['H', 'I']) {
     const rows = await patiently(forStorm(mapSql(refId), 'off'));
@@ -117,6 +133,41 @@ test('the rain and isobar switches: rows when on, one with no place when off', {
     assert.equal(rows[0].latitude, null, `${refId} off`);
   }
   assert.ok((await patiently(forStorm(mapSql('I'), 'on'))).length > 1000, 'isobars on');
+});
+
+test('the satellite: one picture an hour from GIBS, from the one satellite that sees the storm, none over the forecast', { skip }, async () => {
+  const parked = Date.parse('2000-01-01T00:00:00Z');
+  const now = Date.now();
+  const answers = {};
+  for (const refId of ['J', 'M', 'N', 'K']) {
+    const rows = await patiently(forStorm(mapSql(refId)));
+    // Every query keeps its WMS layer on the map with one moment long before any storm.
+    assert.equal(rows[0].time, parked, `${refId} parked`);
+    for (const row of rows) assert.equal(row.wms_url, 'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi');
+    answers[refId] = rows.slice(1);
+    const off = await patiently(forStorm(mapSql(refId), 'off'));
+    assert.deepEqual(off.map((row) => row.time), [parked], `${refId} off`);
+  }
+  const seeing = ['J', 'M', 'N'].filter((refId) => answers[refId].length > 0);
+  assert.ok(seeing.length <= 1, `seen by ${seeing}`);
+  for (const refId of [...seeing, 'K']) {
+    const times = answers[refId].map((row) => row.time);
+    assert.ok(times.length > 24, `${refId}: ${times.length} hours`);
+    // A real picture is at least an hour old; the forecast's hours point at themselves.
+    const past = times.filter((t) => t <= now - 3_600_000);
+    assert.ok(past.length > 0 && times.every((t) => t <= now - 3_600_000 || t % 3_600_000 === 0), refId);
+    assert.ok(times.at(-1) > now + 40 * 3_600_000, `${refId} reaches the forecast`);
+  }
+});
+
+test('the wind chance: bands of ten percent near the storm, none when switched off', { skip }, async () => {
+  const rows = await patiently(forStorm(mapSql('L')));
+  // An ended storm has no chance left; an active one usually has its bands.
+  for (const row of rows) {
+    assert.ok(row.chance_pct >= 10 && row.chance_pct <= 100 && row.chance_pct % 10 === 0, JSON.stringify(row).slice(0, 200));
+    assert.ok(['Polygon', 'MultiPolygon'].includes(JSON.parse(row.geojson).type));
+  }
+  assert.equal((await patiently(forStorm(mapSql('L'), 'off'))).length, 0);
 });
 
 test('the advisory and the GFS low come in pairs, a few hundred kilometres apart at most', { skip, timeout: 10 * 60_000 }, async () => {

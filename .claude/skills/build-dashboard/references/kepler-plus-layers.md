@@ -99,8 +99,12 @@ straight|lanes|split, `trafficLaneBend`, `trafficShape` flat|arc, `trafficArcHei
   (`"{\"bus\":{\"silhouette\":\"bus\"}}"`).
 - Card: `fleetCard`, `fleetCardWindow`, `fleetCardSize`, `fleetSpeedUnit`, `fleetCrosshair`,
   `fleetCardField` + `fleetCardUnit`. A card's chart needs ≥ 2 readings in its window.
+  `fleetPinned` lists the pinned assets' ids; `fleetPinAll: true` keeps every card open instead
+  (one asset picked by a variable, whose id no saved pin can know: `tropical-cyclones`).
 - Camera: `fleetFollow` (id, name or `"$variable"`), `fleetFollowMode`
   follow|orbit|chase|custom. A "vehicle cam" = a second Fleet map with `fleetFollow: "$vehicle"`.
+  `fleetFollowFirst: true` with `fleetFollow` empty follows the layer's first asset. Follow, orbit
+  and chase zoom in to street level from far out: for a storm or anything seen from afar use custom.
 - Trails do not break at the antimeridian: unwrap longitudes per asset in SQL (cumulative
   ±360 on jumps > 180), then shift so the newest point is in [-180, 180].
 - Examples: live `gtfs-rt-mbta-fleet`, `trimet-live-fleet`, `air-traffic-world`; replay

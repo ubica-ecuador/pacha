@@ -13,9 +13,6 @@
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "legacyOptions": {
-            "type": "dashboard"
-          },
           "name": "Annotations \u0026 Alerts",
           "query": {
             "datasource": {
@@ -30,7 +27,7 @@
       }
     ],
     "cursorSync": "Off",
-    "description": "Tropical cyclones live on Kepler Plus: the strongest storm active (or any of the last two weeks) hour by hour from JTWC and NOAA advisories through GDACS, a 3D curtain of its wind and a time brush that replays it over NOAA GFS streamlines; Mosaic charts of its intensification, and the storm among 270 of the last three seasons from IBTrACS.",
+    "description": "Tropical cyclones live on Kepler Plus: the strongest storm active (or any of the last two weeks) hour by hour from JTWC and NOAA advisories through GDACS, a 3D curtain of its wind and a time brush that replays it over NOAA GFS streamlines, the clouds GOES or Himawari saw that hour and the rain NASA measured from space; Mosaic charts of its intensification, and the storm among 270 of the last three seasons from IBTrACS.",
     "editable": true,
     "elements": {
       "panel-10": {
@@ -97,12 +94,25 @@
                   "custom": {
                     "aggregation": "auto",
                     "context": false,
-                    "drawStyle": "bars",
+                    "drawStyle": "area",
                     "hideFrom": {
                       "legend": false,
                       "tooltip": false,
                       "viz": false
                     }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -325,7 +335,7 @@
                 "domain": "data",
                 "followLatest": false,
                 "hatchGaps": true,
-                "hoverTooltip": true,
+                "hoverTooltip": false,
                 "instantVariable": "",
                 "loop": true,
                 "mosaicColumn": "time",
@@ -337,6 +347,7 @@
                 "pinnedHeight": 52,
                 "pinnedPosition": "top",
                 "pinnedStyle": "solid",
+                "playMotion": "smooth",
                 "publishIntervalMs": 500,
                 "publishWhileDragging": true,
                 "publishWhilePlaying": true,
@@ -364,7 +375,7 @@
                 "zoomToExternal": false
               }
             },
-            "version": "1.4.1"
+            "version": "1.5.0"
           }
         }
       },
@@ -442,6 +453,86 @@
                       "spec": {
                         "format": 1,
                         "rawQuery": true,
+                        "rawSql": "-- The satellite under the storm, when GOES-West is the one that sees it best\n-- (the storm's last position west of 106° W; one of three queries, one a satellite,\n-- and only the storm's own answers): NASA GIBS's clean infrared (band 13), cloud\n-- tops coloured by how cold they are, one picture an hour over the storm's life.\n-- The map's clock picks the picture and the browser asks GIBS for it (WMS);\n-- this query only says which moments to ask for. GIBS lists the moments it\n-- holds (DescribeDomains); each hour gets the latest picture of the hour and a\n-- half before it, so the present hour has one about an hour old. An hour with\n-- none (a long gap, the forecast) points at itself, which GIBS answers with a\n-- transparent picture: the map never passes an old picture off as a later hour.\n-- Off with the Satellite switch. None of the three sees the eastern Atlantic\n-- and the western Indian Ocean well, and GIBS has no Meteosat.\nSET VARIABLE storm = (\n  SELECT {lon: (f -\u003e '$.geometry.coordinates[0]')::DOUBLE,\n          since: date_trunc('hour', strptime(f -\u003e\u003e '$.properties.fromdate', '%Y-%m-%dT%H:%M:%S'))}\n  FROM (SELECT unnest(features) AS f\n        FROM read_json('http://feeds/gdacs/events/geteventlist/SEARCH?eventlist=TC\u0026alertlevel=green;orange;red',\n                       columns = {'features': 'JSON[]'}))\n  WHERE f -\u003e\u003e '$.properties.eventid' = $storm);\nSET VARIABLE sat = (\n  SELECT {layer: layer,\n          since: since,\n          domains: format('https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/{}/default/2km/all/{}--{}.xml',\n                          layer, strftime(since, '%Y-%m-%dT%H:%M:%SZ'),\n                          strftime(date_trunc('hour', now() AT TIME ZONE 'UTC') + INTERVAL 1 HOUR, '%Y-%m-%dT%H:%M:%SZ'))}\n  FROM (SELECT greatest(getvariable('storm').since, date_trunc('hour', now() AT TIME ZONE 'UTC') - INTERVAL 14 DAY) AS since,\n               'GOES-West_ABI_Band13_Clean_Infrared' AS layer, getvariable('storm').lon AS lon)\n  WHERE lon \u003c -106 AND lon \u003e= -178 AND $satellite = 'on');\nWITH ranges AS (\n  -- \"start/end/PT10M\" ranges, comma-separated; the first may start on a bare date.\n  SELECT str_split(unnest(str_split(regexp_extract(content, '\u003cDomain\u003e([^\u003c]*)\u003c/Domain\u003e', 1), ',')), '/') AS r\n  -- Switched off, or another satellite's storm: no file to read, no rows.\n  FROM read_text(CASE WHEN getvariable('sat') IS NULL THEN []::VARCHAR[] ELSE [getvariable('sat').domains] END)\n),\nmoments AS (\n  SELECT unnest(generate_series(replace(r[1], 'Z', '')::TIMESTAMP,\n                                replace(coalesce(r[2], r[1]), 'Z', '')::TIMESTAMP,\n                                to_minutes(coalesce(regexp_extract(r[3], 'PT([0-9]+)M', 1), '10')::INTEGER))) AS m\n  FROM ranges\n),\n-- GIBS lists a moment some half hour before it can draw it: the last hour's\n-- are left out.\nready AS (\n  SELECT m FROM moments WHERE m \u003c= (now() AT TIME ZONE 'UTC') - INTERVAL 1 HOUR\n),\nhours AS (\n  SELECT unnest(generate_series(getvariable('sat').since,\n                                date_trunc('hour', now() AT TIME ZONE 'UTC') + INTERVAL 48 HOUR,\n                                INTERVAL 1 HOUR)) AS h\n)\nSELECT * FROM (\n  SELECT DISTINCT coalesce(max(m), h)            AS time,\n         'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi' AS wms_url,\n         'GOES-West_ABI_Band13_Clean_Infrared'                               AS wms_layer\n  FROM hours LEFT JOIN ready ON m \u003e h - INTERVAL 90 MINUTE AND m \u003c= h\n  GROUP BY h\n)\nUNION ALL\n-- And one moment long before any storm, always: the WMS layer stays on the map,\n-- hidden while it has no moment in the window, so picking a storm in another\n-- basin or flipping the switch changes only its moments. A layer that came\n-- and went with them would be rebuilt each time, and the map does not always\n-- manage that.\nSELECT TIMESTAMP '2000-01-01', 'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi', 'GOES-West_ABI_Band13_Clean_Infrared'\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "J"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The satellite under the storm, when GOES-East is the one that sees it best\n-- (the storm's last position between 106° W and 0°; one of three queries, one a satellite,\n-- and only the storm's own answers): NASA GIBS's clean infrared (band 13), cloud\n-- tops coloured by how cold they are, one picture an hour over the storm's life.\n-- The map's clock picks the picture and the browser asks GIBS for it (WMS);\n-- this query only says which moments to ask for. GIBS lists the moments it\n-- holds (DescribeDomains); each hour gets the latest picture of the hour and a\n-- half before it, so the present hour has one about an hour old. An hour with\n-- none (a long gap, the forecast) points at itself, which GIBS answers with a\n-- transparent picture: the map never passes an old picture off as a later hour.\n-- Off with the Satellite switch. None of the three sees the eastern Atlantic\n-- and the western Indian Ocean well, and GIBS has no Meteosat.\nSET VARIABLE storm = (\n  SELECT {lon: (f -\u003e '$.geometry.coordinates[0]')::DOUBLE,\n          since: date_trunc('hour', strptime(f -\u003e\u003e '$.properties.fromdate', '%Y-%m-%dT%H:%M:%S'))}\n  FROM (SELECT unnest(features) AS f\n        FROM read_json('http://feeds/gdacs/events/geteventlist/SEARCH?eventlist=TC\u0026alertlevel=green;orange;red',\n                       columns = {'features': 'JSON[]'}))\n  WHERE f -\u003e\u003e '$.properties.eventid' = $storm);\nSET VARIABLE sat = (\n  SELECT {layer: layer,\n          since: since,\n          domains: format('https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/{}/default/2km/all/{}--{}.xml',\n                          layer, strftime(since, '%Y-%m-%dT%H:%M:%SZ'),\n                          strftime(date_trunc('hour', now() AT TIME ZONE 'UTC') + INTERVAL 1 HOUR, '%Y-%m-%dT%H:%M:%SZ'))}\n  FROM (SELECT greatest(getvariable('storm').since, date_trunc('hour', now() AT TIME ZONE 'UTC') - INTERVAL 14 DAY) AS since,\n               'GOES-East_ABI_Band13_Clean_Infrared' AS layer, getvariable('storm').lon AS lon)\n  WHERE lon \u003e= -106 AND lon \u003c 0 AND $satellite = 'on');\nWITH ranges AS (\n  -- \"start/end/PT10M\" ranges, comma-separated; the first may start on a bare date.\n  SELECT str_split(unnest(str_split(regexp_extract(content, '\u003cDomain\u003e([^\u003c]*)\u003c/Domain\u003e', 1), ',')), '/') AS r\n  -- Switched off, or another satellite's storm: no file to read, no rows.\n  FROM read_text(CASE WHEN getvariable('sat') IS NULL THEN []::VARCHAR[] ELSE [getvariable('sat').domains] END)\n),\nmoments AS (\n  SELECT unnest(generate_series(replace(r[1], 'Z', '')::TIMESTAMP,\n                                replace(coalesce(r[2], r[1]), 'Z', '')::TIMESTAMP,\n                                to_minutes(coalesce(regexp_extract(r[3], 'PT([0-9]+)M', 1), '10')::INTEGER))) AS m\n  FROM ranges\n),\n-- GIBS lists a moment some half hour before it can draw it: the last hour's\n-- are left out.\nready AS (\n  SELECT m FROM moments WHERE m \u003c= (now() AT TIME ZONE 'UTC') - INTERVAL 1 HOUR\n),\nhours AS (\n  SELECT unnest(generate_series(getvariable('sat').since,\n                                date_trunc('hour', now() AT TIME ZONE 'UTC') + INTERVAL 48 HOUR,\n                                INTERVAL 1 HOUR)) AS h\n)\nSELECT * FROM (\n  SELECT DISTINCT coalesce(max(m), h)            AS time,\n         'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi' AS wms_url,\n         'GOES-East_ABI_Band13_Clean_Infrared'                               AS wms_layer\n  FROM hours LEFT JOIN ready ON m \u003e h - INTERVAL 90 MINUTE AND m \u003c= h\n  GROUP BY h\n)\nUNION ALL\n-- And one moment long before any storm, always: the WMS layer stays on the map,\n-- hidden while it has no moment in the window, so picking a storm in another\n-- basin or flipping the switch changes only its moments. A layer that came\n-- and went with them would be rebuilt each time, and the map does not always\n-- manage that.\nSELECT TIMESTAMP '2000-01-01', 'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi', 'GOES-East_ABI_Band13_Clean_Infrared'\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "M"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The satellite under the storm, when Himawari is the one that sees it best\n-- (the storm's last position east of 70° E or west of 178° W; one of three queries, one a satellite,\n-- and only the storm's own answers): NASA GIBS's clean infrared (band 13), cloud\n-- tops coloured by how cold they are, one picture an hour over the storm's life.\n-- The map's clock picks the picture and the browser asks GIBS for it (WMS);\n-- this query only says which moments to ask for. GIBS lists the moments it\n-- holds (DescribeDomains); each hour gets the latest picture of the hour and a\n-- half before it, so the present hour has one about an hour old. An hour with\n-- none (a long gap, the forecast) points at itself, which GIBS answers with a\n-- transparent picture: the map never passes an old picture off as a later hour.\n-- Off with the Satellite switch. None of the three sees the eastern Atlantic\n-- and the western Indian Ocean well, and GIBS has no Meteosat.\nSET VARIABLE storm = (\n  SELECT {lon: (f -\u003e '$.geometry.coordinates[0]')::DOUBLE,\n          since: date_trunc('hour', strptime(f -\u003e\u003e '$.properties.fromdate', '%Y-%m-%dT%H:%M:%S'))}\n  FROM (SELECT unnest(features) AS f\n        FROM read_json('http://feeds/gdacs/events/geteventlist/SEARCH?eventlist=TC\u0026alertlevel=green;orange;red',\n                       columns = {'features': 'JSON[]'}))\n  WHERE f -\u003e\u003e '$.properties.eventid' = $storm);\nSET VARIABLE sat = (\n  SELECT {layer: layer,\n          since: since,\n          domains: format('https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/{}/default/2km/all/{}--{}.xml',\n                          layer, strftime(since, '%Y-%m-%dT%H:%M:%SZ'),\n                          strftime(date_trunc('hour', now() AT TIME ZONE 'UTC') + INTERVAL 1 HOUR, '%Y-%m-%dT%H:%M:%SZ'))}\n  FROM (SELECT greatest(getvariable('storm').since, date_trunc('hour', now() AT TIME ZONE 'UTC') - INTERVAL 14 DAY) AS since,\n               'Himawari_AHI_Band13_Clean_Infrared' AS layer, getvariable('storm').lon AS lon)\n  WHERE (lon \u003e= 70 OR lon \u003c -178) AND $satellite = 'on');\nWITH ranges AS (\n  -- \"start/end/PT10M\" ranges, comma-separated; the first may start on a bare date.\n  SELECT str_split(unnest(str_split(regexp_extract(content, '\u003cDomain\u003e([^\u003c]*)\u003c/Domain\u003e', 1), ',')), '/') AS r\n  -- Switched off, or another satellite's storm: no file to read, no rows.\n  FROM read_text(CASE WHEN getvariable('sat') IS NULL THEN []::VARCHAR[] ELSE [getvariable('sat').domains] END)\n),\nmoments AS (\n  SELECT unnest(generate_series(replace(r[1], 'Z', '')::TIMESTAMP,\n                                replace(coalesce(r[2], r[1]), 'Z', '')::TIMESTAMP,\n                                to_minutes(coalesce(regexp_extract(r[3], 'PT([0-9]+)M', 1), '10')::INTEGER))) AS m\n  FROM ranges\n),\n-- GIBS lists a moment some half hour before it can draw it: the last hour's\n-- are left out.\nready AS (\n  SELECT m FROM moments WHERE m \u003c= (now() AT TIME ZONE 'UTC') - INTERVAL 1 HOUR\n),\nhours AS (\n  SELECT unnest(generate_series(getvariable('sat').since,\n                                date_trunc('hour', now() AT TIME ZONE 'UTC') + INTERVAL 48 HOUR,\n                                INTERVAL 1 HOUR)) AS h\n)\nSELECT * FROM (\n  SELECT DISTINCT coalesce(max(m), h)            AS time,\n         'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi' AS wms_url,\n         'Himawari_AHI_Band13_Clean_Infrared'                               AS wms_layer\n  FROM hours LEFT JOIN ready ON m \u003e h - INTERVAL 90 MINUTE AND m \u003c= h\n  GROUP BY h\n)\nUNION ALL\n-- And one moment long before any storm, always: the WMS layer stays on the map,\n-- hidden while it has no moment in the window, so picking a storm in another\n-- basin or flipping the switch changes only its moments. A layer that came\n-- and went with them would be rebuilt each time, and the map does not always\n-- manage that.\nSELECT TIMESTAMP '2000-01-01', 'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi', 'Himawari_AHI_Band13_Clean_Infrared'\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "N"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Rain measured from space: NASA's IMERG (GPM's satellites with the infrared\n-- of the geostationary ones), every half hour, early run, from GIBS. It comes\n-- some six hours late: from there on the map shows GFS's rain (H). The map's\n-- clock picks the picture and the browser asks GIBS for it (WMS); this query\n-- says which moments to ask for, as the satellite's (J) does, and an hour with\n-- no picture yet points at itself, which GIBS answers with a transparent one.\n-- Off with the Rain switch.\nSET VARIABLE storm = (\n  SELECT date_trunc('hour', strptime(f -\u003e\u003e '$.properties.fromdate', '%Y-%m-%dT%H:%M:%S'))\n  FROM (SELECT unnest(features) AS f\n        FROM read_json('http://feeds/gdacs/events/geteventlist/SEARCH?eventlist=TC\u0026alertlevel=green;orange;red',\n                       columns = {'features': 'JSON[]'}))\n  WHERE f -\u003e\u003e '$.properties.eventid' = $storm);\nSET VARIABLE since = greatest(getvariable('storm'), date_trunc('hour', now() AT TIME ZONE 'UTC') - INTERVAL 14 DAY);\nSET VARIABLE domains = CASE WHEN $rain = 'on' THEN [format(\n  'https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/IMERG_Precipitation_Rate_30min/default/2km/all/{}--{}.xml',\n  strftime(getvariable('since'), '%Y-%m-%dT%H:%M:%SZ'),\n  strftime(date_trunc('hour', now() AT TIME ZONE 'UTC') + INTERVAL 1 HOUR, '%Y-%m-%dT%H:%M:%SZ'))] ELSE []::VARCHAR[] END;\nWITH ranges AS (\n  SELECT str_split(unnest(str_split(regexp_extract(content, '\u003cDomain\u003e([^\u003c]*)\u003c/Domain\u003e', 1), ',')), '/') AS r\n  FROM read_text(getvariable('domains'))\n),\nmoments AS (\n  SELECT unnest(generate_series(replace(r[1], 'Z', '')::TIMESTAMP,\n                                replace(coalesce(r[2], r[1]), 'Z', '')::TIMESTAMP,\n                                to_minutes(coalesce(regexp_extract(r[3], 'PT([0-9]+)M', 1), '30')::INTEGER))) AS m\n  FROM ranges\n),\n-- GIBS lists a moment some half hour before it can draw it: the last hour's\n-- are left out.\nready AS (\n  SELECT m FROM moments WHERE m \u003c= (now() AT TIME ZONE 'UTC') - INTERVAL 1 HOUR\n),\nhours AS (\n  SELECT unnest(generate_series(getvariable('since'),\n                                date_trunc('hour', now() AT TIME ZONE 'UTC') + INTERVAL 48 HOUR,\n                                INTERVAL 1 HOUR)) AS h\n  WHERE len(getvariable('domains')) \u003e 0\n)\nSELECT * FROM (\n  SELECT DISTINCT coalesce(max(m), h)            AS time,\n         'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi' AS wms_url,\n         'IMERG_Precipitation_Rate_30min'        AS wms_layer\n  FROM hours LEFT JOIN ready ON m \u003e h - INTERVAL 30 MINUTE AND m \u003c= h\n  GROUP BY h\n)\nUNION ALL\n-- And one moment long before any storm, always: the WMS layer stays on the map,\n-- hidden while it has no moment in the window, so picking a storm in another\n-- basin or flipping the switch changes only its moments. A layer that came\n-- and went with them would be rebuilt each time, and the map does not always\n-- manage that.\nSELECT TIMESTAMP '2000-01-01', 'https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi', 'IMERG_Precipitation_Rate_30min'\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "K"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
                         "rawSql": "-- The storm picked above, from GDACS's list of tropical cyclones: its last\n-- position and the episode (the advisory) GDACS drew last. Through the gateway\n-- (feeds), which keeps every GDACS answer a quarter of an hour: GDACS takes\n-- 3 to 15 s to build each, and the panels here ask for the same ones nine times.\nSET VARIABLE storm = (\n  SELECT {id: f -\u003e\u003e '$.properties.eventid',\n          episode: f -\u003e\u003e '$.properties.episodeid',\n          lon: (f -\u003e '$.geometry.coordinates[0]')::DOUBLE,\n          lat: (f -\u003e '$.geometry.coordinates[1]')::DOUBLE}\n  FROM (SELECT unnest(features) AS f\n        FROM read_json('http://feeds/gdacs/events/geteventlist/SEARCH?eventlist=TC\u0026alertlevel=green;orange;red',\n                       columns = {'features': 'JSON[]'}))\n  WHERE f -\u003e\u003e '$.properties.eventid' = $storm);\n-- Its advisories are in a \"timeline\" whose id only the event's own data gives.\nSET VARIABLE timeline = (\n  SELECT regexp_extract(j -\u003e\u003e '$.properties.impacts[0].resource.timeline', 'id=([0-9]+)', 1)\n  FROM read_json_objects('http://feeds/gdacs/events/geteventdata?eventtype=TC\u0026eventid=' || getvariable('storm').id) AS t(j));\n-- GDACS's geometry of the latest episode: the forecast's cone of uncertainty,\n-- and the swath of the track (past and forecast) where the advisories put\n-- winds over 60, 90 and 120 km/h: about 34, 50 and 64 knots, the radii JTWC\n-- and NHC give. Simplified to about a kilometre, a tenth of the bytes.\nWITH parts AS (\n  SELECT json_extract_string(f, '$.properties.Class')       AS class,\n         json_extract_string(f, '$.properties.featuretype') AS featuretype,\n         json_extract(f, '$.geometry')                       AS geometry\n  FROM (SELECT unnest(features) AS f\n        FROM read_json('http://feeds/gdacs/polygons/getgeometry?eventtype=TC\u0026eventid=' || getvariable('storm').id\n                       || '\u0026episodeid=' || getvariable('storm').episode,\n                       columns = {'features': 'JSON[]'}, maximum_object_size = 64000000))\n)\nSELECT CASE class WHEN 'Poly_Cones'  THEN 'Forecast cone'\n                  WHEN 'Poly_Green'  THEN 'Winds over 60 km/h'\n                  WHEN 'Poly_Orange' THEN 'Winds over 90 km/h'\n                  ELSE 'Winds over 120 km/h' END                          AS area,\n       CAST(ST_AsGeoJSON(ST_SimplifyPreserveTopology(ST_GeomFromGeoJSON(geometry), 0.01)) AS VARCHAR) AS geojson\nFROM parts\n-- The swath is the three polygons with no time of their own; the radii drawn\n-- per forecast time (featuretype WindRadii) are left out.\nWHERE class = 'Poly_Cones'\n   OR (class IN ('Poly_Green', 'Poly_Orange', 'Poly_Red') AND featuretype IS NULL)\n-- Under one another: the widest first.\nORDER BY CASE class WHEN 'Poly_Cones' THEN 0 WHEN 'Poly_Green' THEN 1 WHEN 'Poly_Orange' THEN 2 ELSE 3 END"
                       },
                       "version": "v0"
@@ -502,7 +593,7 @@
                       "spec": {
                         "format": 1,
                         "rawQuery": true,
-                        "rawSql": "-- Rain from the same GFS answer as the wind (G): the cells where GFS has more\n-- than 0.3 mm an hour, at every step; the map draws the steps inside the window.\n-- None at all when the Rain switch above the map is off.\n-- The storm picked above, from GDACS's list of tropical cyclones: its last\n-- position and the episode (the advisory) GDACS drew last. Through the gateway\n-- (feeds), which keeps every GDACS answer a quarter of an hour: GDACS takes\n-- 3 to 15 s to build each, and the panels here ask for the same ones nine times.\nSET VARIABLE storm = (\n  SELECT {id: f -\u003e\u003e '$.properties.eventid',\n          episode: f -\u003e\u003e '$.properties.episodeid',\n          name: regexp_replace(f -\u003e\u003e '$.properties.eventname', '-[0-9]+$', ''),\n          lon: (f -\u003e '$.geometry.coordinates[0]')::DOUBLE,\n          lat: (f -\u003e '$.geometry.coordinates[1]')::DOUBLE}\n  FROM (SELECT unnest(features) AS f\n        FROM read_json('http://feeds/gdacs/events/geteventlist/SEARCH?eventlist=TC\u0026alertlevel=green;orange;red',\n                       columns = {'features': 'JSON[]'}))\n  WHERE f -\u003e\u003e '$.properties.eventid' = $storm);\n-- Its advisories are in a \"timeline\" whose id only the event's own data gives.\nSET VARIABLE timeline = (\n  SELECT regexp_extract(j -\u003e\u003e '$.properties.impacts[0].resource.timeline', 'id=([0-9]+)', 1)\n  FROM read_json_objects('http://feeds/gdacs/events/geteventdata?eventtype=TC\u0026eventid=' || getvariable('storm').id) AS t(j));\n-- The GFS boxes, one a day of the storm's life (its last nine days at most, to\n-- two days ahead): 15 degrees of latitude and 20 of longitude around where the\n-- storm was, or will be, that day, on whole degrees. Past days every six hours\n-- (GFS's analyses), today and the forecast every three. A past day's URL stays\n-- the same, so the gateway answers it from its cache; ERDDAP takes a second or\n-- two for each of the others.\nSET VARIABLE gfs = (\n  WITH items AS (\n    SELECT strptime(i -\u003e\u003e 'advisory_datetime', '%d %b %Y %H:%M') AS time,\n           (i -\u003e\u003e 'latitude')::DOUBLE AS lat,\n           (i -\u003e\u003e 'longitude')::DOUBLE + 360 * round((getvariable('storm').lon - (i -\u003e\u003e 'longitude')::DOUBLE) / 360) AS lon\n    FROM (SELECT unnest(channel.item) AS i\n          FROM read_json('http://feeds/gdacs/export/gettimeline?id=' || getvariable('timeline'),\n                         columns = {'channel': 'STRUCT(item JSON[])'}))\n  ),\n  span AS (\n    SELECT least(max(time), time_bucket(INTERVAL 3 HOUR, (now() AT TIME ZONE 'UTC') - INTERVAL 90 MINUTE)\n                            + INTERVAL 48 HOUR) AS t_end,\n           greatest(min(time), t_end - INTERVAL 9 DAY) AS t_start,\n           date_trunc('day', now() AT TIME ZONE 'UTC') AS today\n    FROM items\n  ),\n  days AS (\n    SELECT unnest(generate_series(date_trunc('day', t_start), date_trunc('day', t_end), INTERVAL 1 DAY)) AS d,\n           t_start, t_end, today\n    FROM span\n  ),\n  chunks AS (\n    SELECT d, d \u003c today AS past,\n           greatest(d, time_bucket(CASE WHEN past THEN INTERVAL 6 HOUR ELSE INTERVAL 3 HOUR END, t_start)) AS a,\n           least(d + INTERVAL 21 HOUR, t_end) AS b\n    FROM days\n  ),\n  -- Where the storm is that day: its fixes from six hours before to six after.\n  boxes AS (\n    SELECT c.d, c.past, c.a, c.b,\n           coalesce(min(i.lat), getvariable('storm').lat) AS lat0, coalesce(max(i.lat), getvariable('storm').lat) AS lat1,\n           coalesce(min(i.lon), getvariable('storm').lon) AS lon0, coalesce(max(i.lon), getvariable('storm').lon) AS lon1\n    FROM chunks c\n    LEFT JOIN items i ON i.time BETWEEN c.d - INTERVAL 6 HOUR AND c.d + INTERVAL 30 HOUR\n    GROUP BY ALL\n  ),\n  urls AS (\n    -- ERDDAP's longitudes run from 0 to 360: `shift` takes the box there and\n    -- brings its cells back beside the track. A box across 0 degrees is cut there.\n    SELECT d, 360 * floor(getvariable('storm').lon / 360) AS shift,\n           format('http://feeds/erddap/griddap/ncep_global.csv0?ugrd10m{0},vgrd10m{0},prmslmsl{0},pratesfc{0}',\n                  format('%5B({0}):{1}:({2})%5D%5B({3}):2:({4})%5D%5B({5}):2:({6})%5D',\n                         strftime(a, '%Y-%m-%dT%H:%M:%SZ'), CASE WHEN past THEN 2 ELSE 1 END, strftime(b, '%Y-%m-%dT%H:%M:%SZ'),\n                         greatest(-89, floor(lat0) - 15)::INTEGER, least(89, ceil(lat1) + 15)::INTEGER,\n                         greatest(0, floor(lon0 - shift) - 20)::INTEGER, least(359, ceil(lon1 - shift) + 20)::INTEGER)) AS url\n    FROM boxes\n  )\n  SELECT {shift: any_value(shift), urls: list(url ORDER BY d)} FROM urls);\nSELECT column0                                   AS time,\n       column1                                   AS latitude,\n       column2 + getvariable('gfs').shift        AS longitude,\n       round(column6 * 3600, 2)                  AS rain_mm_h,  -- kg m-2 s-1, a millimetre of water per square metre\n       -- What the dots are sized by. Capped, so the rare cloudburst does not set\n       -- the scale and shrink ordinary rain to specks.\n       least(column6 * 3600, 10)                 AS rain_mm_h_capped\nFROM read_csv(getvariable('gfs').urls,\n              header = false,\n              columns = {'column0': 'TIMESTAMP', 'column1': 'DOUBLE', 'column2': 'DOUBLE', 'column3': 'DOUBLE',\n                         'column4': 'DOUBLE', 'column5': 'DOUBLE', 'column6': 'DOUBLE'},\n              nullstr = 'NaN')\nWHERE column6 * 3600 \u003e= 0.3 AND $rain = 'on'\nUNION ALL\n-- Off, one row with no place: the map's time filter waits for every dataset it\n-- names, and a query with no rows makes none.\nSELECT date_trunc('hour', now() AT TIME ZONE 'UTC'), NULL::DOUBLE, NULL::DOUBLE, NULL::DOUBLE, NULL::DOUBLE\nWHERE $rain \u003c\u003e 'on'\nORDER BY time"
+                        "rawSql": "-- Rain from the same GFS answer as the wind (G): the cells where GFS has more\n-- than 0.3 mm an hour, at every step after the last half hour that IMERG has\n-- measured (K): before it, the map shows the rain measured from space. The map\n-- draws the steps inside the window.\n-- None at all when the Rain switch above the map is off.\n-- The storm picked above, from GDACS's list of tropical cyclones: its last\n-- position and the episode (the advisory) GDACS drew last. Through the gateway\n-- (feeds), which keeps every GDACS answer a quarter of an hour: GDACS takes\n-- 3 to 15 s to build each, and the panels here ask for the same ones nine times.\nSET VARIABLE storm = (\n  SELECT {id: f -\u003e\u003e '$.properties.eventid',\n          episode: f -\u003e\u003e '$.properties.episodeid',\n          name: regexp_replace(f -\u003e\u003e '$.properties.eventname', '-[0-9]+$', ''),\n          lon: (f -\u003e '$.geometry.coordinates[0]')::DOUBLE,\n          lat: (f -\u003e '$.geometry.coordinates[1]')::DOUBLE}\n  FROM (SELECT unnest(features) AS f\n        FROM read_json('http://feeds/gdacs/events/geteventlist/SEARCH?eventlist=TC\u0026alertlevel=green;orange;red',\n                       columns = {'features': 'JSON[]'}))\n  WHERE f -\u003e\u003e '$.properties.eventid' = $storm);\n-- Its advisories are in a \"timeline\" whose id only the event's own data gives.\nSET VARIABLE timeline = (\n  SELECT regexp_extract(j -\u003e\u003e '$.properties.impacts[0].resource.timeline', 'id=([0-9]+)', 1)\n  FROM read_json_objects('http://feeds/gdacs/events/geteventdata?eventtype=TC\u0026eventid=' || getvariable('storm').id) AS t(j));\n-- The GFS boxes, one a day of the storm's life (its last nine days at most, to\n-- two days ahead): 15 degrees of latitude and 20 of longitude around where the\n-- storm was, or will be, that day, on whole degrees. Past days every six hours\n-- (GFS's analyses), today and the forecast every three. A past day's URL stays\n-- the same, so the gateway answers it from its cache; ERDDAP takes a second or\n-- two for each of the others.\nSET VARIABLE gfs = (\n  WITH items AS (\n    SELECT strptime(i -\u003e\u003e 'advisory_datetime', '%d %b %Y %H:%M') AS time,\n           (i -\u003e\u003e 'latitude')::DOUBLE AS lat,\n           (i -\u003e\u003e 'longitude')::DOUBLE + 360 * round((getvariable('storm').lon - (i -\u003e\u003e 'longitude')::DOUBLE) / 360) AS lon\n    FROM (SELECT unnest(channel.item) AS i\n          FROM read_json('http://feeds/gdacs/export/gettimeline?id=' || getvariable('timeline'),\n                         columns = {'channel': 'STRUCT(item JSON[])'}))\n  ),\n  span AS (\n    SELECT least(max(time), time_bucket(INTERVAL 3 HOUR, (now() AT TIME ZONE 'UTC') - INTERVAL 90 MINUTE)\n                            + INTERVAL 48 HOUR) AS t_end,\n           greatest(min(time), t_end - INTERVAL 9 DAY) AS t_start,\n           date_trunc('day', now() AT TIME ZONE 'UTC') AS today\n    FROM items\n  ),\n  days AS (\n    SELECT unnest(generate_series(date_trunc('day', t_start), date_trunc('day', t_end), INTERVAL 1 DAY)) AS d,\n           t_start, t_end, today\n    FROM span\n  ),\n  chunks AS (\n    SELECT d, d \u003c today AS past,\n           greatest(d, time_bucket(CASE WHEN past THEN INTERVAL 6 HOUR ELSE INTERVAL 3 HOUR END, t_start)) AS a,\n           least(d + INTERVAL 21 HOUR, t_end) AS b\n    FROM days\n  ),\n  -- Where the storm is that day: its fixes from six hours before to six after.\n  boxes AS (\n    SELECT c.d, c.past, c.a, c.b,\n           coalesce(min(i.lat), getvariable('storm').lat) AS lat0, coalesce(max(i.lat), getvariable('storm').lat) AS lat1,\n           coalesce(min(i.lon), getvariable('storm').lon) AS lon0, coalesce(max(i.lon), getvariable('storm').lon) AS lon1\n    FROM chunks c\n    LEFT JOIN items i ON i.time BETWEEN c.d - INTERVAL 6 HOUR AND c.d + INTERVAL 30 HOUR\n    GROUP BY ALL\n  ),\n  urls AS (\n    -- ERDDAP's longitudes run from 0 to 360: `shift` takes the box there and\n    -- brings its cells back beside the track. A box across 0 degrees is cut there.\n    SELECT d, 360 * floor(getvariable('storm').lon / 360) AS shift,\n           format('http://feeds/erddap/griddap/ncep_global.csv0?ugrd10m{0},vgrd10m{0},prmslmsl{0},pratesfc{0}',\n                  format('%5B({0}):{1}:({2})%5D%5B({3}):2:({4})%5D%5B({5}):2:({6})%5D',\n                         strftime(a, '%Y-%m-%dT%H:%M:%SZ'), CASE WHEN past THEN 2 ELSE 1 END, strftime(b, '%Y-%m-%dT%H:%M:%SZ'),\n                         greatest(-89, floor(lat0) - 15)::INTEGER, least(89, ceil(lat1) + 15)::INTEGER,\n                         greatest(0, floor(lon0 - shift) - 20)::INTEGER, least(359, ceil(lon1 - shift) + 20)::INTEGER)) AS url\n    FROM boxes\n  )\n  SELECT {shift: any_value(shift), urls: list(url ORDER BY d)} FROM urls);\n-- The last half hour IMERG has measured (K): GFS's rain starts after it.\nSET VARIABLE observed_until = (\n  SELECT nullif(regexp_extract(content, '([0-9-]+T[0-9:]+)Z/PT[0-9]+M\u003c/Domain\u003e', 1), '')::TIMESTAMP\n  FROM read_text(CASE WHEN $rain = 'on' THEN [format(\n    'https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/1.0.0/IMERG_Precipitation_Rate_30min/default/2km/all/{}--{}.xml',\n    strftime(date_trunc('hour', now() AT TIME ZONE 'UTC') - INTERVAL 2 DAY, '%Y-%m-%dT%H:%M:%SZ'),\n    strftime(date_trunc('hour', now() AT TIME ZONE 'UTC') + INTERVAL 1 HOUR, '%Y-%m-%dT%H:%M:%SZ'))] ELSE []::VARCHAR[] END));\nSELECT column0                                   AS time,\n       column1                                   AS latitude,\n       column2 + getvariable('gfs').shift        AS longitude,\n       round(column6 * 3600, 2)                  AS rain_mm_h,  -- kg m-2 s-1, a millimetre of water per square metre\n       -- What the dots are sized by. Capped, so the rare cloudburst does not set\n       -- the scale and shrink ordinary rain to specks.\n       least(column6 * 3600, 10)                 AS rain_mm_h_capped\nFROM read_csv(getvariable('gfs').urls,\n              header = false,\n              columns = {'column0': 'TIMESTAMP', 'column1': 'DOUBLE', 'column2': 'DOUBLE', 'column3': 'DOUBLE',\n                         'column4': 'DOUBLE', 'column5': 'DOUBLE', 'column6': 'DOUBLE'},\n              nullstr = 'NaN')\nWHERE column6 * 3600 \u003e= 0.3 AND $rain = 'on'\n  AND column0 \u003e coalesce(getvariable('observed_until'), '-infinity'::TIMESTAMP)\nUNION ALL\n-- And one row with no place, always: the map's time filter waits for every\n-- dataset it names, and a query with no rows (switched off, or a storm whose\n-- rain IMERG has measured all of) makes none.\nSELECT date_trunc('hour', now() AT TIME ZONE 'UTC'), NULL::DOUBLE, NULL::DOUBLE, NULL::DOUBLE, NULL::DOUBLE\nORDER BY time"
                       },
                       "version": "v0"
                     },
@@ -528,13 +619,33 @@
                     },
                     "refId": "I"
                   }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The chance of tropical-storm-force winds (34 kt, 63 km/h) over the next five\n-- days, from the latest advisory: NHC's or JTWC's, in bands of ten percent, as\n-- Esri's Living Atlas publishes them (Active Hurricanes, Cyclones and\n-- Typhoons). They cover every active storm, so only those within 25 degrees of\n-- the one picked; a storm that has ended has none. Off with the Wind chance\n-- switch.\nSET VARIABLE storm = (\n  SELECT {lon: (f -\u003e '$.geometry.coordinates[0]')::DOUBLE,\n          lat: (f -\u003e '$.geometry.coordinates[1]')::DOUBLE}\n  FROM (SELECT unnest(features) AS f\n        FROM read_json('http://feeds/gdacs/events/geteventlist/SEARCH?eventlist=TC\u0026alertlevel=green;orange;red',\n                       columns = {'features': 'JSON[]'}))\n  WHERE f -\u003e\u003e '$.properties.eventid' = $storm);\nSET VARIABLE chances = CASE WHEN $windchance = 'on' THEN [format(\n  'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/Active_Hurricanes_v1/FeatureServer/7/query'\n  || '?where=1%3D1\u0026outFields=PWIND120\u0026geometry={},{},{},{}\u0026geometryType=esriGeometryEnvelope\u0026inSR=4326'\n  || '\u0026spatialRel=esriSpatialRelIntersects\u0026outSR=4326\u0026maxAllowableOffset=0.02\u0026geometryPrecision=3\u0026f=geojson',\n  round(getvariable('storm').lon - 25), round(greatest(-89, getvariable('storm').lat - 25)),\n  round(getvariable('storm').lon + 25), round(least(89, getvariable('storm').lat + 25)))] ELSE []::VARCHAR[] END;\nSELECT (f -\u003e '$.properties.PWIND120')::INTEGER                    AS chance_pct,\n       (f -\u003e '$.properties.PWIND120')::INTEGER || '% chance of winds over 34 kt in 5 days' AS area,\n       CAST(f -\u003e '$.geometry' AS VARCHAR)                         AS geojson\n-- read_text, not read_json: it takes an empty list (switched off) and reads nothing.\nFROM (SELECT unnest(from_json(content, '{\"features\": \"JSON[]\"}').features) AS f\n      FROM read_text(getvariable('chances')))\n-- Under one another: the lowest chance, the widest, first.\nORDER BY chance_pct"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "L"
+                  }
                 }
               ],
               "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "The storm picked above. The curtain: one box an hour along its track, as tall as its wind and in its Saffir-Simpson colour, to two days ahead; the brush above and the charts on the right keep the hours they select. The arrow is the storm at the end of the brushed window, with its last twelve hours behind it. Underneath, NOAA GFS wind streamlines, isobars and rain over 0.3 mm/h (blue dots, sized by the rate) at the last step of the window (every six hours before today, three after), GDACS cone and wind swath, and where the advisory and GFS put the centre at that step (white and magenta). Drag with the right button to turn and tilt.",
+          "description": "The storm picked above. The curtain: one box an hour along its track, as tall as its wind and in its Saffir-Simpson colour, to two days ahead; the brush above and the charts on the right keep the hours they select. The arrow is the storm at the end of the brushed window, with its last twelve hours behind it. Underneath, NOAA GFS wind streamlines, isobars and rain over 0.3 mm/h (blue dots, sized by the rate, after the last half hour NASA has measured) at the last step of the window (every six hours before today, three after), GDACS cone and wind swath, and where the advisory and GFS put the centre at that step (white and magenta). At the bottom, the satellite’s infrared at the end of the window, cloud tops coloured by how cold they are (an hour behind at most; none over the forecast), and the rain measured from space (IMERG, some six hours behind). Wind chance: NHC’s or JTWC’s chance of winds over 34 kt in the next five days, in bands of ten percent. Drag with the right button to turn and tilt.",
           "id": 11,
           "links": [],
           "title": "${storm:text}: the storm, its curtain of wind and the GFS streamlines",
@@ -543,7 +654,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -552,9 +677,11 @@
                 "clickArea": false,
                 "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
+                "dimUnselected": false,
                 "fitOnVariables": [],
                 "flowRenderMode": "straight",
                 "followGrafanaTheme": true,
+                "haloStyle": "auto",
                 "hoverMaxAgeSeconds": 10,
                 "hoverPublishSpike": true,
                 "hoverSync": false,
@@ -610,12 +737,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
+                      "latitude": 16.600199,
+                      "longitude": 151.300203,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_3D",
                       "maxPitch": 85,
                       "pitch": 40,
                       "splitMapViewports": [],
-                      "swipeComparePercentage": 50
+                      "swipeComparePercentage": 50,
+                      "zoom": 4.4
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -624,7 +754,7 @@
                         0
                       ],
                       "mapStyles": {},
-                      "styleType": "openfreemap-fiord",
+                      "styleType": "plus-google-satellite",
                       "threeDBuildingColor": [
                         9.311499150948377,
                         9.311499150948377,
@@ -636,6 +766,7 @@
                         "building": false,
                         "label": true,
                         "land": true,
+                        "relief": false,
                         "road": false,
                         "water": true
                       }
@@ -643,6 +774,13 @@
                     "uiState": {
                       "locale": "en",
                       "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
                         "mapLegend": {
                           "active": false
                         }
@@ -683,6 +821,14 @@
                           ],
                           "plotType": {
                             "aggregation": "average",
+                            "colorsByDataId": {
+                              "grafana-A": "#8F2FBF",
+                              "grafana-C": "#C06C84",
+                              "grafana-E": "#005CFF",
+                              "grafana-G": "#C06C84",
+                              "grafana-H": "#F8B195",
+                              "grafana-I": "#547A82"
+                            },
                             "defaultTimeFormat": "L  LT",
                             "interval": "3-hour",
                             "type": "lineChart"
@@ -690,13 +836,17 @@
                           "speed": 1,
                           "type": "timeRange",
                           "value": [
-                            0,
-                            4102444800000
+                            1792908000000,
+                            1793210400000
                           ],
                           "view": "side"
                         }
                       ],
+                      "groupBys": [],
                       "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
                         "brush": {
                           "enabled": false,
                           "size": 0.5
@@ -705,8 +855,17 @@
                           "enabled": false
                         },
                         "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
                           "enabled": false,
                           "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
                         },
                         "tooltip": {
                           "compareMode": false,
@@ -730,7 +889,15 @@
                                 "name": "phase"
                               }
                             ],
-                            "grafana-B": [],
+                            "grafana-B": [
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              },
+                              {
+                                "name": "track"
+                              }
+                            ],
                             "grafana-C": [
                               {
                                 "name": "storm"
@@ -774,20 +941,119 @@
                                 "name": "rain_mm_h"
                               }
                             ],
-                            "grafana-I": []
+                            "grafana-I": [
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              },
+                              {
+                                "name": "isobar_field"
+                              }
+                            ],
+                            "grafana-J": [
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              },
+                              {
+                                "name": "wms_url"
+                              },
+                              {
+                                "name": "wms_layer"
+                              }
+                            ],
+                            "grafana-J-wms": [],
+                            "grafana-J-wms-times": [
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              }
+                            ],
+                            "grafana-K": [
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              },
+                              {
+                                "name": "wms_url"
+                              },
+                              {
+                                "name": "wms_layer"
+                              }
+                            ],
+                            "grafana-K-wms": [],
+                            "grafana-K-wms-times": [
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              }
+                            ],
+                            "grafana-L": [
+                              {
+                                "name": "area"
+                              }
+                            ],
+                            "grafana-M": [
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              },
+                              {
+                                "name": "wms_url"
+                              },
+                              {
+                                "name": "wms_layer"
+                              }
+                            ],
+                            "grafana-M-wms": [],
+                            "grafana-M-wms-times": [
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              }
+                            ],
+                            "grafana-N": [
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              },
+                              {
+                                "name": "wms_url"
+                              },
+                              {
+                                "name": "wms_layer"
+                              }
+                            ],
+                            "grafana-N-wms": [],
+                            "grafana-N-wms-times": [
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              }
+                            ]
                           }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
                         }
                       },
+                      "joins": [],
                       "layerBlending": "normal",
                       "layerOrder": [
                         "storm",
-                        "centres",
                         "curtain",
                         "trackall",
+                        "centres",
                         "rain",
                         "wind",
                         "isobars",
-                        "areas"
+                        "areas",
+                        "windchance",
+                        "observedrain",
+                        "sat-goes-west",
+                        "sat-goes-east",
+                        "sat-himawari"
                       ],
                       "layers": [
                         {
@@ -895,24 +1161,25 @@
                               "fixedRadius": false,
                               "fleetAltitudeField": "none",
                               "fleetAssetField": "storm",
-                              "fleetCard": false,
+                              "fleetCard": true,
                               "fleetCardField": "",
                               "fleetCardMinutes": 60,
                               "fleetCardOpacity": 0.9,
                               "fleetCardSize": "M",
                               "fleetCardUnit": "",
-                              "fleetCardWindow": "auto",
+                              "fleetCardWindow": "track",
                               "fleetChangeColours": "risingBad",
                               "fleetCrossValue": true,
                               "fleetCrosshair": true,
                               "fleetDisplay": "flat",
                               "fleetFollow": "",
-                              "fleetFollowMode": "chase",
+                              "fleetFollowFirst": true,
+                              "fleetFollowMode": "custom",
                               "fleetGhost": false,
                               "fleetHeadingField": "auto",
                               "fleetHeadingFrom": "auto",
                               "fleetIcons": "{}",
-                              "fleetLabel": "name",
+                              "fleetLabel": "none",
                               "fleetLabelColor": [
                                 255,
                                 255,
@@ -924,6 +1191,7 @@
                               "fleetMarker": "arrow",
                               "fleetModelColours": "original",
                               "fleetOrbitSecs": 60,
+                              "fleetPinAll": true,
                               "fleetPinned": [],
                               "fleetPublishCrosshair": true,
                               "fleetPulseBy": "speed",
@@ -933,10 +1201,12 @@
                                 1,
                                 6
                               ],
+                              "fleetReckon": false,
                               "fleetRemember": "off",
                               "fleetRememberMin": 10,
-                              "fleetShadow": false,
-                              "fleetSize": 46,
+                              "fleetShadow": true,
+                              "fleetSilent": "grey",
+                              "fleetSize": 96,
                               "fleetSmooth": true,
                               "fleetSmoothMs": 1000,
                               "fleetSpeedField": "wind",
@@ -951,16 +1221,19 @@
                               "fleetTrailAnimate": true,
                               "fleetTrailDashLength": 0.5,
                               "fleetTrailFade": true,
+                              "fleetTrailMode": "fleet",
                               "fleetTrailOpacity": 1,
                               "fleetTrailShow": true,
                               "fleetTrailSpacing": 18,
                               "fleetTrailStyle": "comets",
                               "fleetTrailWidth": 5,
+                              "fleetTripsGap": 0,
+                              "fleetTripsTrail": 24,
                               "fleetTypeField": "auto",
                               "fleetZoomRate": 0.35,
-                              "fleetZoomRef": 12.8,
+                              "fleetZoomRef": 7.8,
                               "fleetZoomScale": true,
-                              "opacity": 0.8,
+                              "opacity": 0.92,
                               "outline": false,
                               "radius": 25.2,
                               "radiusRange": [
@@ -1000,132 +1273,6 @@
                         {
                           "config": {
                             "color": [
-                              255,
-                              255,
-                              255
-                            ],
-                            "columnMode": "points",
-                            "columns": {
-                              "lat": "latitude",
-                              "lng": "longitude"
-                            },
-                            "dataId": "grafana-E",
-                            "hidden": false,
-                            "highlightColor": [
-                              252,
-                              242,
-                              26,
-                              255
-                            ],
-                            "isVisible": true,
-                            "label": "Centre now: advisory and GFS",
-                            "textLabel": [
-                              {
-                                "alignment": "center",
-                                "anchor": "start",
-                                "background": false,
-                                "backgroundColor": [
-                                  0,
-                                  0,
-                                  200,
-                                  255
-                                ],
-                                "collisionEnabled": false,
-                                "color": [
-                                  255,
-                                  255,
-                                  255
-                                ],
-                                "offset": [
-                                  0,
-                                  0
-                                ],
-                                "outlineColor": [
-                                  255,
-                                  0,
-                                  0,
-                                  255
-                                ],
-                                "outlineWidth": 0,
-                                "size": 18,
-                                "weight": 400
-                              }
-                            ],
-                            "visConfig": {
-                              "allowHover": true,
-                              "billboard": false,
-                              "colorRange": {
-                                "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    "Advisory",
-                                    "#ffffff"
-                                  ],
-                                  [
-                                    "GFS low",
-                                    "#ff4fd8"
-                                  ]
-                                ],
-                                "colors": [
-                                  "#ffffff",
-                                  "#ff4fd8"
-                                ],
-                                "name": "Centres",
-                                "type": "custom"
-                              },
-                              "filled": true,
-                              "fixedRadius": false,
-                              "opacity": 0.95,
-                              "outline": true,
-                              "radius": 12,
-                              "radiusRange": [
-                                0,
-                                50
-                              ],
-                              "showHighlightColor": true,
-                              "showNeighborOnHover": false,
-                              "strokeColor": [
-                                20,
-                                24,
-                                32
-                              ],
-                              "strokeColorRange": {
-                                "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    "Advisory",
-                                    "#ffffff"
-                                  ],
-                                  [
-                                    "GFS low",
-                                    "#ff4fd8"
-                                  ]
-                                ],
-                                "colors": [
-                                  "#ffffff",
-                                  "#ff4fd8"
-                                ],
-                                "name": "Centres",
-                                "type": "custom"
-                              },
-                              "thickness": 1.5
-                            }
-                          },
-                          "id": "centres",
-                          "type": "point",
-                          "visualChannels": {
-                            "colorField": {
-                              "name": "centre",
-                              "type": "string"
-                            },
-                            "colorScale": "customOrdinal",
-                            "sizeScale": "linear",
-                            "strokeColorScale": "quantile"
-                          }
-                        },
-                        {
-                          "config": {
-                            "color": [
                               34,
                               211,
                               238
@@ -1143,7 +1290,7 @@
                               26,
                               255
                             ],
-                            "isVisible": true,
+                            "isVisible": false,
                             "label": "Intensity curtain",
                             "textLabel": [
                               {
@@ -1179,6 +1326,7 @@
                             ],
                             "visConfig": {
                               "allowHover": true,
+                              "billboard": false,
                               "colorRange": {
                                 "category": "Custom",
                                 "colorMap": [
@@ -1223,24 +1371,68 @@
                                 "name": "Saffir-Simpson",
                                 "type": "custom"
                               },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "historyField": "color",
                               "opacity": 0.9,
+                              "outline": false,
                               "prismAngle": 0,
                               "prismHeight": 200,
                               "prismHeightMode": "raw",
                               "prismHeightMultiplier": 2500,
+                              "prismHeightRange": [
+                                5,
+                                200
+                              ],
                               "prismLabel": false,
+                              "prismLabelSize": 12,
+                              "prismLabelUnit": "",
+                              "prismLength": 20,
+                              "prismLengthMode": "scaled",
+                              "prismLengthMultiplier": 1,
+                              "prismLengthRange": [
+                                2,
+                                60
+                              ],
                               "prismShape": "box",
                               "prismSquareBase": true,
                               "prismUnits": "m",
                               "prismWidth": 28000,
                               "prismWidthMode": "scaled",
+                              "prismWidthMultiplier": 1,
+                              "prismWidthRange": [
+                                2,
+                                60
+                              ],
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
                               "rowsAsset": "auto",
-                              "rowsPerPlace": "all"
+                              "rowsPerPlace": "all",
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
                             }
                           },
                           "id": "curtain",
                           "type": "prism",
                           "visualChannels": {
+                            "angleScale": "linear",
                             "colorField": {
                               "name": "category",
                               "type": "string"
@@ -1248,9 +1440,14 @@
                             "colorScale": "customOrdinal",
                             "heightField": {
                               "name": "wind_kt",
-                              "type": "real"
+                              "type": "integer"
                             },
-                            "heightScale": "linear"
+                            "heightScale": "linear",
+                            "labelScale": "linear",
+                            "lengthScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile",
+                            "widthScale": "linear"
                           }
                         },
                         {
@@ -1396,9 +1593,11 @@
                                 1,
                                 6
                               ],
+                              "fleetReckon": false,
                               "fleetRemember": "off",
                               "fleetRememberMin": 10,
                               "fleetShadow": false,
+                              "fleetSilent": "grey",
                               "fleetSize": 26,
                               "fleetSmooth": true,
                               "fleetSmoothMs": 1000,
@@ -1454,8 +1653,133 @@
                           "id": "trackall",
                           "type": "fleet",
                           "visualChannels": {
-                            "colorField": null,
-                            "colorScale": "ordinal",
+                            "colorScale": "quantile",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-E",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Centre now: advisory and GFS",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Advisory",
+                                    "#ffffff"
+                                  ],
+                                  [
+                                    "GFS low",
+                                    "#ff4fd8"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#ffffff",
+                                  "#ff4fd8"
+                                ],
+                                "name": "Centres",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.95,
+                              "outline": true,
+                              "radius": 12,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColor": [
+                                20,
+                                24,
+                                32
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Advisory",
+                                    "#ffffff"
+                                  ],
+                                  [
+                                    "GFS low",
+                                    "#ff4fd8"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#ffffff",
+                                  "#ff4fd8"
+                                ],
+                                "name": "Centres",
+                                "type": "custom"
+                              },
+                              "thickness": 1.5
+                            }
+                          },
+                          "id": "centres",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "centre",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
                             "sizeScale": "linear",
                             "strokeColorScale": "quantile"
                           }
@@ -1627,7 +1951,7 @@
                             ],
                             "visConfig": {
                               "animate": true,
-                              "calmOpacity": 0.1,
+                              "calmOpacity": 0.45,
                               "colorBySpeed": true,
                               "colorRange": {
                                 "category": "Custom",
@@ -1647,6 +1971,18 @@
                               "directionConvention": "from",
                               "elevationScale": 1,
                               "fixedSpeedRange": false,
+                              "flowContext": {
+                                "camera": {
+                                  "bearing": -8,
+                                  "height": 707,
+                                  "latitude": 16.600199,
+                                  "longitude": 151.300203,
+                                  "pitch": 40,
+                                  "width": 1499,
+                                  "zoom": 4.4
+                                },
+                                "tallest": 0
+                              },
                               "gradientDirection": "downhill",
                               "heightMeters": 0,
                               "lifeFraction": 0.8,
@@ -1655,12 +1991,13 @@
                               "opacityBySpeed": true,
                               "seamlessLoop": true,
                               "smoothing": 3,
-                              "thickness": 1.8,
-                              "trailShare": 8,
+                              "speedContrast": 1,
+                              "thickness": 1.68,
+                              "trailShare": 14,
                               "widthBySpeed": false,
                               "widthRange": [
                                 1,
-                                5
+                                3.5
                               ],
                               "zoomResponse": 0.4
                             }
@@ -1749,6 +2086,18 @@
                               "directionConvention": "from",
                               "elevationScale": 1,
                               "fixedSpeedRange": false,
+                              "flowContext": {
+                                "camera": {
+                                  "bearing": -8,
+                                  "height": 707,
+                                  "latitude": 16.600199,
+                                  "longitude": 151.300203,
+                                  "pitch": 40,
+                                  "width": 1499,
+                                  "zoom": 4.4
+                                },
+                                "tallest": 0
+                              },
                               "gradientDirection": "contours",
                               "heightMeters": 0,
                               "lifeFraction": 0.55,
@@ -1757,6 +2106,7 @@
                               "opacityBySpeed": true,
                               "seamlessLoop": true,
                               "smoothing": 3,
+                              "speedContrast": 1,
                               "thickness": 1.4,
                               "trailShare": 4,
                               "widthBySpeed": true,
@@ -1858,9 +2208,31 @@
                                 "name": "GDACS areas",
                                 "type": "custom"
                               },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
+                              "elevationScale": 1,
                               "enable3d": false,
                               "filled": true,
+                              "fixedElevation": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "invertHeight": false,
                               "opacity": 0.05,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
                               "strokeColor": [
                                 255,
                                 255,
@@ -1909,12 +2281,617 @@
                               "type": "string"
                             },
                             "colorScale": "customOrdinal",
+                            "elevationOffsetScale": "linear",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
                             "sizeScale": "linear",
                             "strokeColorField": {
                               "name": "area",
                               "type": "string"
                             },
                             "strokeColorScale": "customOrdinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-L",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Chance of winds over 34 kt in 5 days (NHC, JTWC)",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "10% chance of winds over 34 kt in 5 days",
+                                    "#e4d7ff"
+                                  ],
+                                  [
+                                    "20% chance of winds over 34 kt in 5 days",
+                                    "#d6c2ff"
+                                  ],
+                                  [
+                                    "30% chance of winds over 34 kt in 5 days",
+                                    "#c8adff"
+                                  ],
+                                  [
+                                    "40% chance of winds over 34 kt in 5 days",
+                                    "#ba98fb"
+                                  ],
+                                  [
+                                    "50% chance of winds over 34 kt in 5 days",
+                                    "#ad83f3"
+                                  ],
+                                  [
+                                    "60% chance of winds over 34 kt in 5 days",
+                                    "#a06ee8"
+                                  ],
+                                  [
+                                    "70% chance of winds over 34 kt in 5 days",
+                                    "#9459da"
+                                  ],
+                                  [
+                                    "80% chance of winds over 34 kt in 5 days",
+                                    "#8945c9"
+                                  ],
+                                  [
+                                    "90% chance of winds over 34 kt in 5 days",
+                                    "#7f32b5"
+                                  ],
+                                  [
+                                    "100% chance of winds over 34 kt in 5 days",
+                                    "#75209e"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#e4d7ff",
+                                  "#d6c2ff",
+                                  "#c8adff",
+                                  "#ba98fb",
+                                  "#ad83f3",
+                                  "#a06ee8",
+                                  "#9459da",
+                                  "#8945c9",
+                                  "#7f32b5",
+                                  "#75209e"
+                                ],
+                                "name": "Wind chance",
+                                "type": "custom"
+                              },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": true,
+                              "fixedElevation": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "invertHeight": false,
+                              "opacity": 0.07,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "10% chance of winds over 34 kt in 5 days",
+                                    "#e4d7ff"
+                                  ],
+                                  [
+                                    "20% chance of winds over 34 kt in 5 days",
+                                    "#d6c2ff"
+                                  ],
+                                  [
+                                    "30% chance of winds over 34 kt in 5 days",
+                                    "#c8adff"
+                                  ],
+                                  [
+                                    "40% chance of winds over 34 kt in 5 days",
+                                    "#ba98fb"
+                                  ],
+                                  [
+                                    "50% chance of winds over 34 kt in 5 days",
+                                    "#ad83f3"
+                                  ],
+                                  [
+                                    "60% chance of winds over 34 kt in 5 days",
+                                    "#a06ee8"
+                                  ],
+                                  [
+                                    "70% chance of winds over 34 kt in 5 days",
+                                    "#9459da"
+                                  ],
+                                  [
+                                    "80% chance of winds over 34 kt in 5 days",
+                                    "#8945c9"
+                                  ],
+                                  [
+                                    "90% chance of winds over 34 kt in 5 days",
+                                    "#7f32b5"
+                                  ],
+                                  [
+                                    "100% chance of winds over 34 kt in 5 days",
+                                    "#75209e"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#e4d7ff",
+                                  "#d6c2ff",
+                                  "#c8adff",
+                                  "#ba98fb",
+                                  "#ad83f3",
+                                  "#a06ee8",
+                                  "#9459da",
+                                  "#8945c9",
+                                  "#7f32b5",
+                                  "#75209e"
+                                ],
+                                "name": "Wind chance",
+                                "type": "custom"
+                              },
+                              "strokeOpacity": 0.5,
+                              "stroked": true,
+                              "thickness": 0.5,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "windchance",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "area",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "elevationOffsetScale": "linear",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorField": {
+                              "name": "area",
+                              "type": "string"
+                            },
+                            "strokeColorScale": "customOrdinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-K-wms",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Rain measured from space (IMERG)",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "dynamicColor": false,
+                              "elevationScale": 5,
+                              "enable3d": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.85,
+                              "radius": 1,
+                              "radiusUnits": true,
+                              "strokeOpacity": 0.8,
+                              "stroked": false,
+                              "transition": false,
+                              "transparent": true,
+                              "wmsLayer": {
+                                "name": "IMERG_Precipitation_Rate_30min",
+                                "queryable": true,
+                                "title": "IMERG_Precipitation_Rate_30min"
+                              },
+                              "wmsTime": "2026-10-28T18:00:00.000Z"
+                            }
+                          },
+                          "id": "observedrain",
+                          "type": "wms",
+                          "visualChannels": {
+                            "colorScale": "quantize",
+                            "heightScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-J-wms",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": false,
+                            "label": "Clouds: GOES-West infrared (NASA GIBS)",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "dynamicColor": false,
+                              "elevationScale": 5,
+                              "enable3d": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.14,
+                              "radius": 1,
+                              "radiusUnits": true,
+                              "strokeOpacity": 0.8,
+                              "stroked": false,
+                              "transition": false,
+                              "transparent": true,
+                              "wmsLayer": {
+                                "name": "GOES-West_ABI_Band13_Clean_Infrared",
+                                "queryable": true,
+                                "title": "GOES-West_ABI_Band13_Clean_Infrared"
+                              }
+                            }
+                          },
+                          "id": "sat-goes-west",
+                          "type": "wms",
+                          "visualChannels": {
+                            "colorScale": "quantize",
+                            "heightScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-M-wms",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": false,
+                            "label": "Clouds: GOES-East infrared (NASA GIBS)",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "dynamicColor": false,
+                              "elevationScale": 5,
+                              "enable3d": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.6,
+                              "radius": 1,
+                              "radiusUnits": true,
+                              "strokeOpacity": 0.8,
+                              "stroked": false,
+                              "transition": false,
+                              "transparent": true,
+                              "wmsLayer": {
+                                "name": "GOES-East_ABI_Band13_Clean_Infrared",
+                                "queryable": true,
+                                "title": "GOES-East_ABI_Band13_Clean_Infrared"
+                              }
+                            }
+                          },
+                          "id": "sat-goes-east",
+                          "type": "wms",
+                          "visualChannels": {
+                            "colorScale": "quantize",
+                            "heightScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-N-wms",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Clouds: Himawari infrared (NASA GIBS)",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "dynamicColor": false,
+                              "elevationScale": 5,
+                              "enable3d": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.16,
+                              "radius": 1,
+                              "radiusUnits": true,
+                              "strokeOpacity": 0.8,
+                              "stroked": false,
+                              "transition": false,
+                              "transparent": true,
+                              "wmsLayer": {
+                                "name": "Himawari_AHI_Band13_Clean_Infrared",
+                                "queryable": true,
+                                "title": "Himawari_AHI_Band13_Clean_Infrared"
+                              },
+                              "wmsTime": "2026-10-28T18:00:00.000Z"
+                            }
+                          },
+                          "id": "sat-himawari",
+                          "type": "wms",
+                          "visualChannels": {
+                            "colorScale": "quantize",
+                            "heightScale": "linear"
                           }
                         }
                       ],
@@ -1924,10 +2901,13 @@
                   },
                   "version": "v1"
                 },
+                "mosaicArea": true,
                 "mosaicSelection": "stormFilters",
+                "mosaicViewport": false,
                 "peerTimeSync": false,
                 "places": {},
                 "publishIntervalMs": 250,
+                "publishWhilePlaying": false,
                 "rasterBands": "",
                 "rasterColormap": "",
                 "rasterPainted": false,
@@ -1950,7 +2930,7 @@
                 ]
               }
             },
-            "version": "1.4.1"
+            "version": "1.5.0"
           }
         }
       },
@@ -1984,7 +2964,7 @@
                 "variables": "- param: stormFilters\n  column: wind_kt\n  from: wind_lo\n  to: wind_hi\n"
               }
             },
-            "version": "2.2.0"
+            "version": "2.3.1"
           }
         }
       },
@@ -2018,7 +2998,7 @@
                 "variables": "- param: stormFilters\n  column: dwind_24h\n  from: dw_lo\n  to: dw_hi\n"
               }
             },
-            "version": "2.2.0"
+            "version": "2.3.1"
           }
         }
       },
@@ -2052,7 +3032,7 @@
                 "variables": "- param: stormFilters\n  column: speed_kmh\n  from: spd_lo\n  to: spd_hi\n"
               }
             },
-            "version": "2.2.0"
+            "version": "2.3.1"
           }
         }
       },
@@ -2107,7 +3087,7 @@
                     "steps": [
                       {
                         "color": "text",
-                        "value": null
+                        "value": 0
                       }
                     ]
                   }
@@ -2148,7 +3128,7 @@
                           "steps": [
                             {
                               "color": "#5ebaff",
-                              "value": null
+                              "value": 0
                             },
                             {
                               "color": "#00faf4",
@@ -2381,7 +3361,7 @@
                     "steps": [
                       {
                         "color": "text",
-                        "value": null
+                        "value": 0
                       }
                     ]
                   }
@@ -2447,7 +3427,7 @@
                           "steps": [
                             {
                               "color": "#5ebaff",
-                              "value": null
+                              "value": 0
                             },
                             {
                               "color": "#00faf4",
@@ -2580,7 +3560,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "**Tropical cyclones, live.** The storm picked in **Storm** (the strongest active one by default), hour by hour from the JTWC and NOAA advisories through [GDACS](https://www.gdacs.org), over **NOAA GFS** streamlines, rain and isobars over its life and the next two days. **Brush the bar below and press play**: the storm moves, its 3D curtain of wind lights up, the wind field follows. **Brush the charts** to keep a band of wind, of intensification or of speed. The second tab sets it among 270 storms of the last three seasons.",
+                "content": "**Tropical cyclones, live.** The storm picked in **Storm** (the strongest active one by default), hour by hour from the JTWC and NOAA advisories through [GDACS](https://www.gdacs.org), over **NOAA GFS** streamlines, rain and isobars over its life and the next two days, and the **clouds** seen from space. **Brush the bar below and press play**: the storm moves, its 3D curtain of wind lights up, the wind field follows. **Brush the charts** to keep a band of wind, of intensification or of speed. The second tab sets it among 270 storms of the last three seasons.",
                 "mode": "markdown"
               }
             },
@@ -2617,7 +3597,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "**Advisories.** [GDACS](https://www.gdacs.org) (the Global Disaster Alert and Coordination System of the UN and the European Commission’s JRC) gathers the advisories of the [Joint Typhoon Warning Center](https://www.metoc.navy.mil/jtwc/jtwc.html) and of NOAA’s [National Hurricane Center](https://www.nhc.noaa.gov) and Central Pacific Hurricane Center, every six hours (three near a coast). From its API this reads the list of storms, each storm’s *timeline* (position, 1-minute sustained wind and gusts of every advisory, and the latest one’s forecast to five days) and the geometry of its latest advisory (cone of uncertainty and wind swath). GDACS gives winds in m/s; they are shown in knots, which the advisories use. A storm is **active** when its last advisory is less than a day old. Free to use with attribution; not an official warning: for that, go to the agency of the basin.\n\n**Hour by hour.** Between two advisories (six hours apart) and two forecast times (twelve), position and wind are drawn in a straight line; the forward speed is the distance between the two over the time between them. The 24-hour change of wind compares each hour with the same hour the day before.\n\n**The last three seasons** come from [IBTrACS](https://www.ncei.noaa.gov/products/international-best-track-archive) (NOAA NCEI): every storm of every agency, every six hours, with the 1-minute wind of the US agencies where there is one. NCEI publishes the last three complete seasons and the storms active now; storms of this season that have already ended arrive with the next complete season.\n\n**Categories** are Saffir-Simpson’s, from the 1-minute wind: tropical depression under 34 kt, tropical storm to 63, then categories 1 (64–82), 2 (83–95), 3 (96–112), 4 (113–136) and 5 (137 and over). JTWC calls a typhoon of 130 kt or more a *super typhoon*.\n\n**Wind and pressure.** NOAA’s [GFS](https://www.emc.ncep.noaa.gov/emc/pages/numerical_forecast_systems/gfs.php) model, 10 m wind, sea-level pressure and rain, from [PacIOOS’s ERDDAP](https://pae-paha.pacioos.hawaii.edu/erddap/griddap/ncep_global.html), which keeps every run since 2022: over the storm’s life (its last nine days at most) every six hours, and the next two days every three, a degree apart, in a box a day that follows the storm 15 degrees of latitude and 20 of longitude around it. A degree (about 110 km) blurs a typhoon’s eye: GFS gives a storm far less wind than the advisories do. The **GFS low** is the lowest pressure within three degrees of where the advisory puts the storm at the same hour, the advisory’s position being interpolated between its fixes. Model and advisory are different forecasts: where they part, the storm’s future is uncertain. Over high ground the isobars crowd for want of a sea: the pressure there is carried down to a sea level kilometres below the ground (the Himalaya, the Andes), so read those bands as mountains.\n\n**Freshness.** The gateway keeps each GDACS answer a quarter of an hour and each day of GFS three hours; IBTrACS six hours; the dashboard reloads every 30 minutes. Everything you brush is answered in your browser (Chaski, DuckDB-WASM).",
+                "content": "**Advisories.** [GDACS](https://www.gdacs.org) (the Global Disaster Alert and Coordination System of the UN and the European Commission’s JRC) gathers the advisories of the [Joint Typhoon Warning Center](https://www.metoc.navy.mil/jtwc/jtwc.html) and of NOAA’s [National Hurricane Center](https://www.nhc.noaa.gov) and Central Pacific Hurricane Center, every six hours (three near a coast). From its API this reads the list of storms, each storm’s *timeline* (position, 1-minute sustained wind and gusts of every advisory, and the latest one’s forecast to five days) and the geometry of its latest advisory (cone of uncertainty and wind swath). GDACS gives winds in m/s; they are shown in knots, which the advisories use. A storm is **active** when its last advisory is less than a day old. Free to use with attribution; not an official warning: for that, go to the agency of the basin.\n\n**Hour by hour.** Between two advisories (six hours apart) and two forecast times (twelve), position and wind are drawn in a straight line; the forward speed is the distance between the two over the time between them. The 24-hour change of wind compares each hour with the same hour the day before.\n\n**The last three seasons** come from [IBTrACS](https://www.ncei.noaa.gov/products/international-best-track-archive) (NOAA NCEI): every storm of every agency, every six hours, with the 1-minute wind of the US agencies where there is one. NCEI publishes the last three complete seasons and the storms active now; storms of this season that have already ended arrive with the next complete season.\n\n**Categories** are Saffir-Simpson’s, from the 1-minute wind: tropical depression under 34 kt, tropical storm to 63, then categories 1 (64–82), 2 (83–95), 3 (96–112), 4 (113–136) and 5 (137 and over). JTWC calls a typhoon of 130 kt or more a *super typhoon*.\n\n**Wind and pressure.** NOAA’s [GFS](https://www.emc.ncep.noaa.gov/emc/pages/numerical_forecast_systems/gfs.php) model, 10 m wind, sea-level pressure and rain, from [PacIOOS’s ERDDAP](https://pae-paha.pacioos.hawaii.edu/erddap/griddap/ncep_global.html), which keeps every run since 2022: over the storm’s life (its last nine days at most) every six hours, and the next two days every three, a degree apart, in a box a day that follows the storm 15 degrees of latitude and 20 of longitude around it. A degree (about 110 km) blurs a typhoon’s eye: GFS gives a storm far less wind than the advisories do. The **GFS low** is the lowest pressure within three degrees of where the advisory puts the storm at the same hour, the advisory’s position being interpolated between its fixes. Model and advisory are different forecasts: where they part, the storm’s future is uncertain. Over high ground the isobars crowd for want of a sea: the pressure there is carried down to a sea level kilometres below the ground (the Himalaya, the Andes), so read those bands as mountains.\n\n**Clouds and rain from space.** NASA’s [GIBS](https://nasa-gibs.github.io/gibs-api-docs/) serves the clean infrared (band 13, 10.3 µm) of GOES-West, GOES-East and Himawari every ten minutes; the map takes the satellite nearest overhead the storm (GOES-West west of 106° W, GOES-East to 0°, Himawari east of 70° E) and one picture an hour, the newest of the hour and a half before it. Cold cloud tops, the tall storms, are coloured, from green to red and black. GIBS holds no Meteosat, so a storm off Africa or in the western Indian Ocean has no clouds here. The rain is [IMERG](https://gpm.nasa.gov/data/imerg) early run, every half hour from the GPM constellation and the geostationary infrared, about six hours behind: from there on the blue dots are GFS’s forecast. Your browser asks GIBS for each picture.\n\n**Wind chance** is the National Hurricane Center’s and JTWC’s probability of tropical-storm-force winds (34 kt) at each place within the next five days, from the latest advisory, in bands of ten percent, as [Esri’s Living Atlas](https://www.arcgis.com/home/item.html?id=248e7b5827a34b248647afb012c58787) republishes it; a storm that has ended has none.\n\n**Freshness.** The gateway keeps each GDACS answer a quarter of an hour and each day of GFS three hours; the satellite and the wind chance are asked for at every load; IBTrACS six hours; the dashboard reloads every 30 minutes. Everything you brush is answered in your browser (Chaski, DuckDB-WASM).",
                 "mode": "markdown"
               }
             },
@@ -2664,11 +3644,25 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
-                "afterRender": "// Two switches for the map's GFS layers: rain and isobars. Each writes its\n// variable (on or off); the map's query for that layer then returns its rows\n// or none, so a layer switched off costs nothing to load. Built here, not in\n// the content: the panel sanitizes its content, and buttons would not survive.\n//\n// ${rain} ${isobars} are named here so the panel redraws when either changes.\n\n// @constants begin\nconst SWITCHES = [\n  { variable: 'rain', label: 'Rain', hint: 'GFS rain over 0.3 mm/h, as blue dots', colour: '#5aaaff' },\n  { variable: 'isobars', label: 'Isobars', hint: 'GFS sea-level pressure, as lines coloured by their gradient', colour: '#d37d87' },\n];\n// @constants end\n\nconst root = context.element.querySelector('.layers');\nif (!root) {\n  return;\n}\nconst value = (name) =\u003e context.grafana.replaceVariables('${' + name + '}');\nroot.innerHTML = '';\nfor (const s of SWITCHES) {\n  const on = value(s.variable) !== 'off';\n  const button = document.createElement('button');\n  button.className = 'layers-switch' + (on ? ' on' : '');\n  button.title = s.hint + (on ? ' (shown: click to hide)' : ' (hidden: click to show)');\n  button.style.setProperty('--accent', s.colour);\n  button.innerHTML = '\u003cspan class=\"layers-dot\"\u003e\u003c/span\u003e' + s.label;\n  button.addEventListener('click', () =\u003e {\n    context.grafana.locationService.partial({ ['var-' + s.variable]: on ? 'off' : 'on' }, true);\n  });\n  root.appendChild(button);\n}",
+                "afterRender": "// Four switches for the map's layers: satellite, rain, isobars and wind chance. Each writes its\n// variable (on or off); the map's query for that layer then returns its rows\n// or none, so a layer switched off costs nothing to load. Built here, not in\n// the content: the panel sanitizes its content, and buttons would not survive.\n//\n// ${satellite} ${rain} ${isobars} ${windchance} are named here so the panel redraws when either changes.\n\n// @constants begin\nconst SWITCHES = [\n  { variable: 'satellite', label: 'Satellite', hint: 'Infrared from GOES or Himawari (NASA GIBS), cloud tops coloured by how cold they are', colour: '#9ad0a0' },\n  { variable: 'rain', label: 'Rain', hint: 'Rain measured from space (IMERG) until some six hours ago, then GFS rain over 0.3 mm/h as blue dots', colour: '#5aaaff' },\n  { variable: 'isobars', label: 'Isobars', hint: 'GFS sea-level pressure, as lines coloured by their gradient', colour: '#d37d87' },\n  { variable: 'windchance', label: 'Wind chance', hint: 'Chance of winds over 34 kt in the next five days, from the latest NHC or JTWC advisory', colour: '#a06ee8' },\n];\n// @constants end\n\nconst root = context.element.querySelector('.layers');\nif (!root) {\n  return;\n}\nconst value = (name) =\u003e context.grafana.replaceVariables('${' + name + '}');\nroot.innerHTML = '';\nfor (const s of SWITCHES) {\n  const on = value(s.variable) !== 'off';\n  const button = document.createElement('button');\n  button.className = 'layers-switch' + (on ? ' on' : '');\n  button.title = s.hint + (on ? ' (shown: click to hide)' : ' (hidden: click to show)');\n  button.style.setProperty('--accent', s.colour);\n  button.innerHTML = '\u003cspan class=\"layers-dot\"\u003e\u003c/span\u003e' + s.label;\n  button.addEventListener('click', () =\u003e {\n    context.grafana.locationService.partial({ ['var-' + s.variable]: on ? 'off' : 'on' }, true);\n  });\n  root.appendChild(button);\n}",
                 "content": "\u003cdiv class=\"layers\"\u003e\u003c/div\u003e",
                 "contentPartials": [],
                 "defaultContent": "\u003cdiv class=\"layers\"\u003e\u003c/div\u003e",
@@ -3415,12 +4409,12 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-11"
+                          "name": "panel-12"
                         },
-                        "height": 24,
-                        "width": 16,
-                        "x": 0,
-                        "y": 15
+                        "height": 13,
+                        "width": 8,
+                        "x": 16,
+                        "y": 13
                       }
                     },
                     {
@@ -3428,12 +4422,12 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-12"
+                          "name": "panel-11"
                         },
-                        "height": 13,
-                        "width": 8,
-                        "x": 16,
-                        "y": 13
+                        "height": 24,
+                        "width": 16,
+                        "x": 0,
+                        "y": 15
                       }
                     },
                     {
@@ -3754,6 +4748,32 @@
           },
           "hide": "hideVariable",
           "name": "isobars",
+          "query": "off",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "on",
+            "value": "on"
+          },
+          "hide": "hideVariable",
+          "name": "satellite",
+          "query": "on",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "off",
+            "value": "off"
+          },
+          "hide": "hideVariable",
+          "name": "windchance",
           "query": "off",
           "skipUrlSync": false
         }
