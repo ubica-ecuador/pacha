@@ -1,6 +1,7 @@
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
+import { chaskiRows } from '../lib/browser.mjs';
 import { ADMIN } from '../lib/grafana.mjs';
 import { STACK_URL } from '../lib/stack.mjs';
 
@@ -25,11 +26,8 @@ test('testing the datasource starts DuckDB in the browser', async () => {
 });
 
 test('spatial works in the browser engine', async () => {
-  const point = await page.evaluate(async () => {
-    const table = await window.__duckdbwasm.runner.query('SELECT ST_AsText(ST_Point(1, 2)) AS p');
-    return table.toArray()[0].toJSON().p;
-  });
-  assert.equal(point, 'POINT (1 2)');
+  const [{ p }] = await chaskiRows(page, 'SELECT ST_AsText(ST_Point(1, 2)) AS p');
+  assert.equal(p, 'POINT (1 2)');
 });
 
 test('other plugins find the engine through window.__chaski, API version 1', async () => {

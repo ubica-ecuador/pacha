@@ -77,7 +77,8 @@ docker run --rm --network host --shm-size=2g -v "$PWD:/repo" -w /repo --env-file
   the Chaski loads. Scroll each panel into view (Grafana renders lazily), wait for the map to
   settle, `page.screenshot`.
 - Collect what failed: panel error icons (hover them for the message), `console` errors,
-  `window.__duckdbwasm` stats.
+  the datasets Chaski loaded (`(await window.__chaski.engine()).datasets()`; `view.chaski(sql)` in
+  `tests/lib/browser.mjs` runs SQL in the page's engine).
 - Then **read the images**. Check: the map is centred on the data, the layers are the ones
   configured (not the automatic fallback with its default palette), the colours mean what the
   legend says, no chart is empty, no panel shows an error, text fits.

@@ -14,6 +14,25 @@ const HEADER = (title) => `[data-testid="data-testid Panel header ${title}"]`;
 // between a pair never changes the result.
 const SUFFIXES = { K: 1e3, M: 1e6, MIL: 1e6, B: 1e9, BIL: 1e9, T: 1e12, TRI: 1e12 };
 
+// Chaski's public API answers in Arrow IPC; the page reads it with the Arrow
+// version Chaski is built with, imported once.
+const ARROW = 'https://cdn.jsdelivr.net/npm/apache-arrow@17.0.0/+esm';
+
+// The rows a statement returns in the page's Chaski engine, through
+// window.__chaski: releases publish no other way in (no window.__duckdbwasm
+// since Chaski 2.3.2).
+export function chaskiRows(page, sql) {
+  return page.evaluate(
+    async ([statement, arrow]) => {
+      const engine = await window.__chaski.engine();
+      window.__pachaArrow ??= import(arrow);
+      const { tableFromIPC } = await window.__pachaArrow;
+      return tableFromIPC(await engine.queryIPC(statement)).toArray().map((row) => row.toJSON());
+    },
+    [sql, ARROW],
+  );
+}
+
 // The number a stat panel's text shows, understanding thousands separators
 // and Grafana's `short`-unit suffixes. Throws if there is no number.
 export function parseStatNumber(text) {
@@ -48,9 +67,13 @@ export async function openDashboard(pathAndQuery, { anonymous = true, timeoutMs 
         document.querySelectorAll('[data-viz-panel-key]').length > 0 &&
         document.querySelectorAll(loading).length === 0 &&
         (!chaski ||
-          (names.length > 0
-            ? names.every((name) => window.__duckdbwasm?.stats?.loads?.some((l) => l.name === name && l.ok))
-            : (window.__duckdbwasm?.stats?.loads?.length ?? 0) > 0)),
+          (() => {
+            // window.__chaski hands out the engine as a promise: kept on the page once it resolves.
+            const pending = window.__chaski?.engine();
+            if (pending && !window.__pachaEngine) pending.then((engine) => (window.__pachaEngine = engine), () => {});
+            const loaded = window.__pachaEngine?.datasets().map((d) => d.name) ?? [];
+            return names.length > 0 ? names.every((name) => loaded.includes(name)) : loaded.length > 0;
+          })()),
       [LOADING, datasets, chaski],
       { timeout: timeoutMs, polling: 250 },
     );
@@ -90,10 +113,6 @@ export async function openDashboard(pathAndQuery, { anonymous = true, timeoutMs 
       return parseStatNumber(text.replace(title, ''));
     },
     // A query on Chaski's engine in the page, as a panel would run it.
-    chaski: (sql) =>
-      page.evaluate(async (statement) => {
-        const table = await window.__duckdbwasm.runner.query(statement);
-        return table.toArray().map((row) => row.toJSON());
-      }, sql),
+    chaski: (sql) => chaskiRows(page, sql),
   };
 }

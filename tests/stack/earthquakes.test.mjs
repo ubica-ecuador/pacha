@@ -57,7 +57,9 @@ test('a magnitude filter in the URL gives a lower count than the page\'s own unf
   assert.ok(filtered < baseline, `${filtered} !< ${baseline}`);
   // The filters panel shows the filter and its range, with the same count.
   const filters = await (await view.panel('Filters')).innerText();
-  assert.match(filters, /Magnitude\s+5 – 10/);
+  // Since Chaski 2.3.2 the value reads under the control, after its axis, not beside the label.
+  const magnitude = filters.slice(filters.indexOf('Magnitude'), filters.indexOf('Depth'));
+  assert.match(magnitude, /\n5 – 10\n/, filters);
   const counted = await view.page.getByTestId('filters-count').first().innerText();
   assert.ok(counted.startsWith(`${filtered.toLocaleString('en-US')} of`), counted);
 });
