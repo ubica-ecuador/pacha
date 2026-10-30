@@ -1169,8 +1169,8 @@
         "spec": {
           "allowCustomValue": false,
           "current": {
-            "text": "×10",
-            "value": "10"
+            "text": "×20",
+            "value": "20"
           },
           "hide": "dontHide",
           "includeAll": false,
@@ -1188,8 +1188,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "d943f0a4d_clouds_v1",
+            "value": "d943f0a4d_clouds_v1"
           },
           "hide": "hideVariable",
           "includeAll": false,
@@ -1238,13 +1238,13 @@
         "kind": "TextVariable",
         "spec": {
           "current": {
-            "text": "2026-10-30T00:00:00.000Z",
-            "value": "2026-10-30T00:00:00.000Z"
+            "text": "2026-10-30T06:00:00.000Z",
+            "value": "2026-10-30T06:00:00.000Z"
           },
           "hide": "hideVariable",
           "label": "Window from",
           "name": "t0",
-          "query": "2026-10-30T00:00:00.000Z",
+          "query": "2026-10-30T06:00:00.000Z",
           "skipUrlSync": false
         }
       },
@@ -1252,13 +1252,13 @@
         "kind": "TextVariable",
         "spec": {
           "current": {
-            "text": "2026-10-30T06:00:00.000Z",
-            "value": "2026-10-30T06:00:00.000Z"
+            "text": "2026-10-30T12:00:00.000Z",
+            "value": "2026-10-30T12:00:00.000Z"
           },
           "hide": "hideVariable",
           "label": "Window to",
           "name": "t1",
-          "query": "2026-10-30T06:00:00.000Z",
+          "query": "2026-10-30T12:00:00.000Z",
           "skipUrlSync": false
         }
       },
@@ -1358,8 +1358,8 @@
         "spec": {
           "allowCustomValue": true,
           "current": {
-            "text": "",
-            "value": ""
+            "text": "clouds#aa76f570",
+            "value": "clouds#aa76f570"
           },
           "hide": "hideVariable",
           "includeAll": false,
