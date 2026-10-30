@@ -146,7 +146,7 @@ panel queries.
 | Service   | What it does                                     | Reached at                        |
 |-----------|--------------------------------------------------|-----------------------------------|
 | `gateway` | nginx; the only published port. Caches the public feeds and adds their keys | `:3000`                           |
-| `grafana` | Grafana 13.2.1 with the plugins baked in         | `/`                               |
+| `grafana` | Grafana 13.3.0 with the plugins baked in         | `/`                               |
 | `titiler` | Tiles for COG, Zarr and Icechunk                 | `/titiler/`                       |
 | `mcp`     | [mcp-grafana](https://github.com/grafana/mcp-grafana) for AI agents | `http://127.0.0.1:8000/mcp`, `Authorization: Bearer $PACHA_MCP_TOKEN` |
 | `recorder` | Keeps live feeds as Parquet for history panels; off unless `COMPOSE_PROFILES=recorder` | `http://feeds/recordings/` (inside the stack) |

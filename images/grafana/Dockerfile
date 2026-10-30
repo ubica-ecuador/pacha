@@ -15,7 +15,7 @@
 # follows main of its repo on purpose.
 
 ARG GRAFANA_EDITION=grafana-enterprise
-ARG GRAFANA_VERSION=13.2.1
+ARG GRAFANA_VERSION=13.3.0
 ARG KEPLER_PANEL_VERSION=1.6.1
 ARG KEPLER_PANEL_SHA256=2e8d5b2a5cd4c2983aea552680df2d1b640c7a2a8b5488ae6a07f3031b1a3ecc
 # release: the version above. edge: main of the Kepler repo, as its CI last
@@ -156,6 +156,8 @@ USER 472
 #   points it at Ubuntu's bundle. Forwarded to DuckDB like any variable but HOME.
 # - No plugin preinstall: it downloads apps from grafana.com at every start,
 #   which is the network at runtime this image exists to avoid.
+# - Notebooks (public preview in 13.3): panels, notes and Assistant findings
+#   in one document, under Dashboards > Notebooks.
 ENV GF_PATHS_PLUGINS=/opt/pacha/plugins \
     HOME=/opt/pacha/duckdb-home \
     GF_AUTH_ANONYMOUS_ENABLED=true \
@@ -164,6 +166,7 @@ ENV GF_PATHS_PLUGINS=/opt/pacha/plugins \
     GF_PLUGINS_FORWARD_HOST_ENV_VARS=motherduck-duckdb-datasource,yesoreyeram-infinity-datasource \
     GF_PLUGIN_PAGINATION_MAX_PAGES=12 \
     GF_PLUGINS_PREINSTALL_DISABLED=true \
+    GF_FEATURE_TOGGLES_ENABLE=dashboard.notebooks \
     CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
 LABEL org.opencontainers.image.title="pacha-grafana" \

@@ -49,9 +49,9 @@ before(async () => {
 
 after(() => remove(id));
 
-test('runs Grafana Enterprise 13.2.1', async () => {
+test('runs Grafana Enterprise 13.3.0', async () => {
   const { json } = await api(base, '/api/frontend/settings');
-  assert.equal(json.buildInfo.version, '13.2.1');
+  assert.equal(json.buildInfo.version, '13.3.0');
   assert.equal(json.buildInfo.edition, 'Enterprise');
 });
 

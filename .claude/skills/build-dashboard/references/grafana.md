@@ -32,7 +32,7 @@ After the first save in Grafana the file is rewritten in that format anyway.
   "data": { "kind": "QueryGroup", "spec": {
     "queries": [ { "kind": "PanelQuery", "spec": { "refId": "A", "hidden": false, "query": { <DataQuery> } } } ],
     "queryOptions": {}, "transformations": [] } },
-  "vizConfig": { "kind": "VizConfig", "group": "<plugin id>", "version": "13.2.1",
+  "vizConfig": { "kind": "VizConfig", "group": "<plugin id>", "version": "13.3.0",
     "spec": { "options": { ... }, "fieldConfig": { "defaults": {}, "overrides": [] } } } } }
 ```
 
