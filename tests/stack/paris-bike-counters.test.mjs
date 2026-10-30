@@ -25,7 +25,8 @@ test('follows the dashboards conventions', () => {
     assert.doesNotMatch(datasetSql, new RegExp(`\\$${name}\\b`), name);
   }
   // The map filters on the GPU from the Selection, so its query leaves the filters out.
-  const [map] = findAll(dashboard, (n) => n.vizConfig?.group === 'ubica-keplergl-panel');
+  // Kepler Plus since the save in Grafana of 27 October 2026.
+  const [map] = findAll(dashboard, (n) => n.vizConfig?.group === 'ubica-keplerplus-panel');
   assert.equal(map.vizConfig.spec.options.mosaicSelection, 'bikeFilters');
   for (const q of map.data.spec.queries) assert.doesNotMatch(q.spec.query.spec.rawSql, /\$__crossfilter/);
 });
@@ -72,9 +73,12 @@ test('opens with every panel drawn, and a brush on the heatmap filters the rest'
     const image = heatmap.getByTestId('mosaic-panel').locator('svg image').last();
     await image.waitFor({ timeout: 60_000 });
     const box = await image.boundingBox();
-    await view.page.mouse.move(box.x + box.width * 0.4, box.y + box.height / 2);
+    // The Kepler Plus map opens a time window, which the heatmap shows as its brush already: a drag
+    // inside it would only move it, so its right edge is pulled to a fifth of the hours.
+    const edge = await heatmap.locator('rect.handle--e').first().boundingBox();
+    await view.page.mouse.move(edge.x + edge.width / 2, box.y + box.height / 2);
     await view.page.mouse.down();
-    await view.page.mouse.move(box.x + box.width * 0.6, box.y + box.height / 2, { steps: 8 });
+    await view.page.mouse.move(box.x + box.width * 0.2, box.y + box.height / 2, { steps: 8 });
     await view.page.mouse.up();
     await view.page.waitForTimeout(3000);
     const after = await counted();

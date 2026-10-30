@@ -68,5 +68,9 @@ test('every building gets its nearest of 496 stations; 29 services; three in fou
 test('loads for an anonymous visitor, with no panel in error', { timeout: 240_000 }, async () => {
   current = await openDashboard('/d/nyc-skyline', { datasets: ['buildings', 'stations'], timeoutMs: 120_000 });
   assert.equal(await current.panelErrors(), 0);
-  assert.ok((await current.statNumber('Buildings shown')) > 20000);
+  // Buildings shown is one of the four values of the Within walking distance card.
+  const card = (await (await current.panel('Within walking distance')).innerText()).split('\n').map((l) => l.trim());
+  const at = card.indexOf('Buildings shown');
+  const shown = [card[at - 1], card[at + 1]].map((l) => Number((l ?? '').replace(/,/g, ''))).find(Number.isFinite);
+  assert.ok(at >= 0 && shown > 20000, card.join(' | '));
 });

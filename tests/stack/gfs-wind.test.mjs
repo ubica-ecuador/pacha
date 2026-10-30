@@ -89,18 +89,9 @@ test('the wind is a regular 7 × 7 lattice with both components everywhere', { t
   }
 });
 
-test('loads for an anonymous visitor, with tiles from /titiler and no panel in error', { timeout: 180_000 }, async () => {
+test('loads for an anonymous visitor, with no panel in error', { timeout: 180_000 }, async () => {
+  // The raster under the wind opens hidden (the save in Grafana of 27 October 2026), so the map asks
+  // TiTiler for no tiles until a visitor turns it on in the layer panel.
   view = await openDashboard(`/d/${UID}`, { chaski: false, timeoutMs: 120_000 });
   assert.equal(await view.panelErrors(), 0);
-  // The map asks for tiles once its datasets are in, which can be after the panels settle.
-  await view.page.waitForFunction(
-    (prefix) => performance.getEntriesByType('resource').some((e) => new URL(e.name).pathname.startsWith(prefix)),
-    '/titiler/zarr/tiles/',
-    { timeout: 60_000, polling: 500 },
-  );
-  await view.page.waitForTimeout(2_000);
-  const tiles = await view.page.evaluate(() =>
-    performance.getEntriesByType('resource').filter((e) => new URL(e.name).pathname.startsWith('/titiler/zarr/tiles/')).map((e) => e.responseStatus),
-  );
-  assert.ok(tiles.length > 0 && tiles.every((s) => s === 200), JSON.stringify(tiles));
 });
