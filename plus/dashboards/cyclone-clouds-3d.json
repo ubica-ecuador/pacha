@@ -13,9 +13,6 @@
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "legacyOptions": {
-            "type": "dashboard"
-          },
           "name": "Annotations \u0026 Alerts",
           "query": {
             "datasource": {
@@ -44,6 +41,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 1,
           "links": [],
           "title": "What you are looking at",
@@ -87,8 +85,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- A voxel for each cell and pressure level whose humidity reaches the threshold\n-- picked above, at the height of its level in the standard atmosphere, lifted\n-- by the factor picked above. The map shows the step in the window of the brush,\n-- the voxels the charts keep (the cloudFilters selection, on the GPU).\nSELECT time, valid_at, latitude, longitude,\n       44330.8 * (1 - pow(level_hpa / 1013.25, 0.190263)) * ${lift:raw} AS altitude,\n       height_km, height_class, level_hpa, humidity_pct, distance_km, bearing_deg\nFROM $clouds\nWHERE humidity_pct \u003e= ${rh:raw}\n",
-                        "refId": "A"
+                        "rawSql": "-- A voxel for each cell and pressure level whose humidity reaches the threshold\n-- picked above, at the height of its level in the standard atmosphere, lifted\n-- by the factor picked above. The map shows the step in the window of the brush,\n-- the voxels the charts keep (the cloudFilters selection, on the GPU).\nSELECT time, valid_at, latitude, longitude,\n       44330.8 * (1 - pow(level_hpa / 1013.25, 0.190263)) * ${lift:raw} AS altitude,\n       height_km, height_class, level_hpa, humidity_pct, distance_km, bearing_deg\nFROM $clouds\nWHERE humidity_pct \u003e= ${rh:raw}\n"
                       },
                       "version": "v0"
                     },
@@ -168,7 +165,7 @@
                 "mapConfig": {
                   "config": {
                     "mapState": {
-                      "bearing": -20,
+                      "bearing": -29.606404269513007,
                       "dragRotate": true,
                       "globe": {
                         "config": {
@@ -217,15 +214,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": 15.2,
-                      "longitude": 146.8,
+                      "latitude": 18.929422499988497,
+                      "longitude": 146.0337187644928,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_3D",
                       "maxPitch": 60,
-                      "pitch": 60,
+                      "pitch": 55.899028381032764,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 5.4
+                      "zoom": 4.9121271250524865
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -234,7 +231,7 @@
                         0
                       ],
                       "mapStyles": {},
-                      "styleType": "dark-matter",
+                      "styleType": "grafana-satellite-terrain",
                       "threeDBuildingColor": [
                         9.311499150948377,
                         9.311499150948377,
@@ -247,15 +244,22 @@
                         "3d building": false,
                         "border": false,
                         "building": false,
-                        "label": false,
+                        "label": true,
                         "land": true,
-                        "road": false,
+                        "road": true,
                         "water": true
                       }
                     },
                     "uiState": {
                       "locale": "en",
                       "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
                         "mapLegend": {
                           "active": true
                         }
@@ -298,7 +302,11 @@
                           "view": "side"
                         }
                       ],
+                      "groupBys": [],
                       "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
                         "brush": {
                           "enabled": false,
                           "size": 0.5
@@ -307,8 +315,17 @@
                           "enabled": false
                         },
                         "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
                           "enabled": false,
                           "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
                         },
                         "tooltip": {
                           "compareMode": false,
@@ -341,11 +358,17 @@
                               }
                             ]
                           }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
                         }
                       },
+                      "joins": [],
                       "layerBlending": "normal",
                       "layerOrder": [
                         "track",
+                        "m7szj8h",
                         "clouds"
                       ],
                       "layers": [
@@ -471,6 +494,137 @@
                               255
                             ],
                             "isVisible": true,
+                            "label": "Copy of Cloud (humid air), ECMWF",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Below 2 km",
+                                    "#5b5bd6"
+                                  ],
+                                  [
+                                    "2–5 km",
+                                    "#3fa7d6"
+                                  ],
+                                  [
+                                    "5–8 km",
+                                    "#59d4a8"
+                                  ],
+                                  [
+                                    "8–11 km",
+                                    "#f2c14e"
+                                  ],
+                                  [
+                                    "Above 11 km",
+                                    "#fff4d6"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#5b5bd6",
+                                  "#3fa7d6",
+                                  "#59d4a8",
+                                  "#f2c14e",
+                                  "#fff4d6"
+                                ],
+                                "name": "Height band",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.23,
+                              "outline": false,
+                              "radius": 13,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#5d6b78",
+                                  "#8796a3",
+                                  "#aebac4",
+                                  "#d3dbe1",
+                                  "#f4f7f9",
+                                  "#ffffff"
+                                ],
+                                "name": "Cloud by height",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "m7szj8h",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "height_class",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              235,
+                              240,
+                              245
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "altitude",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
                             "label": "Cloud (humid air), ECMWF",
                             "textLabel": [
                               {
@@ -543,9 +697,9 @@
                               },
                               "filled": true,
                               "fixedRadius": false,
-                              "opacity": 0.4,
+                              "opacity": 0.03,
                               "outline": false,
-                              "radius": 7,
+                              "radius": 21.9,
                               "radiusRange": [
                                 0,
                                 50
@@ -630,8 +784,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- Humid air in each step: how many voxels pass the threshold and\n-- the brushes of the charts (grey behind: all of them). Not filtered by its own window.\nWITH x AS (\n  SELECT time, level_hpa, $__crossfilter($cloudFilters, -time) AS keep FROM $clouds\n)\nSELECT time_bucket(INTERVAL 6 HOUR, time) AS time,\n       count(*)::DOUBLE AS \"All humid air\",\n       count(*) FILTER (WHERE keep)::DOUBLE AS \"Kept by the charts\"\nFROM x\nGROUP BY 1\nORDER BY 1\n",
-                        "refId": "A"
+                        "rawSql": "-- Humid air in each step: how many voxels pass the threshold and\n-- the brushes of the charts (grey behind: all of them). Not filtered by its own window.\nWITH x AS (\n  SELECT time, level_hpa, $__crossfilter($cloudFilters, -time) AS keep FROM $clouds\n)\nSELECT time_bucket(INTERVAL 6 HOUR, time) AS time,\n       count(*)::DOUBLE AS \"All humid air\",\n       count(*) FILTER (WHERE keep)::DOUBLE AS \"Kept by the charts\"\nFROM x\nGROUP BY 1\nORDER BY 1\n"
                       },
                       "version": "v0"
                     },
@@ -652,7 +805,34 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "aggregation": "auto",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": [
                   {
                     "matcher": {
@@ -884,7 +1064,7 @@
                 "kind": "ElementReference",
                 "name": "panel-2"
               },
-              "height": 25,
+              "height": 17,
               "width": 15,
               "x": 0,
               "y": 9
@@ -897,7 +1077,7 @@
                 "kind": "ElementReference",
                 "name": "panel-4"
               },
-              "height": 12,
+              "height": 7,
               "width": 9,
               "x": 15,
               "y": 9
@@ -910,10 +1090,10 @@
                 "kind": "ElementReference",
                 "name": "panel-6"
               },
-              "height": 13,
+              "height": 10,
               "width": 4,
               "x": 15,
-              "y": 21
+              "y": 16
             }
           },
           {
@@ -923,10 +1103,10 @@
                 "kind": "ElementReference",
                 "name": "panel-5"
               },
-              "height": 13,
+              "height": 10,
               "width": 5,
               "x": 19,
-              "y": 21
+              "y": 16
             }
           }
         ]
@@ -980,7 +1160,8 @@
           "name": "rh",
           "options": [],
           "query": "90 % : 90, 95 % : 95, 100 % : 100",
-          "skipUrlSync": false
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
         }
       },
       {
@@ -998,7 +1179,8 @@
           "name": "lift",
           "options": [],
           "query": "×5 : 5, ×10 : 10, ×20 : 20",
-          "skipUrlSync": false
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
         }
       },
       {
