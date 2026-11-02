@@ -1,11 +1,31 @@
 {
-  "apiVersion": "dashboard.grafana.app/v2beta1",
+  "apiVersion": "dashboard.grafana.app/v2",
   "kind": "Dashboard",
   "metadata": {
     "name": "datacenter-interconnection"
   },
   "spec": {
-    "annotations": [],
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
     "cursorSync": "Off",
     "description": "How the Internet's data centres are joined: some 4,200 data centres from PeeringDB, sized by the networks in them, the world's submarine cables, and the latest round trip from about 1,000 RIPE Atlas anchors to the one picked; reloaded every 5 minutes.",
     "editable": true,
@@ -21,6 +41,7 @@
               "transformations": []
             }
           },
+          "description": "",
           "id": 11,
           "links": [],
           "title": "About the data",
@@ -33,11 +54,16 @@
                 "overrides": []
               },
               "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
                 "content": "### Where the data comes from\n\nThree open registers of how the Internet's data centres are joined, read with no key:\n\n- **[PeeringDB](https://www.peeringdb.com/)**: the register networks keep of where they interconnect. Each data centre (a *facility*) with its operator, its place, and how many networks (ASNs), exchanges and carriers say they are in it. Only those with a place and at least one network show. Kept by the networks themselves, so a building is as complete as its tenants made it.\n- **[Submarine Cable Map](https://www.submarinecablemap.com/)** by TeleGeography: the routes of the cables under the sea, and where they come ashore. The routes are drawn to show where a cable runs, not its exact track.\n- **[RIPE Atlas](https://atlas.ripe.net/)**: some 1,100 *anchors*, measuring servers hosted in data centres and networks around the world. Each anchor is pinged by all the others every four minutes (the *anchoring mesh*); the map shows the latest round of that mesh for the anchor picked in **Ping to**.\n\n### How to read it\n\n- A dot is an anchor, and an arc one of the nearest anchors pinging the target (**Arcs from** sets how many): the colour is the mean round trip of three packets, green under 30 ms, then yellow-green to 80, yellow to 150, orange to 250 and red beyond. Its comets run faster the shorter the trip. An anchor whose packets were all lost does not show, and counts in **Lost**.\n- A round trip is there and back, so a one-way delay is about half of it. Light in fibre covers some 100 km per millisecond of round trip, so a trip well above what the distance asks for means a long route, not a slow link: between two neighbours in Latin America, traffic can still go by way of Miami.\n- The data centres, in violet, are sized by the networks in them: the big dots are where networks meet, and where traffic between them stays local. **Region** picks the data centres the table lists; the map shows all of them.\n\n### How it works\n\nGrafana's DuckDB reads the registers through the stack's gateway, which keeps PeeringDB, the cables and the list of anchors a day, and the latest pings four minutes, the mesh's own interval: each source is asked once whoever is looking, and PeeringDB, which lets an anonymous reader have its whole list once an hour, is never asked twice. DuckDB running in your browser (the Chaski data source) then answers every panel. The map is the Kepler Geospatial Maps Plus panel, with its Traffic layer for the pings and its Pipeline layer for the cables. The dashboard reloads every five minutes.",
                 "mode": "markdown"
               }
             },
-            "version": ""
+            "version": "13.3.0"
           }
         }
       },
@@ -85,7 +111,20 @@
                     "fixedColor": "#8AB8FF",
                     "mode": "fixed"
                   },
-                  "decimals": 0
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
                 },
                 "overrides": []
               },
@@ -94,6 +133,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -101,10 +141,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.3.0"
           }
         }
       },
@@ -152,7 +194,20 @@
                     "fixedColor": "#3D8FE0",
                     "mode": "fixed"
                   },
-                  "decimals": 0
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
                 },
                 "overrides": []
               },
@@ -161,6 +216,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -168,10 +224,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.3.0"
           }
         }
       },
@@ -225,7 +283,7 @@
                     "steps": [
                       {
                         "color": "#73BF69",
-                        "value": null
+                        "value": 0
                       },
                       {
                         "color": "#C8D96F",
@@ -251,6 +309,12 @@
               },
               "options": {
                 "displayMode": "basic",
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": false
+                },
                 "maxVizHeight": 300,
                 "minVizHeight": 10,
                 "minVizWidth": 0,
@@ -263,10 +327,11 @@
                 },
                 "showUnfilled": true,
                 "sizing": "auto",
+                "textMode": "auto",
                 "valueMode": "color"
               }
             },
-            "version": ""
+            "version": "13.3.0"
           }
         }
       },
@@ -315,7 +380,23 @@
                     "cellOptions": {
                       "type": "auto"
                     },
+                    "footer": {
+                      "reducers": []
+                    },
                     "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -389,10 +470,11 @@
                     "desc": true,
                     "displayName": "Networks"
                   }
-                ]
+                ],
+                "zebraStriping": false
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -440,7 +522,20 @@
                     "fixedColor": "#B877D9",
                     "mode": "fixed"
                   },
-                  "decimals": 0
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
                 },
                 "overrides": []
               },
@@ -449,6 +544,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -456,10 +552,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.3.0"
           }
         }
       },
@@ -508,7 +606,23 @@
                     "cellOptions": {
                       "type": "auto"
                     },
+                    "footer": {
+                      "reducers": []
+                    },
                     "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -557,7 +671,7 @@
                           "steps": [
                             {
                               "color": "#73BF69",
-                              "value": null
+                              "value": 0
                             },
                             {
                               "color": "#C8D96F",
@@ -603,10 +717,11 @@
                     "desc": false,
                     "displayName": "Round trip"
                   }
-                ]
+                ],
+                "zebraStriping": false
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -655,6 +770,21 @@
                     "mode": "fixed"
                   },
                   "decimals": 1,
+                  "max": 100,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "percent"
                 },
                 "overrides": []
@@ -664,6 +794,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -671,10 +802,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.3.0"
           }
         }
       },
@@ -807,7 +940,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -815,7 +962,16 @@
                   "show": false
                 },
                 "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
                 "followGrafanaTheme": false,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
                 "mapConfig": {
                   "config": {
                     "mapState": {
@@ -831,7 +987,6 @@
                     },
                     "visState": {
                       "animationConfig": {
-                        "currentTime": null,
                         "speed": 1
                       },
                       "filters": [],
@@ -853,101 +1008,79 @@
                           "fieldsToShow": {
                             "grafana-A": [
                               {
-                                "format": null,
                                 "name": "name"
                               }
                             ],
                             "grafana-B": [
                               {
-                                "format": null,
                                 "name": "name"
                               }
                             ],
                             "grafana-C": [
                               {
-                                "format": null,
                                 "name": "name"
                               },
                               {
-                                "format": null,
                                 "name": "operator"
                               },
                               {
-                                "format": null,
                                 "name": "city"
                               },
                               {
-                                "format": null,
                                 "name": "networks"
                               },
                               {
-                                "format": null,
                                 "name": "exchanges"
                               },
                               {
-                                "format": null,
                                 "name": "carriers"
                               }
                             ],
                             "grafana-D": [
                               {
-                                "format": null,
                                 "name": "source"
                               },
                               {
-                                "format": null,
                                 "name": "company"
                               },
                               {
-                                "format": null,
                                 "name": "asn"
                               },
                               {
-                                "format": null,
                                 "name": "rtt_ms"
                               },
                               {
-                                "format": null,
                                 "name": "loss_pct"
                               },
                               {
-                                "format": null,
                                 "name": "time"
                               }
                             ],
                             "grafana-E": [
                               {
-                                "format": null,
                                 "name": "target"
                               },
                               {
-                                "format": null,
                                 "name": "target_company"
                               }
                             ],
                             "grafana-F": [
                               {
-                                "format": null,
                                 "name": "source"
                               },
                               {
-                                "format": null,
                                 "name": "company"
                               },
                               {
-                                "format": null,
                                 "name": "asn"
                               },
                               {
-                                "format": null,
                                 "name": "rtt_ms"
                               },
                               {
-                                "format": null,
                                 "name": "loss_pct"
                               },
                               {
-                                "format": null,
                                 "name": "time"
                               }
                             ]
@@ -1091,7 +1224,6 @@
                             "reverseColorScale": "quantile",
                             "reverseSizeScale": "linear",
                             "reverseSpeedScale": "linear",
-                            "sizeField": null,
                             "sizeScale": "linear",
                             "speedField": {
                               "name": "pace",
@@ -1210,7 +1342,6 @@
                               "type": "real"
                             },
                             "colorScale": "custom",
-                            "sizeField": null,
                             "sizeScale": "linear"
                           }
                         },
@@ -1289,9 +1420,7 @@
                           "id": "target",
                           "type": "point",
                           "visualChannels": {
-                            "colorField": null,
                             "colorScale": "quantile",
-                            "sizeField": null,
                             "sizeScale": "linear"
                           }
                         },
@@ -1366,7 +1495,6 @@
                           "id": "facilities",
                           "type": "point",
                           "visualChannels": {
-                            "colorField": null,
                             "colorScale": "quantile",
                             "sizeField": {
                               "name": "networks",
@@ -1446,9 +1574,7 @@
                           "id": "landings",
                           "type": "point",
                           "visualChannels": {
-                            "colorField": null,
                             "colorScale": "quantile",
-                            "sizeField": null,
                             "sizeScale": "linear"
                           }
                         },
@@ -1556,7 +1682,6 @@
                             "reverseSpeedScale": "linear",
                             "sizeScale": "linear",
                             "speedScale": "linear",
-                            "strokeColorField": null,
                             "strokeColorScale": "quantile"
                           }
                         }
@@ -1566,11 +1691,21 @@
                   },
                   "version": "v1"
                 },
+                "mosaicArea": true,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
                 "showSidePanel": false,
-                "timeSync": "off"
+                "timeSync": "off",
+                "tripLayerMode": "table"
               }
             },
-            "version": ""
+            "version": "1.5.0"
           }
         }
       },
@@ -1619,6 +1754,19 @@
                     "mode": "fixed"
                   },
                   "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "ms"
                 },
                 "overrides": []
@@ -1628,6 +1776,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -1635,10 +1784,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.3.0"
           }
         }
       },
@@ -1687,6 +1838,19 @@
                     "mode": "fixed"
                   },
                   "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "ms"
                 },
                 "overrides": []
@@ -1696,6 +1860,7 @@
                 "graphMode": "none",
                 "justifyMode": "auto",
                 "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -1703,10 +1868,12 @@
                   "fields": "",
                   "values": false
                 },
-                "textMode": "value"
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.3.0"
           }
         }
       }
@@ -1731,7 +1898,7 @@
                           "kind": "ElementReference",
                           "name": "panel-map"
                         },
-                        "height": 22,
+                        "height": 19,
                         "width": 16,
                         "x": 0,
                         "y": 0
@@ -1796,7 +1963,7 @@
                           "kind": "ElementReference",
                           "name": "panel-fastest"
                         },
-                        "height": 14,
+                        "height": 11,
                         "width": 8,
                         "x": 16,
                         "y": 8
@@ -1812,20 +1979,7 @@
                         "height": 6,
                         "width": 4,
                         "x": 0,
-                        "y": 22
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-cables-count"
-                        },
-                        "height": 6,
-                        "width": 4,
-                        "x": 0,
-                        "y": 28
+                        "y": 19
                       }
                     },
                     {
@@ -1838,7 +1992,7 @@
                         "height": 12,
                         "width": 11,
                         "x": 4,
-                        "y": 22
+                        "y": 19
                       }
                     },
                     {
@@ -1851,7 +2005,20 @@
                         "height": 12,
                         "width": 9,
                         "x": 15,
-                        "y": 22
+                        "y": 19
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-cables-count"
+                        },
+                        "height": 6,
+                        "width": 4,
+                        "x": 0,
+                        "y": 25
                       }
                     },
                     {
@@ -1864,7 +2031,7 @@
                         "height": 11,
                         "width": 24,
                         "x": 0,
-                        "y": 34
+                        "y": 31
                       }
                     }
                   ]
@@ -1909,7 +2076,7 @@
         "spec": {
           "allowCustomValue": false,
           "current": {
-            "text": "Quito, EC \u00b7 CEDIA",
+            "text": "Quito, EC · CEDIA",
             "value": "19206681"
           },
           "definition": "",
@@ -1927,7 +2094,7 @@
             "group": "motherduck-duckdb-datasource",
             "kind": "DataQuery",
             "spec": {
-              "__legacyStringValue": "-- Every RIPE Atlas anchor that others ping (its mesh measurement), by place\n-- and host; the anchors in Ecuador first. Lists cached a day by the gateway.\nWITH anchors AS (\n  SELECT a.fqdn, a.city, a.country, a.company\n  FROM (SELECT unnest(results) AS a FROM read_json(['http://feeds/atlas/anchors/1.json', 'http://feeds/atlas/anchors/2.json', 'http://feeds/atlas/anchors/3.json'], maximum_object_size = 100000000))\n),\nmesh AS (\n  SELECT m.id, m.target FROM (SELECT unnest(results) AS m FROM read_json(['http://feeds/atlas/mesh/1.json', 'http://feeds/atlas/mesh/2.json', 'http://feeds/atlas/mesh/3.json'], maximum_object_size = 100000000))\n)\nSELECT a.city || ', ' || a.country || ' \u00b7 ' || a.company AS __text, CAST(m.id AS VARCHAR) AS __value\nFROM mesh m JOIN anchors a ON a.fqdn = m.target\nORDER BY a.country = 'EC' DESC, __text\n"
+              "__legacyStringValue": "-- Every RIPE Atlas anchor that others ping (its mesh measurement), by place\n-- and host; the anchors in Ecuador first. Lists cached a day by the gateway.\nWITH anchors AS (\n  SELECT a.fqdn, a.city, a.country, a.company\n  FROM (SELECT unnest(results) AS a FROM read_json(['http://feeds/atlas/anchors/1.json', 'http://feeds/atlas/anchors/2.json', 'http://feeds/atlas/anchors/3.json'], maximum_object_size = 100000000))\n),\nmesh AS (\n  SELECT m.id, m.target FROM (SELECT unnest(results) AS m FROM read_json(['http://feeds/atlas/mesh/1.json', 'http://feeds/atlas/mesh/2.json', 'http://feeds/atlas/mesh/3.json'], maximum_object_size = 100000000))\n)\nSELECT a.city || ', ' || a.country || ' · ' || a.company AS __text, CAST(m.id AS VARCHAR) AS __value\nFROM mesh m JOIN anchors a ON a.fqdn = m.target\nORDER BY a.country = 'EC' DESC, __text\n"
             },
             "version": "v0"
           },
