@@ -11,7 +11,7 @@ Like any layer in `config.visState.layers[]`:
 `{"id","type","config":{"dataId":"grafana-<refId>","label","columns","columnMode","isVisible":true,"visConfig":{...},"textLabel":[...]},"visualChannels":{...}}`.
 kepler never adds these types by itself.
 
-- Point-based types (gauge, prism, coverage, surface, sparkline, fleet):
+- Point-based types (gauge, prism, coverage, surface, sparkline, fleet, model4d):
   `"columns":{"lat":"latitude","lng":"longitude"}`, `"columnMode":"points"`.
 - Colour: `visualChannels.colorField = {"name":"<col>","type":"real"|"integer"|"string"}` plus
   `visConfig.colorRange`. Thresholds: `"colorScale":"custom"` and
@@ -27,7 +27,7 @@ kepler never adds these types by itself.
 - `historyField`: `color` (default) | `off` | a numeric column: the series in the popup
   (gauge, prism, coverage, traffic, pipeline).
 
-## The eight types
+## The nine types
 
 **gauge**: a ring or filling marker per point; `colorField` is both value and colour.
 `gaugeShape` ring|thermometer|tank|battery|drop|icon (`gaugeIcon`), `gaugeMin` (0),
@@ -109,6 +109,24 @@ straight|lanes|split, `trafficLaneBend`, `trafficShape` flat|arc, `trafficArcHei
   ±360 on jumps > 180), then shift so the newest point is in [-180, 180].
 - Examples: live `gtfs-rt-mbta-fleet`, `trimet-live-fleet`, `air-traffic-world`; replay
   `f1-race-laps`, `drone-delivery-flights`.
+
+**model4d** ("4D Model", Plus after 1.5.0): a glTF model whose parts are built in time (BIM 4D).
+One row per part: an id column naming a node of the model (an IFC GlobalId), start and finish
+timestamps, and the model's origin in `latitude`/`longitude` on every row.
+- `modelUrl` (a `.glb` the browser can fetch: a model built on the instance is served by the
+  gateway at `/datasets/<name>/<file>.glb`), `modelIdField`, `modelStartField`,
+  `modelFinishField` (`auto` or a column; auto start includes `time`), `modelHeading` (degrees
+  clockwise from north), `modelAltitude` (m).
+- The instant is the end of a time filter on the start column (a Time Brush through
+  `timeSync: variables`, the filter's `view: side`), else the dashboard's end. A part is future
+  (`modelFuture` ghost|hide), active (`modelActiveColour`) or built (`modelBuiltColour` model |
+  layer: `colorField` with `customOrdinal`). `modelUnscheduled`: draw parts no row names.
+- The SQL's start column named `time`, a TIMESTAMP, is what the panel's time filter and the
+  layer's auto both find.
+- Example: `schependomlaan-4d` (model and schedule from `datasets/schependomlaan/build.sh`): Chaski
+  datasets, the Time Brush (incremental, smooth) in the Mosaic Selection `build` on `time`, and Mosaic
+  cards, Gantt and S-curve that read the instant as the latest day kept (`max`/`argmax` over a daily
+  table, a `ruleX` at `{ max: time }`). The map follows the brush through `timeSync: variables`.
 
 Minimal gauge layer:
 
