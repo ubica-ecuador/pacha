@@ -433,7 +433,7 @@
                             }
                           },
                           "id": "grafana-A-zarr-layer",
-                          "type": "zarr",
+                          "type": "zarrTiles",
                           "visualChannels": {
                             "colorScale": "quantile",
                             "sizeScale": "linear"
