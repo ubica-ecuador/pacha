@@ -70,6 +70,9 @@ flows between neighbourhoods.
 [MBTA](https://pacha.ubica.dev/d/gtfs-rt-mbta-fleet) and
 [TriMet](https://pacha.ubica.dev/d/trimet-live-fleet) (both *Plus*) follow buses and trains from GTFS
 Realtime, with punctuality, service changes and alerts;
+[Helsinki public transport, live](https://pacha.ubica.dev/d/hsl-live) (*Plus*) moves every tram,
+metro, train, ferry or bus as its once-a-second report arrives over MQTT, streamed to the page by
+Grafana Live with no refresh;
 [Air traffic, worldwide](https://pacha.ubica.dev/d/air-traffic-world) (*Plus*) every aircraft
 adsb.lol hears; [Delivery drone flights](https://pacha.ubica.dev/d/drone-delivery-flights) and
 [a GPS truck](https://pacha.ubica.dev/d/gps-truck-track-plus) (both *Plus*) replay each trip with
@@ -88,7 +91,8 @@ Pacha is the showcase and the test bench of three Grafana plugins made by
 
 Around them the image bakes in the
 [DuckDB data source](https://github.com/motherduckdb/grafana-duckdb-datasource) for queries on
-the server, [Infinity](https://github.com/grafana/grafana-infinity-datasource), and
+the server, [Infinity](https://github.com/grafana/grafana-infinity-datasource), the
+[MQTT data source](https://grafana.com/grafana/plugins/grafana-mqtt-datasource/) for streams, and
 [Business Charts](https://grafana.com/grafana/plugins/volkovlabs-echarts-panel/), Table, Text and Variable. A
 [TiTiler](https://developmentseed.org/titiler/) serves the imagery.
 
