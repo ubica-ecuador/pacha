@@ -1,0 +1,1193 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "paris-metro-old-maps"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "The Paris Métro growing from 1900 to today on old maps of Paris served by IGN: Cassini's 18th-century map, the État-major map of 1820–1866 or IGN's map of 1950. Play the timeline, pick lines; every panel answers in the browser.",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 9,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Play the timeline.** It grows a window from 1900: the map shows the lines and stations open at its end, the figures count them, and the charts fill in as it goes. Drag across its bars to hold any window, and click lines in *Line by line* to keep only them. Everything is answered in your browser (Chaski, DuckDB-WASM), with no round trip to the server.\n\n**Lines and stations:** Île-de-France Mobilités open data, [Tracés du réseau ferré](https://data.iledefrance-mobilites.fr/explore/dataset/traces-du-reseau-ferre-idf/) and [Gares et stations](https://data.iledefrance-mobilites.fr/explore/dataset/emplacement-des-gares-idf/) (Licence Ouverte 2.0, last updated 21 October 2026), read by the server through the gateway, which keeps them a day, and loaded into your browser once. Each segment and station carries the day it entered service; line 1 opened on 19 July 1900. The six segments of line 11's 2024 extension carry none and take the day its last stations opened, 13 June 2024. Lengths are measured on the ellipsoid: 247 km today. Line 18, not open yet, is left out.\n\n**Old maps:** the [Géoplateforme](https://cartes.gouv.fr) WMS of IGN ([terms](https://cartes.gouv.fr/cgu)), asked by your browser for each view: the 18th-century Cassini map in two copies, the État-major map (1820–1866) and IGN's 1:50,000 map of 1950. Cassini is drawn from 1:34,000 out, so the map stops drawing it if you zoom in close.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-by-line": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Kilometres of each line open in the timeline's window. Click a line to keep only it on the map and in the figures; shift-click to add one; click it again to let go.",
+          "id": 8,
+          "links": [],
+          "title": "Line by line: click to pick lines",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# Kilometres of each line open in the timeline's window. A click picks the line\n# (toggleY), a clause on line in the metroFilters selection: the map, the cards\n# and the five-year chart keep to it. The grey bars are the toggle's own mark,\n# which its clause leaves out, so every line stays to click; the bars drawn\n# after it follow every clause, so only the lines picked keep their colour.\nparams:\n  metroFilters: { select: crossfilter }\nplot:\n  - mark: barX\n    data: { from: segments, filterBy: $metroFilters }\n    x: { sum: km }\n    y: line\n    fill: 'rgba(128, 128, 128, 0.3)'\n  - select: toggleY\n    as: $metroFilters\n  - mark: barX\n    data: { from: segments, filterBy: $metroFilters }\n    x: { sum: km }\n    y: line\n    fill: line\nxDomain: [0, 30]\nyDomain: ['Line 1', 'Line 2', 'Line 3', 'Line 3bis', 'Line 4', 'Line 5', 'Line 6', 'Line 7', 'Line 7bis', 'Line 8', 'Line 9', 'Line 10', 'Line 11', 'Line 12', 'Line 13', 'Line 14']\nxLabel: Kilometres open →\nyLabel: null\nmarginLeft: 70\ncolorDomain: ['Line 1', 'Line 2', 'Line 3', 'Line 3bis', 'Line 4', 'Line 5', 'Line 6', 'Line 7', 'Line 7bis', 'Line 8', 'Line 9', 'Line 10', 'Line 11', 'Line 12', 'Line 13', 'Line 14']\ncolorRange: ['#FFBE00', '#0055C8', '#6E6E00', '#82C8E6', '#A0006E', '#FF5A00', '#82DC73', '#FF82B4', '#82DC73', '#D282BE', '#D2D200', '#DC9600', '#6E491E', '#00643C', '#82C8E6', '#640082']\n",
+                "variables": "- param: metroFilters\n  column: line\n  variable: line\n"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-km": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The length of every segment open in the timeline's window and on the lines picked, measured on the ellipsoid.",
+          "id": 3,
+          "links": [],
+          "title": "Kilometres open",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  metroFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: segments, filterBy: $metroFilters }\n    text: { sql: \"coalesce(round(sum(km)), 0)::INTEGER::VARCHAR || ' km'\" }\n    frameAnchor: middle\n    fill: 'currentColor'\n    fontSize: 40\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-lines": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Lines with a segment open in the timeline's window; 3bis and 7bis count as lines.",
+          "id": 5,
+          "links": [],
+          "title": "Lines",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  metroFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: segments, filterBy: $metroFilters }\n    text: { sql: \"count(DISTINCT line)::VARCHAR\" }\n    frameAnchor: middle\n    fill: 'currentColor'\n    fontSize: 40\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every segment, whatever the timeline holds: the map filters itself on the\n-- GPU from the metroFilters selection (mosaicSelection), with no query.\nSELECT time, line, color, opened_in::INTEGER AS opened_in, km, geojson\nFROM $segments"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The old map: one layer of IGN's Géoplateforme WMS, picked above. The\n-- browser asks the service for the pictures itself (it allows any origin);\n-- nothing is stored here.\nSELECT 'https://data.geopf.fr/wms-r/wms' AS wms_url, $oldmap AS wms_layer"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every station, filtered on the GPU like the lines: the selection's clauses\n-- are on time and line, which the stations have too.\nSELECT time, station, line, opened_in::INTEGER AS opened_in, latitude, longitude\nFROM $stations"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The Métro lines and stations open in the timeline's window, on the old map picked (IGN's WMS). Lines in their official colours (Île-de-France Mobilités), stations as white dots. Play the timeline to watch the network grow; pick lines in Line by line.",
+          "id": 1,
+          "links": [],
+          "title": "The Métro on ${oldmap:text}",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "areaVariable": "",
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "isSplit": false,
+                      "latitude": 48.853,
+                      "longitude": 2.345,
+                      "mapViewMode": "MODE_2D",
+                      "pitch": 0,
+                      "zoom": 11
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        233,
+                        223,
+                        199
+                      ],
+                      "mapStyles": {},
+                      "styleType": "no_map",
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {}
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": false,
+                          "show": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A",
+                            "grafana-C"
+                          ],
+                          "enabled": true,
+                          "id": "opened",
+                          "name": [
+                            "time",
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "sum",
+                            "defaultTimeFormat": "L",
+                            "interval": "1-year",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            -2208988800000,
+                            1793836800000
+                          ],
+                          "view": "side"
+                        },
+                        {
+                          "dataId": [
+                            "grafana-A",
+                            "grafana-C"
+                          ],
+                          "enabled": true,
+                          "id": "lines",
+                          "name": [
+                            "line",
+                            "line"
+                          ],
+                          "type": "multiSelect",
+                          "value": [],
+                          "view": "side"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "line"
+                              },
+                              {
+                                "name": "opened_in"
+                              },
+                              {
+                                "name": "km"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "station"
+                              },
+                              {
+                                "name": "line"
+                              },
+                              {
+                                "name": "opened_in"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "stations",
+                        "lines",
+                        "casing",
+                        "oldmap"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              250,
+                              245,
+                              232
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "isVisible": true,
+                            "label": "Stations",
+                            "textLabel": [],
+                            "visConfig": {
+                              "filled": true,
+                              "opacity": 1,
+                              "outline": true,
+                              "radius": 4.5,
+                              "strokeColor": [
+                                43,
+                                29,
+                                14
+                              ],
+                              "thickness": 1.2
+                            }
+                          },
+                          "id": "stations",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "sizeField": null
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              190,
+                              0
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Lines, in their colours",
+                            "textLabel": [],
+                            "visConfig": {
+                              "enable3d": false,
+                              "filled": false,
+                              "opacity": 1,
+                              "strokeColor": [
+                                255,
+                                190,
+                                0
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "#FFBE00",
+                                    "#FFBE00"
+                                  ],
+                                  [
+                                    "#0055C8",
+                                    "#0055C8"
+                                  ],
+                                  [
+                                    "#6E6E00",
+                                    "#6E6E00"
+                                  ],
+                                  [
+                                    "#82C8E6",
+                                    "#82C8E6"
+                                  ],
+                                  [
+                                    "#A0006E",
+                                    "#A0006E"
+                                  ],
+                                  [
+                                    "#FF5A00",
+                                    "#FF5A00"
+                                  ],
+                                  [
+                                    "#82DC73",
+                                    "#82DC73"
+                                  ],
+                                  [
+                                    "#FF82B4",
+                                    "#FF82B4"
+                                  ],
+                                  [
+                                    "#D282BE",
+                                    "#D282BE"
+                                  ],
+                                  [
+                                    "#D2D200",
+                                    "#D2D200"
+                                  ],
+                                  [
+                                    "#DC9600",
+                                    "#DC9600"
+                                  ],
+                                  [
+                                    "#6E491E",
+                                    "#6E491E"
+                                  ],
+                                  [
+                                    "#00643C",
+                                    "#00643C"
+                                  ],
+                                  [
+                                    "#640082",
+                                    "#640082"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#FFBE00",
+                                  "#0055C8",
+                                  "#6E6E00",
+                                  "#82C8E6",
+                                  "#A0006E",
+                                  "#FF5A00",
+                                  "#82DC73",
+                                  "#FF82B4",
+                                  "#D282BE",
+                                  "#D2D200",
+                                  "#DC9600",
+                                  "#6E491E",
+                                  "#00643C",
+                                  "#640082"
+                                ],
+                                "name": "Métro line colours",
+                                "type": "custom"
+                              },
+                              "strokeOpacity": 1,
+                              "stroked": true,
+                              "thickness": 1.6
+                            }
+                          },
+                          "id": "lines",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "strokeColorField": {
+                              "name": "color",
+                              "type": "string"
+                            },
+                            "strokeColorScale": "customOrdinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              43,
+                              29,
+                              14
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Ink under the lines",
+                            "textLabel": [],
+                            "visConfig": {
+                              "enable3d": false,
+                              "filled": false,
+                              "opacity": 1,
+                              "strokeColor": [
+                                43,
+                                29,
+                                14
+                              ],
+                              "strokeOpacity": 0.9,
+                              "stroked": true,
+                              "thickness": 2.8
+                            }
+                          },
+                          "id": "casing",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "strokeColorField": null
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              30,
+                              150,
+                              190
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-B-wms",
+                            "isVisible": true,
+                            "label": "Old map",
+                            "textLabel": [],
+                            "visConfig": {
+                              "opacity": 1,
+                              "transparent": true,
+                              "wmsLayer": {
+                                "boundingBox": null,
+                                "name": "BNF-IGNF_GEOGRAPHICALGRIDSYSTEMS.CASSINI",
+                                "queryable": false,
+                                "title": "Carte de Cassini"
+                              }
+                            }
+                          },
+                          "id": "oldmap",
+                          "type": "wms",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": false,
+                "mosaicSelection": "metroFilters",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.5.0"
+          }
+        }
+      },
+      "panel-stations": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Stations open in the timeline's window on the lines picked, each counted once however many lines stop there.",
+          "id": 4,
+          "links": [],
+          "title": "Stations",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  metroFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: stations, filterBy: $metroFilters }\n    text: { sql: \"count(DISTINCT station)::VARCHAR\" }\n    frameAnchor: middle\n    fill: 'currentColor'\n    fontSize: 40\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-timeline": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Track segments by the day they opened. Play grows the window from 1900: the map, the figures and the charts show the network open at its end. Drag across the bars to hold another window; the lines picked show as a pill.",
+          "id": 2,
+          "links": [],
+          "title": "Timeline: play to watch the network grow",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 62,
+                "filters": "metroFilters",
+                "layout": "timeline",
+                "maxValues": 8,
+                "noun": "track segments",
+                "playMode": "grow",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 1500,
+                "timeColumn": "",
+                "timeline": "time"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-up-to": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The year the timeline's window ends: the map, the figures and the charts show the network open then.",
+          "id": 6,
+          "links": [],
+          "title": "Up to",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  metroFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: calendar, filterBy: $metroFilters }\n    text: { sql: \"coalesce(max(year(time)), year(now()))::VARCHAR\" }\n    frameAnchor: middle\n    fill: '#C4453A'\n    fontSize: 40\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-yearly": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Kilometres of line opened in each five years, stacked by line in the official colours, for the timeline's window and the lines picked.",
+          "id": 7,
+          "links": [],
+          "title": "Kilometres opened, five years at a time",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# Kilometres opened in each five years, stacked by line. The timeline's window and the\n# lines picked filter it: play the timeline and the years fill in.\nparams:\n  metroFilters: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: segments, filterBy: $metroFilters }\n    x: { bin: time, interval: year, step: 5 }\n    y: { sum: km }\n    fill: line\n    inset: 0.5\nxDomain: Fixed\nyDomain: Fixed\nxLabel: null\nyLabel: ↑ km opened\nmarginLeft: 40\ncolorDomain: ['Line 1', 'Line 2', 'Line 3', 'Line 3bis', 'Line 4', 'Line 5', 'Line 6', 'Line 7', 'Line 7bis', 'Line 8', 'Line 9', 'Line 10', 'Line 11', 'Line 12', 'Line 13', 'Line 14']\ncolorRange: ['#FFBE00', '#0055C8', '#6E6E00', '#82C8E6', '#A0006E', '#FF5A00', '#82DC73', '#FF82B4', '#82DC73', '#D282BE', '#D2D200', '#DC9600', '#6E491E', '#00643C', '#82C8E6', '#640082']\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-timeline"
+              },
+              "height": 5,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 24,
+              "width": 16,
+              "x": 0,
+              "y": 5
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-up-to"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 16,
+              "y": 5
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-km"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 20,
+              "y": 5
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-stations"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 16,
+              "y": 8
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-lines"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 20,
+              "y": 8
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-yearly"
+              },
+              "height": 8,
+              "width": 8,
+              "x": 16,
+              "y": 11
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-by-line"
+              },
+              "height": 10,
+              "width": 8,
+              "x": 16,
+              "y": 19
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 5,
+              "width": 24,
+              "x": 0,
+              "y": 29
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "kepler",
+      "mosaic",
+      "transit"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "1900-01-01T00:00:00.000Z",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "The Paris Métro on old maps of Paris, 1900 to today",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "Cassini · 18th century",
+            "value": "BNF-IGNF_GEOGRAPHICALGRIDSYSTEMS.CASSINI"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Old map",
+          "multi": false,
+          "name": "oldmap",
+          "options": [],
+          "query": "Cassini · 18th century : BNF-IGNF_GEOGRAPHICALGRIDSYSTEMS.CASSINI,Cassini · the king's copy : AN-IGNF_GEOGRAPHICALGRIDSYSTEMS.CASSINI,État-major · 1820–1866 : GEOGRAPHICALGRIDSYSTEMS.ETATMAJOR40,IGN · 1950 : GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN50.1950",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Métro track segments",
+          "multi": false,
+          "name": "segments",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "segments",
+              "refId": "segments",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the Paris Métro segment by segment, with the day\n-- each one opened (date_mes), its line's official colour and its length on the\n-- ellipsoid, from Île-de-France Mobilités' tracks of the rail network, through\n-- the gateway (http://feeds/idfm/...), which keeps each export a day.\n--\n-- The six segments of line 11's 2024 extension carry no date: they take the\n-- last opening among the line's stations (13 June 2024). Lines not open yet\n-- (line 18, announced for December 2026) are left out.\nWITH stations AS (\n  SELECT res_com, max(date_mise) AS last_opened\n  FROM read_parquet('http://feeds/idfm/emplacement-des-gares-idf.parquet')\n  WHERE mode = 'METRO'\n  GROUP BY res_com\n), segments AS (\n  SELECT coalesce(t.date_mes, s.last_opened) AS opened,\n         'Line ' || t.indice_lig AS line,\n         '#' || upper(t.colourweb_hexa) AS color,\n         t.geo_shape::GEOMETRY AS g\n  FROM read_parquet('http://feeds/idfm/traces-du-reseau-ferre-idf.parquet') t\n  LEFT JOIN stations s USING (res_com)\n  WHERE t.mode = 'METRO'\n)\nSELECT opened::TIMESTAMP AS time,\n       line,\n       color,\n       year(opened) AS opened_in,\n       round(ST_Length_Spheroid(ST_FlipCoordinates(g)) / 1000, 3) AS km,\n       ST_AsGeoJSON(g)::VARCHAR AS geojson\nFROM segments\nWHERE opened \u003c= now()\nORDER BY time",
+                  "refId": "segments"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Métro stations",
+          "multi": false,
+          "name": "stations",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "stations",
+              "refId": "stations",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: every Métro station, one row per line it serves,\n-- with the day it opened (date_mise), from Île-de-France Mobilités' stations of\n-- the rail network, through the gateway (http://feeds/idfm/...).\nSELECT date_mise::TIMESTAMP AS time,\n       nom_gares AS station,\n       'Line ' || indice_lig AS line,\n       year(date_mise) AS opened_in,\n       ST_Y(geo_point_2d::GEOMETRY) AS latitude,\n       ST_X(geo_point_2d::GEOMETRY) AS longitude\nFROM read_parquet('http://feeds/idfm/emplacement-des-gares-idf.parquet')\nWHERE mode = 'METRO' AND date_mise \u003c= now()\nORDER BY time",
+                  "refId": "stations"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Every year for every line",
+          "multi": false,
+          "name": "calendar",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "calendar",
+              "refId": "calendar",
+              "source": {
+                "sql": "-- In your browser: the first of January of every year since 1900, for every\n-- line. Filtered by the same selection as the segments (a clause on time, one\n-- on line), its latest year is where the timeline's window ends, at the same\n-- pace as the other cards.\nSELECT make_timestamp(y::BIGINT, 1, 1, 0, 0, 0) AS time, l.line\nFROM range(1900, year(now()) + 1) AS t(y), (SELECT DISTINCT line FROM $segments) AS l",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "open_from",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "open_to",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "line",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "What the timeline and the lines picked keep",
+          "multi": false,
+          "name": "metroFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$segments",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$open_from",
+                  "label": "Opened",
+                  "name": "time",
+                  "to": "$open_to",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "line",
+                  "label": "Line",
+                  "name": "line",
+                  "type": "in",
+                  "variable": "$line"
+                }
+              ],
+              "kind": "filters",
+              "refId": "metroFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
