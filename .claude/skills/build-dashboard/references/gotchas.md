@@ -27,6 +27,7 @@ here, in the same shape: symptom, cause, fix.
 | A map that should follow the selection stays put | saved `mapState` | save without `mapState` and add a `center` mapping with `zoom` |
 | A map whose data changes (another state, another region) stays where it was | the panel frames its data on load only, and a `center` mapping moves it at a fixed `zoom` | name the variable in the panel option `fitOnVariables` (free panel after 1.4.0; edge on pacha): the map frames the new rows at the zoom they need (`ancestry-esda`) |
 | The `center` mapping ignores a change back to a place it has shown before | it skips a lat/lng pair it has already centred on, so as not to fight the user's panning | make each value new: nudge it by the clock, `+ (epoch_ms(now()) % 1000) * 1e-6` (`ancestry-esda`) |
+| An Active alerts tooltip shows an MMSI (or another long number kept as text) as a figure a thousand times larger | kepler re-reads a text column of digits as a time in seconds | save the alerts layer (`dataId: grafana-ALERTS`) in `mapConfig` with a tooltip that leaves out `place` and shows the labels that name the entity; Plus then keeps it instead of adding its own (`baltic-cable-watch`) |
 | Velocity layer draws nothing | lattice spacing wobbles > 5 %, or `u`/`v` NULL over land | regular lattice; drop land rows instead of NULLs |
 | Zarr tiles look like patchwork | no `zarrRescale` | set `min,max` in the store's units |
 | Raster colours like confetti | kepler's default ramp is for NDVI | set `rasterColormap`, or `rasterPainted` for classified rasters |

@@ -130,4 +130,9 @@ On a GitHub-synced instance, only after the user approves the preview.
   `docker compose run --rm --no-deps -T gateway nginx -t` before the gateway is restarted (ask
   first on a shared instance).
 - A new dataset: `datasets/<name>/build.sh` + `build.sql`; every instance must run it.
+- A new alert rule: `provisioning/alerting/<name>.yaml` (Grafana's file provisioning, folder `Alerts`),
+  loaded with `POST /api/admin/provisioning/alerting/reload` (admin) or a Grafana restart. No contact
+  point is set up: a rule only changes state, and the dashboard reads it back (Kepler Plus Active
+  alerts, or `read_text('http://localhost:3000/api/prometheus/grafana/api/v1/rules')` in DuckDB).
+  A SQL expression with `format: alerting` turns a query's rows into one alert each (`baltic-cable-watch`).
 - A panel plugin change belongs in that plugin's repository, not here.
