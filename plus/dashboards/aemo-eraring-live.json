@@ -26,7 +26,7 @@
         }
       }
     ],
-    "cursorSync": "Off",
+    "cursorSync": "Crosshair",
     "description": "Australia’s largest power station in 3D on its satellite image, each of its four 720 MW units in the colour of what it is doing now, from AEMO’s five-minute SCADA readings, with the station’s output, each unit’s output and what each did over the day.",
     "editable": true,
     "elements": {
@@ -87,7 +87,7 @@
                       "spec": {
                         "format": 1,
                         "rawQuery": true,
-                        "rawSql": "-- The station's latest reading: its output, the share of its 2,880 MW, the\n-- units running, and how old the reading is (AEMO publishes every five\n-- minutes; over a quarter of an hour means the recorder or AEMO is late).\nWITH latest AS (\n  SELECT duid, arg_max(mw, ts) AS mw, max(ts) AS ts\n  FROM read_parquet([${files:singlequote}])\n  WHERE duid IN ('ER01', 'ER02', 'ER03', 'ER04')\n  GROUP BY duid\n)\nSELECT round(sum(greatest(mw, 0))) AS \"Output (MW)\",\n       round(100 * sum(greatest(mw, 0)) / 2880) AS \"Of capacity\",\n       count(*) FILTER (WHERE mw \u003e= 10) || ' of 4' AS \"Units running\",\n       round(date_diff('second', max(ts), now()) / 60) AS \"Reading age\"\nFROM latest\n"
+                        "rawSql": "-- The station's latest reading: its output, the share of its 2,880 MW, the\n-- units running, and how old the reading is (AEMO publishes every five\n-- minutes; over a quarter of an hour means the recorder or AEMO is late).\nWITH latest AS (\n  SELECT duid, arg_max(mw, ts) AS mw, max(ts) AS ts\n  FROM read_parquet([${files:singlequote}])\n  WHERE duid IN ('ER01', 'ER02', 'ER03', 'ER04')\n  GROUP BY duid\n)\nSELECT round(sum(greatest(mw, 0))) AS \"Output (MW)\",\n       round(100 * sum(greatest(mw, 0)) / 2880) AS \"Of capacity\",\n       count(*) FILTER (WHERE mw \u003e= 10) || ' of 4' AS \"Units running\",\n       -- AEMO stamps a reading with the end of its five-minute interval and\n       -- publishes it before that end: the age runs from the interval's start.\n       greatest(round(date_diff('second', max(ts) - INTERVAL 5 MINUTE, now()) / 60), 0) AS \"Reading age\"\nFROM latest\n"
                       },
                       "version": "v0"
                     },
@@ -213,13 +213,33 @@
                     },
                     "refId": "A"
                   }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Each unit's output every five minutes over the time range, for its card on\n-- the map: a dot over its part of the block (units.parquet), at the height of\n-- its boiler house, coloured by its output now, and its series on hover.\nSELECT r.ts AS time, u.duid, replace(u.name, 'Eraring unit', 'Unit') AS name,\n       u.latitude, u.longitude, 75 AS altitude, round(r.mw) AS mw\nFROM read_parquet([${files:singlequote}]) r\nJOIN 'http://feeds/datasets/eraring/units.parquet' u USING (duid)\nWHERE r.ts BETWEEN $__timeFrom() AND $__timeTo()\nORDER BY u.duid, r.ts\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
                 }
               ],
               "queryOptions": {},
               "transformations": []
             }
           },
-          "description": "The station in 3D on its satellite image; each unit coloured by its latest SCADA reading.",
+          "description": "The station in 3D on its satellite image; each unit coloured by its latest SCADA reading, with a dot over it and its output over the range on its card.",
           "id": 3,
           "links": [],
           "title": "Eraring now, each unit in the colour of what it is doing",
@@ -312,15 +332,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": -33.0612,
-                      "longitude": 151.5182,
+                      "latitude": -33.0607,
+                      "longitude": 151.5192,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_3D",
                       "maxPitch": 85,
                       "pitch": 58,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 16.4
+                      "zoom": 16.3
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -388,9 +408,95 @@
                       },
                       "layerBlending": "normal",
                       "layerOrder": [
+                        "eraring-trends",
                         "eraring-units"
                       ],
                       "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              115,
+                              191,
+                              105
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "altitude",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Each unit over the range",
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    10,
+                                    "#6e7076"
+                                  ],
+                                  [
+                                    360.0,
+                                    "#5794f2"
+                                  ],
+                                  [
+                                    648.0,
+                                    "#37872d"
+                                  ],
+                                  [
+                                    null,
+                                    "#73bf69"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#6e7076",
+                                  "#5794f2",
+                                  "#37872d",
+                                  "#73bf69"
+                                ],
+                                "name": "Unit output",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "opacity": 1,
+                              "outline": false,
+                              "radius": 10,
+                              "rowsAsset": "auto",
+                              "sparkAlerts": false,
+                              "sparkCardOpacity": 0.9,
+                              "sparkCards": "auto",
+                              "sparkChangeColours": "neutral",
+                              "sparkCrossValue": true,
+                              "sparkCrosshair": true,
+                              "sparkDotRadius": 7,
+                              "sparkDots": true,
+                              "sparkDotsOnTop": true,
+                              "sparkFill": true,
+                              "sparkMax": 720,
+                              "sparkMin": 0,
+                              "sparkNoDataAfter": "auto",
+                              "sparkOverlap": "some",
+                              "sparkPublishCrosshair": false,
+                              "sparkScale": "common",
+                              "sparkSize": "S",
+                              "sparkTimeField": "auto",
+                              "sparkTooltip": false,
+                              "sparkUnit": " MW"
+                            }
+                          },
+                          "id": "eraring-trends",
+                          "type": "sparkline",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "mw",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
                         {
                           "config": {
                             "color": [
