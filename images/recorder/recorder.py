@@ -14,7 +14,8 @@ A reader only ever follows the manifest. Every file is written under a .tmp
 name and renamed, and a file the manifest stops naming is deleted a poll later,
 so a reader holding the previous manifest still finds what it names.
 
-A feed with `-- schedule: daily` is read a day at a time instead: see DailyFeed.
+A feed with `-- schedule: daily` is read a day at a time instead: see DailyFeed. One with
+`-- schedule: listing` reads the files a web page lists, each once: see ListingFeed.
 """
 import datetime as dt
 import http.client
@@ -77,6 +78,8 @@ class Feed:
         self.dir = Path(data) / self.name
         self.public = f'{public_base.rstrip("/")}/{self.name}'
         self.health_file = Path(health_file) if health_file else None
+        # The order a closed hour is merged in, for a reader's pruning (`-- order: ...`).
+        self.order = (re.search(r'^--\s*order:\s*(.+?)\s*$', self.sql, re.M) or [None, 'cell, hex, ts'])[1]
         self.doomed = set()  # files the manifest no longer names, deleted on the next poll
         self.dir.mkdir(parents=True, exist_ok=True)
         os.chmod(self.dir, 0o755)
@@ -173,7 +176,7 @@ class Feed:
                 inputs = sorted(minutes) + ([merged] if merged.exists() else [])
                 listed = ', '.join(f"'{p}'" for p in inputs)
                 write_atomic(merged, lambda tmp: self.db.execute(
-                    f"COPY (SELECT * FROM read_parquet([{listed}], union_by_name = true) ORDER BY cell, hex, ts) TO '{tmp}' "
+                    f"COPY (SELECT * FROM read_parquet([{listed}], union_by_name = true) ORDER BY {self.order}) TO '{tmp}' "
                     '(FORMAT parquet, COMPRESSION zstd, ROW_GROUP_SIZE 122880)'))
                 self.doomed.update(minutes)
                 log.info('%s: merged %s/%s from %d files', self.name, day.name, hour, len(minutes))
@@ -213,6 +216,106 @@ class Feed:
                         [now, f'{self.retention.days} days'])
         write_atomic(self.dir / 'polls.parquet', lambda tmp: self.db.execute(
             f"COPY polls TO '{tmp}' (FORMAT parquet, COMPRESSION zstd)"))
+
+
+class ListingFeed(Feed):
+    """A feed published as a stream of small zipped files that a web page lists (`-- schedule: listing`),
+    as AEMO's NEMweb publishes the electricity market every five minutes.
+
+    Its source is the page; `-- files:` is the pattern of the names on it. Every interval it reads the page and,
+    oldest first, every file it has not read yet: downloads it, unzips its CSV, runs the feed's script with
+    `source` set to it, and writes what comes out as a minute file of the hour its first row's `ts` falls in.
+    Closed hours are merged, and the manifest is written, as for any feed. At start it reads what the page still
+    lists within the retention, so a first start or a restart fills the history.
+
+    A file that cannot be downloaded is tried again the next interval; one that cannot be read is skipped.
+    """
+
+    def __init__(self, sql_path, data, public_base, retention_days, source=None, interval=None, scratch=None):
+        super().__init__(sql_path, data, public_base, retention_days, source=source, interval=interval)
+        pattern = header(self.sql, 'files')
+        if not pattern:
+            raise ValueError(f'{sql_path}: a listing feed names its files (-- files: <pattern>)')
+        self.pattern = re.compile(pattern)
+        self.scratch = scratch or os.environ.get('RECORDER_SCRATCH') or tempfile.gettempdir()
+        self.seen_file = self.dir / 'seen.json'
+        self.seen = set(json.loads(self.seen_file.read_text())) if self.seen_file.exists() else set()
+
+    def _get(self, url, into=None):
+        if not re.match(r'^https?://', url):
+            if into is None:
+                return Path(url).read_bytes()
+            return Path(url)
+        request = urllib.request.Request(url, headers={'User-Agent': 'pacha-recorder'})
+        with urllib.request.urlopen(request, timeout=60) as response:
+            if into is None:
+                return response.read()
+            with open(into, 'wb') as out:
+                shutil.copyfileobj(response, out, 1 << 20)
+                expected = response.headers.get('Content-Length')
+                if expected is not None and out.tell() != int(expected):
+                    raise CutShort(f'download cut short: {out.tell()} of {expected} bytes')
+            return into
+
+    def _listed(self):
+        page = self._get(self.source).decode('utf-8', 'replace')
+        return sorted(set(self.pattern.findall(page)))
+
+    def _read_file(self, name, now):
+        """One listed file into a minute file; the rows written."""
+        base = self.source if re.match(r'^https?://', self.source) else str(Path(self.source).parent) + '/'
+        with tempfile.TemporaryDirectory(dir=self.scratch) as scratch:
+            archive = self._get(base.rstrip('/') + '/' + name, Path(scratch) / 'file.zip')
+            with zipfile.ZipFile(archive) as z:
+                (member,) = [m for m in z.namelist() if m.lower().endswith('.csv')]
+                csv = Path(scratch) / 'file.csv'
+                with z.open(member) as src, open(csv, 'wb') as out:
+                    shutil.copyfileobj(src, out, 1 << 20)
+            self.db.execute('SET VARIABLE source = ?', [str(csv)])
+            self.db.execute(f'CREATE OR REPLACE TEMP TABLE snap AS {self.sql}')
+        rows, first = self.db.execute('SELECT count(*), min(ts) FROM snap').fetchone()
+        if rows == 0:
+            return 0
+        first = first.astimezone(UTC)
+        if first < now - self.retention:
+            return 0
+        path = self._day(first) / f'h{first:%H}-m{first:%M%S}.parquet'
+        write_atomic(path, lambda tmp: self.db.execute(f"COPY snap TO '{tmp}' (FORMAT parquet, COMPRESSION zstd)"))
+        return rows
+
+    def poll(self, now):
+        self._delete_doomed()
+        received = written = 0
+        status, error_text = 'ok', None
+        try:
+            listed = self._listed()
+            for name in listed:
+                if name in self.seen:
+                    continue
+                try:
+                    written += self._read_file(name, now)
+                    received += 1
+                    if received % 24 == 0:
+                        # A first fill takes a while: what is read so far is readable as it goes.
+                        self._write_manifest(now)
+                except (duckdb.Error, ValueError, zipfile.BadZipFile) as error:
+                    # The file, not the network: skipped for good.
+                    log.error('%s: %s: %s', self.name, name, error)
+                    status, error_text = 'error', f'{name}: {error}'
+                self.seen.add(name)
+            # The page lists a few days; what it no longer lists is not asked for again.
+            self.seen &= set(listed)
+            write_atomic(self.seen_file, lambda tmp: tmp.write_text(json.dumps(sorted(self.seen))))
+        except duckdb.FatalException:
+            raise
+        except (urllib.error.URLError, http.client.HTTPException, CutShort, ConnectionError, TimeoutError) as error:
+            # The network: what is left is read the next interval.
+            log.error('%s: %s', self.name, error)
+            status, error_text = 'unreachable', str(error)
+        self._merge_closed_hours(now)
+        self._log_poll(now, status, received, written, error_text)
+        self._write_manifest(now)
+        log.info('%s: %d files read, %d rows written', self.name, received, written)
 
 
 class CutShort(OSError):
@@ -400,9 +503,9 @@ class DailyFeed:
             f"COPY polls TO '{tmp}' (FORMAT parquet, COMPRESSION zstd)"))
 
 
-def run_daily(feed):
-    """A daily feed's own loop, in its own thread: reading a day takes minutes, and
-    the feeds polled every minute must not wait for it."""
+def run_alone(feed):
+    """A daily or listing feed's own loop, in its own thread: reading a day, or a first fill of a few days of
+    files, takes minutes, and the feeds polled every minute must not wait for it."""
     try:
         while True:
             feed.poll(dt.datetime.now(UTC).replace(microsecond=0))
@@ -420,21 +523,24 @@ def main():
     retention = int(os.environ.get('RECORDER_RETENTION_DAYS', '7'))
     interval = os.environ.get('RECORDER_INTERVAL')
     health = os.environ.get('RECORDER_HEALTH_FILE', '/tmp/recorder-ok')
-    feeds, daily = [], []
+    feeds, alone = [], []
     for path in sorted(feeds_dir.glob('*.sql')):
         source = os.environ.get(f'RECORDER_SOURCE_{path.stem.upper().replace("-", "_")}')
-        if header(path.read_text(), 'schedule') == 'daily':
-            daily.append(DailyFeed(path, data, public, retention, source=source))
+        schedule = header(path.read_text(), 'schedule')
+        if schedule == 'daily':
+            alone.append(DailyFeed(path, data, public, retention, source=source))
+        elif schedule == 'listing':
+            alone.append(ListingFeed(path, data, public, retention, source=source))
         else:
             feeds.append(Feed(path, data, public, retention, interval=interval, source=source,
                               health_file=health))
-    if not feeds and not daily:
+    if not feeds and not alone:
         sys.exit(f'no feeds in {feeds_dir}')
     now = dt.datetime.now(UTC)
-    for feed in feeds + daily:
+    for feed in feeds + alone:
         feed.recover(now)
-    for feed in daily:
-        threading.Thread(target=run_daily, args=(feed,), name=feed.name, daemon=True).start()
+    for feed in alone:
+        threading.Thread(target=run_alone, args=(feed,), name=feed.name, daemon=True).start()
     if not feeds:
         threading.Event().wait()
     # On the interval's boundaries, so a poll meets the gateway's cache once.

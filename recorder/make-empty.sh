@@ -1,6 +1,7 @@
 #!/bin/sh
 # Writes gateway/recordings/flights-empty.parquet: flights.sql's columns, no
-# rows; and gateway/recordings/ais-denmark-empty/<table>.parquet, each of
+# rows; gateway/recordings/aemo-scada-empty.parquet, aemo-scada.sql's; and
+# gateway/recordings/ais-denmark-empty/<table>.parquet, each of
 # ais-denmark.sql's tables with no rows. The gateway serves them when nothing
 # has been recorded, so a history panel returns nothing instead of failing.
 # Run it whenever a feed's columns change; tests/stack/flight-recorder.test.mjs
@@ -20,6 +21,16 @@ open('/tmp/empty.json', 'w').write('{\"now\": 0, \"ac\": []}')
 c.sql(\"SET VARIABLE source = '/tmp/empty.json'\")
 sql = open('recorder/feeds/flights.sql').read()
 out = 'gateway/recordings/flights-empty.parquet'
+c.sql(f\"COPY ({sql}) TO '{out}' (FORMAT parquet, COMPRESSION zstd)\")
+os.chown(out, $(id -u), $(id -g))
+print(out, os.path.getsize(out), 'bytes')
+
+# AEMO's SCADA: an interval with no units.
+open('/tmp/empty-scada.csv', 'w').write(
+  'C,NEMP.WORLD,DISPATCHSCADA,AEMO,PUBLIC\\nI,DISPATCH,UNIT_SCADA,1,SETTLEMENTDATE,DUID,SCADAVALUE,LASTCHANGED\\n')
+c.sql(\"SET VARIABLE source = '/tmp/empty-scada.csv'\")
+sql = open('recorder/feeds/aemo-scada.sql').read()
+out = 'gateway/recordings/aemo-scada-empty.parquet'
 c.sql(f\"COPY ({sql}) TO '{out}' (FORMAT parquet, COMPRESSION zstd)\")
 os.chown(out, $(id -u), $(id -g))
 print(out, os.path.getsize(out), 'bytes')
