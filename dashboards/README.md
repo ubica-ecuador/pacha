@@ -31,7 +31,8 @@ A closed vocabulary. Add a theme tag in the same change as the dashboard that
 needs it; the other facets change only with the stack.
 
 - **Engine, at least one:** `chaski` (queries in the browser), `duckdb`
-  (queries on the server), `infinity` (reads HTTP or JSON).
+  (queries on the server), `infinity` (reads HTTP or JSON), `mqtt` (streams
+  an MQTT topic through Grafana Live).
 - **Visualization:** `kepler`, `mosaic` (Chaski's Mosaic panel), `business-charts`,
   `business-table`, `business-text`.
 - **Theme and behaviour:** `seismic`, `mobility`, `transit`, `energy`,
@@ -48,7 +49,7 @@ Every Plus dashboard carries `plus`: filter what needs Plus with it.
 2. The description is never empty: it is what the list and search show.
 3. Tags come from the vocabulary above and include at least one engine.
 4. Datasources are referenced by their provisioned uid only: `duckdb`,
-   `infinity`, `duckdbwasm` (Chaski). That is what makes a dashboard work on
+   `infinity`, `duckdbwasm` (Chaski), `hsl-mqtt` (HSL's vehicle positions). That is what makes a dashboard work on
    every environment.
 5. Files are in Grafana's own format: keys sorted, two-space indent, `<` `>`
    `&` escaped, no trailing newline. A file edited by hand may drift; Grafana

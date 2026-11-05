@@ -34,6 +34,8 @@ here, in the same shape: symptom, cause, fix.
 | Plus panels show ChunkLoadError after a plugin deploy | Grafana registers plugin files at start | restart grafana; users hard-reload (chunks are cached 1 h) |
 | "charts follow the map view" leaves out part of the world on load | Kepler writes `viewportVariables` as soon as it draws, and a world view in a 16-column panel spans about -106..136 longitude | default to the whole Earth and offer the view as a choice (`firms-active-fires`, variable `scope`) |
 | The time brush updates every panel except the map | the map query already aggregates for the brush variables, and kepler also puts a time filter on any time-shaped column of that result (`last_seen` looked like `2026-10-12 18:00 UTC`). Widening the brush re-queries, then the filter keeps its old window because the new value still lies inside the new data, so the new cells never draw | one time filter, on the layer that is not re-queried (the smoke clock). A label on the aggregated rows must not look like a timestamp (`firms-active-fires`, `seen 14 Oct at 18:04 UTC`) |
+| A Fleet or any saved layer on a streamed (MQTT, Grafana Live) query draws nothing; kepler adds a Point layer of its own | *Extract fields* drops the frame's refId, so the dataset is `grafana-0`, not `grafana-A`; and the panel renames `lat`/`long`/`Time` to `latitude`/`longitude`/`time` | `dataId: 'grafana-0'`, `columns: {lat: 'latitude', lng: 'longitude'}`, `fleetTimeField: 'time'` (see `hsl-live`) |
+| A streamed map shows only the last second or so, part of the fleet | Grafana keeps a streaming query's rows in a buffer as long as the panel's *Max data points* (its width in pixels, ~1000) | set `queryOptions.maxDataPoints` (20000 in `hsl-live`) |
 
 ## SQL and engines
 

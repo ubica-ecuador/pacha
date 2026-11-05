@@ -47,6 +47,19 @@ datasources:
     uid: infinity
     jsonData: {}
 
+  # Helsinki Region Transport's public MQTT broker (HSL high-frequency
+  # positioning, CC BY 4.0): every vehicle's position once a second, streamed
+  # to the browser through Grafana Live. Over a websocket on 443, which egress
+  # rules that allow only the web let through where MQTT's 1883/8883 are not.
+  # Subscribe only, no credentials: whoever can view a dashboard can pick a
+  # topic, and the worst is the whole broker's firehose, which the topics in
+  # the dashboards avoid (one kind of vehicle).
+  - name: HSL MQTT
+    type: grafana-mqtt-datasource
+    uid: hsl-mqtt
+    jsonData:
+      uri: wss://mqtt.hsl.fi:443/
+
   # Chaski: DuckDB in each viewer's browser. Deliberately without a URL. That URL
   # is what $__proxy reads through, and whoever may query the datasource (on a
   # public instance, any anonymous visitor) could read anywhere on that server,

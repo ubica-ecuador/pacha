@@ -31,6 +31,7 @@ ARG DUCKDB_ENGINE_VERSION=1.5.4
 ARG DUCKDB_CLI_SHA256_amd64=1f2fa724fb054b3dbe1a9cbd13de5b76997d850e7087ec762ba88db04e0180cf
 ARG DUCKDB_CLI_SHA256_arm64=377f03fb9f17ab5a78f28f829cbfcb5333da8ab3c2d0788f27694f81df77ed29
 ARG INFINITY_VERSION=4.0.0
+ARG MQTT_VERSION=1.3.11
 ARG BUSINESS_CHARTS_VERSION=7.2.5
 ARG BUSINESS_TABLE_VERSION=3.6.8
 ARG BUSINESS_TEXT_VERSION=6.3.0
@@ -114,6 +115,7 @@ ARG CHASKI_VERSION
 ARG DUCKDB_DS_VERSION
 ARG DUCKDB_ENGINE_VERSION
 ARG INFINITY_VERSION
+ARG MQTT_VERSION
 ARG BUSINESS_CHARTS_VERSION
 ARG BUSINESS_TABLE_VERSION
 ARG BUSINESS_TEXT_VERSION
@@ -125,6 +127,7 @@ COPY --from=duckdb-extensions --chown=472:0 /opt/pacha/duckdb-home /opt/pacha/du
 # Signed plugins from the catalogue, at fixed versions.
 RUN for plugin in \
       "yesoreyeram-infinity-datasource ${INFINITY_VERSION}" \
+      "grafana-mqtt-datasource ${MQTT_VERSION}" \
       "volkovlabs-echarts-panel ${BUSINESS_CHARTS_VERSION}" \
       "volkovlabs-table-panel ${BUSINESS_TABLE_VERSION}" \
       "marcusolsson-dynamictext-panel ${BUSINESS_TEXT_VERSION}" \
@@ -179,6 +182,7 @@ LABEL org.opencontainers.image.title="pacha-grafana" \
       io.pacha.duckdb-datasource.version="${DUCKDB_DS_VERSION}" \
       io.pacha.duckdb-engine.version="${DUCKDB_ENGINE_VERSION}" \
       io.pacha.infinity.version="${INFINITY_VERSION}" \
+      io.pacha.mqtt-datasource.version="${MQTT_VERSION}" \
       io.pacha.business-charts.version="${BUSINESS_CHARTS_VERSION}" \
       io.pacha.business-table.version="${BUSINESS_TABLE_VERSION}" \
       io.pacha.business-text.version="${BUSINESS_TEXT_VERSION}" \

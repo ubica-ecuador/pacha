@@ -1,0 +1,1146 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "hsl-live"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Every HSL tram, metro, train, ferry or bus in Helsinki where it is now, from the vehicles' own once-a-second reports over MQTT, streamed to the map through Grafana Live.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "group": "",
+                      "kind": "DataQuery",
+                      "spec": {},
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "id": 1,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "content": "### Helsinki's trams, metro, trains, ferries and buses, as they move\n\nEvery vehicle of Helsinki Region Transport (HSL) reports where it is **once a second** to a public MQTT broker. Grafana's MQTT datasource subscribes to it, and the positions reach this page through **Grafana Live**, a websocket: nothing polls, and nothing is stored. The map moves the vehicles as their reports arrive and keeps a two-minute trail behind each; an arrow is moving, a dot is stopped. Pick the kind of vehicle above.\n\nThe figures on the right are counted in the browser over what has arrived since the page opened. Trams run from about 5:30 to 1:30 Helsinki time, the metro from 5:30 to 23:30; at night only a few buses and trains report. Buses are many hundreds by day: expect a busier page.\n\nData: HSL high-frequency positioning (HFP v2), `mqtt.hsl.fi`, © Helsinki Region Transport, CC BY 4.0.",
+                "mode": "markdown"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "hsl-mqtt"
+                      },
+                      "group": "grafana-mqtt-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "topic": "/hfp/v2/journey/ongoing/vp/${mode}/#"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {
+                "maxDataPoints": 20000
+              },
+              "transformations": [
+                {
+                  "group": "extractFields",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "format": "json",
+                      "keepTime": true,
+                      "replace": true,
+                      "source": "VP"
+                    }
+                  }
+                },
+                {
+                  "group": "calculateField",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "alias": "operator_key",
+                      "binary": {
+                        "left": "oper",
+                        "operator": "*",
+                        "right": "100000"
+                      },
+                      "mode": "binary",
+                      "replaceFields": false
+                    }
+                  }
+                },
+                {
+                  "group": "calculateField",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "alias": "vehicle",
+                      "binary": {
+                        "left": "operator_key",
+                        "operator": "+",
+                        "right": "veh"
+                      },
+                      "mode": "binary",
+                      "replaceFields": false
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "id": 2,
+          "links": [],
+          "title": "Where they are now · $mode",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 60.185,
+                      "longitude": 24.94,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 11.2
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-liberty",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {
+                        "label": false,
+                        "poi": false,
+                        "road": false
+                      },
+                      "visibleLayerGroups": {
+                        "3d building": true,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "route"
+                              },
+                              {
+                                "name": "vehicle"
+                              },
+                              {
+                                "name": "sign"
+                              },
+                              {
+                                "name": "punctuality"
+                              },
+                              {
+                                "name": "delay_min"
+                              },
+                              {
+                                "name": "next_stop"
+                              },
+                              {
+                                "name": "load_pct"
+                              },
+                              {
+                                "name": "in_traffic"
+                              },
+                              {
+                                "name": "age_s"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "line"
+                              },
+                              {
+                                "name": "kind"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "stop"
+                              },
+                              {
+                                "name": "affects"
+                              },
+                              {
+                                "name": "alert"
+                              }
+                            ],
+                            "grafana-D": [
+                              {
+                                "name": "picked"
+                              }
+                            ],
+                            "grafana-E": [
+                              {
+                                "name": "route"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "plus-fleet-grafana-0"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              23,
+                              184,
+                              190
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-0",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Vehicles",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Early \u003e 1 min",
+                                    "#58a6ff"
+                                  ],
+                                  [
+                                    "On time",
+                                    "#3fb950"
+                                  ],
+                                  [
+                                    "Late 5–10 min",
+                                    "#d29922"
+                                  ],
+                                  [
+                                    "Late \u003e 10 min",
+                                    "#f85149"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#58a6ff",
+                                  "#3fb950",
+                                  "#d29922",
+                                  "#f85149"
+                                ],
+                                "name": "Punctuality",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "fleetAltitudeField": "none",
+                              "fleetAssetField": "vehicle",
+                              "fleetCard": false,
+                              "fleetCardField": "speed",
+                              "fleetCardMinutes": 60,
+                              "fleetCardOpacity": 0.9,
+                              "fleetCardSize": "S",
+                              "fleetCardUnit": "",
+                              "fleetCardWindow": "auto",
+                              "fleetChangeColours": "neutral",
+                              "fleetCrossValue": true,
+                              "fleetCrosshair": true,
+                              "fleetDisplay": "flat",
+                              "fleetFollow": "",
+                              "fleetFollowMode": "follow",
+                              "fleetGhost": false,
+                              "fleetHeadingField": "hdg",
+                              "fleetHeadingFrom": "auto",
+                              "fleetIcons": "{}",
+                              "fleetLabel": "none",
+                              "fleetLabelColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "fleetLabelOffset": -1,
+                              "fleetLabelOutline": true,
+                              "fleetLabelSize": 12,
+                              "fleetMarker": "arrow",
+                              "fleetModelColours": "beacon",
+                              "fleetOrbitSecs": 60,
+                              "fleetPinned": [],
+                              "fleetPublishCrosshair": false,
+                              "fleetPulseBy": "auto",
+                              "fleetPulseCycle": 3,
+                              "fleetPulseLength": 0.3,
+                              "fleetPulseRange": [
+                                1,
+                                4
+                              ],
+                              "fleetReckon": false,
+                              "fleetRemember": "off",
+                              "fleetRememberMin": 10,
+                              "fleetShadow": false,
+                              "fleetSize": 22,
+                              "fleetSmooth": true,
+                              "fleetSmoothMs": 1500,
+                              "fleetSpeedField": "spd",
+                              "fleetSpeedUnit": "m/s",
+                              "fleetStaleAfter": 2,
+                              "fleetStatusFrom": "none",
+                              "fleetStem": false,
+                              "fleetStopSpeed": 2,
+                              "fleetTimeField": "time",
+                              "fleetTimeRef": "live",
+                              "fleetTrail": 2,
+                              "fleetTrailAnimate": false,
+                              "fleetTrailDashLength": 0.5,
+                              "fleetTrailFade": true,
+                              "fleetTrailMode": "fleet",
+                              "fleetTrailOpacity": 0.7,
+                              "fleetTrailShow": true,
+                              "fleetTrailSpacing": 40,
+                              "fleetTrailStyle": "solid",
+                              "fleetTrailWidth": 3,
+                              "fleetTripsGap": 0,
+                              "fleetTripsTrail": 24,
+                              "fleetTypeField": "none",
+                              "fleetZoomRate": 0.5,
+                              "fleetZoomRef": 14,
+                              "fleetZoomScale": false,
+                              "opacity": 1,
+                              "outline": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "plus-fleet-grafana-0",
+                          "type": "fleet",
+                          "visualChannels": {
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": true,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 7,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "hsl-mqtt"
+                      },
+                      "group": "grafana-mqtt-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "topic": "/hfp/v2/journey/ongoing/vp/${mode}/#"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {
+                "maxDataPoints": 20000
+              },
+              "transformations": [
+                {
+                  "group": "extractFields",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "format": "json",
+                      "keepTime": true,
+                      "replace": true,
+                      "source": "VP"
+                    }
+                  }
+                },
+                {
+                  "group": "calculateField",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "alias": "operator_key",
+                      "binary": {
+                        "left": "oper",
+                        "operator": "*",
+                        "right": "100000"
+                      },
+                      "mode": "binary",
+                      "replaceFields": false
+                    }
+                  }
+                },
+                {
+                  "group": "calculateField",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "alias": "vehicle",
+                      "binary": {
+                        "left": "operator_key",
+                        "operator": "+",
+                        "right": "veh"
+                      },
+                      "mode": "binary",
+                      "replaceFields": false
+                    }
+                  }
+                },
+                {
+                  "group": "groupBy",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "fields": {
+                        "vehicle": {
+                          "aggregations": [],
+                          "operation": "groupby"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "description": "Distinct vehicles heard since the page opened.",
+          "id": 3,
+          "links": [],
+          "title": "Vehicles",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "reduceOptions": {
+                  "calcs": [
+                    "count"
+                  ],
+                  "fields": "/^vehicle$/",
+                  "values": false
+                },
+                "textMode": "value"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "hsl-mqtt"
+                      },
+                      "group": "grafana-mqtt-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "topic": "/hfp/v2/journey/ongoing/vp/${mode}/#"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {
+                "maxDataPoints": 20000
+              },
+              "transformations": []
+            }
+          },
+          "description": "When the newest position arrived.",
+          "id": 4,
+          "links": [],
+          "title": "Last report",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Time$/",
+                  "values": false
+                },
+                "textMode": "value"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "hsl-mqtt"
+                      },
+                      "group": "grafana-mqtt-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "topic": "/hfp/v2/journey/ongoing/vp/${mode}/#"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {
+                "maxDataPoints": 20000
+              },
+              "transformations": [
+                {
+                  "group": "extractFields",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "format": "json",
+                      "keepTime": true,
+                      "replace": true,
+                      "source": "VP"
+                    }
+                  }
+                },
+                {
+                  "group": "calculateField",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "alias": "operator_key",
+                      "binary": {
+                        "left": "oper",
+                        "operator": "*",
+                        "right": "100000"
+                      },
+                      "mode": "binary",
+                      "replaceFields": false
+                    }
+                  }
+                },
+                {
+                  "group": "calculateField",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "alias": "vehicle",
+                      "binary": {
+                        "left": "operator_key",
+                        "operator": "+",
+                        "right": "veh"
+                      },
+                      "mode": "binary",
+                      "replaceFields": false
+                    }
+                  }
+                },
+                {
+                  "group": "groupBy",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "fields": {
+                        "desi": {
+                          "aggregations": [
+                            "lastNotNull"
+                          ],
+                          "operation": "aggregate"
+                        },
+                        "dl": {
+                          "aggregations": [
+                            "lastNotNull"
+                          ],
+                          "operation": "aggregate"
+                        },
+                        "spd": {
+                          "aggregations": [
+                            "lastNotNull"
+                          ],
+                          "operation": "aggregate"
+                        },
+                        "vehicle": {
+                          "aggregations": [],
+                          "operation": "groupby"
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "group": "sortBy",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "sort": [
+                        {
+                          "desc": false,
+                          "field": "dl (lastNotNull)"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "group": "limit",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "limitField": 15
+                    }
+                  }
+                },
+                {
+                  "group": "organize",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "excludeByName": {
+                        "vehicle": true
+                      },
+                      "indexByName": {
+                        "desi (lastNotNull)": 0,
+                        "dl (lastNotNull)": 1,
+                        "spd (lastNotNull)": 2
+                      },
+                      "renameByName": {
+                        "desi (lastNotNull)": "Line",
+                        "dl (lastNotNull)": "Schedule",
+                        "spd (lastNotNull)": "Speed"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "description": "Each vehicle's latest report, the most delayed first. HSL gives the offset from the timetable in seconds; negative is late.",
+          "id": 5,
+          "links": [],
+          "title": "Furthest behind schedule",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Schedule"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "s"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Speed"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "velocityms"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": ""
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 6,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              },
+              "height": 22,
+              "width": 16,
+              "x": 0,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 5,
+              "width": 4,
+              "x": 16,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 5,
+              "width": 4,
+              "x": 20,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 17,
+              "width": 8,
+              "x": 16,
+              "y": 11
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preferences": {
+      "layout": {
+        "kind": "GridLayout",
+        "spec": {
+          "items": []
+        }
+      }
+    },
+    "preload": false,
+    "tags": [
+      "mqtt",
+      "kepler",
+      "plus",
+      "transit",
+      "live"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-15m",
+      "hideTimepicker": false,
+      "timezone": "Europe/Helsinki",
+      "to": "now"
+    },
+    "title": "Helsinki public transport, live",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "tram",
+            "value": "tram"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Vehicles",
+          "multi": false,
+          "name": "mode",
+          "options": [],
+          "query": "tram,metro,train,ferry,bus",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}

@@ -16,6 +16,7 @@ const EXPECTED = {
   'ubica-chaski-filters-panel': { version: '2.3.2', signature: 'unsigned' },
   'motherduck-duckdb-datasource': { version: '0.4.5', signature: 'unsigned' },
   'yesoreyeram-infinity-datasource': { version: '4.0.0', signature: 'valid' },
+  'grafana-mqtt-datasource': { version: '1.3.11', signature: 'valid' },
   'volkovlabs-echarts-panel': { version: '7.2.5', signature: 'valid' },
   'volkovlabs-table-panel': { version: '3.6.8', signature: 'valid' },
   'marcusolsson-dynamictext-panel': { version: '6.3.0', signature: 'valid' },

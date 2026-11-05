@@ -34,7 +34,8 @@ when it exists.
    the files. Before changing an existing dashboard, start from its latest version (pull first
    on a GitHub-synced instance) and change only the panels and variables the task is about.
    Never regenerate a whole dashboard from a script.
-4. **Datasources by uid only:** `duckdb` (server), `duckdbwasm` (Chaski), `infinity`. That is
+4. **Datasources by uid only:** `duckdb` (server), `duckdbwasm` (Chaski), `infinity`, `hsl-mqtt`
+   (HSL's MQTT broker). That is
    what makes a dashboard work on every instance.
 5. **Remote data that needs a key, a cache or a polite rate goes through the gateway**
    (`http://feeds/...`). Anyone who can view a dashboard can send SQL to `duckdb`: never put a

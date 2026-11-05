@@ -26,8 +26,8 @@ test('Grafana answers through the gateway', async () => {
   assert.ok(await healthy());
 });
 
-test('the three datasources are provisioned, and Chaski has no URL', async () => {
-  for (const uid of ['duckdb', 'infinity', 'duckdbwasm']) {
+test('the datasources are provisioned, and Chaski has no URL', async () => {
+  for (const uid of ['duckdb', 'infinity', 'duckdbwasm', 'hsl-mqtt']) {
     assert.equal((await api(STACK_URL, `/api/datasources/uid/${uid}`)).status, 200, uid);
   }
   const { json } = await api(STACK_URL, '/api/datasources/uid/duckdbwasm');
@@ -97,10 +97,12 @@ test('Grafana Live upgrades to a websocket through the gateway', async () => {
   // Live checks it against GF_SERVER_ROOT_URL (compose.yaml) before
   // upgrading, so the request has to look like a real browser's to prove the
   // gateway/root_url combination actually works — not just that the socket
-  // upgrades when nothing checks the Origin at all.
+  // upgrades when nothing checks the Origin at all. A browser's Origin is the
+  // address it opened Grafana at: the root URL when one is set (an instance
+  // behind a proxy, where 127.0.0.1 is refused), else the gateway's own.
   const res = await rawGet(`${STACK_URL}/api/live/ws`, {
     authorization: basicAuth(),
-    origin: new URL(STACK_URL).origin,
+    origin: new URL(process.env.GF_SERVER_ROOT_URL || STACK_URL).origin,
     connection: 'Upgrade',
     upgrade: 'websocket',
     'sec-websocket-version': '13',
