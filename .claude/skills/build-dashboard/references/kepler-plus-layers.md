@@ -147,8 +147,17 @@ Minimal gauge layer:
 - `places`: `{"<refId>": {column, kind, colourBy, output, country, state}}`, all optional.
   `kind`: region | airport | country | ip | geohash | state | district | auto | off.
   `colourBy`: `{"op":"count"|"sum"|"avg","field":"<col>"}`. `output`: `choropleth` | `points`.
-- `alerts`: `{"show": true, "states": ["firing","pending"], "filter": "team=sre", "folders": [...], "sources": [...], "placeLabel": "auto"}`.
-  `show` must be true.
+- `alerts`: `{"show": true, "states": ["firing","pending"], "filter": "team=sre", "folders": [...], "sources": [...], "placeLabel": "auto",
+  "entityLabel": "vehicle_id", "entityField": "vehicle", "zones": true, "zoneLabel": "fence", "zoneField": "fence"}`.
+  `show` must be true. Alerts are placed by their labels (coordinates, geohash, region, airport, country, site…).
+  Geofences (Plus main, not released yet): `entityLabel` puts an alert on the latest position of the entity it names in
+  the panel's own data (`entityField` column, default the label's name) and follows it on every refresh; `zones`
+  (default on) draws each rule's `geofence` annotation (GeoJSON or WKT) under the other layers, red firing, amber
+  pending, blue quiet; `zoneLabel` colours each fence by the alerts that name it, and draws every row of the panel's
+  data with a geometry and the `zoneField` column (fences from PostGIS) as a zone. A geofence rule on any data
+  source: query id, lat, lon; a SQL expression (`"format": "alerting"`, the condition itself) testing each row
+  against the polygon's edges by ray casting (no `ST_` functions there). Name the map's id column anything but
+  `vehicle_id`/`trip_id`: the free panel reads those as a trip id and renames them.
 
 ## Plus base maps
 
