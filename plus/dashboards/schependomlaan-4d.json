@@ -63,7 +63,7 @@
                 "mode": "markdown"
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -188,10 +188,10 @@
                 "mosaicSelection": "build",
                 "output": "variables",
                 "outsideOpacity": 35,
-                "pinned": "never",
+                "pinned": "scrolled",
                 "pinnedControls": "all",
                 "pinnedHeight": 52,
-                "pinnedPosition": "floating",
+                "pinnedPosition": "top",
                 "pinnedStyle": "solid",
                 "playMotion": "smooth",
                 "publishIntervalMs": 200,
@@ -287,11 +287,15 @@
                 "clickArea": false,
                 "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
                 "dimUnselected": false,
                 "fieldMappings": {},
                 "fitOnVariables": [],
                 "flowRenderMode": "straight",
                 "followGrafanaTheme": true,
+                "gazetteer": "public/gazetteer/countries.json",
+                "grafanaAnnotations": "show",
                 "haloStyle": "auto",
                 "hoverMaxAgeSeconds": 10,
                 "hoverPublishSpike": true,
@@ -299,7 +303,7 @@
                 "mapConfig": {
                   "config": {
                     "mapState": {
-                      "bearing": -32,
+                      "bearing": 5.311266168215042,
                       "dragRotate": true,
                       "globe": {
                         "config": {
@@ -348,25 +352,37 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": 51.84182,
-                      "longitude": 5.8361,
+                      "latitude": 51.84195107678219,
+                      "longitude": 5.836159716850254,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_3D",
                       "maxPitch": 85,
-                      "pitch": 58,
+                      "pitch": 62.826411469760224,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 18.9
+                      "zoom": 19.5405467990271
                     },
                     "mapStyle": {
-                      "styleType": "dark-matter",
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-liberty",
+                      "threeDBuildingColor": [
+                        230.92517894351974,
+                        227.2005792831404,
+                        223.47597962276103
+                      ],
                       "topLayerGroups": {},
                       "visibleLayerGroups": {
-                        "3d building": false,
+                        "3d building": true,
                         "border": false,
                         "building": true,
                         "label": true,
                         "land": true,
+                        "poi": true,
                         "road": true,
                         "water": true
                       }
@@ -374,6 +390,18 @@
                     "uiState": {
                       "locale": "en",
                       "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
                         "chart": {
                           "active": false
                         },
@@ -388,6 +416,15 @@
                       "theme": "dark"
                     },
                     "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
                       "filters": [
                         {
                           "animationWindow": "free",
@@ -408,45 +445,70 @@
                           "speed": 1,
                           "type": "timeRange",
                           "value": [
-                            1424908800000,
-                            1435622400000
+                            1424649600000,
+                            1438646400000
                           ],
                           "view": "side"
                         }
                       ],
+                      "groupBys": [],
                       "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 2.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
                         "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
                           "enabled": true,
                           "fieldsToShow": {
                             "grafana-A": [
                               {
-                                "format": null,
                                 "name": "task"
                               },
                               {
-                                "format": null,
                                 "name": "task_nl"
                               },
                               {
-                                "format": null,
                                 "name": "time"
                               },
                               {
-                                "format": null,
                                 "name": "finish_date"
                               },
                               {
-                                "format": null,
                                 "name": "kind"
                               },
                               {
-                                "format": null,
                                 "name": "as_built"
                               }
                             ]
                           }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
                         }
                       },
+                      "joins": [],
                       "layerBlending": "normal",
                       "layerOrder": [
                         "schependomlaan-4d"
@@ -465,9 +527,50 @@
                               "lng": "longitude"
                             },
                             "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
                             "isVisible": true,
                             "label": "Schependomlaan",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
                             "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
                               "colorRange": {
                                 "category": "Custom",
                                 "colorMap": [
@@ -517,6 +620,8 @@
                                 "name": "Schependomlaan",
                                 "type": "custom"
                               },
+                              "filled": true,
+                              "fixedRadius": false,
                               "modelActiveColour": [
                                 227,
                                 154,
@@ -531,7 +636,29 @@
                               "modelStartField": "auto",
                               "modelUnscheduled": true,
                               "modelUrl": "/datasets/schependomlaan/model.glb",
-                              "opacity": 1
+                              "opacity": 1,
+                              "outline": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
                             }
                           },
                           "id": "schependomlaan-4d",
@@ -541,10 +668,13 @@
                               "name": "colour_by",
                               "type": "string"
                             },
-                            "colorScale": "customOrdinal"
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
                           }
                         }
                       ],
+                      "overlayBlending": "normal",
                       "splitMaps": []
                     }
                   },
@@ -605,7 +735,7 @@
                 "variables": ""
               }
             },
-            "version": "2.3.1"
+            "version": "2.3.2"
           }
         }
       },
@@ -639,7 +769,7 @@
                 "variables": ""
               }
             },
-            "version": "2.3.1"
+            "version": "2.3.2"
           }
         }
       },
@@ -673,7 +803,7 @@
                 "variables": ""
               }
             },
-            "version": "2.3.1"
+            "version": "2.3.2"
           }
         }
       },
@@ -707,7 +837,7 @@
                 "variables": ""
               }
             },
-            "version": "2.3.1"
+            "version": "2.3.2"
           }
         }
       },
@@ -741,7 +871,7 @@
                 "variables": ""
               }
             },
-            "version": "2.3.1"
+            "version": "2.3.2"
           }
         }
       },
@@ -775,7 +905,7 @@
                 "variables": ""
               }
             },
-            "version": "2.3.1"
+            "version": "2.3.2"
           }
         }
       }
@@ -802,25 +932,12 @@
             "spec": {
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-2"
-              },
-              "height": 5,
-              "width": 24,
-              "x": 0,
-              "y": 6
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
                 "name": "panel-4"
               },
               "height": 4,
               "width": 6,
               "x": 0,
-              "y": 11
+              "y": 6
             }
           },
           {
@@ -833,7 +950,7 @@
               "height": 4,
               "width": 6,
               "x": 6,
-              "y": 11
+              "y": 6
             }
           },
           {
@@ -846,7 +963,7 @@
               "height": 4,
               "width": 6,
               "x": 12,
-              "y": 11
+              "y": 6
             }
           },
           {
@@ -859,7 +976,7 @@
               "height": 4,
               "width": 6,
               "x": 18,
-              "y": 11
+              "y": 6
             }
           },
           {
@@ -872,7 +989,20 @@
               "height": 18,
               "width": 15,
               "x": 0,
-              "y": 15
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              },
+              "height": 6,
+              "width": 9,
+              "x": 15,
+              "y": 10
             }
           },
           {
@@ -882,10 +1012,10 @@
                 "kind": "ElementReference",
                 "name": "panel-8"
               },
-              "height": 25,
+              "height": 19,
               "width": 9,
               "x": 15,
-              "y": 15
+              "y": 16
             }
           },
           {
@@ -898,7 +1028,7 @@
               "height": 7,
               "width": 15,
               "x": 0,
-              "y": 33
+              "y": 28
             }
           }
         ]
