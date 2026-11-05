@@ -195,7 +195,7 @@
                 "pinnedStyle": "solid",
                 "playMotion": "smooth",
                 "publishIntervalMs": 200,
-                "publishWhileDragging": false,
+                "publishWhileDragging": true,
                 "publishWhilePlaying": false,
                 "scale": "linear",
                 "selection": "range",
