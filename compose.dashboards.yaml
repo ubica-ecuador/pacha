@@ -1,0 +1,64 @@
+# Overlay: a dashboards repository of its own, beside this one. Pacha is the
+# stack; the dashboards an instance shows can live in another repo
+# (https://github.com/ubica-ecuador/pacha-dashboards for pacha.ubica.dev), with
+# what they need from the stack:
+#
+#   grafana/repositories/{local,github}.yaml  its Git Sync Repository
+#   dashboards/                                what that Repository syncs
+#   gateway/*.conf.template                    location blocks for the feeds server
+#   datasets/<name>/build.sh                   built on each instance, as here
+#
+#   DASHBOARDS_DIR=../pacha-dashboards docker compose -f compose.yaml -f compose.dashboards.yaml up --wait
+#
+# Or in .env, after whatever else COMPOSE_FILE already lists:
+#   DASHBOARDS_DIR=../pacha-dashboards
+#   COMPOSE_FILE=compose.yaml:compose.plus.yaml:compose.dashboards.yaml
+#
+# DASHBOARDS_DIR is required: a bind mount of a path that does not exist would
+# mount an empty folder, and the dashboards would silently disappear.
+#
+# A route reaches nginx only when the gateway starts (the image runs envsubst
+# over its templates then): after a pull that touched gateway/, check it with
+# `docker compose run --rm --no-deps -T gateway nginx -t`, then restart the
+# gateway. Dashboards need nothing: Git Sync brings them within a minute.
+services:
+  grafana:
+    environment:
+      # github.yaml in that repo reads these; the token is PACHA_GIT_TOKEN,
+      # which must be allowed to write that repo too.
+      DASHBOARDS_GIT_URL: ${DASHBOARDS_GIT_URL:-https://github.com/ubica-ecuador/pacha-dashboards}
+      DASHBOARDS_GIT_BRANCH: ${DASHBOARDS_GIT_BRANCH:-main}
+    volumes:
+      # Its Repository; without this mount, start.sh deletes it.
+      - type: bind
+        source: ${DASHBOARDS_DIR:?set DASHBOARDS_DIR to the dashboards repo's clone}/grafana/repositories
+        target: /etc/grafana/provisioning/repositories/dashboards
+        read_only: true
+      # Read-write: a local Repository writes saves back here. See scripts/dev-acl.sh.
+      - type: bind
+        source: ${DASHBOARDS_DIR}/dashboards
+        target: /var/lib/pacha/extra-dashboards
+
+  gateway:
+    environment:
+      # A route's key is a FEED_ variable in .env: the filter lets envsubst
+      # write it, and nothing else, into the templates. See feeds.conf.
+      NGINX_ENVSUBST_FILTER: '^(TRIMET|FRED|FEED)_'
+    # Only for the FEED_ keys above; envsubst never sees the rest.
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      # Sets the FEED_ keys .env lacks, empty, so a missing key refuses one feed
+      # rather than stopping nginx.
+      - ./gateway/feed-keys.envsh:/docker-entrypoint.d/15-feed-keys.envsh:ro
+      # Written to /etc/nginx/conf.d/feeds.d/, which the feeds server includes.
+      - type: bind
+        source: ${DASHBOARDS_DIR}/gateway
+        target: /etc/nginx/templates/feeds.d
+        read_only: true
+      # Served at /datasets/ after this repo's own; see feeds.conf.
+      - type: bind
+        source: ${DASHBOARDS_DIR}/datasets
+        target: /srv/datasets-extra
+        read_only: true

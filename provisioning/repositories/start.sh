@@ -158,7 +158,7 @@ set_home_dashboard() {
 # A local repository needs Grafana (uid 472) to write the mounted folder.
 warn_unwritable() {
   [ "$PACHA_REPO_TYPE" = local ] || return 0
-  for path in /var/lib/pacha/dashboards /var/lib/pacha/plus-dashboards; do
+  for path in /var/lib/pacha/dashboards /var/lib/pacha/plus-dashboards /var/lib/pacha/extra-dashboards; do
     [ -d "$path" ] || continue
     if touch "$path/.pacha-write-test" 2>/dev/null; then
       rm -f "$path/.pacha-write-test"

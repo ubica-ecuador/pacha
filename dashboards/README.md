@@ -19,6 +19,7 @@ One directory per folder. Its `_folder.json` holds the folder's uid and title.
 |------------|---------------------------|----------------------------------------|
 | Gallery    | `gallery/`                | examples on the free stack             |
 | Plus       | `../plus/dashboards/`     | what needs Kepler Plus; only with the Plus overlay |
+| Pacha dashboards | `$DASHBOARDS_DIR/dashboards/` | another repository's, free and Plus (tagged `plus`); only with `compose.dashboards.yaml` |
 | (root)     | `home.json`               | the home page: cards for every dashboard of both folders, read from Grafana's search; `start.sh` makes it the organisation's home |
 
 The home's cards show `../home/screenshots/<uid>.jpg` when it exists (`scripts/screenshots.mjs`

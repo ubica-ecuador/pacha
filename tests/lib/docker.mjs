@@ -35,8 +35,10 @@ export function remove(containerId) {
   sh('docker', ['rm', '-f', containerId]);
 }
 
+// From PACHA_DIR when set: the dashboards repo's tests run from their own clone
+// and still mean this stack.
 export function compose(args, opts = {}) {
-  return sh('docker', ['compose', ...args], opts);
+  return sh('docker', ['compose', ...args], { cwd: process.env.PACHA_DIR, ...opts });
 }
 
 // curl from inside another container's network namespace. It works even when

@@ -3,7 +3,10 @@
 Pacha is an open spatio-temporal stack: Grafana with DuckDB on the server, DuckDB-WASM in the
 browser (Chaski), Kepler.gl map panels and Business Charts, behind an nginx gateway that
 caches and keys the public feeds. The commercial Kepler Plus panel is an optional overlay
-(`compose.plus.yaml`). Most work here is **building dashboards**.
+(`compose.plus.yaml`). Most work here is **building dashboards**. **New dashboards go in
+[pacha-dashboards](https://github.com/ubica-ecuador/pacha-dashboards)** (cloned beside this one,
+mounted by `compose.dashboards.yaml`), with their gateway routes and datasets; this repo keeps
+the stack and the dashboards it already has. Its AGENTS.md says where each file goes.
 [README.md](README.md) is how to run the stack; [dashboards/README.md](dashboards/README.md) is
 the folder, tag and file conventions.
 

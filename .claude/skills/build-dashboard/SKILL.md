@@ -6,8 +6,11 @@ description: Build or change a Pacha Grafana dashboard — DuckDB on the server,
 # Building a Pacha dashboard
 
 A dashboard here is a Grafana v2 resource JSON (`apiVersion: dashboard.grafana.app/v2`) in
-`dashboards/gallery/` (free stack) or `plus/dashboards/` (needs Kepler Plus). Git Sync turns
-the file into a dashboard (on a GitHub-synced instance a push is live: see `AGENTS.md`).
+`dashboards/gallery/` (free stack) or `plus/dashboards/` (needs Kepler Plus). **A new one goes in
+the pacha-dashboards repo** (`dashboards/<uid>.json`, Plus ones tagged `plus`), with its routes
+and datasets: its AGENTS.md says where; the paths below are Pacha's, the dashboards to copy
+from. Git Sync turns the file into a dashboard (on a GitHub-synced instance a push is live: see
+`AGENTS.md`).
 
 ## The workflow
 

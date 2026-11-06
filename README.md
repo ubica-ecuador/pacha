@@ -191,6 +191,22 @@ Plus is in the Grafana plugin catalog as
 (`ubica-keplerplus-app`); what it adds and how to set it up are at
 [docs.ubica.dev/plus](https://docs.ubica.dev/plus/).
 
+## A dashboards repository of its own
+
+The dashboards an instance shows need not live here. `compose.dashboards.yaml` mounts another
+repository cloned beside this one, with what its dashboards need from the stack: its
+`dashboards/` (one more Git Sync repository, in its own folder), its gateway routes
+(`gateway/*.conf.template`, loaded into the `feeds` server, with keys from `FEED_*` variables in
+`.env`) and its datasets (`datasets/<name>/build.sh`, served at the same `http://feeds/datasets/`
+paths). Ubica's is [pacha-dashboards](https://github.com/ubica-ecuador/pacha-dashboards), where
+new dashboards of the live gallery are made:
+
+```bash
+DASHBOARDS_DIR=../pacha-dashboards docker compose -f compose.yaml -f compose.dashboards.yaml up --wait
+```
+
+Routes load when the gateway starts; dashboards arrive by Git Sync within a minute.
+
 ## Working on the Kepler panel
 
 ```bash

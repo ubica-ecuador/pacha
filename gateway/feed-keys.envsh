@@ -1,0 +1,13 @@
+# Sourced by the nginx image's entrypoint before envsubst (compose.dashboards.yaml
+# mounts it as 15-feed-keys.envsh). A ${FEED_*} key that a route of the
+# dashboards repo uses but .env does not set would be left as it is, which
+# nginx reads as an unknown variable and refuses to start: the whole gateway,
+# and Grafana behind it, down for one feed. Each such key is set empty instead,
+# as compose does for TRIMET_APP_ID, so only that feed's upstream refuses.
+for feed_key in $(grep -rhoE '\$\{FEED_[A-Z0-9_]+\}' /etc/nginx/templates/feeds.d 2>/dev/null | tr -d '${}' | sort -u); do
+  if ! printenv "$feed_key" >/dev/null; then
+    entrypoint_log "feed-keys: $feed_key is not set in .env; its feed will be refused upstream"
+    export "$feed_key="
+  fi
+done
+unset feed_key

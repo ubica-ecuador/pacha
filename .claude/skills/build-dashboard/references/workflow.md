@@ -126,7 +126,8 @@ On a GitHub-synced instance, only after the user approves the preview.
 
 ## When the stack itself changes
 
-- A new feed: a `location` in `gateway/feeds.conf`, checked with
+- A new feed: a `location` in `gateway/feeds.conf` (for a pacha-dashboards dashboard, in that
+  repo's `gateway/<feed>.conf.template`), checked with
   `docker compose run --rm --no-deps -T gateway nginx -t` before the gateway is restarted (ask
   first on a shared instance).
 - A new dataset: `datasets/<name>/build.sh` + `build.sql`; every instance must run it.

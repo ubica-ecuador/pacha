@@ -5,7 +5,10 @@
 # Once per clone, on Linux. Public instances sync with GitHub and need none.
 set -eu
 cd "$(dirname "$0")/.."
-for dir in dashboards plus/dashboards; do
+# With compose.dashboards.yaml, the dashboards repo's dashboards/ as well.
+dirs="dashboards plus/dashboards"
+[ -n "${DASHBOARDS_DIR:-}" ] && dirs="$dirs $DASHBOARDS_DIR/dashboards"
+for dir in $dirs; do
   setfacl -R -m u:472:rwX -m d:u:472:rwX -m "d:u:$(id -u):rwX" "$dir"
 done
-echo "Grafana can now write dashboards/ and plus/dashboards/."
+echo "Grafana can now write: $dirs."
