@@ -85,6 +85,13 @@ test('opens with every panel drawn, follows a window to 1937 and asks IGN for th
     const km = Number((await card('Kilometres open')).replace(/\D/g, ''));
     assert.ok(km > 145 && km < 165, `${km} km`);
     assert.equal(await card('Lines'), '15');
+    // A click on a line's bar keeps that line: the coloured bars let it through to the toggle's.
+    const byLine = await view.panel('Line by line: click to pick lines');
+    const label = await byLine.locator('svg text').filter({ hasText: /^Line 4$/ }).first().boundingBox();
+    await view.page.mouse.click(label.x + label.width + 60, label.y + label.height / 2);
+    await view.page.waitForFunction(() => new URL(location.href).searchParams.get('var-line') === 'Line 4', null, { timeout: 30_000 });
+    await view.page.waitForTimeout(2000);
+    assert.equal(await card('Lines'), '1');
     assert.equal(await view.panelErrors(), 0);
     assert.deepEqual(await view.page.getByTestId('mosaic-error').allInnerTexts(), []);
     // The picture comes after the service's capabilities, about a megabyte.

@@ -78,7 +78,7 @@
               "transformations": []
             }
           },
-          "description": "Kilometres of each line open in the timeline's window. Click a line to keep only it on the map and in the figures; shift-click to add one; click it again to let go.",
+          "description": "Kilometres of each line open in the timeline's window. Click a line to keep only it on the map, the cards and the five-year chart (the timeline shows it as a pill, with a × to let go); shift-click to add one.",
           "id": 8,
           "links": [],
           "title": "Line by line: click to pick lines",
@@ -93,7 +93,7 @@
               "options": {
                 "preaggregate": true,
                 "reads": "",
-                "spec": "# Kilometres of each line open in the timeline's window. A click picks the line\n# (toggleY), a clause on line in the metroFilters selection: the map, the cards\n# and the five-year chart keep to it. The grey bars are the toggle's own mark,\n# which its clause leaves out, so every line stays to click; the bars drawn\n# after it follow every clause, so only the lines picked keep their colour.\nparams:\n  metroFilters: { select: crossfilter }\nplot:\n  - mark: barX\n    data: { from: segments, filterBy: $metroFilters }\n    x: { sum: km }\n    y: line\n    fill: 'rgba(128, 128, 128, 0.3)'\n  - select: toggleY\n    as: $metroFilters\n  - mark: barX\n    data: { from: segments, filterBy: $metroFilters }\n    x: { sum: km }\n    y: line\n    fill: line\nxDomain: [0, 30]\nyDomain: ['Line 1', 'Line 2', 'Line 3', 'Line 3bis', 'Line 4', 'Line 5', 'Line 6', 'Line 7', 'Line 7bis', 'Line 8', 'Line 9', 'Line 10', 'Line 11', 'Line 12', 'Line 13', 'Line 14']\nxLabel: Kilometres open →\nyLabel: null\nmarginLeft: 70\ncolorDomain: ['Line 1', 'Line 2', 'Line 3', 'Line 3bis', 'Line 4', 'Line 5', 'Line 6', 'Line 7', 'Line 7bis', 'Line 8', 'Line 9', 'Line 10', 'Line 11', 'Line 12', 'Line 13', 'Line 14']\ncolorRange: ['#FFBE00', '#0055C8', '#6E6E00', '#82C8E6', '#A0006E', '#FF5A00', '#82DC73', '#FF82B4', '#82DC73', '#D282BE', '#D2D200', '#DC9600', '#6E491E', '#00643C', '#82C8E6', '#640082']\n",
+                "spec": "# Kilometres of each line open in the timeline's window. A click picks the line\n# (toggleY), a clause on line in the metroFilters selection: the map, the cards\n# and the five-year chart keep to it, and the timeline shows it as a pill. This\n# chart keeps every bar: Mosaic leaves a clause out of the whole plot it came\n# from, so a second layer here could not show the pick either.\nparams:\n  metroFilters: { select: crossfilter }\nplot:\n  - mark: barX\n    data: { from: segments, filterBy: $metroFilters }\n    x: { sum: km }\n    y: line\n    fill: line\n  - select: toggleY\n    as: $metroFilters\nxDomain: [0, 30]\nyDomain: ['Line 1', 'Line 2', 'Line 3', 'Line 3bis', 'Line 4', 'Line 5', 'Line 6', 'Line 7', 'Line 7bis', 'Line 8', 'Line 9', 'Line 10', 'Line 11', 'Line 12', 'Line 13', 'Line 14']\nxLabel: Kilometres open →\nyLabel: null\nmarginLeft: 70\ncolorDomain: ['Line 1', 'Line 2', 'Line 3', 'Line 3bis', 'Line 4', 'Line 5', 'Line 6', 'Line 7', 'Line 7bis', 'Line 8', 'Line 9', 'Line 10', 'Line 11', 'Line 12', 'Line 13', 'Line 14']\ncolorRange: ['#FFBE00', '#0055C8', '#6E6E00', '#82C8E6', '#A0006E', '#FF5A00', '#82DC73', '#FF82B4', '#82DC73', '#D282BE', '#D2D200', '#DC9600', '#6E491E', '#00643C', '#82C8E6', '#640082']\n",
                 "variables": "- param: metroFilters\n  column: line\n  variable: line\n"
               }
             },
