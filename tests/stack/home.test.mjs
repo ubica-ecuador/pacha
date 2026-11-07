@@ -33,7 +33,7 @@ test('conventions: uid, description, tags, no time picker', () => {
   assert.equal(spec.timeSettings.hideTimepicker, true);
 });
 
-test('the cards repeat over the Gallery and Plus folders, read from the search API', async () => {
+test('the cards repeat over the Gallery and Plus folders and the dashboards repo\'s, read from the search API', async () => {
   const repeats = findAll(spec.layout, (n) => n.repeat?.mode === 'variable').map((n) => n.repeat.value);
   assert.deepEqual(repeats.sort(), ['gallery', 'plus']);
   const gallery = await uidsOf('gallery');
@@ -43,6 +43,14 @@ test('the cards repeat over the Gallery and Plus folders, read from the search A
   const provisioned = await api(STACK_URL, '/api/dashboards/uid/f1-race-laps');
   if (provisioned.status === 200) assert.ok(plus.includes('f1-race-laps'));
   else assert.equal(plus.length, 0);
+  // With compose.dashboards.yaml, the dashboards repo's folder joins them: its
+  // free dashboards with the Gallery's, those tagged plus with Plus's.
+  const extra = await api(STACK_URL, '/api/search?type=dash-db&folderUIDs=dashboards&limit=500', { anonymous: true });
+  for (const d of extra.json ?? []) {
+    if (!d.tags.includes('plus')) assert.ok(gallery.includes(d.uid), `${d.uid} with the Gallery`);
+    else if (provisioned.status === 200) assert.ok(plus.includes(d.uid), `${d.uid} with Plus`);
+  }
+  assert.ok(gallery.every((uid) => !plus.includes(uid)), 'a card in both sections');
 });
 
 test('every screenshot is named after a dashboard, and the gateway serves them with the assets', async () => {

@@ -7,6 +7,7 @@
 #   dashboards/                                what that Repository syncs
 #   gateway/*.conf.template                    location blocks for the feeds server
 #   datasets/<name>/build.sh                   built on each instance, as here
+#   screenshots/<uid>.jpg                      its cards on the home page
 #
 #   DASHBOARDS_DIR=../pacha-dashboards docker compose -f compose.yaml -f compose.dashboards.yaml up --wait
 #
@@ -61,4 +62,9 @@ services:
       - type: bind
         source: ${DASHBOARDS_DIR}/datasets
         target: /srv/datasets-extra
+        read_only: true
+      # Served at /home/screenshots/ after this repo's own; see default.conf.
+      - type: bind
+        source: ${DASHBOARDS_DIR}/screenshots
+        target: /srv/home-extra/screenshots
         read_only: true

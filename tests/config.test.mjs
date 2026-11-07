@@ -64,6 +64,7 @@ test('compose.dashboards.yaml mounts the repo: its Repository read-only, its das
   assert.ok(!mount('grafana', '/var/lib/pacha/extra-dashboards')?.read_only);
   assert.equal(mount('gateway', '/etc/nginx/templates/feeds.d')?.source, '/tmp/pd/gateway');
   assert.equal(mount('gateway', '/srv/datasets-extra')?.source, '/tmp/pd/datasets');
+  assert.equal(mount('gateway', '/srv/home-extra/screenshots')?.source, '/tmp/pd/screenshots');
   assert.match(config.services.gateway.environment.NGINX_ENVSUBST_FILTER, /FEED/);
 });
 
