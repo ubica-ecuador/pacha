@@ -39,7 +39,7 @@ needs it; the other facets change only with the stack.
 - **Theme and behaviour:** `seismic`, `mobility`, `transit`, `energy`,
   `air-quality`, `gps`, `weather`, `migration`, `maritime`, `aviation`,
   `network`, `space`, `wildlife`, `sport`, `satellite`, `water`,
-  `demographics`, `buildings`, `live` (feeds that reload
+  `demographics`, `buildings`, `city` (what a city is asked for and how it answers), `live` (feeds that reload
   by themselves), `alerting` (a Grafana alert rule drawn on the map).
 
 Every Plus dashboard carries `plus`: filter what needs Plus with it.

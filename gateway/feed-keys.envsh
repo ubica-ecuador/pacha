@@ -6,7 +6,7 @@
 # as compose does for TRIMET_APP_ID, so only that feed's upstream refuses.
 for feed_key in $(grep -rhoE '\$\{FEED_[A-Z0-9_]+\}' /etc/nginx/templates/feeds.d 2>/dev/null | tr -d '${}' | sort -u); do
   if ! printenv "$feed_key" >/dev/null; then
-    entrypoint_log "feed-keys: $feed_key is not set in .env; its feed will be refused upstream"
+    entrypoint_log "feed-keys: $feed_key is not set in .env; its routes send it empty"
     export "$feed_key="
   fi
 done
