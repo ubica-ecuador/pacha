@@ -635,7 +635,7 @@
                               "modelIdField": "guid",
                               "modelStartField": "auto",
                               "modelUnscheduled": true,
-                              "modelUrl": "/datasets/schependomlaan/model.glb",
+                              "modelUrl": "https://pacha.ubica.dev/datasets/schependomlaan/model.glb",
                               "opacity": 1,
                               "outline": false,
                               "radius": 10,
