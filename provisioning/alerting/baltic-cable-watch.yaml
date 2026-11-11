@@ -36,6 +36,8 @@ groups:
         rawQuery: true
         rawSql: |-
           SET force_download = true;
+          -- The setting would outlive this query on the pooled connection it ran on, and stop the range reads of every Parquet read there later, so the result goes through a temp table (one per connection) and the setting is put back before it is returned.
+          CREATE OR REPLACE TEMP TABLE fd_baltic_alert AS
           WITH heard AS (
             -- Digitraffic: the latest position of each ship its AIS stations heard; a ship
             -- counts while it was heard in the last 15 minutes.
@@ -103,6 +105,9 @@ groups:
           SELECT mmsi, ship, flag, type, cable, kind, signature,
                  CASE signature WHEN 'Dragging anchor' THEN 'critical' ELSE 'warning' END AS severity
           FROM lingering
+          ;
+          SET force_download = false;
+          SELECT * FROM fd_baltic_alert
     - refId: B
       relativeTimeRange:
         from: 0
