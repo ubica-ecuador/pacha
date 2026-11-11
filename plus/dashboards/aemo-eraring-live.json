@@ -555,7 +555,7 @@
                               "modelIdField": "duid",
                               "modelStartField": "auto",
                               "modelUnscheduled": true,
-                              "modelUrl": "/datasets/eraring/model.glb",
+                              "modelUrl": "https://pacha.ubica.dev/datasets/eraring/model.glb",
                               "opacity": 1
                             }
                           },
