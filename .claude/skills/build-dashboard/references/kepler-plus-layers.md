@@ -11,7 +11,7 @@ Like any layer in `config.visState.layers[]`:
 `{"id","type","config":{"dataId":"grafana-<refId>","label","columns","columnMode","isVisible":true,"visConfig":{...},"textLabel":[...]},"visualChannels":{...}}`.
 kepler never adds these types by itself.
 
-- Point-based types (gauge, prism, coverage, surface, sparkline, fleet, model4d):
+- Point-based types (gauge, prism, coverage, surface, sparkline, callout, fleet, model4d):
   `"columns":{"lat":"latitude","lng":"longitude"}`, `"columnMode":"points"`.
 - Colour: `visualChannels.colorField = {"name":"<col>","type":"real"|"integer"|"string"}` plus
   `visConfig.colorRange`. Thresholds: `"colorScale":"custom"` and
@@ -27,7 +27,10 @@ kepler never adds these types by itself.
 - `historyField`: `color` (default) | `off` | a numeric column: the series in the popup
   (gauge, prism, coverage, traffic, pipeline).
 
-## The nine types
+## The ten types
+
+What is marked "Plus after 1.6.0" is on Plus main, not in the 1.6.0 release: check the Plus
+version the instance runs before using it.
 
 **gauge**: a ring or filling marker per point; `colorField` is both value and colour.
 `gaugeShape` ring|thermometer|tank|battery|drop|icon (`gaugeIcon`), `gaugeMin` (0),
@@ -66,7 +69,18 @@ on the map, laid over the ground of its tiles, buildings standing through it; fl
 `sparkSize` S|M|L, `sparkCards` auto|hover, `sparkOverlap`, `sparkDots`, `sparkDotsOnTop` (true:
 the dots over the base map's top groups, as the cards always are), `sparkAlerts` +
 `sparkNoDataAfter`, `sparkCrosshair` (follows `cursorSync`). Example: `germany-power-borders`,
-`melbourne-city-sensors`.
+`melbourne-city-sensors`. Plus after 1.6.0: the cards of several card layers on one map keep off each
+other, the layer higher in the list first.
+
+**callout** ("3D Callout", Plus after 1.6.0): a sparkline whose cards stand on a vertical stem above
+their places, the way a 3D map labels summits or a building's sensors. Same rows, keys and `spark*`
+settings as sparkline, plus `"columns":{"lat","lng","altitude"}`: the height is the altitude column
+plus `calloutLift` (m), on `calloutBase` column (as it is) | ground | surface (the ground, or the
+roof or canopy, under the place in a `tile3d` layer on the map; 0 without one). `calloutStem`
+(shortest stem, px, 36); cards climb to clear each other. `calloutAlertLabel` (`auto` = the label
+named like the id column, `""` = none): a firing Grafana alert whose label holds a place's id keeps
+its callout on top with the rule's name in red; it needs the panel's `alerts.show` and
+`alerts.entityLabel` set to the same label (only placed alerts reach the layers).
 
 **traffic**: animated links. `"columns":{"lat0","lng0","lat1","lng1"}`, `"columnMode":"points"`.
 `colorField`, `sizeField`, `speedField` and their `reverse*` twins; `trafficDirectionMode`
@@ -79,7 +93,9 @@ straight|lanes|split, `trafficLaneBend`, `trafficShape` flat|arc, `trafficArcHei
 `"columnMode":"geojson"`. Colour is `strokeColorField` (+ `strokeColorScale`,
 `visConfig.strokeColorRange`), **not** `colorField`. `sizeField`, `speedField`,
 `altitudeField`, `pipelineLaneGap`, `pipelineAltitude`, `pipelineReverse`,
-`pipelineSignedSpeed`. Example: `nyc-skyline-plus` (subway floating over buildings).
+`pipelineSignedSpeed`. Example: `nyc-skyline-plus` (subway floating over buildings). Plus after
+1.6.0: a line whose vertices change height (a riser, a pipe up a level) draws with its width facing
+the screen; before, it drew nothing.
 
 **fleet**: each asset once, where it is now, with a trail. Needs an asset and a time column.
 - `fleetAssetField` / `fleetTimeField`: **set both explicitly** when the frame has other
@@ -107,14 +123,20 @@ straight|lanes|split, `trafficLaneBend`, `trafficShape` flat|arc, `trafficArcHei
   and chase zoom in to street level from far out: for a storm or anything seen from afar use custom.
 - Trails do not break at the antimeridian: unwrap longitudes per asset in SQL (cumulative
   ±360 on jumps > 180), then shift so the newest point is in [-180, 180].
+- Indoors (Plus after 1.6.0): positions in a building's frame (`model_x`, `model_y`, `model_z`,
+  `model_heading`; see "Data in a model's frame" below) with `fleetAltitudeField: "altitude"`,
+  `fleetDisplay: "3d"`, `fleetStem: false`, `fleetTimeRef: "history"` for a replay, and the 4D
+  Model's `opacity` under 1, or it hides the assets inside it.
 - Examples: live `gtfs-rt-mbta-fleet`, `trimet-live-fleet`, `air-traffic-world`; replay
   `f1-race-laps`, `drone-delivery-flights`.
 
 **model4d** ("4D Model", Plus after 1.5.0): a glTF model whose parts are built in time (BIM 4D).
 One row per part: an id column naming a node of the model (an IFC GlobalId), start and finish
 timestamps, and the model's origin in `latitude`/`longitude` on every row.
-- `modelUrl` (a `.glb` the browser can fetch: a model built on the instance is served by the
-  gateway at `/datasets/<name>/<file>.glb`), `modelIdField`, `modelStartField`,
+- `modelUrl`: an `https://` address the browser can fetch, or a file of the plugin; a path such as
+  `/datasets/...` is refused (the map says "model URL is refused" and draws nothing). A model built
+  on the instance is served by the gateway at `/datasets/<name>/<file>.glb`: name it by the
+  instance's public address, `https://<host>/datasets/<name>/<file>.glb`. `modelIdField`, `modelStartField`,
   `modelFinishField` (`auto` or a column; auto start includes `time`), `modelHeading` (degrees
   clockwise from north), `modelAltitude` (m).
 - The instant is the end of a time filter on the start column (a Time Brush through
@@ -123,10 +145,63 @@ timestamps, and the model's origin in `latitude`/`longitude` on every row.
   layer: `colorField` with `customOrdinal`). `modelUnscheduled`: draw parts no row names.
 - The SQL's start column named `time`, a TIMESTAMP, is what the panel's time filter and the
   layer's auto both find.
+- State mode (`modelMode: "state"`, Plus after 1.6.0): rows are readings (id, time, values,
+  origin), any number per part; each part takes `colorField`'s colour of its latest reading at
+  or before the instant (custom thresholds or `customOrdinal`), so a Time Brush replays the asset
+  and the dashboard's end shows it now. `modelTimeField` (`auto`: time, ts, timestamp…;
+  `none`: every row current, a part's last row wins), `modelNoReading` ghost|hide,
+  `modelStaleMinutes` (a reading older than this counts as none; 0 never). Start, finish,
+  `modelBuiltColour` and `modelActiveColour` are ignored. Up to 256 named parts each hovers with
+  its own row; above, parts of one colour draw as one mesh and do not hover. A Time Brush with
+  `followLatest: true` keeps a live map on the newest reading until someone brushes back.
+- `opacity` under 1 (Plus after 1.6.0) draws the model see-through, writing no depth: what stands
+  inside it (Fleet assets on a floor, a callout's anchor, a room) shows. Opaque, it hides them.
 - Example: `schependomlaan-4d` (model and schedule from `datasets/schependomlaan/build.sh`): Chaski
   datasets, the Time Brush (incremental, smooth) in the Mosaic Selection `build` on `time`, and Mosaic
   cards, Gantt and S-curve that read the instant as the latest day kept (`max`/`argmax` over a daily
   table, a `ruleX` at `{ max: time }`). The map follows the brush through `timeSync: variables`.
+
+## Cards on other layers (Plus after 1.6.0)
+
+gauge, prism, coverage, traffic, pipeline and model4d take a card per object (a site, a sector, a
+link, a pipe, a part) with its reading at the map's instant and its series, instead of kepler's
+popup or always, from the same query: no sparkline layer beside them. visConfig:
+- `cardShow` `tooltip` (default: kepler's popup, saved maps unchanged) | `hover` (a card instead of
+  the popup, pinnable; pins in `cardPinned`) | `always`.
+- `cardPlacement` `beside` | `above` (on a stem; model4d's default, at each part's top).
+- `cardValueField` `color` (the colour field, when numeric) or a numeric column; `cardTimeField`
+  `auto` | `none` (value only) | a column; `cardNameField`, `cardUnit`, `cardSize` S|M|L,
+  `cardScale` common|perSite, `cardMin`/`cardMax` (`auto` or a number).
+- `cardAlertLabel` (`""` = none): with the panel's `alerts.show` and `alerts.entityLabel` set to the
+  same label, a firing alert whose label holds an object's value (in the column of that name, else
+  the object's key) marks its card on top with the rule's name in red; with `cardShow: "hover"` it
+  shows without a hover while the alert fires.
+- Anchors: a gauge's or a sector's site; a prism's top when `prismUnits` is `m` (its base in px);
+  halfway along a link, or along a pipeline at its height there (a riser's card halfway up); a
+  model4d part's top, once the model has loaded.
+- A 4D Model in State mode gives each part its colour and its card from one query.
+- The panel renames a column `flow` to `count` (it reads it as an OD count): a card or stroke field
+  named `flow` reads nothing; name it otherwise.
+
+## Data in a model's frame (Plus after 1.6.0)
+
+Any query on a map with a model4d layer can be written in the model's own coordinates instead of
+latitude and longitude. Columns, by these exact names:
+- `model_x`, `model_y`: metres east and north of the model's origin, before `modelHeading` turns
+  it; `model_z`: metres up (optional). Coordinates read off a glTF file (Y up, −Z north): x, −z, y.
+- `model_part`: a node name of the model; the row stands on the top of that part, centred on its
+  footprint, `model_x/y/z` offsetting it. Placed once the model has loaded.
+- `model_heading` (optional): degrees clockwise from the model's north; becomes `heading`.
+- `model_geometry` (optional): GeoJSON in the model's metres, `[x, y]` or `[x, y, z]` (DuckDB
+  `ST_AsGeoJSON` of local-metre geometry); becomes `geometry` for kepler's geojson layer (rooms:
+  polygons at their floor's z, `enable3d` with a height field) and pipeline (pipes with z).
+- `model` (optional): which model4d layer, by label or id; else the map's first.
+
+The rows gain `latitude`, `longitude`, `altitude` (replacing columns of those names) before any
+layer, Places or Alerts read them: set the layer's columns to `latitude`, `longitude` and, in 3D,
+`altitude`. They follow the model when its Heading or Altitude change, before a save. A row whose
+part is unknown or not loaded yet is drawn nowhere. Alerts with `entityLabel` are placed on these
+rows too.
 
 Minimal gauge layer:
 
@@ -158,6 +233,8 @@ Minimal gauge layer:
   source: query id, lat, lon; a SQL expression (`"format": "alerting"`, the condition itself) testing each row
   against the polygon's edges by ray casting (no `ST_` functions there). Name the map's id column anything but
   `vehicle_id`/`trip_id`: the free panel reads those as a trip id and renames them.
+  Cards and callouts (Plus after 1.6.0): `cardAlertLabel` / `calloutAlertLabel` with `entityLabel` set
+  to the same label mark the card of the entity an alert names.
 
 ## Plus base maps
 
