@@ -69,6 +69,7 @@ here, in the same shape: symptom, cause, fix.
 | A Business Chart writes a variable on click but its highlight stays on the old value | the panel redraws only when its query or code names that variable | name it: `${var}` in the code (redraws without re-querying) or `-- ${var:raw}` in the SQL |
 | "Malformed JSON", about 1 query in 800, on a feed refreshed often | DuckDB's external file cache mixed two versions of a file | already off instance-wide; don't turn it on |
 | "the remote file has changed" | a source that rebuilds the file per request | cache it in the gateway |
+| A remote Parquet read is slow, and the gateway log shows `200` with the whole file instead of `206` ranges | `force_download` left on by an earlier query on the same pooled connection | start the query with `SET force_download = false;`, and never leave it on (temp-table pattern in spatial-sources.md) |
 | "HTTP 0" from DuckDB | the server answered HEAD with 405, or ERDDAP refused a subset (400) | use another endpoint, or make every ERDDAP subset identical |
 | `INSTALL` or local file read fails | by design: local filesystem off, no install | only the preloaded extensions; data from URLs |
 | `http_get` times out | `http_client` gives up after about 10 s | batch; cache in the gateway |

@@ -53,9 +53,22 @@ wrong region. The index answers 429 after about 5 reads: read it once per load.
 
 **Remote CSV, JSON, GeoJSON** (pacha: `earthquakes`):
 `read_json(url)` + `unnest(features) AS t(f)`, then `f.geometry.coordinates[2]::DOUBLE AS latitude`.
-`read_csv` for CSV; `maximum_object_size` for big JSON. `SET force_download = true` only for
-endpoints that rebuild the file per request, and only through the gateway's cache in pacha
-(it persists on the shared connection).
+`read_csv` for CSV; `maximum_object_size` for big JSON. `SET force_download = true` (one GET,
+no HEAD) only where DuckDB's HEAD fails: a gateway route that gunzips (no Content-Length) or
+renews its copy in the background (HEAD and GET see two versions). The server DuckDB is a pool
+of connections and a `SET` stays on the one it ran on, turning every later range read into a
+big Parquet there into a full download. So never leave it on: read into a temp table (one per
+connection), put it back, return the table (pacha: `trimet-live`, `mareas-ecuador`):
+
+```sql
+SET force_download = true;
+CREATE OR REPLACE TEMP TABLE fd_mydash_1 AS
+SELECT ... FROM read_json('http://feeds/...');
+SET force_download = false;
+SELECT * FROM fd_mydash_1
+```
+
+A query that reads big Parquet by ranges can also start with `SET force_download = false;`.
 
 **XLSX** (pacha: `international-migration`): `read_xlsx(url, sheet=…, range='A11:AE40000', all_varchar=true)`,
 then `UNPIVOT`. Join to Natural Earth centroids for flows. When nothing matches, emit one
