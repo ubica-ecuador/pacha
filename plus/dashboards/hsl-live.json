@@ -70,7 +70,7 @@
                 "overrides": []
               },
               "options": {
-                "content": "### Helsinki's trams, metro, trains, ferries and buses, as they move\n\nEvery vehicle of Helsinki Region Transport (HSL) reports where it is **once a second** to a public MQTT broker. Grafana's MQTT datasource subscribes to it, and the positions reach this page through **Grafana Live**, a websocket: nothing polls, and nothing is stored. The map moves the vehicles as their reports arrive and keeps a two-minute trail behind each; an arrow is moving, a dot is stopped. Pick the kind of vehicle above.\n\nThe figures on the right are counted in the browser over what has arrived since the page opened. Trams run from about 5:30 to 1:30 Helsinki time, the metro from 5:30 to 23:30; at night only a few buses and trains report. Buses are many hundreds by day: expect a busier page.\n\nData: HSL high-frequency positioning (HFP v2), `mqtt.hsl.fi`, © Helsinki Region Transport, CC BY 4.0.",
+                "content": "### Helsinki's trams, metro, trains, ferries and buses, as they move\n\nEvery vehicle of Helsinki Region Transport (HSL) reports where it is **once a second** to a public MQTT broker. Grafana's MQTT datasource subscribes to it, and the positions reach this page through **Grafana Live**, a websocket: nothing polls, and nothing is stored. The map moves the vehicles as their reports arrive and keeps a trail of up to a minute behind each; an arrow is moving, a dot is stopped. Pick the kind of vehicle above.\n\nThe map, the figures and the table on the right all work on the newest 20,000 reports the browser keeps: on a weekday evening, about 50 seconds of trams (HSL sends each tram report four times) or 35 seconds of buses. Trams run from about 5:30 to 1:30 Helsinki time, the metro from 5:30 to 23:30; at night only a few buses and trains report. Buses are many hundreds by day: expect a busier page.\n\nData: HSL high-frequency positioning (HFP v2), `mqtt.hsl.fi`, © Helsinki Region Transport, CC BY 4.0.",
                 "mode": "markdown"
               }
             },
@@ -541,7 +541,7 @@
                               "fleetStopSpeed": 2,
                               "fleetTimeField": "time",
                               "fleetTimeRef": "live",
-                              "fleetTrail": 2,
+                              "fleetTrail": 1,
                               "fleetTrailAnimate": false,
                               "fleetTrailDashLength": 0.5,
                               "fleetTrailFade": true,
@@ -708,7 +708,7 @@
               ]
             }
           },
-          "description": "Distinct vehicles heard since the page opened.",
+          "description": "Distinct vehicles among the newest 20,000 reports the browser keeps: under a minute of them.",
           "id": 3,
           "links": [],
           "title": "Vehicles",
