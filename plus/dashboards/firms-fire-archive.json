@@ -27,7 +27,7 @@
       }
     ],
     "cursorSync": "Crosshair",
-    "description": "Every active fire NASA satellites detected since 2000, as the A5 cells of the Portolan FIRMS mirror read in the browser: a time brush over years or days, a latitude raster where the fire seasons swing across the equator, a calendar of months, countries and a strip of filters that cross-filter one another with Chaski and Mosaic, and a map whose cells give way to the single detections of the window when zoomed in.",
+    "description": "Every active fire NASA satellites detected since 2000, as the A5 cells of the Portolan FIRMS mirror read in the browser: a time brush over years or days, a latitude raster where the fire seasons swing across the equator, a calendar of months, countries and a strip of filters that cross-filter one another with Chaski and Mosaic, and a map whose cells give way to finer cells and then to the single detections of the window as you zoom in.",
     "editable": true,
     "elements": {
       "panel-about": {
@@ -59,7 +59,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "**NASA FIRMS active fire detections** since November 2000, from the\n[Portolan mirror](https://portolan-mirrors.github.io/firms-catalog/) on\n[Source Cooperative](https://source.coop/portolan-mirrors/firms-catalog) (CC0-1.0; NASA LANCE FIRMS is the producer and\nthe authority). This dashboard reads the aggregates the mirror builds beside the 630 million detections: each A5 cell of\nresolution 5 with its count per day for the current year (`year=YYYY/aggregate-r5.parquet`) and per month for the whole\nrecord (`alltime-r5.parquet`), the same grid and buckets the\n[Portolan FIRMS explorer](https://portolan-mirrors.github.io/firms-catalog/) draws from its PMTiles. Your browser reads\nthem with Chaski; the server only turns the cell outlines into GeoJSON and gives each cell a country\n([Natural Earth](https://www.naturalearthdata.com/) 1:110m, the one covering most of it). Zoomed in, the map shows the detections themselves (`year=YYYY/detections.parquet`), which the server reads only where the view is: the files are sorted along a Hilbert curve, so a few row groups of each year cover it.\n\n- **Counts depend on the fleet.** MODIS on Terra (2000) and Aqua (2002), then VIIRS on Suomi-NPP (2012), NOAA-20 (2018)\n  and NOAA-21 (2024): each adds overpasses, and the count of 2012 is 5.5 times that of 2011 with no change in fire.\n  The calendar shows shares within each year for that reason.\n- **The aggregates hold counts only**, per cell and bucket: no satellite, day or night, or fire radiative power per\n  day. The detections layer of the zoomed-in map has them.\n- **The all-time file is rebuilt less often** than the year files, so the current year comes from its own file, by\n  day and rolled up to months.\n\n**Credits.** The mirror, its A5 aggregates and the explorer that inspired this dashboard are the work of **Chris Holmes** ([Portolan](https://www.portolan-sdi.org)), who tells how he built them in [Building Portolan: FIRMS](https://www.portolan-sdi.org/es/blog/building-portolan-firms).",
+                "content": "**NASA FIRMS active fire detections** since November 2000, from the\n[Portolan mirror](https://portolan-mirrors.github.io/firms-catalog/) on\n[Source Cooperative](https://source.coop/portolan-mirrors/firms-catalog) (CC0-1.0; NASA LANCE FIRMS is the producer and\nthe authority). This dashboard reads the aggregates the mirror builds beside the 630 million detections: each A5 cell of\nresolution 5 with its count per day for the current year (`year=YYYY/aggregate-r5.parquet`) and per month for the whole\nrecord (`alltime-r5.parquet`), the same grid and buckets the\n[Portolan FIRMS explorer](https://portolan-mirrors.github.io/firms-catalog/) draws from its PMTiles. Your browser reads\nthem with Chaski; the server only turns the cell outlines into GeoJSON and gives each cell a country\n([Natural Earth](https://www.naturalearthdata.com/) 1:110m, the one covering most of it). Zoomed in, the server reads the finer aggregates of resolution 8 (`alltime-r8.parquet` by month, `year=YYYY/aggregate-r8.parquet` by day), and where the view and the window hold fewer than 50,000 detections, the detections themselves (`year=YYYY/detections.parquet`), only where the view is: the files are sorted along a Hilbert curve, so a few row groups of each year cover it. Pacha's gateway keeps what it has read of the mirror for a month, so a region seen once comes back at once.\n\n- **Counts depend on the fleet.** MODIS on Terra (2000) and Aqua (2002), then VIIRS on Suomi-NPP (2012), NOAA-20 (2018)\n  and NOAA-21 (2024): each adds overpasses, and the count of 2012 is 5.5 times that of 2011 with no change in fire.\n  The calendar shows shares within each year for that reason.\n- **The aggregates hold counts only**, per cell and bucket: no satellite, day or night, or fire radiative power per\n  day. The detections layer of the zoomed-in map has them.\n- **The all-time file is rebuilt less often** than the year files, so the current year comes from its own file, by\n  day and rolled up to months.\n\n**Credits.** The mirror, its A5 aggregates and the explorer that inspired this dashboard are the work of **Chris Holmes** ([Portolan](https://www.portolan-sdi.org)), who tells how he built them in [Building Portolan: FIRMS](https://www.portolan-sdi.org/es/blog/building-portolan-firms).",
                 "mode": "markdown"
               }
             },
@@ -768,7 +768,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "**How to read it.** This is the long view: the A5 aggregates the Portolan mirror publishes, about 5 MB,\nread and joined once in your browser, where every panel filters them. *Archive* switches between this year by day and\nevery month since 2000. Drag across the time brush or the latitude raster to pick a window, click a month in the\ncalendar to keep that month of every year, click a country, draw an area on the map, or open a pill of the filter strip.\n**Zoom the map in** and the cells give way to the single detections of the window in the view, read on the server.\n\nFor satellites, day and night and fire radiative power of the last days, open\n[the last eight days, every detection](/d/firms-active-fires).",
+                "content": "**How to read it.** This is the long view: the A5 aggregates the Portolan mirror publishes, about 5 MB,\nread and joined once in your browser, where every panel filters them. *Archive* switches between this year by day and\nevery month since 2000. Drag across the time brush or the latitude raster to pick a window, click a month in the\ncalendar to keep that month of every year, click a country, draw an area on the map, or open a pill of the filter strip.\n**Zoom the map in** and the cells give way to finer ones, about 28 km across, and then to the single detections of the window in the view, read on the server once there are fewer than 50,000 of them.\n\nFor satellites, day and night and fire radiative power of the last days, open\n[the last eight days, every detection](/d/firms-active-fires).",
                 "mode": "markdown"
               }
             },
@@ -814,11 +814,31 @@
                       "spec": {
                         "format": 1,
                         "rawQuery": true,
-                        "rawSql": "-- Single detections, read on the server from the mirror's yearly files, once\n-- the map is zoomed in to a view under 25 degrees across: the window's years\n-- only, and in each file only the row groups whose box meets the view (the\n-- rows are sorted along a Hilbert curve, so a view of a few degrees reads a\n-- handful of the five hundred groups of a year; ST_Intersects_Extent is what\n-- lets DuckDB skip them). The strongest 100,000 by FRP when there are more.\n-- Wider than that, it opens only the small file of 2000 and returns nothing.\n-- The time is a label, not a timestamp, so kepler hangs no time filter on it.\n-- Country and months follow the A5 cells only; the window and the view, this.\nSET parquet_metadata_cache = true;\nSET VARIABLE w = greatest(coalesce(try_cast($w AS DOUBLE), -180), -180);\nSET VARIABLE e = least(coalesce(try_cast($e AS DOUBLE), 180), 180);\nSET VARIABLE s = greatest(coalesce(try_cast($s AS DOUBLE), -90), -90);\nSET VARIABLE n = least(coalesce(try_cast($n AS DOUBLE), 90), 90);\nSET VARIABLE near = getvariable('e') - getvariable('w') \u003c= 25 AND getvariable('n') - getvariable('s') \u003c= 25;\nSET VARIABLE t0 = greatest(coalesce(try_cast($t0 AS TIMESTAMP), TIMESTAMP '2000-11-01'), TIMESTAMP '2000-11-01');\nSET VARIABLE t1 = least(coalesce(try_cast($t1 AS TIMESTAMP), current_date + 1), current_date + 1);\nSET VARIABLE files = (\n  SELECT CASE WHEN getvariable('near') AND count(*) \u003e 0\n              THEN list(format('https://data.source.coop/portolan-mirrors/firms-catalog/detections/year={}/detections.parquet', y) ORDER BY y)\n              ELSE ['https://data.source.coop/portolan-mirrors/firms-catalog/detections/year=2000/detections.parquet'] END\n  FROM range(year(getvariable('t0')), year(getvariable('t1') - INTERVAL 1 MICROSECOND) + 1) AS t(y)\n);\nSELECT round(ST_Y(geometry), 4) AS latitude, round(ST_X(geometry), 4) AS longitude,\n       frp, round(log10(greatest(frp, 0.1)), 2) AS frp_log,\n       strftime(acq_datetime, '%Y-%m-%d %H:%M UTC') AS seen,\n       satellite, CASE daynight WHEN 'N' THEN 'night' ELSE 'day' END AS daynight, confidence\nFROM read_parquet(getvariable('files'))\nWHERE getvariable('near')\n  AND ST_Intersects_Extent(geometry, ST_MakeEnvelope(getvariable('w'), getvariable('s'), getvariable('e'), getvariable('n')))\n  AND acq_datetime \u003e= getvariable('t0') AND acq_datetime \u003c getvariable('t1')\nORDER BY frp DESC\nLIMIT 100000"
+                        "rawSql": "-- Single detections, read on the server from the mirror's yearly files once\n-- the map is zoomed in to a view under 25 degrees across and the view and the\n-- window hold fewer than 50,000 of them (else query C draws A5 cells of\n-- resolution 8). That count comes from the cells of resolution 8 that meet the\n-- view, so it is never under the true one. Only the window's years are read,\n-- and in each file only the row groups whose box meets the view (the rows are\n-- sorted along a Hilbert curve, so a view of a few degrees reads a handful of\n-- the five hundred groups of a year; ST_Intersects_Extent is what lets DuckDB\n-- skip them), through the gateway's cache of the mirror: a region seen once\n-- comes back in a fraction of a second. Otherwise it opens only the small\n-- file of 2000 and returns nothing.\n-- The time is a label, not a timestamp, so kepler hangs no time filter on it.\n-- Country and months follow the A5 cells only; the window and the view, this.\n-- The view and the window, clamped. near: under 25 degrees across, the same\n-- test query A makes on the same viewport variables to drop its cells.\nSET force_download = false;\nSET VARIABLE w = greatest(coalesce(try_cast($w AS DOUBLE), -180), -180);\nSET VARIABLE e = least(coalesce(try_cast($e AS DOUBLE), 180), 180);\nSET VARIABLE s = greatest(coalesce(try_cast($s AS DOUBLE), -90), -90);\nSET VARIABLE n = least(coalesce(try_cast($n AS DOUBLE), 90), 90);\nSET VARIABLE near = getvariable('e') - getvariable('w') \u003c= 25 AND getvariable('n') - getvariable('s') \u003c= 25;\nSET VARIABLE first = CASE WHEN $archive = 'day' THEN date_trunc('year', current_date)::TIMESTAMP ELSE TIMESTAMP '2000-11-01' END;\nSET VARIABLE t0 = greatest(coalesce(try_cast($t0 AS TIMESTAMP), getvariable('first')), getvariable('first'));\nSET VARIABLE t1 = least(coalesce(try_cast($t1 AS TIMESTAMP), current_date + 1), current_date + 1);\n-- The window as the names of the aggregates' columns: count_YYYYMM in the\n-- all-time file (read for the months before this year), count_YYYYMMDD in\n-- this year's file, which the mirror rebuilds more often.\nSET VARIABLE m0 = 'count_' || strftime(getvariable('t0'), '%Y%m');\nSET VARIABLE m1 = 'count_' || strftime(getvariable('t1') - INTERVAL 1 MICROSECOND, '%Y%m');\nSET VARIABLE d0 = 'count_' || strftime(getvariable('t0'), '%Y%m%d');\nSET VARIABLE d1 = 'count_' || strftime(getvariable('t1') - INTERVAL 1 MICROSECOND, '%Y%m%d');\nSET VARIABLE this_year = 'count_' || year(current_date)::VARCHAR;\n-- This year's file only when the window reaches into this year and the view\n-- is near; otherwise the all-time one stands in, opened but not read.\nSET VARIABLE this_year_r8 = getvariable('near') AND getvariable('t1') \u003e date_trunc('year', current_date);\nSET VARIABLE year_r8 = CASE WHEN getvariable('this_year_r8')\n  THEN 'http://feeds/portolan/firms/detections/year=' || year(current_date)::VARCHAR || '/aggregate-r8.parquet'\n  ELSE 'http://feeds/portolan/firms/detections/alltime-r8.parquet' END;\nSET parquet_metadata_cache = true;\nSET VARIABLE total = (\n  WITH r8 AS MATERIALIZED (\n    SELECT a5_cell, geometry,\n           coalesce(list_sum(list_value(*COLUMNS(c -\u003e c = 'count' OR (c BETWEEN getvariable('m0') AND getvariable('m1') AND c \u003c getvariable('this_year'))))), 0)\n             - coalesce(\"count\", 0) AS n\n    FROM read_parquet('http://feeds/portolan/firms/detections/alltime-r8.parquet')\n    WHERE getvariable('near')\n      AND bbox.xmin \u003c getvariable('e') AND bbox.xmax \u003e getvariable('w') AND bbox.ymin \u003c getvariable('n') AND bbox.ymax \u003e getvariable('s')\n    UNION ALL\n    SELECT a5_cell, geometry,\n           coalesce(list_sum(list_value(*COLUMNS(c -\u003e c = 'count' OR c BETWEEN getvariable('d0') AND getvariable('d1')))), 0)\n             - coalesce(\"count\", 0) AS n\n    FROM read_parquet(getvariable('year_r8'))\n    WHERE getvariable('this_year_r8')\n      AND bbox.xmin \u003c getvariable('e') AND bbox.xmax \u003e getvariable('w') AND bbox.ymin \u003c getvariable('n') AND bbox.ymax \u003e getvariable('s')\n  )\n  SELECT coalesce(sum(n), 0) FROM r8\n);\nSET VARIABLE points = getvariable('near') AND getvariable('total') \u003c 50000;\nSET VARIABLE files = (\n  SELECT CASE WHEN getvariable('points') AND count(*) \u003e 0\n              THEN list(format('http://feeds/portolan/firms/detections/year={}/detections.parquet', y) ORDER BY y)\n              ELSE ['http://feeds/portolan/firms/detections/year=2000/detections.parquet'] END\n  FROM range(year(getvariable('t0')), year(getvariable('t1') - INTERVAL 1 MICROSECOND) + 1) AS t(y)\n);\nSELECT round(ST_Y(geometry), 4) AS latitude, round(ST_X(geometry), 4) AS longitude,\n       frp, round(log10(greatest(frp, 0.1)), 2) AS frp_log,\n       strftime(acq_datetime, '%Y-%m-%d %H:%M UTC') AS seen,\n       satellite, CASE daynight WHEN 'N' THEN 'night' ELSE 'day' END AS daynight, confidence\nFROM read_parquet(getvariable('files'))\nWHERE getvariable('points')\n  AND ST_Intersects_Extent(geometry, ST_MakeEnvelope(getvariable('w'), getvariable('s'), getvariable('e'), getvariable('n')))\n  AND acq_datetime \u003e= getvariable('t0') AND acq_datetime \u003c getvariable('t1')\nORDER BY frp DESC\nLIMIT 100000"
                       },
                       "version": "v0"
                     },
                     "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- A5 cells of resolution 8 (about 28 km across), read on the server from the\n-- mirror's aggregates once the map is zoomed in to a view under 25 degrees\n-- across, where the view and the window hold 50,000 detections or more:\n-- too many to draw one by one (query B draws them below that). Each cell's\n-- detections in the window, from the all-time file by month and this year's\n-- by day, through the gateway's cache of the mirror. Cells that wrap around\n-- the antimeridian are left out. Country and months follow the A5 cells of\n-- resolution 5 only; the window and the view, this.\n-- The view and the window, clamped. near: under 25 degrees across, the same\n-- test query A makes on the same viewport variables to drop its cells.\nSET force_download = false;\nSET VARIABLE w = greatest(coalesce(try_cast($w AS DOUBLE), -180), -180);\nSET VARIABLE e = least(coalesce(try_cast($e AS DOUBLE), 180), 180);\nSET VARIABLE s = greatest(coalesce(try_cast($s AS DOUBLE), -90), -90);\nSET VARIABLE n = least(coalesce(try_cast($n AS DOUBLE), 90), 90);\nSET VARIABLE near = getvariable('e') - getvariable('w') \u003c= 25 AND getvariable('n') - getvariable('s') \u003c= 25;\nSET VARIABLE first = CASE WHEN $archive = 'day' THEN date_trunc('year', current_date)::TIMESTAMP ELSE TIMESTAMP '2000-11-01' END;\nSET VARIABLE t0 = greatest(coalesce(try_cast($t0 AS TIMESTAMP), getvariable('first')), getvariable('first'));\nSET VARIABLE t1 = least(coalesce(try_cast($t1 AS TIMESTAMP), current_date + 1), current_date + 1);\n-- The window as the names of the aggregates' columns: count_YYYYMM in the\n-- all-time file (read for the months before this year), count_YYYYMMDD in\n-- this year's file, which the mirror rebuilds more often.\nSET VARIABLE m0 = 'count_' || strftime(getvariable('t0'), '%Y%m');\nSET VARIABLE m1 = 'count_' || strftime(getvariable('t1') - INTERVAL 1 MICROSECOND, '%Y%m');\nSET VARIABLE d0 = 'count_' || strftime(getvariable('t0'), '%Y%m%d');\nSET VARIABLE d1 = 'count_' || strftime(getvariable('t1') - INTERVAL 1 MICROSECOND, '%Y%m%d');\nSET VARIABLE this_year = 'count_' || year(current_date)::VARCHAR;\n-- This year's file only when the window reaches into this year and the view\n-- is near; otherwise the all-time one stands in, opened but not read.\nSET VARIABLE this_year_r8 = getvariable('near') AND getvariable('t1') \u003e date_trunc('year', current_date);\nSET VARIABLE year_r8 = CASE WHEN getvariable('this_year_r8')\n  THEN 'http://feeds/portolan/firms/detections/year=' || year(current_date)::VARCHAR || '/aggregate-r8.parquet'\n  ELSE 'http://feeds/portolan/firms/detections/alltime-r8.parquet' END;\nWITH r8 AS MATERIALIZED (\n  SELECT a5_cell, geometry,\n         coalesce(list_sum(list_value(*COLUMNS(c -\u003e c = 'count' OR (c BETWEEN getvariable('m0') AND getvariable('m1') AND c \u003c getvariable('this_year'))))), 0)\n           - coalesce(\"count\", 0) AS n\n  FROM read_parquet('http://feeds/portolan/firms/detections/alltime-r8.parquet')\n  WHERE getvariable('near')\n    AND bbox.xmin \u003c getvariable('e') AND bbox.xmax \u003e getvariable('w') AND bbox.ymin \u003c getvariable('n') AND bbox.ymax \u003e getvariable('s')\n  UNION ALL\n  SELECT a5_cell, geometry,\n         coalesce(list_sum(list_value(*COLUMNS(c -\u003e c = 'count' OR c BETWEEN getvariable('d0') AND getvariable('d1')))), 0)\n           - coalesce(\"count\", 0) AS n\n  FROM read_parquet(getvariable('year_r8'))\n  WHERE getvariable('this_year_r8')\n    AND bbox.xmin \u003c getvariable('e') AND bbox.xmax \u003e getvariable('w') AND bbox.ymin \u003c getvariable('n') AND bbox.ymax \u003e getvariable('s')\n),\ncells AS MATERIALIZED (\n  SELECT a5_cell, any_value(geometry)::GEOMETRY AS geom, sum(n) AS n FROM r8 GROUP BY a5_cell\n)\nSELECT a5_cell::VARCHAR AS a5, n::DOUBLE AS detections, round(log10(n), 2) AS log_detections,\n       ST_AsGeoJSON(geom)::VARCHAR AS geojson\nFROM cells\nWHERE n \u003e 0 AND ST_XMax(geom) - ST_XMin(geom) \u003c 10\n  AND (SELECT sum(n) FROM cells) \u003e= 50000\nORDER BY n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
                   }
                 }
               ],
@@ -826,10 +846,10 @@
               "transformations": []
             }
           },
-          "description": "Zoomed out, each pentagon is an A5 cell of resolution 5 (about 200 km across, the grid the Portolan explorer draws) coloured by its detections under every filter, on a log scale. Zoom in to a view under 25 degrees across and the cells give way to the single detections of the brushed window in the view, read on the server from the yearly files of the mirror (a few seconds; the strongest 100,000 by FRP), coloured by fire radiative power. Draw a polygon or rectangle to keep that area in the other panels; the map itself keeps showing everything.",
+          "description": "Zoomed out, each pentagon is an A5 cell of resolution 5 (about 200 km across, the grid the Portolan explorer draws) coloured by its detections under every filter, on a log scale. Zoom in to a view under 25 degrees across and the server takes over with the brushed window in the view: the single detections, coloured by fire radiative power, when the view and window hold fewer than 50,000 of them; otherwise A5 cells of resolution 8 (about 28 km across) with their counts, until you zoom in further or shorten the window. Pacha keeps what it reads from the mirror, so a region seen once comes back in a fraction of a second. Draw a polygon or rectangle to keep that area in the other panels; the map itself keeps showing everything.",
           "id": 2,
           "links": [],
-          "title": "Where: A5 cells in the window, single detections when zoomed in",
+          "title": "Where: A5 cells in the window, finer cells and single detections as you zoom in",
           "vizConfig": {
             "group": "ubica-keplerplus-panel",
             "kind": "VizConfig",
@@ -1013,6 +1033,11 @@
                               {
                                 "name": "confidence"
                               }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "detections"
+                              }
                             ]
                           }
                         }
@@ -1020,6 +1045,7 @@
                       "layerBlending": "normal",
                       "layerOrder": [
                         "detections",
+                        "a5-cells-r8",
                         "a5-cells"
                       ],
                       "layers": [
@@ -1043,7 +1069,7 @@
                               255
                             ],
                             "isVisible": true,
-                            "label": "Detections per A5 cell",
+                            "label": "Detections per A5 cell (about 200 km)",
                             "textLabel": [
                               {
                                 "alignment": "center",
@@ -1150,6 +1176,130 @@
                         {
                           "config": {
                             "color": [
+                              221,
+                              178,
+                              124
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Detections per A5 cell (about 28 km)",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#0198BD",
+                                  "#42C1BC",
+                                  "#9CE3B1",
+                                  "#F5B272",
+                                  "#EB7053",
+                                  "#D50255"
+                                ],
+                                "name": "Ice And Fire",
+                                "type": "diverging"
+                              },
+                              "elevationScale": 5,
+                              "enable3d": false,
+                              "filled": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.85,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColor": [
+                                20,
+                                20,
+                                22
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "strokeOpacity": 0.6,
+                              "stroked": true,
+                              "thickness": 0.3,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "a5-cells-r8",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "log_detections",
+                              "type": "integer"
+                            },
+                            "colorScale": "quantize",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
                               255,
                               152,
                               48
@@ -1168,7 +1318,7 @@
                               255
                             ],
                             "isVisible": true,
-                            "label": "Detections (zoomed in)",
+                            "label": "Single detections (fewer than 50,000 in view)",
                             "textLabel": [
                               {
                                 "alignment": "center",
