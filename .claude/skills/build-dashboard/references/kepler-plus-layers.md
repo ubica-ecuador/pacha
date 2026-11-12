@@ -11,7 +11,7 @@ Like any layer in `config.visState.layers[]`:
 `{"id","type","config":{"dataId":"grafana-<refId>","label","columns","columnMode","isVisible":true,"visConfig":{...},"textLabel":[...]},"visualChannels":{...}}`.
 kepler never adds these types by itself.
 
-- Point-based types (gauge, prism, coverage, surface, sparkline, callout, fleet, model4d):
+- Point-based types (gauge, prism, coverage, surface, sparkline, callout, fleet, model4d, floorplan):
   `"columns":{"lat":"latitude","lng":"longitude"}`, `"columnMode":"points"`.
 - Colour: `visualChannels.colorField = {"name":"<col>","type":"real"|"integer"|"string"}` plus
   `visConfig.colorRange`. Thresholds: `"colorScale":"custom"` and
@@ -27,7 +27,7 @@ kepler never adds these types by itself.
 - `historyField`: `color` (default) | `off` | a numeric column: the series in the popup
   (gauge, prism, coverage, traffic, pipeline).
 
-## The ten types
+## The eleven types
 
 What is marked "Plus after 1.6.0" is on Plus main, not in the 1.6.0 release: check the Plus
 version the instance runs before using it.
@@ -161,6 +161,16 @@ timestamps, and the model's origin in `latitude`/`longitude` on every row.
   cards, Gantt and S-curve that read the instant as the latest day kept (`max`/`argmax` over a daily
   table, a `ruleX` at `{ max: time }`). The map follows the brush through `timeSync: variables`.
 
+**floorplan** ("Floor plan", Plus after 1.6.0): a picture per row (an architect's plan, a scanned
+evacuation map, a CAD export) laid flat on the map or on its floor. `image_url` (an `https://`
+picture or a file of the plugin; any other URL is refused) and where it lies: `corners` (JSON
+`[[lng,lat] ×4]`: bottom left, top left, top right, bottom right), or the row's latitude/longitude as
+its centre with `width_m`, `depth_m` and `rotation` (degrees clockwise from north). visConfig
+`planWhite` (0–1, default 0.8: pixels lighter than this turn transparent, so the paper is
+see-through; 1 keeps it). Altitude column `floor_z` lifts it to its floor. With Floors on, the
+Indoor tab makes this layer on the `grafana-floorplans` dataset, one row per plan: write one by hand
+only for pictures Floors does not place.
+
 ## Cards on other layers (Plus after 1.6.0)
 
 gauge, prism, coverage, traffic, pipeline and model4d take a card per object (a site, a sector, a
@@ -180,8 +190,10 @@ popup or always, from the same query: no sparkline layer beside them. visConfig:
   halfway along a link, or along a pipeline at its height there (a riser's card halfway up); a
   model4d part's top, once the model has loaded.
 - A 4D Model in State mode gives each part its colour and its card from one query.
-- The panel renames a column `flow` to `count` (it reads it as an OD count): a card or stroke field
-  named `flow` reads nothing; name it otherwise.
+- The free panel 1.7.0, which Plus builds on, renames a column `flow` (also `trips`, `weight`,
+  `total`, `volume`) to `count` on every query: a card, stroke or colour field named `flow` reads
+  nothing; name it otherwise (`airflow`). Free main renames it only on an origin–destination query;
+  Plus keeps the old behaviour until it is built on a free release with that fix.
 
 ## Data in a model's frame (Plus after 1.6.0)
 
@@ -216,6 +228,69 @@ Minimal gauge layer:
    "background":false,"backgroundColor":[0,0,200,255]}]},
  "visualChannels":{"colorField":{"name":"Value","type":"real"},"colorScale":"custom"}}
 ```
+
+## Floors: indoor maps (Plus after 1.6.0)
+
+The panel option `floors` (beside `places` and `alerts`, not in `mapConfig`) turns a map into an
+indoor map: a lift-panel picker over the map, the map narrowed to the floor picked, the floors
+stacked in 3D. Docs: https://docs.ubica.dev/plus/indoor/. Copy from the app's own
+`plus-tour-indoor` (an office with plans, rooms and callouts; a plant as a 4D model on two floors).
+
+```json
+"floors": {"enabled": true, "field": "level", "nameField": "floor_name", "variable": "floor",
+  "defaultFloor": "0", "spacing": 6, "others": "ghost", "ghostOpacity": 0.12,
+  "selectVariable": "room", "selectField": "room",
+  "badge": {"field": "co2_ppm", "agg": "max", "warn": 1000, "alert": 1400, "label": "ppm CO2 at worst"}}
+```
+
+- The floor column (`field`; auto: level, ordinal, floor, level_ordinal, floor_number, floor_no,
+  storey, story, etage, piso, nivel) holds a number (an IMDF ordinal: 0 ground, -1 basement), an OSM
+  list `"0;1"` (the row shows on each, standing on the lowest) or span `"-1-2"`, or a name (`"G"`:
+  listed after the numbers, never stacked). Give floors numbers and their names in `nameField`
+  (auto: floor_name, level_name, floor_label, level_label, storey_name).
+- `variable`: written by the picker and followed (a dropdown, a link `var-floor=2`, another panel);
+  empty = every floor. `defaultFloor`: the floor it opens on. `mode` only|below. `zoomToFloor`
+  (default true): picking a floor flies to it. A click mapping from the floor column to the floor
+  variable picks a clicked room's floor.
+- Stacking: `spacing` metres between floors (0 = all on the ground), `floorSettings` by floor id
+  `{label, height, hidden, linked: [keys shown with it]}`, `groundFloor` level (floor 0 on the
+  ground, basements under the map) | picked | lowest. `others` hide|outline|ghost (ghost needs a
+  spread and keeps only shapes, not points), `ghostOpacity` (0.15), `above` zoom|keep|hide.
+- `queryFloors` by refId: `follow` (default for a query with the floor column), `always` (every
+  floor, each at its height), `["0"]` (only while one of these floors is picked: the site with the
+  ground floor), `facade` (a building's shell: the other buildings, and zoomed out). A query without
+  the floor column draws on every floor unless set.
+- Every query that follows the floor is lifted: GeoJSON/WKT/WKB at its floor's height (kepler's
+  geojson layer, `enable3d` with a height field for rooms as boxes); points gain `floor_z` (the
+  floor's height + 0.25 m): set `columns.altitude = "floor_z"` on point, icon, gauge, prism,
+  sparkline and callout, and `fleetAltitudeField: "floor_z"` with `fleetDisplay: "3d"` on fleet.
+  `floor_h` (floor to next floor) as a height field raises a shaft or a full wall. Surface finds its
+  floor by itself.
+- `badge {field, agg sum|max|avg, label, warn, alert}`: the figure per floor on the picker and
+  each building's card; counts every row the queries return (return each room's latest reading for
+  a "now" figure).
+- Buildings: `buildingField` (auto: building, building_id, building_name, structure, facility,
+  edificio, bloque); floor ids become `<building>/<level>` (`""` for rows naming none).
+  `buildingSettings` by building id `{label, base (m, up a hill), defaultFloor}`, `otherBuildings`
+  default|all|hide, `buildingVariable`, `siteField` (auto: site, site_name, campus, city, region,
+  sede, ciudad). Below `minZoom` (indoor zoom, default 17; 0 = always indoors; `outdoorZoom` half a
+  level lower) every building shows its default floor (or facade) with a card; a breadcrumb over the
+  map goes back out.
+- Selection: `selectVariable` names a row by `selectField` (auto: code, id, room, room_name,
+  sensor, sensor_id, asset, name; exact, case-sensitive match, and the row must have the floor
+  column) or a place `@lat,lon[,zoom]`: the map goes to its building and floor, flies to it and
+  rings it. A table link `/d/<uid>?${__url_time_range}&var-room=${__data.fields.room}` makes a
+  finder.
+- Plans: `plans` by floor id, an `https://` picture, a file of the plugin, or an uploaded data URL
+  (≤ 1 MB); placed by `planPoints` (≥ 3 `{u, v, longitude, latitude}`, u/v shares of the picture
+  from its top left), else at `planAnchor {latitude, longitude, widthM, rotation}`, else over the
+  floor's rows. Rows with `plan_x`/`plan_y` (and the floor column) stand on the plan, in
+  `planUnits` pixels|fraction|metres. Draw them with a `floorplan` layer on `grafana-floorplans`.
+- Rooms traced on a plan (`planRooms`) or drawn on the map (`mapRooms`), floors added by hand
+  (`declaredFloors [{level, building?, name}]`) and drawn (`floorOutlines`) are written by the Indoor
+  tab's editors: do not hand-write them. `planRoomsData {refId, field}` gives the rooms a query's
+  readings by room name; `planWalls {height}`. Their datasets: `grafana-planrooms`,
+  `grafana-planwalls`, `grafana-flooroutlines`.
 
 ## Places and Alerts (panel options)
 

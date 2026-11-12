@@ -82,9 +82,9 @@ Read only what the task needs.
   written in the JSON; variables and macros; what each engine cannot do.
 - [kepler.md](references/kepler.md): the panel options, field roles, the saved `mapConfig`,
   cross-filtering, variable formats, free vs Plus.
-- [kepler-plus-layers.md](references/kepler-plus-layers.md): the ten Plus layer types and
-  their keys (gauge, prism, coverage, surface, sparkline, callout, traffic, pipeline, fleet, model4d), cards on
-  any layer, data in a 3D model's frame, Places and Alerts.
+- [kepler-plus-layers.md](references/kepler-plus-layers.md): the eleven Plus layer types and
+  their keys (gauge, prism, coverage, surface, sparkline, callout, traffic, pipeline, fleet, model4d,
+  floorplan), cards on any layer, data in a 3D model's frame, Floors (indoor maps), Places and Alerts.
 - [business-charts.md](references/business-charts.md): ECharts panels on Chaski frames; the
   `@constants` template; brush to variables; colours from the theme.
 - [mosaic.md](references/mosaic.md): the Chaski Mosaic panel: when to use it, its options,
