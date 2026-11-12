@@ -54,7 +54,8 @@ test('the cards repeat over the Gallery and Plus folders and the dashboards repo
 });
 
 test('every screenshot is named after a dashboard, and the gateway serves them with the assets', async () => {
-  const uids = ['dashboards/gallery', 'plus/dashboards']
+  // dashboards/ itself: a dashboard parked at the root, off public view (no permissions there), keeps its screenshot.
+  const uids = ['dashboards', 'dashboards/gallery', 'plus/dashboards']
     .flatMap((dir) => readdirSync(new URL(`../../${dir}/`, import.meta.url)))
     .filter((f) => f.endsWith('.json') && !f.startsWith('_'))
     .map((f) => f.slice(0, -5));

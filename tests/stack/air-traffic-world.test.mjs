@@ -9,7 +9,7 @@ import { api, rowsOf } from '../lib/grafana.mjs';
 import { findAll, loadDashboard } from '../lib/dashboards.mjs';
 import { STACK_URL } from '../lib/stack.mjs';
 
-const dashboard = loadDashboard('plus/dashboards/air-traffic-world.json');
+const dashboard = loadDashboard('dashboards/air-traffic-world.json');
 const EMPTY = 'http://feeds/recordings/flights-empty.parquet';
 
 const panelSql = findAll(dashboard, (n) => n.kind === 'Panel').flatMap((p) =>
