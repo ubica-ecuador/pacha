@@ -54,6 +54,8 @@ here, in the same shape: symptom, cause, fix.
 | `strftime` binder error | no `TIMESTAMPTZ` overload | cast to `TIMESTAMP` first |
 | `QUALIFY` error | bare `QUALIFY` without a window function | use a subquery |
 | `SET VARIABLE x AS …` syntax error | wrong syntax | `SET VARIABLE x = (…)` |
+| `-(STRING_LITERAL, INTERVAL)` or `/(STRING_LITERAL, INTEGER_LITERAL)` binder error on the server | `$__timeFrom()` arrives as a string literal and `${__from}` quoted (`'1794420156637'`): fine in a comparison, not in arithmetic | `$__timeFrom()::TIMESTAMPTZ - INTERVAL 6 HOUR`; `to_timestamp(CAST(${__from} AS BIGINT) / 1000)` |
+| "Failed to cast value to numerical" on a whole JSON object, from a `WHERE` | `->>` binds more loosely than `=` and `IS NULL`: `j ->> 'k' = '2'` reads as `j ->> ('k' = '2')` | parenthesize: `(j ->> 'k') = '2'` |
 | A dropdown value `11388.0` in URLs and cache keys | Chaski `values` hand integers back as doubles | `col::BIGINT::VARCHAR` for value and text |
 | A sum renders as `[object Object]` or breaks a chart | `SUM(BIGINT)` → `HUGEINT`, serialised by DuckDB-WASM as an object | cast sums to `DOUBLE` |
 | `h3_*` not found in Chaski | no H3 in the browser | compute on the server in the dataset's source query |

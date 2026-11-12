@@ -6,18 +6,23 @@
 # Its DuckDB is the grafana datasource's engine (DUCKDB_ENGINE_VERSION in
 # images/grafana/Dockerfile): the files it writes are the files Grafana reads.
 # The feeds come from the repo's recorder/feeds/, the build context `feeds`
-# (compose.yaml and docker-bake.hcl pass it).
+# (compose.yaml and docker-bake.hcl pass it); compose.dashboards.yaml mounts a
+# dashboards repo's own beside them.
 
 ARG PYTHON_VERSION=3.12
 ARG DUCKDB_VERSION=1.5.4
 ARG PYTZ_VERSION=2025.2
+ARG WEBSOCKETS_VERSION=15.0.1
 ARG PYTEST_VERSION=8.4.2
 
 FROM python:${PYTHON_VERSION}-slim AS base
 ARG DUCKDB_VERSION
 ARG PYTZ_VERSION
+ARG WEBSOCKETS_VERSION
 # pytz: the duckdb package needs it to hand a TIMESTAMPTZ to Python.
-RUN pip install --no-cache-dir --root-user-action=ignore "duckdb==${DUCKDB_VERSION}" "pytz==${PYTZ_VERSION}"
+# websockets: the client of a stream feed (StreamFeed).
+RUN pip install --no-cache-dir --root-user-action=ignore "duckdb==${DUCKDB_VERSION}" "pytz==${PYTZ_VERSION}" \
+      "websockets==${WEBSOCKETS_VERSION}"
 # Extensions at build, outside any home, readable by the user it runs as: never
 # downloaded at run time.
 ENV RECORDER_EXTENSIONS=/opt/recorder/extensions \

@@ -164,6 +164,11 @@ adsb.lol around the clock and up to a few GB of disk in the `recordings` volume,
 runs only when `COMPOSE_PROFILES=recorder` is set (see `.env.example`). Without it the live
 panels work and the history panels are empty.
 
+A feed is a `.sql` file in `recorder/feeds/`: a poll every minute by default, or a day's file
+(`-- schedule: daily`), the files a page lists (`listing`), or what a websocket pushes
+(`stream`); `images/recorder/recorder.py` says how each works. A dashboards repository keeps its
+own feeds in its `recorder/feeds/`, which `compose.dashboards.yaml` mounts beside these.
+
 Some data cannot be read where it is published, or not republished as it is: those dashboards
 read files built once on each instance, under `datasets/<name>/`, which the gateway serves to
 Grafana's DuckDB only (`http://feeds/datasets/`). geolife-mobility needs

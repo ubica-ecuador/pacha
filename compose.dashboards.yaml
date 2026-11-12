@@ -7,6 +7,7 @@
 #   dashboards/                                what that Repository syncs
 #   gateway/*.conf.template                    location blocks for the feeds server
 #   datasets/<name>/build.sh                   built on each instance, as here
+#   recorder/feeds/<feed>.sql                  feeds the recorder keeps, beside this repo's
 #   screenshots/<uid>.jpg                      its cards on the home page
 #
 #   DASHBOARDS_DIR=../pacha-dashboards docker compose -f compose.yaml -f compose.dashboards.yaml up --wait
@@ -21,7 +22,9 @@
 # A route reaches nginx only when the gateway starts (the image runs envsubst
 # over its templates then): after a pull that touched gateway/, check it with
 # `docker compose run --rm --no-deps -T gateway nginx -t`, then restart the
-# gateway. Dashboards need nothing: Git Sync brings them within a minute.
+# gateway. A feed reaches the recorder only when it starts: recreate it
+# (with the recorder profile on). Dashboards need nothing: Git Sync brings them
+# within a minute.
 services:
   grafana:
     environment:
@@ -67,4 +70,15 @@ services:
       - type: bind
         source: ${DASHBOARDS_DIR}/screenshots
         target: /srv/home-extra/screenshots
+        read_only: true
+
+  # Its feeds, read after this repo's (images/recorder/recorder.py); a name they
+  # share is refused at start. The folder must exist in that repo.
+  recorder:
+    environment:
+      RECORDER_FEEDS: /etc/recorder/feeds:/etc/recorder/feeds-extra
+    volumes:
+      - type: bind
+        source: ${DASHBOARDS_DIR}/recorder/feeds
+        target: /etc/recorder/feeds-extra
         read_only: true

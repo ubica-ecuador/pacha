@@ -210,6 +210,10 @@ with snapshots for time travel. On the backlog in `dashboards/README.md`; no das
 - Every live source goes through the gateway with a cache no shorter than its update interval;
   history the dashboard needs beyond the source's own lives in the recorder
   (`recorder/feeds/*.sql`, served at `http://feeds/recordings/…`; `air-traffic-world`).
+- A websocket that pushes readings as they change: a recorder feed with `-- schedule: stream`
+  and a `ws://` or `wss://` source, read with `read_ndjson_objects` and `->>` (messages differ in
+  their keys); the recording is the only history (pacha-dashboards: `urban-sciences-building`).
+  A dashboards repo keeps its feeds in its own `recorder/feeds/`.
 
 ## 3D
 

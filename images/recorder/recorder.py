@@ -15,7 +15,11 @@ name and renamed, and a file the manifest stops naming is deleted a poll later,
 so a reader holding the previous manifest still finds what it names.
 
 A feed with `-- schedule: daily` is read a day at a time instead: see DailyFeed. One with
-`-- schedule: listing` reads the files a web page lists, each once: see ListingFeed.
+`-- schedule: listing` reads the files a web page lists, each once: see ListingFeed. One with
+`-- schedule: stream` keeps what a websocket pushes: see StreamFeed.
+
+The feeds are the .sql files of the folders RECORDER_FEEDS names, separated by colons
+(a dashboards repository brings its own folder: see compose.dashboards.yaml).
 """
 import datetime as dt
 import http.client
@@ -34,6 +38,8 @@ import zipfile
 from pathlib import Path
 
 import duckdb
+from websockets.exceptions import WebSocketException
+from websockets.sync.client import connect as websocket_connect
 
 log = logging.getLogger('recorder')
 UTC = dt.timezone.utc
@@ -322,6 +328,120 @@ class CutShort(OSError):
     """A download that ended before the length its server announced."""
 
 
+class StreamFeed(Feed):
+    """A feed a websocket pushes (`-- schedule: stream`): a message each time something changes, as a
+    building's sensors send a reading when it moves.
+
+    Its source is a ws:// or wss:// address. A thread holds the socket open and keeps each message as one line;
+    when the socket drops it connects again, after a pause that doubles up to five minutes. Every interval the
+    poll hands what came since the last one to the feed's script as newline-delimited JSON (`source`) and writes
+    what the script returns as a minute file of the hour its `ts` falls in, so a message read just after the hour
+    turns still lands in the hour it belongs to. Closed hours are merged, and the manifest is written, as for any
+    feed. Nothing is dropped as already seen: a stream sends each message once.
+
+    Messages of one stream need not share their keys: read them with read_ndjson_objects and ->>, so the
+    script does not depend on which messages a poll happened to receive. A stream has no history: the recording
+    starts when the recorder does.
+    """
+    PAUSE = 5  # seconds before connecting again; doubled after each failure
+    MAX_PAUSE = 300
+    STEADY = 60  # a connection that lasted this long resets the pause
+
+    def __init__(self, sql_path, data, public_base, retention_days, source=None, interval=None,
+                 health_file=None):
+        super().__init__(sql_path, data, public_base, retention_days, source=source, interval=interval,
+                         health_file=health_file)
+        if not re.match(r'^wss?://', self.source or ''):
+            raise ValueError(f'{sql_path}: a stream feed reads a ws:// or wss:// source')
+        self.db.execute("SET TimeZone = 'UTC'")  # hours in UTC, as the files are named
+        self.lock = threading.Lock()
+        self.messages = []
+        self.connected = threading.Event()
+        self.stopped = threading.Event()
+        self.socket = None
+
+    # --- the socket ---
+
+    def start(self):
+        threading.Thread(target=self._listen, name=self.name, daemon=True).start()
+
+    def stop(self):
+        self.stopped.set()
+        if self.socket is not None:
+            self.socket.close()
+
+    def receive(self, message):
+        """One message, as the socket gave it."""
+        if isinstance(message, bytes):
+            message = message.decode('utf-8', 'replace')
+        # JSON has no raw line break but as whitespace: joined, a message is one line.
+        line = ' '.join(message.splitlines()).strip()
+        if line:
+            with self.lock:
+                self.messages.append(line)
+
+    def _listen(self):
+        pause = self.PAUSE
+        while not self.stopped.is_set():
+            opened = time.monotonic()
+            try:
+                with websocket_connect(self.source, user_agent_header='pacha-recorder', open_timeout=30,
+                                       max_size=1 << 22) as socket:
+                    self.socket = socket
+                    self.connected.set()
+                    log.info('%s: connected to %s', self.name, self.source)
+                    for message in socket:
+                        self.receive(message)
+                log.info('%s: the socket closed', self.name)
+            except (OSError, TimeoutError, WebSocketException) as error:
+                if not self.stopped.is_set():
+                    log.error('%s: %s', self.name, error)
+            self.socket = None
+            self.connected.clear()
+            if time.monotonic() - opened >= self.STEADY:
+                pause = self.PAUSE
+            self.stopped.wait(pause)
+            pause = min(pause * 2, self.MAX_PAUSE)
+
+    # --- one poll ---
+
+    def poll(self, now):
+        self._delete_doomed()
+        with self.lock:
+            messages, self.messages = self.messages, []
+        received, written = len(messages), 0
+        status, error_text = ('ok', None) if self.connected.is_set() else ('unreachable', 'not connected')
+        try:
+            if messages:
+                with tempfile.TemporaryDirectory() as scratch:
+                    path = Path(scratch) / 'messages.ndjson'
+                    path.write_text('\n'.join(messages) + '\n')
+                    self.db.execute('SET VARIABLE source = ?', [str(path)])
+                    self.db.execute(f'CREATE OR REPLACE TEMP TABLE snap AS {self.sql}')
+                # A clock ahead of ours is put in this hour; what is older than the retention, nowhere.
+                self.db.execute(
+                    "CREATE OR REPLACE TEMP TABLE fresh AS SELECT *, date_trunc('hour', least(ts, ?::TIMESTAMPTZ)) "
+                    'AS _hour FROM snap WHERE ts >= ?::TIMESTAMPTZ', [now, now - self.retention])
+                for (hour,) in self.db.execute('SELECT DISTINCT _hour FROM fresh ORDER BY 1').fetchall():
+                    hour = hour.astimezone(UTC)
+                    path = self._day(hour) / f'h{hour:%H}-m{now:%M%S}.parquet'
+                    write_atomic(path, lambda tmp: self.db.execute(
+                        f"COPY (SELECT * EXCLUDE (_hour) FROM fresh WHERE _hour = '{iso(hour)}'::TIMESTAMPTZ) "
+                        f"TO '{tmp}' (FORMAT parquet, COMPRESSION zstd)"))
+                written = self.db.execute('SELECT count(*) FROM fresh').fetchone()[0]
+            self._merge_closed_hours(now)
+        except duckdb.FatalException:
+            raise
+        except (duckdb.Error, OSError) as error:
+            log.error('%s: %s', self.name, error)
+            status, error_text = 'error', str(error)
+        self._log_poll(now, status, received, written, error_text)
+        self._write_manifest(now)
+        if status == 'ok' and self.health_file:
+            self.health_file.touch()
+        log.info('%s: %d messages, %d rows written', self.name, received, written)
+
+
 class DailyFeed:
     """A feed published a day at a time, as one zipped CSV (`-- schedule: daily`).
 
@@ -515,32 +635,54 @@ def run_alone(feed):
         os._exit(1)  # the process restarts; DuckDB refuses every later statement
 
 
+def feed_paths(folders):
+    """The .sql files of every folder, by name; a folder that is not there has none. Two feeds of one name
+    would write the same recordings: refused."""
+    paths = sorted((p for folder in folders if folder.is_dir() for p in folder.glob('*.sql')), key=lambda p: p.name)
+    names = [p.stem for p in paths]
+    twice = sorted({n for n in names if names.count(n) > 1})
+    if twice:
+        raise ValueError(f'two feeds named {", ".join(twice)}: ' + ', '.join(str(p) for p in paths if p.stem in twice))
+    return paths
+
+
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s', stream=sys.stdout)
-    feeds_dir = Path(os.environ.get('RECORDER_FEEDS', '/etc/recorder/feeds'))
+    folders = [Path(f) for f in os.environ.get('RECORDER_FEEDS', '/etc/recorder/feeds').split(':') if f]
     data = Path(os.environ.get('RECORDER_DATA', '/var/lib/recorder'))
     public = os.environ.get('RECORDER_PUBLIC_BASE', 'http://feeds/recordings')
     retention = int(os.environ.get('RECORDER_RETENTION_DAYS', '7'))
     interval = os.environ.get('RECORDER_INTERVAL')
     health = os.environ.get('RECORDER_HEALTH_FILE', '/tmp/recorder-ok')
-    feeds, alone = [], []
-    for path in sorted(feeds_dir.glob('*.sql')):
+    try:
+        paths = feed_paths(folders)
+    except ValueError as error:
+        sys.exit(str(error))
+    feeds, alone, streams = [], [], []
+    for path in paths:
         source = os.environ.get(f'RECORDER_SOURCE_{path.stem.upper().replace("-", "_")}')
         schedule = header(path.read_text(), 'schedule')
         if schedule == 'daily':
             alone.append(DailyFeed(path, data, public, retention, source=source))
         elif schedule == 'listing':
             alone.append(ListingFeed(path, data, public, retention, source=source))
+        elif schedule == 'stream':
+            streams.append(StreamFeed(path, data, public, retention, interval=interval, source=source,
+                                      health_file=health))
         else:
             feeds.append(Feed(path, data, public, retention, interval=interval, source=source,
                               health_file=health))
+    log.info('feeds: %s', ', '.join(f'{p.stem} ({p.parent})' for p in paths) or 'none')
+    feeds += streams
     if not feeds and not alone:
-        sys.exit(f'no feeds in {feeds_dir}')
+        sys.exit(f'no feeds in {", ".join(str(f) for f in folders)}')
     now = dt.datetime.now(UTC)
     for feed in feeds + alone:
         feed.recover(now)
     for feed in alone:
         threading.Thread(target=run_alone, args=(feed,), name=feed.name, daemon=True).start()
+    for feed in streams:
+        feed.start()
     if not feeds:
         threading.Event().wait()
     # On the interval's boundaries, so a poll meets the gateway's cache once.
