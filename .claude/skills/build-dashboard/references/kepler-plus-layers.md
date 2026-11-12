@@ -70,7 +70,8 @@ on the map, laid over the ground of its tiles, buildings standing through it; fl
 the dots over the base map's top groups, as the cards always are), `sparkAlerts` +
 `sparkNoDataAfter`, `sparkCrosshair` (follows `cursorSync`). Example: `germany-power-borders`,
 `melbourne-city-sensors`. Plus after 1.6.0: the cards of several card layers on one map keep off each
-other, the layer higher in the list first.
+other, the layer higher in the list first; `sparkExtras` (Plus faab59d) adds rows under the value, as
+`cardExtras` below.
 
 **callout** ("3D Callout", Plus after 1.6.0): a sparkline whose cards stand on a vertical stem above
 their places, the way a 3D map labels summits or a building's sensors. Same rows, keys and `spark*`
@@ -182,6 +183,11 @@ popup or always, from the same query: no sparkline layer beside them. visConfig:
 - `cardValueField` `color` (the colour field, when numeric) or a numeric column; `cardTimeField`
   `auto` | `none` (value only) | a column; `cardNameField`, `cardUnit`, `cardSize` S|M|L,
   `cardScale` common|perSite, `cardMin`/`cardMax` (`auto` or a number).
+- `cardExtras` (Plus faab59d, after 1.6.0): further numbers of the object, a row each under the value,
+  up to 4: `[{"field": "temp_c", "label": "Temperature", "unit": "°C"}, ...]` (label defaults to the
+  field). A row reads the card's row, else the object's newest earlier value (a change-only sensor
+  keeps its last reading). Example: `urban-sciences-building`'s CO2 dials (hover card: CO2,
+  temperature, humidity).
 - `cardAlertLabel` (`""` = none): with the panel's `alerts.show` and `alerts.entityLabel` set to the
   same label, a firing alert whose label holds an object's value (in the column of that name, else
   the object's key) marks its card on top with the rule's name in red; with `cardShow: "hover"` it
