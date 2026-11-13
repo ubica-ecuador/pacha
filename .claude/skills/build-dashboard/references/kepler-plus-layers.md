@@ -71,7 +71,9 @@ the dots over the base map's top groups, as the cards always are), `sparkAlerts`
 `sparkNoDataAfter`, `sparkCrosshair` (follows `cursorSync`). Example: `germany-power-borders`,
 `melbourne-city-sensors`. Plus after 1.6.0: the cards of several card layers on one map keep off each
 other, the layer higher in the list first; `sparkExtras` (Plus faab59d) adds rows under the value, as
-`cardExtras` below.
+`cardExtras` below. `sparkRange` (Plus 5229689) `dashboard` (default) | `data`: the chart over the rows' own span,
+for a short dashboard range (a quarter the Time Brush moves) whose query also returns the history up to it; the
+card still reads the newest row (`audimax-evacuation-plans`).
 
 **callout** ("3D Callout", Plus after 1.6.0): a sparkline whose cards stand on a vertical stem above
 their places, the way a 3D map labels summits or a building's sensors. Same rows, keys and `spark*`
@@ -273,8 +275,8 @@ stacked in 3D. Docs: https://docs.ubica.dev/plus/indoor/. Copy from the app's ow
   `floor_h` (floor to next floor) as a height field raises a shaft or a full wall. Surface finds its
   floor by itself.
 - `badge {field, agg sum|max|avg, label, warn, alert}`: the figure per floor on the picker and
-  each building's card; counts every row the queries return (return each room's latest reading for
-  a "now" figure).
+  each building's card; counts every row of the first query holding the badge column (return each
+  room's latest reading there for a "now" figure; a history query for callouts goes after it).
 - Buildings: `buildingField` (auto: building, building_id, building_name, structure, facility,
   edificio, bloque); floor ids become `<building>/<level>` (`""` for rows naming none).
   `buildingSettings` by building id `{label, base (m, up a hill), defaultFloor}`, `otherBuildings`
@@ -292,6 +294,8 @@ stacked in 3D. Docs: https://docs.ubica.dev/plus/indoor/. Copy from the app's ow
   from its top left), else at `planAnchor {latitude, longitude, widthM, rotation}`, else over the
   floor's rows. Rows with `plan_x`/`plan_y` (and the floor column) stand on the plan, in
   `planUnits` pixels|fraction|metres. Draw them with a `floorplan` layer on `grafana-floorplans`.
+  A plan lies level with its floor's flat rooms (Plus bf5913e): the layer list decides which draws over the
+  other, at every zoom. Plans above the rooms: their walls and names over the colours; below: the colours over them.
 - Rooms traced on a plan (`planRooms`) or drawn on the map (`mapRooms`), floors added by hand
   (`declaredFloors [{level, building?, name}]`) and drawn (`floorOutlines`) are written by the Indoor
   tab's editors: do not hand-write them. `planRoomsData {refId, field}` gives the rooms a query's
