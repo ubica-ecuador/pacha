@@ -26,6 +26,11 @@ kepler never adds these types by itself.
   collar_id, then trip_id, track_id.
 - `historyField`: `color` (default) | `off` | a numeric column: the series in the popup
   (gauge, prism, coverage, traffic, pipeline).
+- On a relief base map (Satellite + relief, Topographic + relief; Plus 5850cc3, after 1.6.0) 4D Model, 3D Callout,
+  Sparkline, Gauge, 3D Shape, Coverage and Pipeline stand on the ground and their cards with them: a place on the
+  ground under it (altitude columns are heights above it), a pipe along the ground (a vertex every 25 m), a 4D Model
+  on the ground under its origin (rigid: a part far up a slope belongs in a model of its own), rows in a model's frame
+  with their model. Traffic, Fleet and kepler's own layers still draw from z = 0.
 
 ## The eleven types
 
