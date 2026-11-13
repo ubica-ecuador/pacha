@@ -9,7 +9,7 @@ const IMAGE = process.env.GRAFANA_IMAGE ?? 'ghcr.io/ubica-ecuador/pacha-grafana:
 const NESTED = ['ubica-chaski-datasource', 'ubica-chaski-mosaic-panel', 'ubica-chaski-filters-panel'];
 
 const EXPECTED = {
-  'ubica-keplergl-panel': { version: '1.8.0', signature: 'unsigned' },
+  'ubica-keplergl-panel': { version: '1.9.0', signature: 'unsigned' },
   'ubica-chaski-app': { version: '2.3.2', signature: 'unsigned' },
   'ubica-chaski-datasource': { version: '2.3.2', signature: 'unsigned' },
   'ubica-chaski-mosaic-panel': { version: '2.3.2', signature: 'unsigned' },
@@ -95,7 +95,7 @@ test('safe defaults, and plugins and DuckDB home outside /var/lib/grafana', () =
 
 test('versions are exposed as image labels', () => {
   const labels = JSON.parse(sh('docker', ['image', 'inspect', '--format', '{{json .Config.Labels}}', IMAGE]));
-  assert.equal(labels['io.pacha.kepler-panel.version'], '1.8.0');
+  assert.equal(labels['io.pacha.kepler-panel.version'], '1.9.0');
   assert.equal(labels['io.pacha.kepler-panel.channel'], 'release');
   assert.equal(labels['io.pacha.chaski.version'], '2.3.2');
   assert.equal(labels['io.pacha.duckdb-datasource.version'], '0.4.5');
