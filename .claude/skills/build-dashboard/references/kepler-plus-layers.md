@@ -332,7 +332,10 @@ stacked in 3D. Docs: https://docs.ubica.dev/plus/indoor/. Copy from the app's ow
 ## Plus base maps
 
 `config.mapStyle.styleType`: `plus-azure-road|dark-grey|imagery|hybrid` and
-`plus-google-roadmap|satellite|hybrid|terrain`. Each needs its provider's key in the app
+`plus-google-roadmap|satellite|hybrid|terrain`. On every `openfreemap-*` style Plus (f66654c) adds the Relief switch
+(`visibleLayerGroups.relief`) and 3D buildings from the style's own tiles (`visibleLayerGroups["3d building"]`, from
+zoom 14, off by default but on Liberty; a saved `true` on Dark or Fiord now draws them). Not on CARTO's styles (its
+terms forbid modifying its basemaps) nor Google's. Each needs its provider's key in the app
 config (both kept on the server). Since Plus 1.4.0 there are no `plus-maptiler-*` or
 `plus-esri-*` styles: a map saved on one falls back to the free default with a notice, so use
 the keyless `openfreemap-*` ids (or `grafana-satellite`) instead. Plus also has no

@@ -65,7 +65,8 @@ the panel ignores the whole config silently.
 - `mapConfig` is applied when the dashboard loads: after a live edit, reload.
 
 Base maps (`config.mapStyle.styleType`, and the panel option `basemap`): prefer
-`openfreemap-positron|bright|liberty|dark|fiord`. `dark-matter`, `positron`, `voyager` are
+`openfreemap-positron|bright|liberty|dark|fiord` (with Kepler Plus each has Relief and 3D buildings switches:
+kepler-plus-layers.md, Plus base maps). `dark-matter`, `positron`, `voyager` are
 CARTO's and need `cartoApiKey` or the tiles are watermarked. Also `grafana-satellite`,
 `grafana-satellite-terrain`, `grafana-topographic-terrain`, `no_map`. Dark base map for dense
 points, light for choropleths.
