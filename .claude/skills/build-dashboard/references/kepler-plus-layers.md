@@ -26,11 +26,12 @@ kepler never adds these types by itself.
   collar_id, then trip_id, track_id.
 - `historyField`: `color` (default) | `off` | a numeric column: the series in the popup
   (gauge, prism, coverage, traffic, pipeline).
-- On a relief base map (Satellite + relief, Topographic + relief; Plus 5850cc3, after 1.6.0) 4D Model, 3D Callout,
-  Sparkline, Gauge, 3D Shape, Coverage and Pipeline stand on the ground and their cards with them: a place on the
-  ground under it (altitude columns are heights above it), a pipe along the ground (a vertex every 25 m), a 4D Model
-  on the ground under its origin (rigid: a part far up a slope belongs in a model of its own), rows in a model's frame
-  with their model. Traffic, Fleet and kepler's own layers still draw from z = 0.
+- On a relief base map (Satellite + relief, Topographic + relief; Plus 5850cc3 and 7e9c4b7, after 1.6.0) 4D Model,
+  3D Callout, Sparkline, Gauge, 3D Shape, Coverage, Pipeline and Fleet stand on the ground and their cards with them: a
+  place on the ground under it (altitude columns are heights above it), a pipe along the ground (a vertex every 25 m),
+  a 4D Model on the ground under its origin (rigid: a part far up a slope belongs in a model of its own), rows in a
+  model's frame with their model, a Fleet asset, its trail and trips on the road. Traffic and kepler's own layers still
+  draw from z = 0.
 
 ## The eleven types
 
@@ -131,6 +132,8 @@ the screen; before, it drew nothing.
   and chase zoom in to street level from far out: for a storm or anything seen from afar use custom.
 - Trails do not break at the antimeridian: unwrap longitudes per asset in SQL (cumulative
   ±360 on jumps > 180), then shift so the newest point is in [-180, 180].
+- `fleetAltitudeRef` (Plus 7e9c4b7): `ground` (default; vehicles, drones, floors) | `sea` (an aircraft's altitude):
+  on a relief base map a height above the sea is drawn exaggerated as the relief is, so it clears the hills it does.
 - Indoors (Plus after 1.6.0): positions in a building's frame (`model_x`, `model_y`, `model_z`,
   `model_heading`; see "Data in a model's frame" below) with `fleetAltitudeField: "altitude"`,
   `fleetDisplay: "3d"`, `fleetStem: false`, `fleetTimeRef: "history"` for a replay, and the 4D
