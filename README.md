@@ -43,8 +43,6 @@ camera with its live video, the lane closures and the message signs;
 **Digital twins.** The place in 3D, with its networks and what happens on them.
 [Manhattan in 3D](https://pacha.ubica.dev/d/nyc-skyline-plus) (*Plus*) raises 22,324 buildings to
 their roof heights with the subway running above them;
-[AGI headquarters](https://pacha.ubica.dev/d/agi-hq-grid-cameras) (*Plus*) lays a simulated grid and
-the field of view of every security camera on a photogrammetric 3D Tiles mesh;
 [Wildfires near the power grid](https://pacha.ubica.dev/d/wildfires-power-grid) (*Plus*) measures
 every satellite fire detection against the high-voltage lines.
 

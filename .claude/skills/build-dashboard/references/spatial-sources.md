@@ -217,7 +217,7 @@ with snapshots for time travel. On the backlog in `dashboards/README.md`; no das
 
 ## 3D
 
-`tile3d` layer for 3D Tiles (pacha: `agi-hq-grid-cameras`; bench: `tile3d.json`): the tileset lives
+`tile3d` layer for 3D Tiles (pacha: `tile3d`, in the gallery; bench: `tile3d.json`): the tileset lives
 only in the saved `mapConfig` (Add Data → Tileset); the query can be `SELECT 1 AS nothing WHERE false`.
 Extruded buildings: polygons with a height column and the geojson layer's `enable3d`
 (`nyc-skyline-plus`, `nyc-taxi-trips`).

@@ -96,7 +96,7 @@ Each dashboard has `tests/stack/<uid>.test.mjs`. Keep a new one to a handful of 
 - it opens with no panel in error (`openDashboard`).
 
 Plus dashboards skip when Plus is not mounted (`provisioned.status === 404`). The smallest
-example: `tests/stack/agi-hq-grid-cameras.test.mjs`. Run one file:
+example: `tests/stack/nyc-skyline-plus.test.mjs`. Run one file:
 
 ```bash
 docker run --rm --network host --shm-size=2g -v "$PWD:/repo" -w /repo --env-file .env \

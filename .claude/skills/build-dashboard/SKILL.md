@@ -67,7 +67,7 @@ nothing) are already in it.
 | Origin–destination flows on a day | `spain-daily-mobility`, `trimet-live-fleet` (flow layer) | Traffic layer for OD links, municipality picker, bars against the national share |
 | Lines and polygons with a value along them | `nyc-skyline-plus`, `wildfires-power-grid` | Pipeline layer, extruded GeoJSON buildings, proximity of points to lines in `spatial` |
 | A grid or raster field (forecast, wind) | `gfs-wind-synoptic` | ERDDAP read on the server, velocity roles `u`/`v` |
-| 3D tiles, sectors | `agi-hq-grid-cameras`, `caltrans-la-cameras` | tile3d, Coverage layer, dynamic text with live video |
+| 3D tiles, sectors | `tile3d`, `caltrans-la-cameras` | tile3d, Coverage layer, dynamic text with live video |
 | Computed geometry (orbits) | `starlink-constellation` | SQL that computes positions now, "overhead a point" |
 | An HTTP JSON source without SQL | `gps-truck-track` | Infinity, hover sync between map and series |
 

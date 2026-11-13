@@ -57,7 +57,7 @@ box|cylinder|hexagon|triangle, `prismUnits` px|m, `prismWidth|Length|Height`,
 `coverageRange` (m, 1000); `coverageRangeMode`, `coverageInner`, `coverageGradient`,
 `coverageOutline*`, `coverageSite*`; 3D: `coverage3d`, `coverageProfile` dome|cone,
 `coverageHeight*`, `coverageDetail`. A mast with three sectors = three rows.
-Examples: `caltrans-la-cameras`, `agi-hq-grid-cameras`.
+Example: `caltrans-la-cameras`.
 
 **surface**: bands and isolines between points. `surfaceMode` interpolate (IDW of
 `colorField`) | count (assets within `surfaceRadius` m); `surfaceReduce` last|mean|min|max,
@@ -336,4 +336,4 @@ the keyless `openfreemap-*` ids (or `grafana-satellite`) instead. Plus also has 
 `cartoApiKey` option. Relief is a toggle, not a base map:
 `config.mapStyle.visibleLayerGroups.relief = true` (Azure styles; on free styles use
 `grafana-satellite-terrain` or `grafana-topographic-terrain`). Never invent a `*-relief` id. Google Photorealistic 3D tiles: the
-"3D (Plus)" tab of Add Data (`tile3d` layer, `agi-hq-grid-cameras`).
+"3D (Plus)" tab of Add Data (`tile3d` layer).
