@@ -33,7 +33,7 @@ kepler never adds these types by itself.
   model's frame with their model, a Fleet asset, its trail and trips on the road. Traffic and kepler's own layers still
   draw from z = 0.
 
-## The eleven types
+## The twelve types
 
 What is marked "Plus after 1.6.0" is on Plus main, not in the 1.6.0 release: check the Plus
 version the instance runs before using it.
@@ -105,6 +105,24 @@ straight|lanes|split, `trafficLaneBend`, `trafficShape` flat|arc, `trafficArcHei
 `pipelineSignedSpeed`. Example: `nyc-skyline-plus` (subway floating over buildings). Plus after
 1.6.0: a line whose vertices change height (a riser, a pipe up a level) draws with its width facing
 the screen; before, it drew nothing.
+
+**route** (Plus after 1.6.0, live on pacha since 543f0b2): a route with its heights along it,
+coloured by grade or height, and a profile under the map. `"columnMode":"geojson"` with
+`"columns":{"geojson":"_geojson"}` (a row per route; a z coordinate is metres above the sea, a 4th a
+time), or `"columnMode":"table"` with `"columns":{"id","lat":"latitude","lng":"longitude",
+"altitude"?,"sortBy"?}` (a track's points joined by id in time order; the panel renames a query's
+lat/lon to latitude/longitude). A string column name|route|trail|track|title|label names a
+geometry row's route. `routeColourBy` grade|height|stroke (grade: six classes of steepness, < 5 %
+to ≥ 40 %; stroke: `strokeColorField` or `visConfig.strokeColor`), `routeHeights` auto|data|ground
+(ground: Mapterhorn's terrain read in the browser, ~19 m a pixel worldwide, 2 m over Spain),
+`routeDrawAt` ground|data (data: 3D, above the sea × 1.5 on a relief base map, from the layer's
+lowest height up × `elevationScale` on a flat one), `routeGradeWindow` (m, 50),
+`routeClimbThreshold` (m, 4), `routeProfile` (true), `routeDrawn` (true: a line drawn with the
+map's draw tool is a route too, heights off the ground), `thickness` (px, 4). The profile: length,
+climb, descent, height range, steepest grade, time; pointer both ways, a drag measures a section;
+a timed route is on the shared crosshair both ways (`graphTooltip: 1`). Traps: a flat-map 3D route is framed by its lowest
+height, so frame the camera on it; kepler's draw tool finishes a line with a double click (Enter on
+a pitched map in headless).
 
 **fleet**: each asset once, where it is now, with a trail. Needs an asset and a time column.
 - `fleetAssetField` / `fleetTimeField`: **set both explicitly** when the frame has other
