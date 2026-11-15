@@ -219,5 +219,10 @@ with snapshots for time travel. On the backlog in `dashboards/README.md`; no das
 
 `tile3d` layer for 3D Tiles (pacha: `tile3d`, in the gallery; bench: `tile3d.json`): the tileset lives
 only in the saved `mapConfig` (Add Data → Tileset); the query can be `SELECT 1 AS nothing WHERE false`.
+A tileset built on the instance (a LiDAR point cloud as `.pnts`, a mesh as `.b3dm` or `.glb`):
+`datasets/<name>/build.sh` writes `<folder>/tileset.json` and its tiles, one folder deep, and the
+gateway serves them to browsers at `/datasets/<name>/<folder>/tileset.json` (CORS open, an hour of
+cache); write a point cloud with the street at height 0 and save the layer with
+`groundTileset: false`.
 Extruded buildings: polygons with a height column and the geojson layer's `enable3d`
 (`nyc-skyline-plus`, `nyc-taxi-trips`).
