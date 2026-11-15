@@ -11,7 +11,9 @@ test('the discrete global grids answer', async () => {
     STACK_URL,
     'SELECT h3_latlng_to_cell(-2.9, -79.0, 7)::VARCHAR AS h3, a5_lonlat_to_cell(-79.0, -2.9, 10)::VARCHAR AS a5',
   );
-  assert.deepEqual({ ...row }, { h3: '610509782519906303', a5: '2955903420613001216' });
+  // A5 1.0's cell id (the a5 extension since DuckDB 1.5.6). Before, 2955903420613001216: the format of a5-js 0.x,
+  // which the free Kepler panel still decodes, so a cell id made here lands elsewhere in its A5 column.
+  assert.deepEqual({ ...row }, { h3: '610509782519906303', a5: '3391146197979758592' });
 });
 
 test('raster reads a public COG over HTTPS', async () => {

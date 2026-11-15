@@ -14,7 +14,7 @@ const EXPECTED = {
   'ubica-chaski-datasource': { version: '2.3.2', signature: 'unsigned' },
   'ubica-chaski-mosaic-panel': { version: '2.3.2', signature: 'unsigned' },
   'ubica-chaski-filters-panel': { version: '2.3.2', signature: 'unsigned' },
-  'motherduck-duckdb-datasource': { version: '0.4.5', signature: 'unsigned' },
+  'motherduck-duckdb-datasource': { version: '0.4.6', signature: 'unsigned' },
   'yesoreyeram-infinity-datasource': { version: '4.0.0', signature: 'valid' },
   'grafana-mqtt-datasource': { version: '1.3.11', signature: 'valid' },
   'volkovlabs-echarts-panel': { version: '7.2.5', signature: 'valid' },
@@ -98,8 +98,8 @@ test('versions are exposed as image labels', () => {
   assert.equal(labels['io.pacha.kepler-panel.version'], '1.9.0');
   assert.equal(labels['io.pacha.kepler-panel.channel'], 'release');
   assert.equal(labels['io.pacha.chaski.version'], '2.3.2');
-  assert.equal(labels['io.pacha.duckdb-datasource.version'], '0.4.5');
-  assert.equal(labels['io.pacha.duckdb-engine.version'], '1.5.4');
+  assert.equal(labels['io.pacha.duckdb-datasource.version'], '0.4.6');
+  assert.equal(labels['io.pacha.duckdb-engine.version'], '1.5.6');
   assert.equal(labels['io.pacha.business-charts.version'], '7.2.5');
   assert.match(labels['org.opencontainers.image.description'], /Not affiliated with Grafana Labs/);
 });
@@ -133,12 +133,23 @@ test('DuckDB loads every baked extension with no network at all', async () => {
       "(SELECT count(*) FROM duckdb_functions() WHERE function_name IN ('iceberg_scan', 'RT_Read')) AS table_functions";
     const out = curl('-X', 'POST', '-H', 'content-type: application/json', '-d', JSON.stringify(dsQueryBody(sql)), 'http://localhost:3000/api/ds/query');
     const [row] = rowsOf(JSON.parse(out));
-    assert.equal(row.v, 'v1.5.4');
+    assert.equal(row.v, 'v1.5.6');
     assert.equal(row.p, 'POINT (1 2)');
     assert.equal(row.h3, '610509782519906303');
-    assert.equal(row.a5, '2955903420613001216');
+    // A5 1.0's cell id: the a5 extension built for 1.5.6 follows it (1.5.4's gave 2955903420613001216, the format
+    // of a5-js 0.x, which the free Kepler panel still decodes).
+    assert.equal(row.a5, '3391146197979758592');
     assert.equal(row.hilbert, 7);
     assert.ok(Number(row.table_functions) >= 2, 'iceberg_scan or RT_Read is missing');
+    // Spatial on 1.5.4 killed the whole datasource process on a predicate against an empty geometry that is not a
+    // constant (from a subquery or a CTE): what a Viewshed layer's area variable holds when nothing is in sight.
+    const empty =
+      'LOAD spatial; SELECT count(*)::INTEGER AS n FROM range(3) t(i) ' +
+      "WHERE ST_Within(ST_Point(i, 0), (SELECT ST_GeomFromText('MULTIPOLYGON EMPTY')))";
+    const [none] = rowsOf(
+      JSON.parse(curl('-X', 'POST', '-H', 'content-type: application/json', '-d', JSON.stringify(dsQueryBody(empty)), 'http://localhost:3000/api/ds/query'))
+    );
+    assert.equal(none?.n, 0);
   } finally {
     remove(offline);
   }

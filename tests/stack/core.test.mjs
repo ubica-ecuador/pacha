@@ -38,7 +38,7 @@ test('the datasources are provisioned, and Chaski has no URL', async () => {
 
 test('the server DuckDB is the pinned engine', async () => {
   const [row] = await duckdb(STACK_URL, 'SELECT version() AS v');
-  assert.equal(row.v, 'v1.5.4');
+  assert.equal(row.v, 'v1.5.6');
 });
 
 test('DuckDB reaches the tiler by its service name', async () => {

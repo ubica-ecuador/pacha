@@ -12,7 +12,7 @@ const arg = (name) => dockerfile.match(new RegExp(`^ARG ${name}=(\\S+)$`, 'm'))?
 const ENGINE = arg('DUCKDB_ENGINE_VERSION');
 
 test('the Dockerfile pins the engine and the arm64 CLI hash', () => {
-  assert.equal(ENGINE, '1.5.4');
+  assert.equal(ENGINE, '1.5.6');
   assert.match(arg('DUCKDB_CLI_SHA256_arm64') ?? '', /^[0-9a-f]{64}$/);
 });
 
