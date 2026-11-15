@@ -11,7 +11,7 @@ Like any layer in `config.visState.layers[]`:
 `{"id","type","config":{"dataId":"grafana-<refId>","label","columns","columnMode","isVisible":true,"visConfig":{...},"textLabel":[...]},"visualChannels":{...}}`.
 kepler never adds these types by itself.
 
-- Point-based types (gauge, prism, coverage, surface, sparkline, callout, fleet, model4d, floorplan):
+- Point-based types (gauge, prism, coverage, viewshed, surface, sparkline, callout, fleet, model4d, floorplan):
   `"columns":{"lat":"latitude","lng":"longitude"}`, `"columnMode":"points"`.
 - Colour: `visualChannels.colorField = {"name":"<col>","type":"real"|"integer"|"string"}` plus
   `visConfig.colorRange`. Thresholds: `"colorScale":"custom"` and
@@ -33,7 +33,7 @@ kepler never adds these types by itself.
   model's frame with their model, a Fleet asset, its trail and trips on the road. Traffic and kepler's own layers still
   draw from z = 0.
 
-## The twelve types
+## The thirteen types
 
 What is marked "Plus after 1.6.0" is on Plus main, not in the 1.6.0 release: check the Plus
 version the instance runs before using it.
@@ -59,6 +59,33 @@ box|cylinder|hexagon|triangle, `prismUnits` px|m, `prismWidth|Length|Height`,
 `coverageOutline*`, `coverageSite*`; 3D: `coverage3d`, `coverageProfile` dome|cone,
 `coverageHeight*`, `coverageDetail`. A mast with three sectors = three rows.
 Example: `caltrans-la-cameras`.
+
+**viewshed** (Plus after 1.6.0, live on pacha since 1741e2e): what each row's place sees past the
+terrain and the buildings, the seen ground in its colour, the rest of its range shaded (roofs left
+clear). A row per observer. `viewshedObstacles` terrain|buildings|both (terrain: Mapterhorn's, read in
+the browser). `viewshedBuildings` `"__basemap__"` (default: OpenStreetMap's buildings with their
+heights, OpenFreeMap's z14 tiles within 3 km of each observer, whatever the base map) or the id of a
+dataset on the map with a polygon geometry column (`"grafana-B"`; no layer needs to draw it);
+`viewshedBuildingHeight` `""` (by name: height, render_height, building_height, height_m, hgt, h,
+else num_floors, levels, floors, storeys × 3 m) | `"__fixed__"` | a column; `viewshedBuildingDefault`
+(m, 10: a building with no height). Channels, each with `<name>Scale: "linear"`: `eyeField` (m above
+the ground), `reachField` (m × `viewshedRangeMultiplier`), `azimuthField`, `beamwidthField`; fixed
+without them: `viewshedEye` (1.6), `viewshedRange` (m, 2000; 10 m to 100 km), `viewshedAzimuth` (added
+to a column), `viewshedBeamwidth` (360). `viewshedEyeFrom` ground|roof (roof: the eye over the building
+the observer stands in; its own building never hides it), `viewshedTarget` (m above the ground a point
+is seen at: 0 the ground, 1.6 people; repaints without a new sweep), `viewshedCurvature` (true),
+`viewshedResolution` low|medium|high (129, 257, 513 cells across each observer's square; 12 million
+cells shared, so coarser past 45 observers at high, 181 at medium; 500 observers at most),
+`viewshedGradient` (fade with distance), `viewshedShade` (true), `viewshedOutline` +
+`viewshedOutlineWidth`, `viewshedSite` + `viewshedSiteRadius` (a dot at eye height on a stem),
+`rowsPerPlace`, `rowsAsset`, `opacity` (0.6). Colour per observer: a string `colorField`,
+`customOrdinal`. `viewshedDrawn` (true) makes a Point drawn with the draw tool an observer too, with the
+fixed settings; `viewshedRows` false keeps only those. Hover: seen or hidden, from how many observers,
+how high a hidden point would have to be, distance, elevation. On a relief base map the picture lies on
+the relief with terrain among the obstacles, level at the observer's ground with buildings alone (use
+both on a slope). Traps: tiles load round each observer first, so a screenshot needs ~30 s; a 15 km
+lookout at medium has 117 m cells, too coarse for buildings. Example: `madrid-traffic-cameras`
+(pacha-dashboards).
 
 **surface**: bands and isolines between points. `surfaceMode` interpolate (IDW of
 `colorField`) | count (assets within `surfaceRadius` m); `surfaceReduce` last|mean|min|max,
