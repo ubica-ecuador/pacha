@@ -11,7 +11,8 @@ Like any layer in `config.visState.layers[]`:
 `{"id","type","config":{"dataId":"grafana-<refId>","label","columns","columnMode","isVisible":true,"visConfig":{...},"textLabel":[...]},"visualChannels":{...}}`.
 kepler never adds these types by itself.
 
-- Point-based types (gauge, prism, coverage, viewshed, surface, sparkline, callout, fleet, model4d, floorplan):
+- Point-based types (gauge, prism, coverage, viewshed, buildings with sensors, surface, sparkline, callout, fleet,
+  model4d, floorplan):
   `"columns":{"lat":"latitude","lng":"longitude"}`, `"columnMode":"points"`.
 - Colour: `visualChannels.colorField = {"name":"<col>","type":"real"|"integer"|"string"}` plus
   `visConfig.colorRange`. Thresholds: `"colorScale":"custom"` and
@@ -33,7 +34,7 @@ kepler never adds these types by itself.
   model's frame with their model, a Fleet asset, its trail and trips on the road. Traffic and kepler's own layers still
   draw from z = 0.
 
-## The thirteen types
+## The fourteen types
 
 What is marked "Plus after 1.6.0" is on Plus main, not in the 1.6.0 release: check the Plus
 version the instance runs before using it.
@@ -95,6 +96,29 @@ relief base map the picture lies on the relief with terrain among the obstacles,
 ground with buildings alone (use both on a slope). Traps: tiles load round each observer first, so a
 screenshot needs ~30 s; a 15 km lookout at medium has 117 m cells, too coarse for buildings. Example:
 `madrid-traffic-cameras` (pacha-dashboards).
+
+**buildings** (Plus after 1.6.0, live on pacha since a103a83): the base map's buildings (OpenStreetMap's, from
+OpenFreeMap's tiles in view, from zoom 12, within 3.5 km of the centre; 5 m where OSM has no height), each extruded
+and coloured by a value from the layer's rows. `colorField` (numeric) is the value; its colour scale colours the
+buildings and the legend reads it (custom thresholds: `"colorScale":"custom"`, the last colorMap key may be a number,
+the top of the last class). The column mode says what the rows are:
+- `"columnMode":"points"`, `"columns":{"lat":"latitude","lng":"longitude"}`: sensors. `buildingsMode` interpolate
+  (IDW at each building's centre, as the Surface: `buildingsPower` 2, `buildingsNeighbours` auto|8|16|32|all,
+  `buildingsMaxDistance` m, null for no limit, past which a building gets none) | inside (the sensors in the
+  footprint, by `buildingsAggregate` mean|min|max). `buildingsSensors` (dots, true), `buildingsSensorRadius` (4).
+- `"columnMode":"geojson"`, `"columns":{"geojson":"_geojson"}`: polygons (WKT, GeoJSON or WKB; the panel names the
+  column `_geojson`). A building takes the value of the polygon its centre is in; overlaps by `buildingsAggregate`.
+- `"columnMode":"h3"`, `"columns":{"hex_id":"h3"}`: H3 cells as text (the panel names the column `h3`; in DuckDB
+  `h3_h3_to_string(h3_latlng_to_cell(lat, lng, 9))`, never the UBIGINT, which loses digits as a number). A building
+  takes its cell's value at the finest resolution present. A raster reaches the buildings this way: its mean per cell
+  on the server.
+
+`buildingsReduce` last|mean|min|max makes one value per sensor, polygon or cell over the rows. `buildingsEmpty`
+grey|hide (a building with no value), `buildingsEmptyColor` (null: a mid grey), `buildingsHeightScale` (1),
+`buildingsHideBasemap` (true: the base map's 3D buildings are hidden while the layer shows), opacity 0.9. Hover: value,
+band, closest sensor or cell, height. With polygons or cells the layer's bounds are the areas', so a saved `mapState`
+with only `pitch`/`bearing` (no lat/lng/zoom) frames them on load, whatever variable a link sets, and
+`fitOnVariables` follows a picker. Example: `nyc-street-heat` (pacha-dashboards: sensors, ZIP code polygons, H3).
 
 **surface**: bands and isolines between points. `surfaceMode` interpolate (IDW of
 `colorField`) | count (assets within `surfaceRadius` m); `surfaceReduce` last|mean|min|max,

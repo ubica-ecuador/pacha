@@ -63,6 +63,7 @@ nothing) are already in it.
 | Replaying tracks with charts in sync | `f1-race-laps`, `drone-delivery-flights` | Fleet `fleetTimeRef: history`, cards, centre on selection; in `drone-delivery-flights` a Chaski Timeline and Mosaic curves drive the Fleet layer through `mosaicSelection`, and the picked flight is an `equals` clause, so picking reloads nothing |
 | Trajectories, stops and trips | `denmark-ais-trajectories`, `animal-movement-tracking` | trip layers, selection from a table link (not a map click) |
 | Sensors with series per site | `air-quality-amsterdam`, `melbourne-city-sensors` | Surface and Sparkline layers, `http_get` per station with whole-hour cache keys |
+| Buildings coloured by sensors, by an area's index or by H3 cells | `nyc-street-heat` (pacha-dashboards) | Buildings layer in its three column modes, a Time Brush hour by hour, a picker that reframes the maps (`fitOnVariables`, a `mapState` with only pitch and bearing) |
 | Network links, flows between places | `germany-power-borders`, `datacenter-interconnection`, `international-migration` | Traffic, Gauge, Sparkline and Pipeline layers; arcs; Sankey and pyramid in ECharts |
 | Origin–destination flows on a day | `spain-daily-mobility`, `trimet-live-fleet` (flow layer) | Traffic layer for OD links, municipality picker, bars against the national share |
 | Lines and polygons with a value along them | `nyc-skyline-plus`, `wildfires-power-grid` | Pipeline layer, extruded GeoJSON buildings, proximity of points to lines in `spatial` |
@@ -82,9 +83,9 @@ Read only what the task needs.
   written in the JSON; variables and macros; what each engine cannot do.
 - [kepler.md](references/kepler.md): the panel options, field roles, the saved `mapConfig`,
   cross-filtering, variable formats, free vs Plus.
-- [kepler-plus-layers.md](references/kepler-plus-layers.md): the thirteen Plus layer types and
-  their keys (gauge, prism, coverage, viewshed, surface, sparkline, callout, traffic, pipeline, route,
-  fleet, model4d, floorplan), cards on any layer, data in a 3D model's frame, Floors (indoor maps),
+- [kepler-plus-layers.md](references/kepler-plus-layers.md): the fourteen Plus layer types and
+  their keys (gauge, prism, coverage, viewshed, buildings, surface, sparkline, callout, traffic, pipeline,
+  route, fleet, model4d, floorplan), cards on any layer, data in a 3D model's frame, Floors (indoor maps),
   Places and Alerts.
 - [business-charts.md](references/business-charts.md): ECharts panels on Chaski frames; the
   `@constants` template; brush to variables; colours from the theme.
