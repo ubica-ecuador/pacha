@@ -158,7 +158,10 @@ map's draw tool is a route too, heights off the ground), `thickness` (px, 4). Th
 climb, descent, height range, steepest grade, time; pointer both ways, a drag measures a section;
 a timed route is on the shared crosshair both ways (`graphTooltip: 1`). Traps: a flat-map 3D route is framed by its lowest
 height, so frame the camera on it; kepler's draw tool finishes a line with a double click (Enter on
-a pitched map in headless).
+a pitched map in headless). Example: `alps-weather-balloons` (pacha-dashboards): a radiosonde's
+flight in table mode at its own heights, its ground track a second route layer on the same `dataId`
+(`routeDrawAt` and `routeHeights` ground, `routeColourBy` stroke, `routeProfile` false: it stays
+off the profile), charts of height, temperature and wind on the shared crosshair.
 
 **fleet**: each asset once, where it is now, with a trail. Needs an asset and a time column.
 - `fleetAssetField` / `fleetTimeField`: **set both explicitly** when the frame has other
