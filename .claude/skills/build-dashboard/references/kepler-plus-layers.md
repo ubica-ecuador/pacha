@@ -120,6 +120,17 @@ band, closest sensor or cell, height. With polygons or cells the layer's bounds 
 with only `pitch`/`bearing` (no lat/lng/zoom) frames them on load, whatever variable a link sets, and
 `fitOnVariables` follows a picker. Example: `nyc-street-heat` (pacha-dashboards: sensors, ZIP code polygons, H3).
 
+Cards (Plus 38e0e7c, live on pacha): `cardShow` `tooltip` | `hover` (no `always`: thousands of buildings) puts the
+hovered building's card over its roof instead of the hover box: its value at the time filter's instant and its series
+over the range, worked out as its colour (IDW at its centre at every time from the sensors reading then, a sensor
+dropping out 1.5 of its usual gap after its last reading; inside: their aggregate; polygon: its rows, named by the
+first text column; cell: "H3 <id>"). Value = `colorField`. Keys: `cardPlacement` above (default) | beside,
+`cardTimeField`, `cardUnit`, `cardSize`, `cardMin`/`cardMax`; pins in `cardPinned` (by the building's centre). The
+card reads rows past kepler's time filter, the colours only the rows it keeps: for a chart over the range and colours
+of one hour, query every hour and add a kepler `timeRange` filter on the time column with `timeSync: "variables"`
+(the Time Brush moves it); a reading at the half hour (`time + INTERVAL 30 MINUTE`) keeps one per hourly window. Sensor
+dots keep their hover. Example: `nyc-street-heat`'s two temperature maps.
+
 **surface**: bands and isolines between points. `surfaceMode` interpolate (IDW of
 `colorField`) | count (assets within `surfaceRadius` m); `surfaceReduce` last|mean|min|max,
 `surfaceBands`, `surfaceIsolines*`, `surfaceLabels*`, `surfaceResolution`, `surfacePower` (2),
@@ -265,7 +276,7 @@ only for pictures Floors does not place.
 
 ## Cards on other layers (Plus after 1.6.0)
 
-gauge, prism, coverage, traffic, pipeline and model4d take a card per object (a site, a sector, a
+gauge, prism, coverage, traffic, pipeline and model4d (and buildings, on hover only: see its section) take a card per object (a site, a sector, a
 link, a pipe, a part) with its reading at the map's instant and its series, instead of kepler's
 popup or always, from the same query: no sparkline layer beside them. visConfig:
 - `cardShow` `tooltip` (default: kepler's popup, saved maps unchanged) | `hover` (a card instead of
