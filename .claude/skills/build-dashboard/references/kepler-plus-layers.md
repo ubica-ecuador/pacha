@@ -138,8 +138,15 @@ dots keep their hover. Example: `nyc-street-heat`'s two temperature maps.
 ("2, 5, 10": fixed breaks keep frames comparable while playing), `surfaceUnderBuildings` (true:
 drawn inside the base map under its 3D buildings, on styles that have them such as
 `openfreemap-liberty`; not with Relief), `surfaceDrape` (true: with a `tile3d` layer
-on the map, laid over the ground of its tiles, buildings standing through it; flat otherwise),
-`surfaceAltitude` (metres above the ground, 0). Example: `air-quality-amsterdam`.
+on the map, laid over the ground of its tiles, buildings standing through it; flat otherwise;
+a Gaussian Splats tileset tells its ground too), `surfaceDrapeOn` ground|top (ground; top:
+poured over everything, roofs, heaps and canopies, 0.5 m over them, what is narrower than 8 m
+bridged, shaded by its slope; a draped surface goes above the scan in the layer list),
+`surfaceAltitude` (metres above the ground, 0). Splats write no depth, so a surface drawn after
+them paints over the whole scan: the Gaussian Splats layer's `splatDepth` (false) writes the
+depth of its splats' cores, so sheds pierce a surface on the ground and chimneys a poured one
+(under a wide roof a scan's ground is the roof: prefer top there). Example:
+`air-quality-amsterdam`.
 
 **sparkline**: a card per place with its series. Needs time (`sparkTimeField` auto);
 `colorField` is the plotted value. `sparkScale` common|perSite, `sparkMin|Max`, `sparkUnit`,
