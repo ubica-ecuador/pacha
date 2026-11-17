@@ -200,7 +200,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -638,7 +638,7 @@
                 }
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -889,7 +889,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -927,7 +927,7 @@
                 "mode": "markdown"
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -1005,7 +1005,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -1109,13 +1109,23 @@
                 "clickArea": false,
                 "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
                 "dimUnselected": false,
-                "flowRenderMode": "straight",
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
                 "followGrafanaTheme": false,
+                "grafanaAnnotations": "show",
                 "haloStyle": "auto",
                 "hoverMaxAgeSeconds": 60,
                 "hoverPublishSpike": false,
                 "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
                 "mapConfig": {
                   "config": {
                     "mapState": {
@@ -1820,6 +1830,7 @@
                   },
                   "version": "v1"
                 },
+                "maxZoom": 22,
                 "mosaicArea": true,
                 "mosaicSelection": "",
                 "mosaicViewport": false,
@@ -1837,7 +1848,6 @@
                   "from": "slot_from",
                   "to": "slot_to"
                 },
-                "tripLayerMode": "table",
                 "variableMappings": [
                   {
                     "field": "segment_id",
@@ -1857,7 +1867,7 @@
                 ]
               }
             },
-            "version": "1.4.1"
+            "version": "1.6.0"
           }
         }
       },
@@ -1925,11 +1935,23 @@
                 "clickArea": false,
                 "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
-                "flowRenderMode": "straight",
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
                 "followGrafanaTheme": false,
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
                 "hoverMaxAgeSeconds": 60,
                 "hoverPublishSpike": false,
                 "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
                 "mapConfig": {
                   "config": {
                     "mapState": {
@@ -1982,15 +2004,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": 39.46102081825062,
-                      "longitude": -0.40217401336310954,
+                      "latitude": 39.4640465386029,
+                      "longitude": -0.3907089384284618,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_3D",
                       "maxPitch": 85,
                       "pitch": 50,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 13.177350383771156
+                      "zoom": 13.731853928518344
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -2025,6 +2047,18 @@
                     "uiState": {
                       "locale": "en",
                       "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
                         "chart": {
                           "active": false
                         },
@@ -2072,8 +2106,8 @@
                           "timezone": "Europe/Madrid",
                           "type": "timeRange",
                           "value": [
-                            1792681646115,
-                            1792768046115
+                            1794801600000,
+                            1794834000000
                           ],
                           "view": "minified"
                         }
@@ -2154,6 +2188,7 @@
                       "layerBlending": "normal",
                       "layerOrder": [
                         "stations",
+                        "wegeltp",
                         "surface"
                       ],
                       "layers": [
@@ -2177,7 +2212,7 @@
                               26,
                               255
                             ],
-                            "isVisible": true,
+                            "isVisible": false,
                             "label": "Estaciones · última lectura",
                             "textLabel": [],
                             "visConfig": {
@@ -2198,8 +2233,18 @@
                               },
                               "filled": true,
                               "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.5,
                               "opacity": 0.85,
                               "outline": true,
+                              "pulseDurationMs": 1000,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
                               "radius": 7,
                               "radiusRange": [
                                 0,
@@ -2218,6 +2263,7 @@
                               "sparkDotRadius": 8,
                               "sparkDots": true,
                               "sparkDotsOnTop": true,
+                              "sparkExtras": [],
                               "sparkFill": true,
                               "sparkMax": "auto",
                               "sparkMin": "auto",
@@ -2225,6 +2271,7 @@
                               "sparkOverlap": "none",
                               "sparkPinned": [],
                               "sparkPublishCrosshair": true,
+                              "sparkRange": "dashboard",
                               "sparkScale": "common",
                               "sparkSize": "S",
                               "sparkTimeField": "auto",
@@ -2279,6 +2326,118 @@
                               255
                             ],
                             "isVisible": true,
+                            "label": "Copy of Superficie · medida elegida",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "buildingsAggregate": "mean",
+                              "buildingsEmpty": "grey",
+                              "buildingsHeightScale": 1,
+                              "buildingsHideBasemap": true,
+                              "buildingsMode": "interpolate",
+                              "buildingsNeighbours": "auto",
+                              "buildingsOn": "basemap",
+                              "buildingsPower": 2,
+                              "buildingsReduce": "last",
+                              "buildingsSensorRadius": 4,
+                              "buildingsSensors": false,
+                              "cardAlertLabel": "",
+                              "cardExtras": [],
+                              "cardMax": "auto",
+                              "cardMin": "auto",
+                              "cardNameField": "auto",
+                              "cardPinned": [],
+                              "cardPlacement": "above",
+                              "cardScale": "common",
+                              "cardShow": "hover",
+                              "cardSize": "S",
+                              "cardTimeField": "auto",
+                              "cardUnit": "",
+                              "cardValueField": "color",
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#00939C",
+                                  "#6BB5B9",
+                                  "#AAD7D9",
+                                  "#F4B198",
+                                  "#DF744E",
+                                  "#C22E00"
+                                ],
+                                "name": "Uber Viz Diverging",
+                                "type": "diverging"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.5,
+                              "opacity": 0.86,
+                              "outline": true,
+                              "pulseDurationMs": 1000,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 7,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "wegeltp",
+                          "type": "buildings",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "value",
+                              "type": "integer"
+                            },
+                            "colorScale": "quantize",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              242,
+                              242,
+                              242
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
                             "label": "Superficie · medida elegida",
                             "textLabel": [],
                             "visConfig": {
@@ -2299,8 +2458,18 @@
                               },
                               "filled": true,
                               "fixedRadius": false,
-                              "opacity": 0.29,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.5,
+                              "opacity": 0.14,
                               "outline": true,
+                              "pulseDurationMs": 1000,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
                               "radius": 7,
                               "radiusRange": [
                                 0,
@@ -2350,7 +2519,7 @@
                               "name": "value",
                               "type": "integer"
                             },
-                            "colorScale": "quantile",
+                            "colorScale": "quantize",
                             "sizeScale": "linear",
                             "strokeColorScale": "quantile"
                           }
@@ -2362,7 +2531,10 @@
                   },
                   "version": "v1"
                 },
+                "maxZoom": 22,
+                "mosaicArea": true,
                 "mosaicSelection": "air",
+                "mosaicViewport": false,
                 "peerTimeSync": false,
                 "places": {},
                 "publishIntervalMs": 1500,
@@ -2377,7 +2549,6 @@
                   "from": "slot_from",
                   "to": "slot_to"
                 },
-                "tripLayerMode": "table",
                 "variableMappings": [
                   {
                     "field": "station",
@@ -2387,7 +2558,7 @@
                 ]
               }
             },
-            "version": "1.4.1"
+            "version": "1.6.0"
           }
         }
       },
@@ -3342,7 +3513,7 @@
                 }
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -3422,7 +3593,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -3820,7 +3991,7 @@
                 }
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -4329,7 +4500,7 @@
                 }
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -4488,7 +4659,7 @@
                 }
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -4621,6 +4792,19 @@
                       "tooltip": false,
                       "viz": false
                     }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -4667,7 +4851,9 @@
                 "pinnedHeight": 52,
                 "pinnedPosition": "top",
                 "pinnedStyle": "solid",
+                "playMotion": "smooth",
                 "publishIntervalMs": 1000,
+                "publishWhileDragging": false,
                 "publishWhilePlaying": false,
                 "scale": "linear",
                 "selection": "range",
@@ -4693,7 +4879,7 @@
                 "zoomToExternal": false
               }
             },
-            "version": ""
+            "version": "1.6.0"
           }
         }
       },
@@ -4951,6 +5137,7 @@
                 "pinnedHeight": 52,
                 "pinnedPosition": "floating",
                 "pinnedStyle": "solid",
+                "playMotion": "smooth",
                 "publishIntervalMs": 400,
                 "publishWhileDragging": true,
                 "publishWhilePlaying": true,
@@ -4978,7 +5165,7 @@
                 "zoomToExternal": false
               }
             },
-            "version": "1.4.1"
+            "version": "1.6.0"
           }
         }
       },
@@ -5235,7 +5422,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -5358,7 +5545,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
