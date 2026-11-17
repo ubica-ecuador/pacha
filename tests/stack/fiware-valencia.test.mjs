@@ -115,11 +115,14 @@ test('the overview map has the four Plus layers, publishes its clicks and follow
 test('each tab map draws its own layers; the air one moves with the window in the browser', () => {
   assert.deepEqual(layerTypes('Tráfico por tramo en la ventana'), ['pipeline']);
   assert.deepEqual(layerTypes('Estaciones Valenbisi al final de la ventana'), ['gauge']);
-  assert.deepEqual(layerTypes('${metric:text} en la ventana'), ['sparkline', 'surface']);
+  assert.deepEqual(layerTypes('${metric:text} en la ventana'), ['buildings', 'sparkline', 'surface']);
   const air = options('${metric:text} en la ventana');
   assert.equal(air.timeSync, 'variables');
   assert.deepEqual(air.timeVariables, { from: 'slot_from', to: 'slot_to' });
   assert.equal(air.mosaicSelection, 'air');
+  // The buildings cast their shadows under kepler's Light & Shadow, the sun at the end of the window (animation).
+  const [light] = air.mapConfig.config.visState.effects;
+  assert.deepEqual([light.type, light.isEnabled, light.parameters.timeMode], ['lightAndShadow', true, 'animation']);
 });
 
 test('a Time Brush per tab: an instant ($t) on the overview, one window ($slot_from, $slot_to) in the tabs', () => {

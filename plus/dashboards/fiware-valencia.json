@@ -2004,15 +2004,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": 39.4640465386029,
-                      "longitude": -0.3907089384284618,
+                      "latitude": 39.46163104533763,
+                      "longitude": -0.3939057461946633,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_3D",
                       "maxPitch": 85,
                       "pitch": 50,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 13.731853928518344
+                      "zoom": 14.352017618536756
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -2081,7 +2081,36 @@
                         "features": [],
                         "visible": true
                       },
-                      "effects": [],
+                      "effects": [
+                        {
+                          "id": "light",
+                          "isEnabled": true,
+                          "parameters": {
+                            "ambientLightColor": [
+                              255,
+                              254,
+                              230
+                            ],
+                            "ambientLightIntensity": 0.52,
+                            "shadowColor": [
+                              77,
+                              74,
+                              68
+                            ],
+                            "shadowIntensity": 0.56,
+                            "sunLightColor": [
+                              255,
+                              236,
+                              214
+                            ],
+                            "sunLightIntensity": 2.72,
+                            "timeMode": "animation",
+                            "timestamp": 1794834000000,
+                            "timezone": "America/Guayaquil"
+                          },
+                          "type": "lightAndShadow"
+                        }
+                      ],
                       "filters": [
                         {
                           "animationWindow": "free",
@@ -2106,10 +2135,10 @@
                           "timezone": "Europe/Madrid",
                           "type": "timeRange",
                           "value": [
-                            1794801600000,
-                            1794834000000
+                            1794884400000,
+                            1794891600000
                           ],
-                          "view": "minified"
+                          "view": "side"
                         }
                       ],
                       "groupBys": [],
@@ -2342,6 +2371,7 @@
                               "buildingsReduce": "last",
                               "buildingsSensorRadius": 4,
                               "buildingsSensors": false,
+                              "buildingsShadow": 0.35,
                               "cardAlertLabel": "",
                               "cardExtras": [],
                               "cardMax": "auto",
@@ -2494,6 +2524,7 @@
                               "surfaceBands": true,
                               "surfaceBreaks": "",
                               "surfaceDrape": true,
+                              "surfaceDrapeOn": "ground",
                               "surfaceExtent": "hull",
                               "surfaceFade": true,
                               "surfaceIsolineWidth": 1,
