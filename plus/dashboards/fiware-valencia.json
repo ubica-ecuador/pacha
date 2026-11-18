@@ -3379,7 +3379,7 @@
                               "cardShow": "always",
                               "cardSize": "XS",
                               "cardTimeField": "none",
-                              "cardUnit": "m/s",
+                              "cardUnit": "µg/m³",
                               "cardValueField": "color",
                               "colorRange": {
                                 "category": "Custom",
