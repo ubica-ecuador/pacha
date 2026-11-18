@@ -70,9 +70,13 @@ jobs:
         with:
           source: .
           files: ./docker-bake.hcl
+          # A push by digest takes a bare name: the tags come in the next job.
           set: |
             *.platform=${{ matrix.platform }}
             *.output=type=image,push-by-digest=true,name-canonical=true,push=true
+            grafana.tags=${{ env.REGISTRY }}/pacha-grafana
+            titiler.tags=${{ env.REGISTRY }}/pacha-titiler
+            recorder.tags=${{ env.REGISTRY }}/pacha-recorder
 
       - name: Keep the digests
         env:
