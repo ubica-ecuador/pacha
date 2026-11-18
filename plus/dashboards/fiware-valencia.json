@@ -775,7 +775,7 @@
                 }
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -809,7 +809,7 @@
                 "variables": "- param: bikesel\n  column: pct\n  from: bikes_lo\n  to: bikes_hi\n"
               }
             },
-            "version": ""
+            "version": "2.3.2"
           }
         }
       },
@@ -2135,8 +2135,8 @@
                           "timezone": "Europe/Madrid",
                           "type": "timeRange",
                           "value": [
-                            1794884400000,
-                            1794891600000
+                            1794960383290,
+                            1794965141645
                           ],
                           "view": "side"
                         }
@@ -2241,7 +2241,7 @@
                               26,
                               255
                             ],
-                            "isVisible": false,
+                            "isVisible": true,
                             "label": "Estaciones · última lectura",
                             "textLabel": [],
                             "visConfig": {
@@ -2657,11 +2657,23 @@
                 "clickArea": false,
                 "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
-                "flowRenderMode": "straight",
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
                 "followGrafanaTheme": false,
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
                 "hoverMaxAgeSeconds": 60,
                 "hoverPublishSpike": false,
                 "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
                 "mapConfig": {
                   "config": {
                     "mapState": {
@@ -2972,7 +2984,10 @@
                   },
                   "version": "v1"
                 },
+                "maxZoom": 22,
+                "mosaicArea": true,
                 "mosaicSelection": "",
+                "mosaicViewport": false,
                 "peerTimeSync": false,
                 "places": {},
                 "publishIntervalMs": 1500,
@@ -2987,7 +3002,6 @@
                   "from": "slot_from",
                   "to": "slot_to"
                 },
-                "tripLayerMode": "table",
                 "variableMappings": [
                   {
                     "field": "bike",
@@ -2997,7 +3011,7 @@
                 ]
               }
             },
-            "version": "1.4.1"
+            "version": "1.6.0"
           }
         }
       },
@@ -3065,11 +3079,23 @@
                 "clickArea": false,
                 "clickAreaSizeMetres": 6000,
                 "clickConfirm": false,
-                "flowRenderMode": "straight",
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
                 "followGrafanaTheme": false,
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
                 "hoverMaxAgeSeconds": 60,
                 "hoverPublishSpike": false,
                 "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
                 "mapConfig": {
                   "config": {
                     "mapState": {
@@ -3397,7 +3423,10 @@
                   },
                   "version": "v1"
                 },
+                "maxZoom": 22,
+                "mosaicArea": true,
                 "mosaicSelection": "",
+                "mosaicViewport": false,
                 "peerTimeSync": false,
                 "places": {},
                 "publishIntervalMs": 1500,
@@ -3412,7 +3441,6 @@
                   "from": "slot_from",
                   "to": "slot_to"
                 },
-                "tripLayerMode": "table",
                 "variableMappings": [
                   {
                     "field": "segment_id",
@@ -3422,7 +3450,7 @@
                 ]
               }
             },
-            "version": "1.4.1"
+            "version": "1.6.0"
           }
         }
       },
@@ -4209,10 +4237,11 @@
                     "desc": true,
                     "displayName": "Incidencia"
                   }
-                ]
+                ],
+                "zebraStriping": false
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -4966,6 +4995,19 @@
                       "tooltip": false,
                       "viz": false
                     }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -5027,7 +5069,9 @@
                 "pinnedHeight": 52,
                 "pinnedPosition": "top",
                 "pinnedStyle": "solid",
+                "playMotion": "smooth",
                 "publishIntervalMs": 1000,
+                "publishWhileDragging": false,
                 "publishWhilePlaying": false,
                 "scale": "linear",
                 "selection": "range",
@@ -5053,7 +5097,7 @@
                 "zoomToExternal": false
               }
             },
-            "version": ""
+            "version": "1.6.0"
           }
         }
       },
@@ -5252,6 +5296,19 @@
                       "tooltip": false,
                       "viz": false
                     }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -5347,7 +5404,9 @@
                 "pinnedHeight": 52,
                 "pinnedPosition": "top",
                 "pinnedStyle": "solid",
+                "playMotion": "smooth",
                 "publishIntervalMs": 1000,
+                "publishWhileDragging": false,
                 "publishWhilePlaying": false,
                 "scale": "linear",
                 "selection": "range",
@@ -5373,7 +5432,7 @@
                 "zoomToExternal": false
               }
             },
-            "version": ""
+            "version": "1.6.0"
           }
         }
       },
@@ -5487,13 +5546,14 @@
                 "maxValues": 5,
                 "noun": "cuartos de hora de tramo",
                 "playMode": "slide",
+                "playMotion": "smooth",
                 "selection": "traffic",
                 "stepMs": 800,
                 "timeColumn": "",
                 "timeline": ""
               }
             },
-            "version": ""
+            "version": "2.3.2"
           }
         }
       },
@@ -5610,7 +5670,7 @@
                 "variables": ""
               }
             },
-            "version": ""
+            "version": "2.3.2"
           }
         }
       }
