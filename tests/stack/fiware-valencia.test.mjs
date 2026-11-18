@@ -99,7 +99,7 @@ test('the air and weather readings share one table, each kind with its measures'
 test('an overview, then a tab per kind of data, then the sources', () => {
   const { layout } = dashboard.spec;
   assert.equal(layout.kind, 'TabsLayout');
-  assert.deepEqual(layout.spec.tabs.map((t) => t.spec.title), ['Vista general', 'Tráfico', 'Valenbisi', 'Aire y meteorología', 'Sobre los datos']);
+  assert.deepEqual(layout.spec.tabs.map((t) => t.spec.title), ['Vista general', 'Tráfico', 'Valenbisi', 'Aire y meteorología', 'A qué huele', 'Sobre los datos']);
 });
 
 test('the overview map has the four Plus layers, publishes its clicks and follows the instant in its queries', () => {
@@ -125,9 +125,21 @@ test('each tab map draws its own layers; the air one moves with the window in th
   assert.deepEqual([light.type, light.isEnabled, light.parameters.timeMode], ['lightAndShadow', true, 'animation']);
 });
 
+test('the smell tab: where the city\'s wind takes each station\'s air', () => {
+  const readings = findAll(dashboard, (n) => n.kind === 'dataset' && n.name === 'readings')[0].source.query.rawSql;
+  assert.match(readings, /wind_speed, wind_direction,/);
+  const smell = options('A qué huele València: el tráfico, el NO₂ y adónde se lo lleva el viento');
+  const layers = Object.fromEntries(smell.mapConfig.config.visState.layers.map((l) => [l.id, l]));
+  assert.equal(layers.plumes.type, 'traffic');
+  assert.equal(layers.plumes.visualChannels.speedField.name, 'wind');
+  const sql = panelTitled(dashboard, 'A qué huele València: el tráfico, el NO₂ y adónde se lo lleva el viento').data.spec.queries[1].spec.query.spec.rawSql;
+  // Downwind: the wind's direction is where it blows from, so the air goes 180° the other way.
+  assert.match(sql, /cos\(radians\(from_deg \+ 180\)\)/);
+});
+
 test('a Time Brush per tab: an instant ($t) on the overview, one window ($slot_from, $slot_to) in the tabs', () => {
   const brushes = panelsByType(dashboard, 'ubica-timebrush-panel').map((p) => p.vizConfig.spec.options);
-  assert.equal(brushes.length, 4);
+  assert.equal(brushes.length, 5);
   const instants = brushes.filter((b) => b.selection === 'instant');
   assert.deepEqual(instants.map((b) => b.instantVariable), ['t']);
   // The overview's map and figures follow the instant as it is dragged, paced like a play.

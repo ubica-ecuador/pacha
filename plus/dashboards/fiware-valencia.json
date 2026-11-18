@@ -3015,6 +3015,795 @@
           }
         }
       },
+      "panel-map-smell": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Cada tramo con su estado: el de ahora o, si la barra de tiempo o el\n-- estado elegido dejan fuera parte de la historia, su peor estado en los\n-- cuartos de hora que quedan; y su parte del tiempo con incidencia en la\n-- ventana. Solo los tramos con algún cuarto de hora que pase los filtros\n-- declarados en trafficFilters (hora, estado, incidencia), o todos si ninguno\n-- deja nada fuera.\nWITH counts AS (\n  SELECT count(*) AS total,\n         count(*) FILTER (WHERE $__crossfilter($trafficFilters, -jam)) AS timed,\n         count(*) FILTER (WHERE $__crossfilter($trafficFilters)) AS kept\n  FROM $traffic\n),\nshare AS (\n  SELECT segment_id, 100.0 * sum(incidents) / sum(n) AS pct, (sum(incidents) * 3)::DOUBLE AS minutes\n  FROM $traffic WHERE t \u003e= coalesce(try_cast($slot_from AS TIMESTAMP), '-infinity'::TIMESTAMP) AND t \u003c coalesce(try_cast($slot_to AS TIMESTAMP), 'infinity'::TIMESTAMP) GROUP BY 1\n),\npicked AS (\n  SELECT segment_id, max(worst) AS worst FROM $traffic WHERE $__crossfilter($trafficFilters) GROUP BY 1\n),\nlabelled AS (\n  SELECT s.segment_id, s.name, s.underpass, s.geojson, s.state_label AS state_now,\n         CASE WHEN c.timed = c.total THEN s.state_label\n              ELSE ['Fluido', 'Denso', 'Congestionado', 'Cortado', 'Sin datos'][(coalesce(p.worst, 4) + 1)::BIGINT] END AS state_label,\n         coalesce(h.pct, 0) AS pct, coalesce(h.minutes, 0) AS minutes\n  FROM $segments AS s\n  CROSS JOIN counts AS c\n  LEFT JOIN share AS h ON h.segment_id = s.segment_id\n  LEFT JOIN picked AS p ON p.segment_id = s.segment_id\n  WHERE c.kept = c.total OR p.segment_id IS NOT NULL\n)\nSELECT segment_id, name, underpass, geojson, state_now, state_label, round(pct, 1) AS pct, minutes,\n       CASE state_label WHEN 'Fluido' THEN 1.0 WHEN 'Denso' THEN 0.45 WHEN 'Congestionado' THEN 0.15 ELSE 0.0 END AS speed\nFROM labelled"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- El viento de la ciudad en la última hora de la ventana: la media de los vectores de sus tres estaciones\n-- urbanas (Natzaret, Avda. de Francia, Jardines de Viveros); wind_dir es de dónde sopla. Cada estación de aire\n-- con su última lectura de NO₂ en la ventana, y el punto adonde ese viento lleva su aire en 15 minutos\n-- (velocidad × 900 s, hacia donde sopla: de dónde + 180°), en grados con 111.320 m por grado.\nWITH win AS (\n  SELECT * FROM $readings\n  WHERE time \u003e= coalesce(try_cast($slot_from AS TIMESTAMP), '-infinity'::TIMESTAMP)\n    AND time \u003c coalesce(try_cast($slot_to AS TIMESTAMP), 'infinity'::TIMESTAMP)\n),\nwind AS (\n  SELECT avg(wind) AS wind,\n         (degrees(atan2(avg(wind * sin(radians(wind_dir))), avg(wind * cos(radians(wind_dir))))) + 360) % 360 AS from_deg\n  FROM win WHERE kind = 'Meteo' AND name IN ('Natzaret', 'Avda. de Francia', 'Jardines de Viveros') AND wind IS NOT NULL\n    AND time \u003e (SELECT max(time) FROM win WHERE kind = 'Meteo') - INTERVAL 1 HOUR\n),\nair AS (\n  SELECT station, arg_max(name, time) AS name, arg_max(no2, time) AS no2, max(time) AS observed,\n         any_value(latitude) AS lat, any_value(longitude) AS lng\n  FROM win WHERE kind = 'Aire' AND no2 IS NOT NULL GROUP BY station\n)\nSELECT name, name || ' · ' || round(no2)::INTEGER || ' µg/m³' AS label, no2, round(wind, 1) AS wind,\n       round(from_deg) AS from_deg, observed, lat AS lat0, lng AS lng0,\n       lat + wind * 900 * cos(radians(from_deg + 180)) / 111320 AS lat1,\n       lng + wind * 900 * sin(radians(from_deg + 180)) / (111320 * cos(radians(lat))) AS lng1\nFROM air CROSS JOIN wind"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Las calles con su peor estado de tráfico en la ventana; cada estación de aire con su NO₂; y desde cada una, el camino que el viento de la ciudad le hace recorrer al aire en 15 minutos, coloreado por su NO₂ y tan rápido como el viento.",
+          "id": 43,
+          "links": [],
+          "title": "A qué huele València: el tráfico, el NO₂ y adónde se lo lleva el viento",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": false,
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 27.002001334222815,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 39.466823255067176,
+                      "longitude": -0.3748072331513775,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 65.36355770142835,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 13.177350383771156
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "dark-matter",
+                      "threeDBuildingColor": [
+                        12.887291085429352,
+                        12.887291085429352,
+                        12.887291085429352
+                      ],
+                      "topLayerGroups": {
+                        "label": true,
+                        "poi": true,
+                        "road": false
+                      },
+                      "visibleLayerGroups": {
+                        "3d building": true,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [
+                        {
+                          "id": "e_c72d6vk",
+                          "isEnabled": true,
+                          "parameters": {
+                            "animateHeight": false,
+                            "density": 0.244,
+                            "fogColor": [
+                              28,
+                              15,
+                              88
+                            ],
+                            "height": 109,
+                            "heightEnd": 100,
+                            "linearEasing": false,
+                            "pattern": true,
+                            "thickness": 0
+                          },
+                          "type": "surfaceFog"
+                        },
+                        {
+                          "id": "e_v0m1v6e",
+                          "isEnabled": true,
+                          "parameters": {
+                            "amount": 0.588,
+                            "radius": 0.421
+                          },
+                          "type": "vignette"
+                        }
+                      ],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "state_label"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "no2"
+                              },
+                              {
+                                "name": "wind"
+                              },
+                              {
+                                "name": "from_deg"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "plumes",
+                        "smell-stations",
+                        "traffic"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              244,
+                              177,
+                              152
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat0": "lat0",
+                              "lat1": "lat1",
+                              "lng0": "lng0",
+                              "lng1": "lng1"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Adónde lleva el viento el aire de cada estación en 15 minutos",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": false,
+                              "cardAlertLabel": "",
+                              "cardExtras": [],
+                              "cardMax": "auto",
+                              "cardMin": "auto",
+                              "cardNameField": "name",
+                              "cardPinned": [],
+                              "cardPlacement": "above",
+                              "cardScale": "common",
+                              "cardShow": "always",
+                              "cardSize": "XS",
+                              "cardTimeField": "none",
+                              "cardUnit": "m/s",
+                              "cardValueField": "color",
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    10,
+                                    "#00939C"
+                                  ],
+                                  [
+                                    20,
+                                    "#AAD7D9"
+                                  ],
+                                  [
+                                    30,
+                                    "#F4B198"
+                                  ],
+                                  [
+                                    40,
+                                    "#DF744E"
+                                  ],
+                                  [
+                                    null,
+                                    "#C22E00"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#00939C",
+                                  "#AAD7D9",
+                                  "#F4B198",
+                                  "#DF744E",
+                                  "#C22E00"
+                                ],
+                                "name": "NO₂ (µg/m³)",
+                                "type": "custom"
+                              },
+                              "elevationScale": 0,
+                              "historyField": "color",
+                              "opacity": 1,
+                              "sizeRange": [
+                                3,
+                                6.1
+                              ],
+                              "targetArrowEnabled": true,
+                              "targetArrowShape": "chevron",
+                              "targetArrowSize": 50,
+                              "thickness": 3,
+                              "trafficAnimate": false,
+                              "trafficArcHeight": 0,
+                              "trafficCycle": 4,
+                              "trafficDashLength": 0.5,
+                              "trafficDirectionMode": "straight",
+                              "trafficGlow": true,
+                              "trafficLaneBend": 0,
+                              "trafficLapsRange": [
+                                1,
+                                3
+                              ],
+                              "trafficShape": "flat",
+                              "trafficSpacing": 18,
+                              "trafficStyle": "comets",
+                              "trafficTiming": "together",
+                              "trafficTrail": 0.7
+                            }
+                          },
+                          "id": "plumes",
+                          "type": "traffic",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "no2",
+                              "type": "integer"
+                            },
+                            "colorScale": "custom",
+                            "reverseColorScale": "quantile",
+                            "reverseSizeScale": "linear",
+                            "reverseSpeedScale": "linear",
+                            "sizeField": {
+                              "name": "no2",
+                              "type": "integer"
+                            },
+                            "sizeScale": "linear",
+                            "speedField": {
+                              "name": "wind",
+                              "type": "real"
+                            },
+                            "speedScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              244,
+                              177,
+                              152
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "lat0",
+                              "lng": "lng0"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": false,
+                            "label": "Estaciones de aire: su NO₂",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": true,
+                                "backgroundColor": [
+                                  17,
+                                  18,
+                                  23,
+                                  220
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  235,
+                                  238,
+                                  245
+                                ],
+                                "field": {
+                                  "name": "label",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  14,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 13,
+                                "weight": 500
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    10,
+                                    "#00939C"
+                                  ],
+                                  [
+                                    20,
+                                    "#AAD7D9"
+                                  ],
+                                  [
+                                    30,
+                                    "#F4B198"
+                                  ],
+                                  [
+                                    40,
+                                    "#DF744E"
+                                  ],
+                                  [
+                                    null,
+                                    "#C22E00"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#00939C",
+                                  "#AAD7D9",
+                                  "#F4B198",
+                                  "#DF744E",
+                                  "#C22E00"
+                                ],
+                                "name": "NO₂ (µg/m³)",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.5,
+                              "opacity": 1,
+                              "outline": true,
+                              "pulseDurationMs": 1000,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 16,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2.5
+                            }
+                          },
+                          "id": "smell-stations",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "no2",
+                              "type": "integer"
+                            },
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              26,
+                              152,
+                              80
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Las calles: su peor estado de tráfico en la ventana",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": false,
+                              "cardAlertLabel": "",
+                              "cardExtras": [],
+                              "cardMax": "auto",
+                              "cardMin": "auto",
+                              "cardNameField": "auto",
+                              "cardPinned": [],
+                              "cardPlacement": "beside",
+                              "cardScale": "common",
+                              "cardShow": "tooltip",
+                              "cardSize": "S",
+                              "cardTimeField": "auto",
+                              "cardUnit": "",
+                              "cardValueField": "color",
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Fluido",
+                                    "#1a9850"
+                                  ],
+                                  [
+                                    "Denso",
+                                    "#fdae61"
+                                  ],
+                                  [
+                                    "Congestionado",
+                                    "#d73027"
+                                  ],
+                                  [
+                                    "Cortado",
+                                    "#7b0d1e"
+                                  ],
+                                  [
+                                    "Sin datos",
+                                    "#9e9e9e"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#1a9850",
+                                  "#fdae61",
+                                  "#d73027",
+                                  "#7b0d1e",
+                                  "#9e9e9e"
+                                ],
+                                "name": "Estado del tráfico",
+                                "type": "customOrdinal"
+                              },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
+                              "elevationScale": 0,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedElevation": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "historyField": "color",
+                              "invertHeight": false,
+                              "opacity": 0.55,
+                              "pipelineAltitude": 0,
+                              "pipelineLaneGap": 1,
+                              "pipelineReverse": false,
+                              "pipelineSignedSpeed": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#A50026",
+                                  "#F88D52",
+                                  "#F9F7AE",
+                                  "#85CB67",
+                                  "#006837"
+                                ],
+                                "name": "color.customPalette.customOrdinal.speed",
+                                "reversed": true,
+                                "type": "customOrdinal"
+                              },
+                              "strokeOpacity": 0.55,
+                              "stroked": true,
+                              "thickness": 7.38,
+                              "trafficAnimate": true,
+                              "trafficCycle": 17,
+                              "trafficDashLength": 0.5,
+                              "trafficDirectionMode": "straight",
+                              "trafficGlow": false,
+                              "trafficLapsRange": [
+                                1,
+                                6
+                              ],
+                              "trafficSpacing": 30,
+                              "trafficStyle": "dots",
+                              "trafficTiming": "wave",
+                              "trafficTrail": 0.3,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "traffic",
+                          "type": "pipeline",
+                          "visualChannels": {
+                            "altitudeScale": "linear",
+                            "elevationOffsetScale": "linear",
+                            "reverseColorScale": "quantile",
+                            "reverseSizeScale": "linear",
+                            "reverseSpeedScale": "linear",
+                            "sizeScale": "linear",
+                            "speedField": {
+                              "name": "speed",
+                              "type": "integer"
+                            },
+                            "speedScale": "linear",
+                            "strokeColorField": {
+                              "name": "speed",
+                              "type": "integer"
+                            },
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": true,
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 3,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "timeVariables": {
+                  "from": "slot_from",
+                  "to": "slot_to"
+                },
+                "variableMappings": []
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
       "panel-map-traffic": {
         "kind": "Panel",
         "spec": {
@@ -4245,6 +5034,208 @@
           }
         }
       },
+      "panel-smell-series": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Por hora: la mediana del NO₂ de las estaciones de aire y el viento medio de las tres urbanas.\nSELECT time_bucket(INTERVAL 1 HOUR, time) AS time,\n       median(no2) FILTER (WHERE kind = 'Aire')::DOUBLE AS \"NO₂ (µg/m³)\",\n       avg(wind) FILTER (WHERE kind = 'Meteo' AND name IN ('Natzaret', 'Avda. de Francia', 'Jardines de Viveros'))::DOUBLE AS \"Viento (m/s)\"\nFROM $readings GROUP BY 1 ORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "group": "prepareTimeSeries",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "format": "multi"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "description": "La mediana del NO₂ de las estaciones (izquierda) y el viento medio de las tres estaciones urbanas (derecha). Con calma el aire de la calle se queda; con viento se va.",
+          "id": 44,
+          "links": [],
+          "title": "El NO₂ y el viento, hora a hora",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": 3600000,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "NO₂ (µg/m³)"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#DF744E",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "unit",
+                        "value": "conμgm3"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Viento (m/s)"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#8AB8FF",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "unit",
+                        "value": "velocityms"
+                      },
+                      {
+                        "id": "custom.axisPlacement",
+                        "value": "right"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-smell-text": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 45,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**A qué huele València.** El olor del tráfico es su aire: el NO₂ que sale de los tubos de escape. Las calles del mapa son la fuente, con su peor estado en la ventana; cada estación de aire, lo que respira su barrio; y su estela, adonde el viento de la ciudad lleva ese aire en 15 minutos (sus tres estaciones urbanas: de dónde sopla y a qué velocidad). Con viento flojo la estela es corta y el olor se queda en la calle; con viento, se va. Mueve la ventana de tiempo para ver cambiar las dos cosas a la vez.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
       "panel-station-name": {
         "kind": "Panel",
         "spec": {
@@ -5225,6 +6216,149 @@
                 "snap": true,
                 "snapTo": "buckets",
                 "stepMs": 2000,
+                "stickyOffset": 0,
+                "valueGuides": false,
+                "variables": {
+                  "from": "slot_from",
+                  "to": "slot_to"
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "free",
+                "zoomToExternal": false
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-tb-smell": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- La mediana del NO₂ entre las estaciones, por hora.\nSELECT time_bucket(INTERVAL 1 HOUR, time) AS time, median(no2)::DOUBLE AS \"NO₂\"\nFROM $readings WHERE no2 IS NOT NULL GROUP BY 1 ORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "La misma ventana que las otras pestañas. El mapa toma el viento de su última hora y el NO₂ de la última lectura de cada estación dentro de ella.",
+          "id": 42,
+          "links": [],
+          "title": "Ventana de tiempo · NO₂, mediana de las estaciones por hora",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "aggregation": "sum",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "${metric:text}"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#8AB8FF",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "accentColor": "",
+                "backgroundColor": "",
+                "backgroundTransparency": 90,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "1h",
+                "cursorColor": "",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "density": "comfortable",
+                "domain": "dashboard",
+                "followLatest": false,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "instantVariable": "t",
+                "loop": false,
+                "mosaicColumn": "time",
+                "mosaicSelection": "air",
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "scrolled",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "top",
+                "pinnedStyle": "solid",
+                "playMotion": "smooth",
+                "publishIntervalMs": 1000,
+                "publishWhileDragging": false,
+                "publishWhilePlaying": false,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 600,
                 "stickyOffset": 0,
                 "valueGuides": false,
                 "variables": {
@@ -6446,6 +7580,86 @@
                                 "spec": {
                                   "element": {
                                     "kind": "ElementReference",
+                                    "name": "panel-tb-smell"
+                                  },
+                                  "height": 7,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-map-smell"
+                                  },
+                                  "height": 18,
+                                  "width": 16,
+                                  "x": 0,
+                                  "y": 7
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-smell-text"
+                                  },
+                                  "height": 7,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 7
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-smell-series"
+                                  },
+                                  "height": 11,
+                                  "width": 8,
+                                  "x": 16,
+                                  "y": 14
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "title": "Olor"
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "A qué huele"
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "RowsLayout",
+                "spec": {
+                  "rows": [
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "collapse": false,
+                        "hideHeader": true,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
                                     "name": "panel-about"
                                   },
                                   "height": 14,
@@ -7062,7 +8276,7 @@
                   "editorMode": "code",
                   "format": 1,
                   "rawQuery": true,
-                  "rawSql": "-- Server side: las lecturas de las estaciones de calidad del aire (horarias)\n-- y meteorológicas (cada 10 minutos) en el rango de tiempo, Stellio →\n-- Parquet, en una sola tabla: cada fila trae las medidas de su tipo de\n-- estación y NULL en las del otro. La estación es el código del Geoportal\n-- (A01…, W01…); los exportes guardan 7 días.\nSELECT regexp_extract(entity_id, 'valencia-([A-Z][0-9]+)', 1) AS station,\n       name, 'Aire' AS kind, time,\n       no2, pm10, pm25, o3,\n       NULL::DOUBLE AS temperature, NULL::DOUBLE AS humidity, NULL::DOUBLE AS wind,\n       latitude, longitude\nFROM read_parquet('https://fiware.ubica.dev/exports/air_quality.parquet')\nWHERE time \u003e= make_timestamptz(CAST(${__from} AS BIGINT) * 1000)\n  AND time \u003c make_timestamptz(CAST(${__to} AS BIGINT) * 1000)\nUNION ALL\nSELECT regexp_extract(entity_id, 'valencia-([A-Z][0-9]+)', 1),\n       CASE name WHEN 'ESTACIÓN AEROPUERTO' THEN 'Aeropuerto' WHEN 'ESTACIÓN ALBUFERA' THEN 'Albufera'\n                 WHEN 'ESTACIÓN AVD. FRANCIA' THEN 'Avda. de Francia' WHEN 'ESTACIÓN JARDINES DE VIVEROS' THEN 'Jardines de Viveros'\n                 WHEN 'ESTACIÓN NAZARET' THEN 'Natzaret' ELSE replace(name, 'ESTACIÓN ', '') END,\n       'Meteo', time,\n       NULL, NULL, NULL, NULL,\n       temperature, relative_humidity_pct, wind_speed,\n       latitude, longitude\nFROM read_parquet('https://fiware.ubica.dev/exports/weather.parquet')\nWHERE time \u003e= make_timestamptz(CAST(${__from} AS BIGINT) * 1000)\n  AND time \u003c make_timestamptz(CAST(${__to} AS BIGINT) * 1000)",
+                  "rawSql": "-- Server side: las lecturas de las estaciones de calidad del aire (horarias)\n-- y meteorológicas (cada 10 minutos) en el rango de tiempo, Stellio →\n-- Parquet, en una sola tabla: cada fila trae las medidas de su tipo de\n-- estación y NULL en las del otro. La estación es el código del Geoportal\n-- (A01…, W01…); los exportes guardan 7 días. wind_dir es de dónde sopla el\n-- viento, en grados desde el norte.\nSELECT regexp_extract(entity_id, 'valencia-([A-Z][0-9]+)', 1) AS station,\n       name, 'Aire' AS kind, time,\n       no2, pm10, pm25, o3,\n       NULL::DOUBLE AS temperature, NULL::DOUBLE AS humidity, NULL::DOUBLE AS wind, NULL::DOUBLE AS wind_dir,\n       latitude, longitude\nFROM read_parquet('https://fiware.ubica.dev/exports/air_quality.parquet')\nWHERE time \u003e= make_timestamptz(CAST(${__from} AS BIGINT) * 1000)\n  AND time \u003c make_timestamptz(CAST(${__to} AS BIGINT) * 1000)\nUNION ALL\nSELECT regexp_extract(entity_id, 'valencia-([A-Z][0-9]+)', 1),\n       CASE name WHEN 'ESTACIÓN AEROPUERTO' THEN 'Aeropuerto' WHEN 'ESTACIÓN ALBUFERA' THEN 'Albufera'\n                 WHEN 'ESTACIÓN AVD. FRANCIA' THEN 'Avda. de Francia' WHEN 'ESTACIÓN JARDINES DE VIVEROS' THEN 'Jardines de Viveros'\n                 WHEN 'ESTACIÓN NAZARET' THEN 'Natzaret' ELSE replace(name, 'ESTACIÓN ', '') END,\n       'Meteo', time,\n       NULL, NULL, NULL, NULL,\n       temperature, relative_humidity_pct, wind_speed, wind_direction,\n       latitude, longitude\nFROM read_parquet('https://fiware.ubica.dev/exports/weather.parquet')\nWHERE time \u003e= make_timestamptz(CAST(${__from} AS BIGINT) * 1000)\n  AND time \u003c make_timestamptz(CAST(${__to} AS BIGINT) * 1000)",
                   "refId": "readings"
                 },
                 "type": "datasource"
