@@ -7,7 +7,9 @@
 #   dashboards/                                what that Repository syncs
 #   gateway/*.conf.template                    location blocks for the feeds server
 #   datasets/<name>/build.sh                   built on each instance, as here
-#   recorder/feeds/<feed>.sql                  feeds the recorder keeps, beside this repo's
+#   recorder/feeds/<feed>.sql                  feeds the recorder keeps (Pacha has none)
+#   recorder/fallback/                         their empty recordings, served until it records
+#   grafana/alerting/*.yaml                    its alert rules
 #   screenshots/<uid>.jpg                      its cards on the home page
 #
 #   DASHBOARDS_DIR=../pacha-dashboards docker compose -f compose.yaml -f compose.dashboards.yaml up --wait
@@ -42,6 +44,12 @@ services:
       - type: bind
         source: ${DASHBOARDS_DIR}/dashboards
         target: /var/lib/pacha/extra-dashboards
+      # Its alert rules, over Pacha's empty provisioning/alerting/. Grafana reads
+      # them at start: recreate grafana after a change.
+      - type: bind
+        source: ${DASHBOARDS_DIR}/grafana/alerting
+        target: /etc/grafana/provisioning/alerting
+        read_only: true
 
   gateway:
     environment:
@@ -70,6 +78,12 @@ services:
       - type: bind
         source: ${DASHBOARDS_DIR}/screenshots
         target: /srv/home-extra/screenshots
+        read_only: true
+      # The empty recordings of its feeds, served at /recordings/ while the
+      # recorder has written nothing; see feeds.conf.
+      - type: bind
+        source: ${DASHBOARDS_DIR}/recorder/fallback
+        target: /srv/fallback-extra/recordings
         read_only: true
 
   # Its feeds, read after this repo's (images/recorder/recorder.py); a name they

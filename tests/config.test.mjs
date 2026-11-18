@@ -53,7 +53,7 @@ test('compose.dashboards.yaml refuses to start without DASHBOARDS_DIR', () => {
   assert.throws(() => compose(['--env-file', '/dev/null', ...DASHBOARDS, 'config'], { env }), /DASHBOARDS_DIR/);
 });
 
-test('compose.dashboards.yaml mounts the repo: its Repository read-only, its dashboards writable, its routes as templates', () => {
+test('compose.dashboards.yaml mounts the repo: its Repository read-only, its dashboards writable, its routes as templates, its alert rules and empty recordings', () => {
   const config = JSON.parse(
     compose(['--env-file', '/dev/null', ...DASHBOARDS, 'config', '--format', 'json'], { env: { ...process.env, DASHBOARDS_DIR: '/tmp/pd' } }),
   );
@@ -66,6 +66,9 @@ test('compose.dashboards.yaml mounts the repo: its Repository read-only, its das
   assert.equal(mount('gateway', '/srv/datasets-extra')?.source, '/tmp/pd/datasets');
   assert.equal(mount('gateway', '/srv/home-extra/screenshots')?.source, '/tmp/pd/screenshots');
   assert.match(config.services.gateway.environment.NGINX_ENVSUBST_FILTER, /FEED/);
+  assert.equal(mount('grafana', '/etc/grafana/provisioning/alerting')?.source, '/tmp/pd/grafana/alerting');
+  assert.equal(mount('grafana', '/etc/grafana/provisioning/alerting')?.read_only, true);
+  assert.equal(mount('gateway', '/srv/fallback-extra/recordings')?.source, '/tmp/pd/recorder/fallback');
 });
 
 // A route whose key .env lacks must not stop nginx (and Grafana behind it).

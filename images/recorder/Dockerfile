@@ -6,8 +6,9 @@
 # Its DuckDB is the grafana datasource's engine (DUCKDB_ENGINE_VERSION in
 # images/grafana/Dockerfile): the files it writes are the files Grafana reads.
 # The feeds come from the repo's recorder/feeds/, the build context `feeds`
-# (compose.yaml and docker-bake.hcl pass it); compose.dashboards.yaml mounts a
-# dashboards repo's own beside them.
+# (compose.yaml and docker-bake.hcl pass it), which holds none of its own;
+# compose.dashboards.yaml mounts a dashboards repo's beside them. The tests
+# read copies of three real feeds in tests/feeds/.
 
 ARG PYTHON_VERSION=3.12
 ARG DUCKDB_VERSION=1.5.6
@@ -35,12 +36,11 @@ COPY recorder.py .
 FROM base AS test
 ARG PYTEST_VERSION
 RUN pip install --no-cache-dir --root-user-action=ignore "pytest==${PYTEST_VERSION}"
-COPY --from=feeds *.sql /repo/recorder/feeds/
 COPY tests tests
 RUN python -m pytest -q -p no:cacheprovider tests
 
 FROM base
-COPY --from=feeds *.sql /etc/recorder/feeds/
+COPY --from=feeds . /etc/recorder/feeds/
 RUN mkdir -p /var/lib/recorder
 # Healthy while polls succeed: the last one under three minutes old.
 HEALTHCHECK --interval=15s --timeout=3s --start-period=90s --retries=3 \

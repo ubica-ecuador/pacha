@@ -9,7 +9,8 @@ import pytest
 
 import recorder
 
-FEED_SQL = Path(os.environ.get('RECORDER_FEEDS', '/repo/recorder/feeds')) / 'flights.sql'
+# A real feed as the fixture: tests/feeds/ keeps a copy of the dashboards repo's.
+FEED_SQL = Path(__file__).parent / 'feeds' / 'flights.sql'
 BASE = 'http://feeds/recordings'
 T0 = dt.datetime(2026, 10, 10, 14, 3, 0, tzinfo=dt.timezone.utc)
 

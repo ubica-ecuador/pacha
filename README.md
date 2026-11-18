@@ -156,27 +156,23 @@ panel queries.
 Plugins and DuckDB's extensions are part of the image, so nothing is downloaded when the stack
 starts. The dashboards read their data where it is published.
 
-The recorder is what gives air-traffic-world its history: every minute it keeps what adsb.lol
-said, about 9,000 aircraft, and keeps a week of it, by default. That is one request a minute to
-adsb.lol around the clock and up to a few GB of disk in the `recordings` volume, which is why it
-runs only when `COMPOSE_PROFILES=recorder` is set (see `.env.example`). Without it the live
-panels work and the history panels are empty.
+The recorder keeps what a live feed said, as Parquet in the `recordings` volume, for the
+history a source does not keep itself. A feed is a `.sql` file: a poll every minute by default,
+or a day's file (`-- schedule: daily`), the files a page lists (`listing`), or what a websocket
+pushes (`stream`); `images/recorder/recorder.py` says how each works. Pacha has no feed of its
+own: a dashboards repository keeps them in its `recorder/feeds/`, which `compose.dashboards.yaml`
+mounts, with their empty recordings for before the first one (`recorder/fallback/`). It runs
+only when `COMPOSE_PROFILES=recorder` is set (see `.env.example`), since it polls around the
+clock and fills disk; without it the history panels are empty.
 
-A feed is a `.sql` file in `recorder/feeds/`: a poll every minute by default, or a day's file
-(`-- schedule: daily`), the files a page lists (`listing`), or what a websocket pushes
-(`stream`); `images/recorder/recorder.py` says how each works. A dashboards repository keeps its
-own feeds in its `recorder/feeds/`, which `compose.dashboards.yaml` mounts beside these.
-
-Some data cannot be read where it is published, or not republished as it is: those dashboards
-read files built once on each instance, under `datasets/<name>/`, which the gateway serves to
-Grafana's DuckDB only (`http://feeds/datasets/`). geolife-mobility needs
-`datasets/geolife/build.sh`: GeoLife's GPS trajectories, cleaned and analysed into Parquet in
-about three minutes (313 MB download, 8 GB of memory for DuckDB). Until it runs, that
-dashboard's panels show errors. geosismos-gnss-plus draws its map arrows, its station paths
-and its latitude-time map from `datasets/geosismos/build.sh`: every Chilean GNSS station's
-daily position from the Geo-Sismos API, in a few minutes (about 60 MB download). Without it
-those panels are empty and the rest of that dashboard works; run it again when Geo-Sismos
-publishes new days.
+Some data cannot be read where it is published, or not republished as it is: a dashboard that
+needs it reads files built once on each instance, under `datasets/<name>/` (each with its
+`build.sh`), which the gateway serves to Grafana's DuckDB only (`http://feeds/datasets/`).
+Every dashboard in this repository reads its data where it is published, with no key: a fresh
+clone shows them all. The ones that need a dataset built, a key in `.env` or a recorder feed
+live in a dashboards repository with what they need; Ubica's
+[pacha-dashboards](https://github.com/ubica-ecuador/pacha-dashboards) has GeoLife, the Chilean
+GNSS stations, TriMet, AEMO's Eraring and the rest.
 
 ## Kepler Plus
 

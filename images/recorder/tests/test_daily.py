@@ -2,7 +2,6 @@
 import datetime as dt
 import json
 import math
-import os
 import zipfile
 from pathlib import Path
 
@@ -11,7 +10,8 @@ import pytest
 
 import recorder
 
-FEED_SQL = Path(os.environ.get('RECORDER_FEEDS', '/repo/recorder/feeds')) / 'ais-denmark.sql'
+# A real feed as the fixture: tests/feeds/ keeps a copy of the dashboards repo's.
+FEED_SQL = Path(__file__).parent / 'feeds' / 'ais-denmark.sql'
 BASE = 'http://feeds/recordings'
 DAY = dt.date(2026, 10, 8)
 NOW = dt.datetime(2026, 10, 11, 1, 0, tzinfo=dt.timezone.utc)

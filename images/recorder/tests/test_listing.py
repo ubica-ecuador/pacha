@@ -1,7 +1,6 @@
 """The listing recorder against a NEMweb-like page and zips built here: no network, no clock of its own."""
 import datetime as dt
 import json
-import os
 import zipfile
 from pathlib import Path
 
@@ -9,7 +8,8 @@ import duckdb
 
 import recorder
 
-FEED_SQL = Path(os.environ.get('RECORDER_FEEDS', '/repo/recorder/feeds')) / 'aemo-scada.sql'
+# A real feed as the fixture: tests/feeds/ keeps a copy of the dashboards repo's.
+FEED_SQL = Path(__file__).parent / 'feeds' / 'aemo-scada.sql'
 BASE = 'http://feeds/recordings'
 UTC = dt.timezone.utc
 

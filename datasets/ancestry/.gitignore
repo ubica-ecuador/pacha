@@ -1,3 +1,0 @@
-# Built by build.sh on each instance; ~65 MB of derived Parquet.
-*.parquet
-.*.tmp

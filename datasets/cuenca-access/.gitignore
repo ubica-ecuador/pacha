@@ -1,2 +1,0 @@
-# Built by build.sh on each instance (about 5 MB), not in git.
-*.parquet

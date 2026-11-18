@@ -131,7 +131,8 @@ On a GitHub-synced instance, only after the user approves the preview.
   `docker compose run --rm --no-deps -T gateway nginx -t` before the gateway is restarted (ask
   first on a shared instance).
 - A new dataset: `datasets/<name>/build.sh` + `build.sql`; every instance must run it.
-- A new alert rule: `provisioning/alerting/<name>.yaml` (Grafana's file provisioning, folder `Alerts`),
+- A new alert rule: the dashboards repo's `grafana/alerting/<name>.yaml`, which `compose.dashboards.yaml`
+  mounts over Pacha's empty `provisioning/alerting/` (Grafana's file provisioning, folder `Alerts`),
   loaded with `POST /api/admin/provisioning/alerting/reload` (admin) or a Grafana restart. No contact
   point is set up: a rule only changes state, and the dashboard reads it back (Kepler Plus Active
   alerts, or `read_text('http://localhost:3000/api/prometheus/grafana/api/v1/rules')` in DuckDB).
