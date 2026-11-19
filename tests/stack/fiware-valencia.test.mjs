@@ -151,6 +151,9 @@ test('the hexagons tab: H3 cells that rise with the window, filtered from Mosaic
   const mosaic = options('Filtros: la medida, las horas del día y las celdas');
   // Plot's tip takes the click a toggle needs.
   assert.doesNotMatch(mosaic.spec, /tip: true/);
+  // A brush narrower than an hour leaves the matrices with no rows: without a time scale their %H:%M ticks throw
+  // and the brush stops; a time scale also draws the hours in local time, not UTC.
+  assert.equal(mosaic.spec.match(/xScale: time\n\s+xTickFormat: '%H:%M'/g).length, 3);
   assert.match(mosaic.spec, /select: toggleY\n\s+as: \$hexsel/);
   assert.match(mosaic.variables, /param: hexm\n\s+variable: hexmetric/);
   for (const name of ['hexmetric', 'hour_lo', 'hour_hi']) {
