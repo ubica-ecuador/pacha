@@ -93,6 +93,29 @@ test('safe defaults, and plugins and DuckDB home outside /var/lib/grafana', () =
   assert.ok(!env.some((entry) => entry.startsWith('GF_DEFAULT_APP_MODE=development')));
 });
 
+test('features outside the stack are off, and nothing calls out unasked', async () => {
+  const { json: settings } = await api(base, '/api/admin/settings');
+  assert.equal(settings.snapshots.external_enabled, 'false');
+  assert.equal(settings.public_dashboards.enabled, 'false');
+  assert.equal(settings.analytics.reporting_enabled, 'false');
+  assert.equal(settings.analytics.check_for_updates, 'false');
+  assert.equal(settings.analytics.check_for_plugin_updates, 'false');
+  assert.equal(settings.analytics.feedback_links_enabled, 'false');
+  assert.equal(settings.news.news_feed_enabled, 'false');
+  assert.equal(settings.security.disable_gravatar, 'true');
+  assert.equal(settings.cloud_migration.enabled, 'false');
+  assert.equal(settings.recording_rules.enabled, 'false');
+  assert.equal(settings.plugins.plugin_admin_enabled, 'false');
+
+  const ids = (await api(base, '/api/plugins')).json.map((p) => p.id);
+  for (const off of ['prometheus', 'loki', 'tempo', 'cloudwatch', 'grafana-azure-monitor-datasource', 'stackdriver', 'mssql']) {
+    assert.ok(!ids.includes(off), `${off} still loads`);
+  }
+  for (const kept of ['elasticsearch', 'mysql', 'grafana-postgresql-datasource', 'grafana-testdata-datasource', 'alertmanager']) {
+    assert.ok(ids.includes(kept), `${kept} is gone`);
+  }
+});
+
 test('versions are exposed as image labels', () => {
   const labels = JSON.parse(sh('docker', ['image', 'inspect', '--format', '{{json .Config.Labels}}', IMAGE]));
   assert.equal(labels['io.pacha.kepler-panel.version'], '1.9.0');

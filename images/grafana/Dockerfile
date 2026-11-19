@@ -161,6 +161,16 @@ USER 472
 #   which is the network at runtime this image exists to avoid.
 # - Notebooks (public preview in 13.3): panels, notes and Assistant findings
 #   in one document, under Dashboards > Notebooks.
+# - Off, as outside a spatio-temporal stack or calling out unasked: snapshots
+#   published to snapshots.raintank.io (local snapshots stay), public dashboards
+#   (anonymous Viewers already see every dashboard, and a public one takes no
+#   variables), usage reports, update checks and feedback links to Grafana Labs,
+#   the news feed, Gravatar (it sends a hash of each user's email), migration to
+#   Grafana Cloud, recording rules (they write to a Prometheus there is none of),
+#   and the plugin catalogue: the plugins are the ones baked here, and one
+#   installed from the UI would be lost at the next recreate.
+# - Core datasources off: cloud monitoring, metrics, logs, traces and profiles.
+#   Kept for data people bring: Elasticsearch, MySQL, PostgreSQL, and TestData.
 ENV GF_PATHS_PLUGINS=/opt/pacha/plugins \
     HOME=/opt/pacha/duckdb-home \
     GF_AUTH_ANONYMOUS_ENABLED=true \
@@ -170,6 +180,18 @@ ENV GF_PATHS_PLUGINS=/opt/pacha/plugins \
     GF_PLUGIN_PAGINATION_MAX_PAGES=12 \
     GF_PLUGINS_PREINSTALL_DISABLED=true \
     GF_FEATURE_TOGGLES_ENABLE=dashboard.notebooks \
+    GF_SNAPSHOTS_EXTERNAL_ENABLED=false \
+    GF_PUBLIC_DASHBOARDS_ENABLED=false \
+    GF_ANALYTICS_REPORTING_ENABLED=false \
+    GF_ANALYTICS_CHECK_FOR_UPDATES=false \
+    GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES=false \
+    GF_ANALYTICS_FEEDBACK_LINKS_ENABLED=false \
+    GF_NEWS_NEWS_FEED_ENABLED=false \
+    GF_SECURITY_DISABLE_GRAVATAR=true \
+    GF_CLOUD_MIGRATION_ENABLED=false \
+    GF_RECORDING_RULES_ENABLED=false \
+    GF_PLUGINS_PLUGIN_ADMIN_ENABLED=false \
+    GF_PLUGINS_DISABLE_PLUGINS=cloudwatch,grafana-azure-monitor-datasource,stackdriver,prometheus,loki,tempo,jaeger,zipkin,grafana-pyroscope-datasource,graphite,influxdb,opentsdb,mssql \
     CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
 LABEL org.opencontainers.image.title="pacha-grafana" \
