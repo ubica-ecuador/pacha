@@ -15,7 +15,7 @@ import { STACK_URL } from '../lib/stack.mjs';
 import { openDashboard } from '../lib/browser.mjs';
 
 const UID = 'fiware-valencia';
-const DATASETS = ['segments', 'traffic', 'traffic_top', 'bikes', 'bikes_hist', 'readings'];
+const DATASETS = ['segments', 'traffic', 'traffic_top', 'bikes', 'bikes_hist', 'readings', 'cells', 'hex_hours'];
 const dashboard = loadDashboard(`plus/dashboards/${UID}.json`);
 const serverSql = (name) => findAll(dashboard, (n) => n.kind === 'dataset' && n.name === name)[0].source.query.rawSql;
 // The last 24 hours, as Grafana writes ${__from} and ${__to} into the query.
@@ -99,7 +99,7 @@ test('the air and weather readings share one table, each kind with its measures'
 test('an overview, then a tab per kind of data, then the sources', () => {
   const { layout } = dashboard.spec;
   assert.equal(layout.kind, 'TabsLayout');
-  assert.deepEqual(layout.spec.tabs.map((t) => t.spec.title), ['Vista general', 'Tráfico', 'Valenbisi', 'Aire y meteorología', 'A qué huele', 'Sobre los datos']);
+  assert.deepEqual(layout.spec.tabs.map((t) => t.spec.title), ['Vista general', 'Tráfico', 'Valenbisi', 'Aire y meteorología', 'A qué huele', 'Hexágonos', 'Sobre los datos']);
 });
 
 test('the overview map has the four Plus layers, publishes its clicks and follows the instant in its queries', () => {
@@ -137,9 +137,38 @@ test('the smell tab: where the city\'s wind takes each station\'s air', () => {
   assert.match(sql, /cos\(radians\(from_deg \+ 180\)\)/);
 });
 
+test('the hexagons tab: H3 cells that rise with the window, filtered from Mosaic', () => {
+  const map = options('València en hexágonos');
+  const hexes = map.mapConfig.config.visState.layers.find((l) => l.id === 'hexes');
+  assert.equal(hexes.type, 'hexagonId');
+  // An H3 layer's height comes from sizeField (heightField does nothing there).
+  assert.equal(hexes.visualChannels.sizeField.name, 'value');
+  assert.equal(map.mosaicSelection, 'hexsel');
+  const sql = panelTitled(dashboard, 'València en hexágonos').data.spec.queries[1].spec.query.spec.rawSql;
+  for (const v of ['$hex_hours', '$slot_from', '$hour_lo', '$hour_hi', '$hexmetric']) assert.ok(sql.includes(v), v);
+  // hour stays out of the map's frame, or the selection's hour clause would land on it too.
+  assert.doesNotMatch(sql.split('SELECT').at(-1), /\bhour\b/);
+  const mosaic = options('Filtros: la medida, las horas del día y las celdas');
+  // Plot's tip takes the click a toggle needs.
+  assert.doesNotMatch(mosaic.spec, /tip: true/);
+  assert.match(mosaic.spec, /select: toggleY\n\s+as: \$hexsel/);
+  assert.match(mosaic.variables, /param: hexm\n\s+variable: hexmetric/);
+  for (const name of ['hexmetric', 'hour_lo', 'hour_hi']) {
+    assert.equal(dashboard.spec.variables.find((v) => v.spec.name === name).kind, 'TextVariable', name);
+  }
+});
+
+test('every traffic segment and Valenbisi station falls in an H3 cell of València', async () => {
+  const rows = await duckdb(STACK_URL, `SELECT kind, count(*) AS n, count(DISTINCT hex) AS cells, min(hex_lat) AS s, max(hex_lat) AS n2,
+    min(hex_lng) AS w, max(hex_lng) AS e FROM (${serverSql('cells')}) GROUP BY kind ORDER BY kind`);
+  const by = Object.fromEntries(rows.map((r) => [r.kind, r]));
+  assert.ok(Number(by.traffic.n) > 350 && Number(by.bike.n) > 200, JSON.stringify(rows));
+  for (const r of rows) assert.ok(inValencia({ latitude: r.s, longitude: r.w }) && inValencia({ latitude: r.n2, longitude: r.e }), JSON.stringify(r));
+});
+
 test('a Time Brush per tab: an instant ($t) on the overview, one window ($slot_from, $slot_to) in the tabs', () => {
   const brushes = panelsByType(dashboard, 'ubica-timebrush-panel').map((p) => p.vizConfig.spec.options);
-  assert.equal(brushes.length, 5);
+  assert.equal(brushes.length, 6);
   const instants = brushes.filter((b) => b.selection === 'instant');
   assert.deepEqual(instants.map((b) => b.instantVariable), ['t']);
   // The overview's map and figures follow the instant as it is dragged, paced like a play.
@@ -154,8 +183,9 @@ test('a Time Brush per tab: an instant ($t) on the overview, one window ($slot_f
 
 test('the Mosaic panels read datasets of the dashboard', () => {
   const specs = panelsByType(dashboard, 'ubica-chaski-mosaic-panel').map((p) => p.vizConfig.spec.options.spec);
-  assert.equal(specs.length, 2);
+  assert.equal(specs.length, 3);
   assert.ok(specs.some((s) => s.includes('from: traffic_top')));
+  assert.ok(specs.some((s) => s.includes('from: hex_hours')));
   assert.ok(specs.some((s) => s.includes('from: bikes_hist')));
 });
 

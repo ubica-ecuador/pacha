@@ -931,6 +931,78 @@
           }
         }
       },
+      "panel-hex-matrix": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Arriba, la medida que dibuja el mapa. Después, la media de todas las celdas por hora del día: arrastra sobre ella para quedarte con esas horas, en el mapa y en las matrices. Las matrices son las 12 celdas con la media más alta de cada medida, hora a hora: un clic en una fila deja esa celda sola en el mapa y en las demás matrices (otro clic la suelta; con mayúsculas se suman).",
+          "id": 48,
+          "links": [],
+          "title": "Filtros: la medida, las horas del día y las celdas",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  hexsel: { select: crossfilter }\n  hexm: traffic\nvconcat:\n  - input: menu\n    label: 'Altura y color del mapa'\n    as: $hexm\n    options:\n      - { label: 'Tráfico con incidencia (%)', value: traffic }\n      - { label: 'Valenbisi sin bici (%)', value: bikes }\n      - { label: 'NO₂ (µg/m³)', value: no2 }\n  - plot:\n      - mark: lineY\n        data: { from: hex_hours, filterBy: $hexsel }\n        x: hour\n        y: { avg: traffic }\n        stroke: { sql: \"'Tráfico con incidencia %'\" }\n        strokeWidth: 2\n      - mark: lineY\n        data: { from: hex_hours, filterBy: $hexsel }\n        x: hour\n        y: { avg: bikes }\n        stroke: { sql: \"'Valenbisi sin bici %'\" }\n        strokeWidth: 2\n      - mark: lineY\n        data: { from: hex_hours, filterBy: $hexsel }\n        x: hour\n        y: { avg: no2 }\n        stroke: { sql: \"'NO₂ µg/m³'\" }\n        strokeWidth: 2\n      - select: intervalX\n        as: $hexsel\n    name: hexhours\n    colorDomain: ['Tráfico con incidencia %', 'Valenbisi sin bici %', 'NO₂ µg/m³']\n    colorRange: ['#DF744E', '#8AB8FF', '#F2CC0C']\n    xDomain: [0, 23]\n    xTicks: 12\n    xLabel: 'Hora del día: arrastra para elegir horas →'\n    yLabel: null\n    yLabelAnchor: top\n    marginLeft: 40\n    marginTop: 22\n    height: 150\n  - legend: color\n    for: hexhours\n  - plot:\n      - mark: barX\n        data: { from: hex_hours, filterBy: $hexsel }\n        x1: time\n        x2: time_end\n        y: label\n        fill: traffic\n        inset: 0.5\n        sort: { y: -fill, reduce: mean, limit: 12 }\n      - select: toggleY\n        as: $hexsel\n    colorScale: linear\n    colorRange: ['#0b2d39', '#DF744E', '#C22E00']\n    xTickFormat: '%H:%M'\n    xLabel: null\n    yLabel: Tráfico con incidencia (%)\n    yLabelAnchor: top\n    marginLeft: 250\n    marginTop: 22\n    height: 190\n    yTickSize: 0\n  - plot:\n      - mark: barX\n        data: { from: hex_hours, filterBy: $hexsel }\n        x1: time\n        x2: time_end\n        y: label\n        fill: bikes\n        inset: 0.5\n        sort: { y: -fill, reduce: mean, limit: 12 }\n      - select: toggleY\n        as: $hexsel\n    colorScale: linear\n    colorRange: ['#0b2d39', '#E0605A', '#B2182B']\n    xTickFormat: '%H:%M'\n    xLabel: null\n    yLabel: Valenbisi sin bici (%)\n    yLabelAnchor: top\n    marginLeft: 250\n    marginTop: 22\n    height: 190\n    yTickSize: 0\n  - plot:\n      - mark: barX\n        data: { from: hex_hours, filterBy: $hexsel }\n        x1: time\n        x2: time_end\n        y: label\n        fill: no2\n        inset: 0.5\n        sort: { y: -fill, reduce: mean, limit: 12 }\n      - select: toggleY\n        as: $hexsel\n    colorScale: linear\n    colorRange: ['#0b2d39', '#F4B198', '#C22E00']\n    xTickFormat: '%H:%M'\n    xLabel: null\n    yLabel: NO₂ (µg/m³)\n    yLabelAnchor: top\n    marginLeft: 250\n    marginTop: 22\n    height: 190\n    yTickSize: 0\n",
+                "variables": "- param: hexm\n  variable: hexmetric\n- param: hexsel\n  column: hour\n  from: hour_lo\n  to: hour_hi\n"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-hex-text": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 49,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**València en hexágonos.** Una ciudad se gestiona por zonas, y un hexágono H3 es una zona que no depende de barrios ni distritos: todas iguales, de unos 0,7 km², con seis vecinas a la misma distancia. Aquí cada una junta lo que miden sus tramos de tráfico, sus estaciones Valenbisi y el aire a su alrededor. En el panel de abajo: el menú elige lo que dibujan; arrastra sobre las horas del día para ver solo la hora punta o la noche de toda la semana; un clic en una fila de las matrices deja esa celda sola. Con una ventana de una hora y ▶, las celdas suben y bajan con el día.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
       "panel-incidents-now": {
         "kind": "Panel",
         "spec": {
@@ -3009,6 +3081,583 @@
                     "variable": "bike"
                   }
                 ]
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-map-hex": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Cada tramo con su estado: el de ahora o, si la barra de tiempo o el\n-- estado elegido dejan fuera parte de la historia, su peor estado en los\n-- cuartos de hora que quedan; y su parte del tiempo con incidencia en la\n-- ventana. Solo los tramos con algún cuarto de hora que pase los filtros\n-- declarados en trafficFilters (hora, estado, incidencia), o todos si ninguno\n-- deja nada fuera.\nWITH counts AS (\n  SELECT count(*) AS total,\n         count(*) FILTER (WHERE $__crossfilter($trafficFilters, -jam)) AS timed,\n         count(*) FILTER (WHERE $__crossfilter($trafficFilters)) AS kept\n  FROM $traffic\n),\nshare AS (\n  SELECT segment_id, 100.0 * sum(incidents) / sum(n) AS pct, (sum(incidents) * 3)::DOUBLE AS minutes\n  FROM $traffic WHERE t \u003e= coalesce(try_cast($slot_from AS TIMESTAMP), '-infinity'::TIMESTAMP) AND t \u003c coalesce(try_cast($slot_to AS TIMESTAMP), 'infinity'::TIMESTAMP) GROUP BY 1\n),\npicked AS (\n  SELECT segment_id, max(worst) AS worst FROM $traffic WHERE $__crossfilter($trafficFilters) GROUP BY 1\n),\nlabelled AS (\n  SELECT s.segment_id, s.name, s.underpass, s.geojson, s.state_label AS state_now,\n         CASE WHEN c.timed = c.total THEN s.state_label\n              ELSE ['Fluido', 'Denso', 'Congestionado', 'Cortado', 'Sin datos'][(coalesce(p.worst, 4) + 1)::BIGINT] END AS state_label,\n         coalesce(h.pct, 0) AS pct, coalesce(h.minutes, 0) AS minutes\n  FROM $segments AS s\n  CROSS JOIN counts AS c\n  LEFT JOIN share AS h ON h.segment_id = s.segment_id\n  LEFT JOIN picked AS p ON p.segment_id = s.segment_id\n  WHERE c.kept = c.total OR p.segment_id IS NOT NULL\n)\nSELECT segment_id, name, underpass, geojson, state_now, state_label, round(pct, 1) AS pct, minutes,\n       CASE state_label WHEN 'Fluido' THEN 1.0 WHEN 'Denso' THEN 0.45 WHEN 'Congestionado' THEN 0.15 ELSE 0.0 END AS speed\nFROM labelled"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Cada celda en la ventana de tiempo y en las horas del día arrastradas en el panel de Mosaic, de sus\n-- horas ya cargadas en el navegador (hex_hours): la media de cada medida, y value la del menú de ese\n-- panel (hexmetric). Se rehace en el navegador cada vez que la barra de tiempo mueve la ventana o la\n-- reproduce: las celdas suben y bajan con ella. Las celdas que se pulsan en las matrices llegan por la\n-- selección de Mosaic hexsel (columna label); la columna hour queda fuera para que no llegue ahí.\n-- value se topa en el percentil 95 de las celdas, para que una sola celda (el paso inferior de Pérez Galdós)\n-- no se lleve toda la escala de color y de altura; el tooltip enseña los valores sin topar.\nWITH c AS (\nSELECT hex, label, place, round(avg(traffic), 1) AS traffic, round(avg(bikes), 1) AS bikes, round(avg(no2), 1) AS no2,\n       CASE $hexmetric WHEN 'traffic' THEN avg(traffic) WHEN 'bikes' THEN avg(bikes) ELSE avg(no2) END AS v\nFROM $hex_hours\nWHERE time \u003e= coalesce(try_cast($slot_from AS TIMESTAMP), '-infinity'::TIMESTAMP)\n  AND time \u003c coalesce(try_cast($slot_to AS TIMESTAMP), 'infinity'::TIMESTAMP)\n  AND hour BETWEEN coalesce(try_cast($hour_lo AS DOUBLE), 0) AND coalesce(try_cast($hour_hi AS DOUBLE), 23)\nGROUP BY hex, label, place\nHAVING v IS NOT NULL\n)\nSELECT hex, label, place, traffic, bikes, no2, least(v, quantile_cont(v, 0.95) OVER ()) AS value FROM c"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Cada hexágono es una celda H3 de unos 0,7 km², tan alto y tan cálido como la medida elegida en el menú del panel de la derecha: el tráfico de sus tramos, el tiempo sin bici de sus estaciones Valenbisi o su NO₂, en la ventana de tiempo y en las horas del día elegidas. Pasa el ratón por una celda para ver las tres.",
+          "id": 47,
+          "links": [],
+          "title": "València en hexágonos",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": false,
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 27.002001334222815,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 39.448,
+                      "longitude": -0.372,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 50,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 13.0
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "dark-matter",
+                      "threeDBuildingColor": [
+                        12.887291085429352,
+                        12.887291085429352,
+                        12.887291085429352
+                      ],
+                      "topLayerGroups": {
+                        "label": true,
+                        "poi": true,
+                        "road": false
+                      },
+                      "visibleLayerGroups": {
+                        "3d building": true,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [
+                        {
+                          "id": "e_c72d6vk",
+                          "isEnabled": true,
+                          "parameters": {
+                            "animateHeight": false,
+                            "density": 0.244,
+                            "fogColor": [
+                              28,
+                              15,
+                              88
+                            ],
+                            "height": 109,
+                            "heightEnd": 100,
+                            "linearEasing": false,
+                            "pattern": true,
+                            "thickness": 0
+                          },
+                          "type": "surfaceFog"
+                        },
+                        {
+                          "id": "e_v0m1v6e",
+                          "isEnabled": true,
+                          "parameters": {
+                            "amount": 0.588,
+                            "radius": 0.421
+                          },
+                          "type": "vignette"
+                        }
+                      ],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "state_label"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "place"
+                              },
+                              {
+                                "name": "traffic"
+                              },
+                              {
+                                "name": "bikes"
+                              },
+                              {
+                                "name": "no2"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "hexes",
+                        "traffic"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              223,
+                              116,
+                              78
+                            ],
+                            "columns": {
+                              "hex_id": "hex"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Celdas H3: la medida del menú",
+                            "textLabel": [],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#00939C",
+                                  "#6BB5B9",
+                                  "#AAD7D9",
+                                  "#F4B198",
+                                  "#DF744E",
+                                  "#C22E00"
+                                ],
+                                "name": "Uber Viz Diverging",
+                                "type": "diverging"
+                              },
+                              "coverage": 0.88,
+                              "elevationScale": 5,
+                              "enable3d": true,
+                              "heightRange": [
+                                0,
+                                250
+                              ],
+                              "opacity": 0.8,
+                              "sizeRange": [
+                                0,
+                                120
+                              ]
+                            }
+                          },
+                          "id": "hexes",
+                          "type": "hexagonId",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "value",
+                              "type": "real"
+                            },
+                            "colorScale": "quantize",
+                            "coverageField": null,
+                            "coverageScale": "linear",
+                            "sizeField": {
+                              "name": "value",
+                              "type": "real"
+                            },
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              26,
+                              152,
+                              80
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Las calles: su peor estado de tráfico en la ventana",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": false,
+                              "cardAlertLabel": "",
+                              "cardExtras": [],
+                              "cardMax": "auto",
+                              "cardMin": "auto",
+                              "cardNameField": "auto",
+                              "cardPinned": [],
+                              "cardPlacement": "beside",
+                              "cardScale": "common",
+                              "cardShow": "tooltip",
+                              "cardSize": "S",
+                              "cardTimeField": "auto",
+                              "cardUnit": "",
+                              "cardValueField": "color",
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Fluido",
+                                    "#1a9850"
+                                  ],
+                                  [
+                                    "Denso",
+                                    "#fdae61"
+                                  ],
+                                  [
+                                    "Congestionado",
+                                    "#d73027"
+                                  ],
+                                  [
+                                    "Cortado",
+                                    "#7b0d1e"
+                                  ],
+                                  [
+                                    "Sin datos",
+                                    "#9e9e9e"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#1a9850",
+                                  "#fdae61",
+                                  "#d73027",
+                                  "#7b0d1e",
+                                  "#9e9e9e"
+                                ],
+                                "name": "Estado del tráfico",
+                                "type": "customOrdinal"
+                              },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
+                              "elevationScale": 0,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedElevation": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "historyField": "color",
+                              "invertHeight": false,
+                              "opacity": 0.35,
+                              "pipelineAltitude": 0,
+                              "pipelineLaneGap": 1,
+                              "pipelineReverse": false,
+                              "pipelineSignedSpeed": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#A50026",
+                                  "#F88D52",
+                                  "#F9F7AE",
+                                  "#85CB67",
+                                  "#006837"
+                                ],
+                                "name": "color.customPalette.customOrdinal.speed",
+                                "reversed": true,
+                                "type": "customOrdinal"
+                              },
+                              "strokeOpacity": 0.35,
+                              "stroked": true,
+                              "thickness": 2,
+                              "trafficAnimate": true,
+                              "trafficCycle": 17,
+                              "trafficDashLength": 0.5,
+                              "trafficDirectionMode": "straight",
+                              "trafficGlow": false,
+                              "trafficLapsRange": [
+                                1,
+                                6
+                              ],
+                              "trafficSpacing": 30,
+                              "trafficStyle": "dots",
+                              "trafficTiming": "wave",
+                              "trafficTrail": 0.3,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "traffic",
+                          "type": "pipeline",
+                          "visualChannels": {
+                            "altitudeScale": "linear",
+                            "elevationOffsetScale": "linear",
+                            "reverseColorScale": "quantile",
+                            "reverseSizeScale": "linear",
+                            "reverseSpeedScale": "linear",
+                            "sizeScale": "linear",
+                            "speedField": {
+                              "name": "speed",
+                              "type": "integer"
+                            },
+                            "speedScale": "linear",
+                            "strokeColorField": {
+                              "name": "speed",
+                              "type": "integer"
+                            },
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": true,
+                "mosaicSelection": "hexsel",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 3,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "timeVariables": {
+                  "from": "slot_from",
+                  "to": "slot_to"
+                },
+                "variableMappings": []
               }
             },
             "version": "1.6.0"
@@ -6092,6 +6741,198 @@
           }
         }
       },
+      "panel-tb-hex": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Los tramos con incidencia por cuarto de hora: cuántos tuvieron como peor\n-- estado del cuarto denso, congestionado o cortado, apilados en los colores\n-- del mapa, bajo el estado y la incidencia elegidos en los filtros del tráfico;\n-- en gris detrás, todos los tramos con incidencia. Lee las variables del estado\n-- y de la incidencia, no la variable de filtros del tráfico (que cambia con la\n-- ventana): Grafana volvería a consultar esta barra a cada movimiento de su\n-- propia ventana. Ojo: Grafana busca variables también en los comentarios.\nWITH k AS (\n  SELECT t, worst,\n         (list_contains([$state], state) OR len(list_filter([$state], x -\u003e x \u003c\u003e '')) = 0)\n         AND jam \u003e= coalesce(try_cast($jam_lo AS DOUBLE), -1)\n         AND jam \u003c= coalesce(try_cast($jam_hi AS DOUBLE), 101) AS kept\n  FROM $traffic\n)\nSELECT t AS time,\n       count(*) FILTER (WHERE worst = 1 AND kept)::DOUBLE AS \"Denso\",\n       count(*) FILTER (WHERE worst = 2 AND kept)::DOUBLE AS \"Congestionado\",\n       count(*) FILTER (WHERE worst = 3 AND kept)::DOUBLE AS \"Cortado\",\n       count(*) FILTER (WHERE worst IN (1, 2, 3))::DOUBLE AS \"Todos\"\nFROM k GROUP BY t ORDER BY t"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "La misma ventana que las otras pestañas: los hexágonos resumen lo que pasa dentro de ella.",
+          "id": 46,
+          "links": [],
+          "title": "Ventana de tiempo · tramos con incidencia por cuarto de hora",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "aggregation": "sum",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Todos"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.context",
+                        "value": true
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "rgba(128, 128, 128, 0.35)",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Denso"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#fdae61",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Congestionado"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#d73027",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Cortado"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#7b0d1e",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "accentColor": "",
+                "backgroundColor": "",
+                "backgroundTransparency": 90,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "15m",
+                "cursorColor": "",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "density": "comfortable",
+                "domain": "dashboard",
+                "followLatest": false,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "instantVariable": "t",
+                "loop": false,
+                "mosaicColumn": "t",
+                "mosaicSelection": "traffic",
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "scrolled",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "top",
+                "pinnedStyle": "solid",
+                "playMotion": "smooth",
+                "publishIntervalMs": 1000,
+                "publishWhileDragging": false,
+                "publishWhilePlaying": false,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 600,
+                "stickyOffset": 0,
+                "valueGuides": false,
+                "variables": {
+                  "from": "slot_from",
+                  "to": "slot_to"
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "free",
+                "zoomToExternal": false
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
       "panel-tb-overview": {
         "kind": "Panel",
         "spec": {
@@ -7660,6 +8501,86 @@
                                 "spec": {
                                   "element": {
                                     "kind": "ElementReference",
+                                    "name": "panel-tb-hex"
+                                  },
+                                  "height": 7,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-map-hex"
+                                  },
+                                  "height": 37,
+                                  "width": 15,
+                                  "x": 0,
+                                  "y": 7
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-hex-text"
+                                  },
+                                  "height": 7,
+                                  "width": 9,
+                                  "x": 15,
+                                  "y": 7
+                                }
+                              },
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-hex-matrix"
+                                  },
+                                  "height": 30,
+                                  "width": 9,
+                                  "x": 15,
+                                  "y": 14
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "title": "Hexágonos"
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Hexágonos"
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "RowsLayout",
+                "spec": {
+                  "rows": [
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "collapse": false,
+                        "hideHeader": true,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
                                     "name": "panel-about"
                                   },
                                   "height": 14,
@@ -7884,6 +8805,45 @@
           },
           "hide": "hideVariable",
           "name": "station",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "traffic",
+            "value": "traffic"
+          },
+          "hide": "hideVariable",
+          "name": "hexmetric",
+          "query": "traffic",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "hour_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "hour_hi",
           "query": "",
           "skipUrlSync": false
         }
@@ -8285,6 +9245,96 @@
             "version": "v0"
           },
           "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Celdas H3 de tramos y estaciones",
+          "multi": false,
+          "name": "cells",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "cells",
+              "refId": "cells",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: la celda H3 de resolución 8 (unos 0,7 km²) de cada tramo de tráfico (la de su\n-- centro) y de cada estación Valenbisi, con el centro de la celda y el nombre de su tramo más\n-- largo, para nombrarla. Los tramos salen del exporte de su geometría; las estaciones, de su\n-- historia (LABMAD, una estación de prueba en Madrid, queda fuera de la caja).\nWITH seg AS (\n  SELECT segment_id, name, ST_GeomFromGeoJSON(geojson) AS g\n  FROM read_parquet('https://fiware.ubica.dev/exports/traffic_segments.parquet')\n),\nrows AS (\n  SELECT 'traffic' AS kind, segment_id::VARCHAR AS key, name, ST_Length(g) AS metres,\n         h3_latlng_to_cell_string(ST_Y(ST_Centroid(g)), ST_X(ST_Centroid(g)), 8) AS hex\n  FROM seg\n  UNION ALL\n  SELECT 'bike', regexp_extract(entity_id, '[0-9]+$'), NULL, 0,\n         h3_latlng_to_cell_string(any_value(latitude), any_value(longitude), 8)\n  FROM read_parquet('https://fiware.ubica.dev/exports/bikes.parquet')\n  WHERE latitude BETWEEN 39.3 AND 39.6 AND longitude BETWEEN -0.5 AND -0.25\n  GROUP BY entity_id\n),\nplaces AS (SELECT hex, arg_max(name, metres) AS place FROM rows WHERE kind = 'traffic' GROUP BY hex)\nSELECT kind, key, hex, h3_cell_to_lat(hex) AS hex_lat, h3_cell_to_lng(hex) AS hex_lng, coalesce(place, 'sin tramos') AS place\nFROM rows LEFT JOIN places USING (hex)",
+                  "refId": "cells"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Celdas H3 hora a hora",
+          "multi": false,
+          "name": "hex_hours",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "hex_hours",
+              "refId": "hex_hours",
+              "source": {
+                "sql": "-- Cada celda H3, hora a hora en todo el rango: la parte de las lecturas de sus tramos con\n-- incidencia (denso, congestionado o cortado), la parte del tiempo de sus estaciones Valenbisi sin\n-- bici, y su NO₂: la lectura de cada estación de aire en esa hora, ponderada por el inverso del\n-- cuadrado de su distancia al centro de la celda (en grados, la longitud por el coseno de la\n-- latitud). El navegador recibe segment_id como número decimal: pasa a entero para casar con la\n-- celda. hour es la hora del día en València (UTC+1 en noviembre). label nombra la celda por su tramo más largo, con una parte de su código H3 para distinguirlas.\nWITH tr AS (\n  SELECT c.hex, time_bucket(INTERVAL 1 HOUR, t.t) AS time,\n         100.0 * sum(t.incidents) / nullif(sum(t.n), 0) AS traffic\n  FROM $traffic AS t JOIN $cells AS c ON c.kind = 'traffic' AND c.key = CAST(t.segment_id AS BIGINT)::VARCHAR\n  GROUP BY 1, 2\n),\nbk AS (\n  SELECT c.hex, time_bucket(INTERVAL 1 HOUR, b.t) AS time, 100.0 * avg(CASE WHEN b.bikes = 0 THEN 1 ELSE 0 END) AS bikes\n  FROM $bikes_hist AS b JOIN $cells AS c ON c.kind = 'bike' AND c.key = b.bike\n  GROUP BY 1, 2\n),\nair AS (\n  SELECT station, time_bucket(INTERVAL 1 HOUR, time) AS time, avg(no2) AS no2,\n         any_value(latitude) AS lat, any_value(longitude) AS lng\n  FROM $readings WHERE kind = 'Aire' AND no2 IS NOT NULL\n  GROUP BY 1, 2\n),\nhx AS (SELECT DISTINCT hex, hex_lat, hex_lng, place FROM $cells),\nno2 AS (\n  SELECT hex, time, sum(no2 / w) / sum(1 / w) AS no2\n  FROM (SELECT hx.hex, air.time, air.no2,\n               greatest(power(hx.hex_lat - air.lat, 2) + power((hx.hex_lng - air.lng) * 0.77, 2), 1e-8) AS w\n        FROM hx CROSS JOIN air)\n  GROUP BY 1, 2\n),\ngrid AS (SELECT hex, time FROM tr UNION SELECT hex, time FROM bk UNION SELECT hex, time FROM no2)\nSELECT g.hex, left(hx.place, 30) || ' · ' || substr(g.hex, 5, 5) AS label, hx.place,\n       g.time, g.time + INTERVAL 1 HOUR AS time_end, (hour(g.time) + 1) % 24 AS hour,\n       round(tr.traffic, 1) AS traffic, round(bk.bikes, 1) AS bikes, round(no2.no2, 1) AS no2\nFROM grid AS g JOIN hx USING (hex)\nLEFT JOIN tr USING (hex, time) LEFT JOIN bk USING (hex, time) LEFT JOIN no2 USING (hex, time)",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
           "regex": "",
           "regexApplyTo": "value",
           "skipUrlSync": true,
