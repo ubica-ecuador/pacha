@@ -88,7 +88,7 @@ All in `panel.options`, not in `mapConfig`.
 | `flowRenderMode` | `straight`, `curved`, `animated-straight` |
 | `areaVariable` | the drawn polygon or rectangle → WKT EPSG:4326; `''` when deleted |
 | `clickArea`, `clickAreaSizeMetres` | a click sets the area to a square around the entity |
-| `viewportVariables` | `{"west":"w","south":"s","east":"e","north":"n"}` |
+| `viewportVariables` | `{"west":"w","south":"s","east":"e","north":"n"}`; and/or `"view":"view"`, the whole box in one text box variable, `"viewFormat"` `wkt` (default, a POLYGON) or `bbox` (`w,s,e,n`, for a `bbox=` parameter). `view`: free panel 1.10.1 edge on pacha; not in Plus until its next vendor bump |
 | `selectionField` | a boolean column of the query (`... AS selected`): its true rows are ringed as selected, beside what click mappings published. For selections too big for the URL: compute them from short variables (a brushed box's edges) |
 | `dimUnselected` | `true`: while something is selected, a veil of the base map's tone covers the rest |
 | `haloStyle` | `auto` (default: amber, or under the veil a thin line for ≤ 50 shapes and none beyond), `amber`, `thin`, `none` |
@@ -115,18 +115,23 @@ A list of `{field, variable, variableTo?, source?, zoom?, keepOnDeselect?}`:
 ### What the panel writes
 
 Every value is a string, and every channel can be empty before the first interaction. Time
-windows: UTC ISO 8601. Coordinates and viewport: degrees, 6 decimals, clamped. Area: WKT
+windows: UTC ISO 8601. Coordinates and viewport: degrees, 6 decimals, clamped; `view` is the
+same box in the same write, not rewritten while it holds that box. Area: WKT
 EPSG:4326, only the latest figure, never written on load. Range filters: both bounds blanked
 when the filter is removed.
 
 **Never feed a variable a map writes into that same map's query**: the map would filter
-itself and could not widen again. Other panels read it; the map filters in kepler.
+itself and could not widen again. Other panels read it; the map filters in kepler. The one
+exception is the viewport read on purpose, a source too big to load whole read for what the map
+shows (spatial-sources.md, "Large Parquet pruned by the viewport"): it re-runs at each rest and a
+refresh keeps the view.
 
 Consuming in DuckDB (which quotes for you):
 
 ```sql
 WHERE time >= coalesce(try_cast($t0 AS TIMESTAMPTZ), '-infinity'::TIMESTAMPTZ)
   AND ($area = '' OR ST_Intersects(geom, ST_GeomFromText($area)))      -- server, spatial
+  AND ($view = '' OR ST_Intersects(geom, ST_GeomFromText($view)))      -- the view, as WKT
 ```
 
 In Chaski, declare the map's variables in a filters variable and read them with

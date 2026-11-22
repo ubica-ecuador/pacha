@@ -43,7 +43,11 @@ is a binder error.
 map, then `WHERE longitude BETWEEN ${west:raw} AND ${east:raw} AND latitude BETWEEN ${south:raw} AND ${north:raw}`,
 with a sampling bucket that grows with the visible area. The file must be sorted spatially
 (by an H3 cell, or `lindel` Hilbert order) so row-group statistics prune the read. This is
-the one case where a map deliberately reads its own viewport, as density control.
+the one case where a map deliberately reads its own viewport, as density control. For a
+geometry test rather than four bounds, publish the box as one variable (`"view":"view"`, WKT)
+and use `ST_Intersects(geom, ST_GeomFromText($view))`, guarded by `$view = ''`; a service's
+`bbox=` takes `"viewFormat":"bbox"`. A map reading its own view counts only what is on screen in
+its filters and legend: say so on the panel, and keep a `LIMIT`.
 
 **Overture Maps through its STAC index, no credentials** (bench: `r5-calles.json`): the
 release from `https://stac.overturemaps.org/catalog.json` (`latest`), the files from
