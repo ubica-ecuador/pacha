@@ -97,6 +97,17 @@ ground with buildings alone (use both on a slope). Traps: tiles load round each 
 screenshot needs ~30 s; a 15 km lookout at medium has 117 m cells, too coarse for buildings. Example:
 `madrid-traffic-cameras` (pacha-dashboards).
 
+**streets** (Plus after 1.6.0, live on pacha since 9c7856d; docs.ubica.dev/plus/layers/streets): the base map's
+streets (OpenFreeMap's tiles, from zoom 10, minor from 13) coloured by a points dataset (`columns: {lat, lng}`,
+`colorField` numeric). `streetsMode` along (a sensor's value runs along its street, `streetsReach` 300 m, straight on
+at crossings) | interpolate (as the crow flies, `streetsPower`, `streetsNeighbours`) | points (moving points per ~20 m
+stretch: `streetsAggregate` count|distinct|mean|min|max, `streetsIdField`, `streetsJoin` + `streetsTimeField`,
+`streetsJoinGap` 120 s, `streetsJoinDistance` 1000 m, `streetsMinCount`); `streetsReduce` last|mean|min|max per sensor;
+`streetsSnap` 25 m; `streetsClasses` all|major|paths; `streetsWidth` 4; `streetsEmpty` hide|grey + `streetsEmptyColor`;
+`streetsSensors`, `streetsSensorRadius`; `streetsInBaseMap` (true: drawn with the base map's roads, 3D buildings and
+names in front); `streetsFlow` (false), `streetsFlowStyle` dashes|dots|pulse, `streetsFlowSpeed` same|faster|slower,
+`streetsFlowLaps`. Cards as on Buildings (`cardShow` hover). Up to 5,000 sensors in along/interpolate.
+
 **buildings** (Plus after 1.6.0, live on pacha since a103a83): the base map's buildings (OpenStreetMap's, from
 OpenFreeMap's tiles in view, from zoom 12, within 3.5 km of the centre; 5 m where OSM has no height), each extruded
 and coloured by a value from the layer's rows. `colorField` (numeric) is the value; its colour scale colours the
@@ -447,16 +458,21 @@ the keyless `openfreemap-*` ids (or `grafana-satellite`) instead. Plus also has 
 `grafana-satellite-terrain` or `grafana-topographic-terrain`). Never invent a `*-relief` id. Google Photorealistic 3D tiles: the
 "3D (Plus)" tab of Add Data (`tile3d` layer).
 
-**Night and day** (Plus after 1.6.0, live on pacha since 51aa569; docs.ubica.dev/plus/maps/night-and-day): three
+**Night and day** (Plus after 1.6.0, live on pacha since 51aa569, Drawn/roads/blending since 9c7856d; docs.ubica.dev/plus/maps/night-and-day): three
 sections of the Base map tab on the `openfreemap-*` styles, each OFF by default, saved as the VALUE of a group in
 `config.mapStyle.visibleLayerGroups` (an object; `true` means on with the defaults). They follow the sun at the view's
 centre: Light & Shadow's time when `visState.effects` has a `lightAndShadow` effect, else the dashboard range's end;
 night from under 1° of sun.
-- `dayNightStyles: {on, day, night}` (`openfreemap-*` ids; default liberty and fiord): the style switches at dusk and
-  dawn; the saved `styleType` is only where the map starts.
-- `buildingShadows: {on, opacity 0..1, shade 0..1, styleColour (true), colour [r,g,b], nightColour [r,g,b]}`: the
+- `dayNightStyles: {on, day, night, blendWhen never|night|day|always, blendMode additive|subtractive}`
+  (`openfreemap-*` ids; default liberty and fiord, blendWhen never): the style switches at dusk and dawn; the saved
+  `styleType` is only where the map starts; blendWhen sets kepler's `layerBlending` by the sun (normal otherwise).
+- `buildingShadows: {on, opacity 0..1, shade 0..1, styleColour (true), colour [r,g,b], nightColour [r,g,b], overData
+  (false: under kepler's layers; true: after them, shadows on polygons)}`: the
   style's 3D buildings drawn by deck so they cast the effect's shadows (needs the `lightAndShadow` effect; does nothing
   with a `buildings` or `citymodel` layer on the map, which cast their own, nor with Relief on, where the style keeps
   its own buildings, without shadows).
-- `streetLights: {on, intensity 0..3, reach 0.3..3, colour sodium|warm|neutral, always}`: lamps along OpenFreeMap's
-  streets at night, from zoom 12; use a dark style or `dayNightStyles` (a light style shows little); not with Relief.
+- `streetLights: {on, intensity 0..3, reach 0.3..3, colour sodium|warm|neutral, always, overData, roadsOnTop}`: lamps
+  along OpenFreeMap's streets at night, from zoom 12; use a dark style or `dayNightStyles` (a light style shows
+  little); not with Relief. overData: over kepler's layers (lights a polygon/Surface). roadsOnTop: lights under the
+  base map's roads, buildings over the roads (overData ignored). Never set `topLayerGroups.road` (Move to top) with
+  these: its roads are drawn over everything and cut through the buildings.
