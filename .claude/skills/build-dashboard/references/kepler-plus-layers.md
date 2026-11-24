@@ -134,7 +134,11 @@ dots keep their hover. Example: `nyc-street-heat`'s two temperature maps.
 **surface**: bands and isolines between points. `surfaceMode` interpolate (IDW of
 `colorField`) | count (assets within `surfaceRadius` m); `surfaceReduce` last|mean|min|max,
 `surfaceBands`, `surfaceIsolines*`, `surfaceLabels*`, `surfaceResolution`, `surfacePower` (2),
-`surfaceMaxDistance`, `surfaceExtent` hull|rectangle, `surfaceMargin`, `surfaceBreaks`
+`surfaceNeighbours` auto|8|16|32|all, `surfaceSmoothing` (0..6, 0; Plus after 1.6.0: a Gaussian
+blur of the estimate on kepler Contour's scale, 2-3 when many sensors disagree street by street),
+`surfaceStepsFrom` scale|surface (scale; surface: the palette spread over the surface's own
+range, as kepler's Contour does; it moves with each frame and kepler's legend keeps the scale's
+breaks), `surfaceMaxDistance`, `surfaceExtent` hull|rectangle, `surfaceMargin`, `surfaceBreaks`
 ("2, 5, 10": fixed breaks keep frames comparable while playing), `surfaceUnderBuildings` (true:
 drawn inside the base map under its 3D buildings, on styles that have them such as
 `openfreemap-liberty`; not with Relief), `surfaceDrape` (true: with a `tile3d` layer
