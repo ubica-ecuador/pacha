@@ -446,3 +446,17 @@ the keyless `openfreemap-*` ids (or `grafana-satellite`) instead. Plus also has 
 `config.mapStyle.visibleLayerGroups.relief = true` (Azure styles; on free styles use
 `grafana-satellite-terrain` or `grafana-topographic-terrain`). Never invent a `*-relief` id. Google Photorealistic 3D tiles: the
 "3D (Plus)" tab of Add Data (`tile3d` layer).
+
+**Night and day** (Plus after 1.6.0, live on pacha since 51aa569; docs.ubica.dev/plus/maps/night-and-day): three
+sections of the Base map tab on the `openfreemap-*` styles, each OFF by default, saved as the VALUE of a group in
+`config.mapStyle.visibleLayerGroups` (an object; `true` means on with the defaults). They follow the sun at the view's
+centre: Light & Shadow's time when `visState.effects` has a `lightAndShadow` effect, else the dashboard range's end;
+night from under 1° of sun.
+- `dayNightStyles: {on, day, night}` (`openfreemap-*` ids; default liberty and fiord): the style switches at dusk and
+  dawn; the saved `styleType` is only where the map starts.
+- `buildingShadows: {on, opacity 0..1, shade 0..1, styleColour (true), colour [r,g,b], nightColour [r,g,b]}`: the
+  style's 3D buildings drawn by deck so they cast the effect's shadows (needs the `lightAndShadow` effect; does nothing
+  with a `buildings` or `citymodel` layer on the map, which cast their own; leave it off with Relief: it draws at sea
+  level).
+- `streetLights: {on, intensity 0..3, reach 0.3..3, colour sodium|warm|neutral, always}`: lamps along OpenFreeMap's
+  streets at night, from zoom 12; use a dark style or `dayNightStyles` (a light style shows little); not with Relief.
