@@ -456,7 +456,7 @@ night from under 1° of sun.
   dawn; the saved `styleType` is only where the map starts.
 - `buildingShadows: {on, opacity 0..1, shade 0..1, styleColour (true), colour [r,g,b], nightColour [r,g,b]}`: the
   style's 3D buildings drawn by deck so they cast the effect's shadows (needs the `lightAndShadow` effect; does nothing
-  with a `buildings` or `citymodel` layer on the map, which cast their own; leave it off with Relief: it draws at sea
-  level).
+  with a `buildings` or `citymodel` layer on the map, which cast their own, nor with Relief on, where the style keeps
+  its own buildings, without shadows).
 - `streetLights: {on, intensity 0..3, reach 0.3..3, colour sodium|warm|neutral, always}`: lamps along OpenFreeMap's
   streets at night, from zoom 12; use a dark style or `dayNightStyles` (a light style shows little); not with Relief.
