@@ -52,6 +52,7 @@ from functools import lru_cache
 from typing import Any, Callable
 
 import attr
+import obstore.store
 import xarray
 
 # Ordering, not style: the stock application mounts its own `/zarr` router at
@@ -234,6 +235,27 @@ def open_icechunk(
         decode_coords,
         int(time.time() // CACHE_TTL),
     )
+
+
+def _from_url_allowing_http(url: str, *args: Any, client_options: Any = None, **kwargs: Any) -> Any:
+    """obstore's `from_url`, which also opens a store over plain HTTP.
+
+    obstore refuses `http://` unless told otherwise (`allow_http`), and the
+    refusal surfaces as a 500 whose body is a Rust `BadScheme` builder error,
+    nowhere near "this is plain HTTP". A catalog on a private network — the
+    bed's file server, a MinIO inside the stack — serves Zarr that way, and
+    `/cog` already reads COGs from such addresses through GDAL, so `/zarr`
+    refusing the same address was an inconsistency, not a protection.
+    Only an `http://` address gets the option; every other is opened as before.
+    """
+    if url.lower().startswith("http://"):
+        client_options = {**(client_options or {}), "allow_http": True}
+    return _obstore_from_url(url, *args, client_options=client_options, **kwargs)
+
+
+# `titiler.xarray.io.open_zarr` looks `obstore.store.from_url` up at call time.
+_obstore_from_url = obstore.store.from_url
+obstore.store.from_url = _from_url_allowing_http
 
 
 def open_any(src_path: str, **kwargs: Any) -> xarray.Dataset:

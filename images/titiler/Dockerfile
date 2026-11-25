@@ -84,5 +84,8 @@ assert any(p.startswith('/cog') for p in paths), 'the other routers went missing
 assert a.zarr_factory.reader is a.AnyReader, 'router is not using AnyReader'; \
 assert a.icechunk_href('https://example.com/x.zarr') is None, 'a plain store was routed to icechunk'; \
 assert a.icechunk_href('icechunk+https://example.com/r.icechunk') == 'https://example.com/r.icechunk'; \
+import obstore.store; \
+assert obstore.store.from_url is a._from_url_allowing_http, 'plain-HTTP Zarr would be refused'; \
+obstore.store.from_url('http://example.com/x.zarr'); \
 assert any(getattr(r, 'path', None) == '/readyz' for r in a.app.routes), 'no /readyz route'; \
 print(f'icechunk router in place, {len(zarr)} paths on /zarr')"
