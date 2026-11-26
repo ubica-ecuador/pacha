@@ -21,8 +21,8 @@ ARG KEPLER_PANEL_SHA256=d922133a30201ad5c526d6072220161f86c74f2957fea70efdc4e63a
 # release: the version above. edge: main of the Kepler repo, as its CI last
 # published it; not pinned, see the kepler-edge stage.
 ARG KEPLER_PANEL_CHANNEL=release
-ARG CHASKI_VERSION=2.3.2
-ARG CHASKI_SHA256=cc980bb6c0f9262d2fe11ea9646f455a7ad076d1cdda40efb7744966656768ec
+ARG CHASKI_VERSION=2.5.0
+ARG CHASKI_SHA256=f18bb52192c28fb4da9a7047b087534809341ab2ce7b8a5a0e71cde432463fbe
 ARG DUCKDB_DS_VERSION=0.4.6
 ARG DUCKDB_DS_SHA256=3464c8ee0a60eb49bdbd778caf103112dd710a234aa26e429faf813f449a8a57
 # The engine the DuckDB datasource is linked against. Extensions are built per

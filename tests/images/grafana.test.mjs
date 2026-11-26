@@ -10,10 +10,10 @@ const NESTED = ['ubica-chaski-datasource', 'ubica-chaski-mosaic-panel', 'ubica-c
 
 const EXPECTED = {
   'ubica-keplergl-panel': { version: '1.9.0', signature: 'unsigned' },
-  'ubica-chaski-app': { version: '2.3.2', signature: 'unsigned' },
-  'ubica-chaski-datasource': { version: '2.3.2', signature: 'unsigned' },
-  'ubica-chaski-mosaic-panel': { version: '2.3.2', signature: 'unsigned' },
-  'ubica-chaski-filters-panel': { version: '2.3.2', signature: 'unsigned' },
+  'ubica-chaski-app': { version: '2.5.0', signature: 'unsigned' },
+  'ubica-chaski-datasource': { version: '2.5.0', signature: 'unsigned' },
+  'ubica-chaski-mosaic-panel': { version: '2.5.0', signature: 'unsigned' },
+  'ubica-chaski-filters-panel': { version: '2.5.0', signature: 'unsigned' },
   'motherduck-duckdb-datasource': { version: '0.4.6', signature: 'unsigned' },
   'yesoreyeram-infinity-datasource': { version: '4.0.0', signature: 'valid' },
   'grafana-mqtt-datasource': { version: '1.3.11', signature: 'valid' },
@@ -120,7 +120,7 @@ test('versions are exposed as image labels', () => {
   const labels = JSON.parse(sh('docker', ['image', 'inspect', '--format', '{{json .Config.Labels}}', IMAGE]));
   assert.equal(labels['io.pacha.kepler-panel.version'], '1.9.0');
   assert.equal(labels['io.pacha.kepler-panel.channel'], 'release');
-  assert.equal(labels['io.pacha.chaski.version'], '2.3.2');
+  assert.equal(labels['io.pacha.chaski.version'], '2.5.0');
   assert.equal(labels['io.pacha.duckdb-datasource.version'], '0.4.6');
   assert.equal(labels['io.pacha.duckdb-engine.version'], '1.5.6');
   assert.equal(labels['io.pacha.business-charts.version'], '7.2.5');
