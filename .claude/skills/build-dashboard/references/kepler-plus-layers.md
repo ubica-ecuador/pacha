@@ -142,6 +142,25 @@ of one hour, query every hour and add a kepler `timeRange` filter on the time co
 (the Time Brush moves it); a reading at the half hour (`time + INTERVAL 30 MINUTE`) keeps one per hourly window. Sensor
 dots keep their hover. Example: `nyc-street-heat`'s two temperature maps.
 
+**citymodel** ("City Model", Plus after 1.6.0, live on pacha; docs.ubica.dev/plus/layers/city-model): a 3D city
+model (CityJSON LoD2) drawn as the model has it, every surface lit. Two column modes:
+- rows: `"columns":{"geojson":"_geojson"}` (the panel renames `geometry`), one POLYGON Z per surface in EPSG:4326 as
+  GeoJSON with z (the WKT reader drops Z: `ST_AsGeoJSON(ST_GeomFromText(wkt))::VARCHAR`); `cityClassField` auto
+  (surface_type...: RoofSurface, WallSurface; else by the face's normal), `cityBuildingField` auto (building_id...).
+- files: `"columnMode":"files"`, `"columns":{}`, CityJSON or CityJSONSeq (gzip ok) from `cityUrl` or a column
+  (`city_url`, `model_url`, `url`), https:// with CORS (a dataset's `cityjson/` folder is served at
+  `/datasets/<name>/cityjson/`; build the URL with a hidden `site` variable, `${site:raw}`), placed by its
+  referenceSystem (EPSG:4979 lon/lat works). Tiles: one row per tile, its URL and box (west/south/east/north): the
+  tiles in view, the `cityMaxTiles` (32, max 150) nearest; `cityMaxTriangles` (2e6). `cityFootprints` '' (OpenFreeMap's
+  blocks from afar, the tiles from zoom 15) | MVT template | .pmtiles | none.
+`cityColourBy` class (`cityRoofColor`...) | layer (rows: kepler's colorField; ordinal custom colours go by the sorted
+categories) | material (files, Plus 84c1e1a: each surface its CityJSON appearance material's diffuseColor under the
+geometry's first theme; a tiled city keeps its roof and wall colours) | attribute | data (rows joined per building) |
+sensors | slope | aspect | solar. `cityHeights` auto|data|ground; on relief each building stands on the lowest ground
+under its base corners. Under the `lightAndShadow` effect the buildings cast shadows on a clear ground over the view,
+on relief too since Plus 062d99e. Examples: `edogawa-flood` (data joined per building), `cuenca-3d-tiles` (697
+CityJSON tiles coloured by materials; datasets/cuenca-3d/tiles.py writes them).
+
 **surface**: bands and isolines between points. `surfaceMode` interpolate (IDW of
 `colorField`) | count (assets within `surfaceRadius` m); `surfaceReduce` last|mean|min|max,
 `surfaceBands`, `surfaceIsolines*`, `surfaceLabels*`, `surfaceResolution`, `surfacePower` (2),
