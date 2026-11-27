@@ -43,6 +43,8 @@ needs it; the other facets change only with the stack.
   objects: old sheets, scales, how a map is made), `live` (feeds that reload
   by themselves), `alerting` (a Grafana alert rule drawn on the map).
 
+`unlisted` keeps a dashboard off the home page (its cards and its counts): it is reached only by its link.
+
 Every Plus dashboard carries `plus`: filter what needs Plus with it.
 
 ## Conventions
